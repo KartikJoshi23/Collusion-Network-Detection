@@ -1,0 +1,109 @@
+[project]
+name = "collusiongraph"
+version = "0.1.0"
+description = "Explainable, imbalance-robust graph-learning framework for illicit-finance and bid-rigging collusion detection (screening & triage only — no determination of guilt)"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Apache-2.0" }
+authors = [{ name = "CollusionGraph contributors" }]
+
+# PyTorch/PyG deliberately WITHOUT optional compiled extensions
+# (torch-scatter/torch-sparse) per implementation-plan.md §4.1 —
+# modern PyG no longer requires them and they stall Windows installs.
+# Exact pins live in uv.lock (committed).
+dependencies = [
+    "torch>=2.6",
+    "torch-geometric>=2.6",
+    "pygod>=1.1",
+    "scikit-learn>=1.5",
+    "xgboost>=2.1",
+    "lightgbm>=4.5",
+    "networkx>=3.4",
+    "python-igraph>=0.11",
+    "leidenalg>=0.10",
+    "pandas>=2.2",
+    "polars>=1.17",
+    "pyarrow>=18",
+    "duckdb>=1.1",
+    "pydantic>=2.9",
+    "fastapi>=0.115",
+    "uvicorn>=0.32",
+    "pyyaml>=6.0",
+    "hydra-core>=1.3",
+    "wandb>=0.18",
+    "tqdm>=4.66",
+    "requests>=2.32",
+    "gdown>=5.2",
+    "kaggle>=1.6",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.8",
+    "black>=24.10",
+    "mypy>=1.13",
+    "pytest>=8.3",
+    "pytest-cov>=6.0",
+    "pre-commit>=4.0",
+    "poethepoet>=0.30",
+    "jupyterlab>=4.3",
+    "ipykernel>=6.29",
+    "matplotlib>=3.9",
+    "openpyxl>=3.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["backend/collusiongraph"]
+
+# ─── Task runner (cross-platform; Windows-first per §4.1) ────────────
+[tool.poe.tasks]
+fmt = "black backend scripts"
+lint = "ruff check backend scripts"
+lint-fix = "ruff check --fix backend scripts"
+typecheck = "mypy backend/collusiongraph"
+test = "pytest backend/tests"
+test-leakage = "pytest backend/tests -m leakage"
+check = ["lint", "typecheck", "test"]
+data = "python scripts/download_data.py"
+ingest = "python -m collusiongraph.cli ingest"
+train = "python -m collusiongraph.cli train"
+score = "python -m collusiongraph.cli score"
+explain = "python -m collusiongraph.cli explain"
+eval = "python -m collusiongraph.cli eval"
+serve = "python -m collusiongraph.cli serve"
+demo = "python -m collusiongraph.cli demo"
+
+# ─── Lint / format / types ───────────────────────────────────────────
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+extend-exclude = ["reference", "notebooks"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF"]
+# Typographic dashes/§-references are project style (they mirror the plan documents).
+ignore = ["RUF001", "RUF002", "RUF003"]
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+extend-exclude = "reference|notebooks"
+
+[tool.mypy]
+python_version = "3.11"
+files = ["backend/collusiongraph"]
+ignore_missing_imports = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+no_implicit_optional = true
+
+[tool.pytest.ini_options]
+testpaths = ["backend/tests"]
+markers = [
+    "leakage: tests that assert no train/test leakage (§9.1 — highest priority)",
+    "integration: full-pipeline tests on tiny synthetic fixtures",
+]

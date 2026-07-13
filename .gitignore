@@ -1,0 +1,53 @@
+# ── Secrets — never committed (R18) ─────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# ── Raw & derived data — manifests only travel in git (§8) ──────────
+data/raw/
+data/interim/
+data/processed/
+eval_outputs/
+
+# ── Untriaged original chatbot folder (contains its own .env) ───────
+# The triaged, key-free port source lives in reference/genai-chatbot/.
+Gen-AI Chatbot/
+
+# ── Python ───────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+build/
+
+# ── Experiment tracking & model artifacts (regenerable) ─────────────
+wandb/
+checkpoints/
+*.ckpt
+*.pt
+*.pth
+
+# ── Notebooks ────────────────────────────────────────────────────────
+.ipynb_checkpoints/
+
+# ── Node / frontend ──────────────────────────────────────────────────
+node_modules/
+frontend/dist/
+*.tsbuildinfo
+
+# ── OS / editor noise ────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+.claude/settings.local.json
