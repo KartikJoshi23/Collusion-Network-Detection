@@ -49,7 +49,7 @@ MENDELEY_FILES = {
 }
 GARCIA_SUPPLEMENT_URL = "https://ars.els-cdn.com/content/image/1-s2.0-S0926580521004982-mmc2.zip"
 AMLWORLD_KAGGLE_SLUG = "ealtman2019/ibm-transactions-for-anti-money-laundering-aml"
-AMLWORLD_HI_SMALL_FILES = ["HI-Small_Trans.csv", "HI-Small_Patterns.txt"]
+AMLWORLD_HI_SMALL_FILES = ["HI-Small_Trans.csv", "HI-Small_Patterns.txt", "HI-Small_accounts.csv"]
 
 KAGGLE_SETUP_HELP = (
     "Kaggle credentials not found. Setup (documented in README.md):\n"
@@ -197,7 +197,11 @@ def kaggle_credentials_present() -> bool:
     import os
 
     kaggle_json = Path.home() / ".kaggle" / "kaggle.json"
-    return kaggle_json.is_file() or ("KAGGLE_USERNAME" in os.environ and "KAGGLE_KEY" in os.environ)
+    return (
+        kaggle_json.is_file()
+        or "KAGGLE_API_TOKEN" in os.environ  # new-style KGAT_* token (Kaggle CLI >= 2)
+        or ("KAGGLE_USERNAME" in os.environ and "KAGGLE_KEY" in os.environ)
+    )
 
 
 def fetch_amlworld_hi_small(dest: Path) -> None:
@@ -256,12 +260,13 @@ DATASETS: dict[str, dict] = {
     "amlworld_hi_small": {
         "source": f"https://www.kaggle.com/datasets/{AMLWORLD_KAGGLE_SLUG} (HI-Small variant)",
         "license": (
-            "Per the Kaggle dataset listing (Altman et al., NeurIPS 2023, "
-            "arXiv:2306.16424) — VERIFY the exact license string on the Kaggle page "
-            "when downloading (expected: Community Data License Agreement)."
+            "Community Data License Agreement - Sharing - Version 1.0 "
+            "(CDLA-Sharing-1.0) — verified via Kaggle dataset metadata 2026-07-13. "
+            "Altman et al., NeurIPS 2023, arXiv:2306.16424."
         ),
         "notes": "D2: synthetic AML with 8 ground-truth laundering patterns. "
-        "Requires Kaggle API auth.",
+        "Requires Kaggle API auth. Caveat (Kaggle discussion #427517): transactions "
+        "dated after the primary date range are all laundering — handle in splits.",
         "fetch": fetch_amlworld_hi_small,
     },
     "mendeley_eu": {

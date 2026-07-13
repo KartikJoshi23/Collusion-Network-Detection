@@ -8,7 +8,7 @@ in `notebooks/` are read-only after merge.
 |---|---|---|---|---|
 | D1 | Elliptic++ (git-disl, Google Drive) | ✅ downloaded + checksummed (9 CSVs, ~2.2 GB) | none published — research use, cite arXiv:2306.06108 | `elliptic_pp.json` |
 | D1 | Elliptic base (PyG mirror) | ✅ downloaded + checksummed (3 CSVs) | none published — research use, cite Weber et al. 2019 | `elliptic.json` |
-| D2 | IBM AMLworld HI-Small (Kaggle) | ⛔ **blocked — Kaggle API credentials required** (setup in README) | verify on Kaggle page at download | — |
+| D2 | IBM AMLworld HI-Small (Kaggle) | ✅ downloaded + checksummed (3 files, ~510 MB) | CDLA-Sharing-1.0 (verified via Kaggle metadata) | `amlworld_hi_small.json` |
 | D3 | García Rodríguez supplement ec0010/mmc2 | ✅ downloaded + checksummed (11 files) — **fallback R2 NOT triggered** | CC BY-NC-ND 4.0 (article OA license per Crossref) | `garcia_rodriguez.json` |
 | D4 | Mendeley EU cartel f3y4nrn3s6 v2 | ✅ downloaded; sha256 **matches Mendeley's official API hash** | CC BY NC 3.0 | `mendeley_eu.json` |
 | D5 | OCDS bulk | Phase 2 (publisher chosen for bid-level coverage) | per publisher | — |
@@ -53,9 +53,17 @@ counts shared with base).
   strong cross-market heterogeneity, exactly the LOMO/LOCO transfer terrain.
 - All seven screen variables (CV, SPD, DIFFP, RD, KURT, SKEW, KSTEST) 100% populated.
 
-### IBM AMLworld HI-Small
+### IBM AMLworld HI-Small (notebook 05)
 
-Blocked on Kaggle credentials (this machine). After setup, `uv run poe data` downloads
-`HI-Small_Trans.csv` + `HI-Small_Patterns.txt`, writes the manifest, and the license
-string must be verified on the Kaggle listing. Needed from Week 3–5 (injection
-calibration against the eight ground-truth patterns).
+- **5,078,345 transactions, 515,080 accounts, 5,177 laundering (0.1019%, 1 per 980)** —
+  matches the Kaggle-metadata statistics; date range 2022-09-01 → 2022-09-18.
+- **All eight ground-truth laundering pattern types confirmed** in the patterns file
+  (CYCLE 54, GATHER-SCATTER 51, BIPARTITE 49, FAN-OUT 48, SCATTER-GATHER 44, STACK 43,
+  RANDOM 41, FAN-IN 40 attempts) — the §4.4 injector calibration targets.
+- **Post-window leakage trap, measured:** 1,108 transactions dated after Sep 10 are
+  59.1% laundering (~580× the base rate; cf. Kaggle discussion #427517). The Week-2
+  temporal splitter must drop or explicitly handle the post-window tail.
+- True amounts, 7 payment formats, 15+ currencies → the amount-level evidence-narrative
+  demo dataset (contrast: Elliptic's anonymized features, §4.3 D1).
+- Files include `HI-Small_accounts.csv` (account metadata, 34 MB) — present on Kaggle
+  since 2025-07, not mentioned in the plan; useful for the financial adapter.
