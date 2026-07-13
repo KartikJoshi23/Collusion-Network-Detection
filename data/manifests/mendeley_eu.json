@@ -1,0 +1,20 @@
+{
+  "dataset": "mendeley_eu",
+  "source": "https://data.mendeley.com/datasets/f3y4nrn3s6/2 (DOI 10.17632/f3y4nrn3s6.2, v2 2025-08-12)",
+  "license": "CC BY NC 3.0 (as stated on the Mendeley Data record)",
+  "downloaded_at": "2026-07-13",
+  "status": "complete",
+  "files": [
+    {
+      "path": "GTI_labelled_cartel_data_NOV2023.csv",
+      "bytes": 7360572,
+      "sha256": "13ab9e8ef511ac5f9b8258875d1596c4afbe60d5f4eae7cccafd6b1e0559a1d3"
+    },
+    {
+      "path": "GTI_labelled_cartel_data_NOV2023.RData",
+      "bytes": 807592,
+      "sha256": "cab9e9d3ef4f7cba948b5200a474921608eb49218a8a9319059a76e18da0eaa8"
+    }
+  ],
+  "notes": "D4: primary labeled procurement anchor. Fazekas, Wachs, Tóth & Abdou; companion paper IJIO S0167718725000943. Losing-bid coverage caveat per §4.3 D4."
+}

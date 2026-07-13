@@ -1,0 +1,65 @@
+{
+  "dataset": "garcia_rodriguez",
+  "source": "https://ars.els-cdn.com/content/image/1-s2.0-S0926580521004982-mmc2.zip (supplement ec0010/mmc2 to Automation in Construction 133:104047, S0926580521004982)",
+  "license": "Article is open access under CC BY-NC-ND 4.0 (per Crossref license metadata for DOI 10.1016/j.autcon.2021.104047); supplement downloaded from Elsevier (ars.els-cdn.com). Not redistributed here.",
+  "downloaded_at": "2026-07-13",
+  "status": "complete",
+  "files": [
+    {
+      "path": "1-s2.0-S0926580521004982-mmc2.zip",
+      "bytes": 1530786,
+      "sha256": "bcf4bc280227326bfa3e761c4163173fd29c5452c37d65d08269a00a5fa209f0"
+    },
+    {
+      "path": "extracted/Collusion_Detection_Code.py",
+      "bytes": 36765,
+      "sha256": "e00a9192ab7179345019e1aea86da823cca034ab9fc1bdac3d550847cc29f7cd"
+    },
+    {
+      "path": "extracted/DB_Collusion_All_processed.csv",
+      "bytes": 5030516,
+      "sha256": "3b463a4500c5a5213044f2c49f8e6a33e6dce2c782b8459b9c191d89b20ed61b"
+    },
+    {
+      "path": "extracted/DB_Collusion_America_processed.csv",
+      "bytes": 723704,
+      "sha256": "df2262e999223d6591f05d97063e19e81d0c9fd3cafec4ade12d5f76484fb907"
+    },
+    {
+      "path": "extracted/DB_Collusion_Brazil_processed.csv",
+      "bytes": 89510,
+      "sha256": "96d3d8daad6c4a277f8468b47e440d54df5bd5f427abcd80df63a4998afe4804"
+    },
+    {
+      "path": "extracted/DB_Collusion_Italy_processed.csv",
+      "bytes": 2629430,
+      "sha256": "7c4a537f86f559103e69585fc73924e621ea35970e7363e5e2e97487ef393ca6"
+    },
+    {
+      "path": "extracted/DB_Collusion_Japan_processed.csv",
+      "bytes": 2034724,
+      "sha256": "db94514200c3f0a5bda5c2b01e9f44c7f62dcbc6163ce5ef52762c4d098e2178"
+    },
+    {
+      "path": "extracted/DB_Collusion_Switzerland_GR_and_See-Gaster_processed.csv",
+      "bytes": 1789423,
+      "sha256": "dec178f6194bdf043aced14c0889a2ee50a51852cdc01993e0545e2bc7a01b5d"
+    },
+    {
+      "path": "extracted/DB_Collusion_Switzerland_Ticino_processed.csv",
+      "bytes": 143122,
+      "sha256": "0c8802fc0c59bd39ff78611e0a7c373b422c0f38479777d39e7528efd00a5519"
+    },
+    {
+      "path": "extracted/README.txt",
+      "bytes": 3554,
+      "sha256": "c5351d168f3ec9c641dd99262a9b215147257d6a886cc8e9bdb94edbcf5e2535"
+    },
+    {
+      "path": "extracted/requirements.txt",
+      "bytes": 101,
+      "sha256": "e7fe5d9b8b142d3e1c9b97d492c38ac7a1b7778f85ae8431b7944fdfa1b90d4b"
+    }
+  ],
+  "notes": "D3: multi-country collusion dataset (Brazil, Italy, Japan, Switzerland ×2, US)."
+}
