@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TechNova Hybrid Agentic Chatbot — System Architecture</title>
+<style>
+  :root {
+    --bg-0: #07090f;
+    --bg-1: #0d1220;
+    --bg-2: #131a2e;
+    --bg-3: #1b2440;
+    --line: #2a3559;
+    --ink-0: #f3f6ff;
+    --ink-1: #c7d0e6;
+    --ink-2: #8a96b8;
+    --acc-cyan: #34e2e2;
+    --acc-violet: #a78bfa;
+    --acc-pink: #f472b6;
+    --acc-amber: #fbbf24;
+    --acc-green: #4ade80;
+    --acc-red: #f87171;
+    --grad-router: linear-gradient(135deg, #34e2e2 0%, #60a5fa 100%);
+    --grad-sql: linear-gradient(135deg, #4ade80 0%, #34d399 100%);
+    --grad-rag: linear-gradient(135deg, #a78bfa 0%, #f472b6 100%);
+    --grad-validator: linear-gradient(135deg, #fbbf24 0%, #f87171 100%);
+    --grad-final: linear-gradient(135deg, #818cf8 0%, #34e2e2 100%);
+    --shadow-1: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+    --shadow-2: 0 1px 2px rgba(0,0,0,.4), 0 24px 48px rgba(0,0,0,.55);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: radial-gradient(ellipse at top, #1a1f3d 0%, #07090f 60%) fixed;
+    color: var(--ink-0);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.55;
+  }
+  code, pre, .mono {
+    font-family: 'JetBrains Mono', 'SF Mono', 'Cascadia Mono', 'Consolas', monospace;
+    font-size: 0.88em;
+  }
+  .container { max-width: 1280px; margin: 0 auto; padding: 0 32px; }
+
+  /* Hero */
+  header.hero {
+    padding: 80px 32px 56px;
+    text-align: center;
+    border-bottom: 1px solid var(--line);
+    background:
+      radial-gradient(circle at 20% 0%, rgba(52,226,226,.10), transparent 50%),
+      radial-gradient(circle at 80% 0%, rgba(167,139,250,.10), transparent 50%);
+  }
+  header.hero .eyebrow {
+    color: var(--acc-cyan); font-weight: 600; letter-spacing: 0.18em;
+    text-transform: uppercase; font-size: 12px; margin-bottom: 16px;
+  }
+  header.hero h1 {
+    margin: 0 0 16px;
+    font-size: clamp(36px, 5vw, 60px);
+    font-weight: 800; letter-spacing: -0.02em; line-height: 1.05;
+    background: linear-gradient(135deg, #fff 0%, #c7d0e6 50%, #34e2e2 100%);
+    background-clip: text; -webkit-background-clip: text;
+    color: transparent; -webkit-text-fill-color: transparent;
+  }
+  header.hero p.lede {
+    margin: 0 auto; max-width: 720px;
+    color: var(--ink-1); font-size: 18px;
+  }
+  header.hero .stat-row {
+    margin-top: 36px;
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 16px; max-width: 800px; margin-left: auto; margin-right: auto;
+  }
+  .stat {
+    background: rgba(19,26,46,.7); border: 1px solid var(--line);
+    border-radius: 12px; padding: 18px 12px;
+    backdrop-filter: blur(8px);
+  }
+  .stat .num {
+    font-size: 28px; font-weight: 800;
+    background: var(--grad-final); background-clip: text; -webkit-background-clip: text;
+    color: transparent; -webkit-text-fill-color: transparent;
+  }
+  .stat .lbl {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--ink-2); margin-top: 4px;
+  }
+
+  /* Section */
+  section {
+    padding: 72px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  section h2 {
+    font-size: 32px; font-weight: 800; letter-spacing: -0.01em;
+    margin: 0 0 8px;
+  }
+  section h2 .num-badge {
+    display: inline-block; padding: 2px 10px; margin-right: 12px;
+    border-radius: 999px; font-size: 12px; font-weight: 700; vertical-align: middle;
+    background: rgba(52,226,226,.12); color: var(--acc-cyan);
+    border: 1px solid rgba(52,226,226,.4);
+  }
+  section h2 + p.sub {
+    color: var(--ink-2); margin: 0 0 32px; font-size: 16px;
+  }
+  h3 { margin: 28px 0 12px; font-size: 18px; font-weight: 700; color: var(--ink-0); }
+
+  /* Pipeline diagram */
+  .pipeline {
+    display: grid;
+    grid-template-columns: repeat(13, minmax(0, 1fr));
+    gap: 8px; margin: 24px 0;
+  }
+  @media (max-width: 1100px) { .pipeline { grid-template-columns: repeat(4, 1fr); } }
+  .stage {
+    position: relative; padding: 14px 10px;
+    border-radius: 10px; text-align: center; font-size: 11px; font-weight: 600;
+    background: var(--bg-2); border: 1px solid var(--line);
+    transition: transform .15s ease;
+  }
+  .stage:hover { transform: translateY(-2px); border-color: var(--acc-cyan); }
+  .stage .pos { font-size: 9px; color: var(--ink-2); margin-bottom: 4px; letter-spacing: .15em; }
+  .stage.s-router  { background: linear-gradient(180deg, rgba(52,226,226,.12), transparent); border-color: rgba(52,226,226,.5); }
+  .stage.s-intent  { background: linear-gradient(180deg, rgba(96,165,250,.12), transparent); border-color: rgba(96,165,250,.5); }
+  .stage.s-clar    { background: linear-gradient(180deg, rgba(251,191,36,.12), transparent); border-color: rgba(251,191,36,.5); }
+  .stage.s-plan    { background: linear-gradient(180deg, rgba(167,139,250,.12), transparent); border-color: rgba(167,139,250,.5); }
+  .stage.s-sql     { background: linear-gradient(180deg, rgba(74,222,128,.12), transparent); border-color: rgba(74,222,128,.5); }
+  .stage.s-rag     { background: linear-gradient(180deg, rgba(244,114,182,.12), transparent); border-color: rgba(244,114,182,.5); }
+  .stage.s-hyb     { background: linear-gradient(180deg, rgba(167,139,250,.18), transparent); border-color: rgba(167,139,250,.6); }
+  .stage.s-syn     { background: linear-gradient(180deg, rgba(167,139,250,.12), transparent); border-color: rgba(167,139,250,.4); }
+  .stage.s-rb      { background: linear-gradient(180deg, rgba(251,191,36,.12), transparent); border-color: rgba(251,191,36,.5); }
+  .stage.s-crit    { background: linear-gradient(180deg, rgba(248,113,113,.12), transparent); border-color: rgba(248,113,113,.5); }
+  .stage.s-cv      { background: linear-gradient(180deg, rgba(248,113,113,.12), transparent); border-color: rgba(248,113,113,.4); }
+  .stage.s-arb     { background: linear-gradient(180deg, rgba(248,113,113,.18), transparent); border-color: rgba(248,113,113,.6); }
+  .stage.s-comp    { background: linear-gradient(180deg, rgba(74,222,128,.12), transparent); border-color: rgba(74,222,128,.4); }
+  .stage.s-fin     { background: linear-gradient(180deg, rgba(52,226,226,.18), transparent); border-color: rgba(52,226,226,.6); }
+
+  /* Agent cards grid */
+  .agents {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+    gap: 18px; margin-top: 28px;
+  }
+  .agent {
+    background: var(--bg-1); border: 1px solid var(--line);
+    border-radius: 14px; padding: 22px 22px 18px;
+    box-shadow: var(--shadow-1);
+    position: relative; overflow: hidden;
+  }
+  .agent::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  }
+  .agent.t-router::before { background: var(--grad-router); }
+  .agent.t-sql::before { background: var(--grad-sql); }
+  .agent.t-rag::before { background: var(--grad-rag); }
+  .agent.t-validator::before { background: var(--grad-validator); }
+  .agent.t-final::before { background: var(--grad-final); }
+
+  .agent .row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .agent h4 {
+    margin: 0; font-size: 17px; font-weight: 700;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .agent .ord {
+    font-size: 11px; color: var(--ink-2); font-weight: 600;
+    background: rgba(255,255,255,.04); padding: 2px 8px; border-radius: 6px;
+    letter-spacing: 0.08em;
+  }
+  .pill {
+    display: inline-block; padding: 2px 10px; font-size: 11px; font-weight: 600;
+    border-radius: 999px; letter-spacing: 0.04em;
+  }
+  .pill.always { background: rgba(74,222,128,.12); color: var(--acc-green); border: 1px solid rgba(74,222,128,.4); }
+  .pill.cond   { background: rgba(251,191,36,.12); color: var(--acc-amber); border: 1px solid rgba(251,191,36,.4); }
+  .pill.rare   { background: rgba(248,113,113,.12); color: var(--acc-red); border: 1px solid rgba(248,113,113,.4); }
+
+  .agent dl { margin: 0; display: grid; grid-template-columns: 100px 1fr; row-gap: 8px; }
+  .agent dt { color: var(--ink-2); font-size: 12px; font-weight: 600; padding-top: 1px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .agent dd { margin: 0; color: var(--ink-1); font-size: 13.5px; }
+  .agent .tools {
+    display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px;
+  }
+  .agent .tools span {
+    background: rgba(52,226,226,.08); color: var(--acc-cyan);
+    border: 1px solid rgba(52,226,226,.3);
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    padding: 2px 8px; border-radius: 6px;
+  }
+  .agent footer.json {
+    margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--line);
+    color: var(--ink-2); font-size: 12px;
+  }
+  .agent footer.json code {
+    background: var(--bg-0); padding: 1px 6px; border-radius: 4px; color: var(--acc-cyan);
+  }
+
+  /* Data layer cards */
+  .data-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px; margin-top: 24px;
+  }
+  .dc { background: var(--bg-1); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
+  .dc h4 { margin: 0 0 4px; color: var(--ink-0); font-size: 15px; }
+  .dc .who { color: var(--ink-2); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; }
+  .dc ul { margin: 0; padding-left: 18px; color: var(--ink-1); font-size: 13.5px; }
+  .dc ul li { margin: 4px 0; }
+
+  /* Tables */
+  table {
+    width: 100%; border-collapse: collapse; margin: 16px 0;
+    background: var(--bg-1); border: 1px solid var(--line); border-radius: 10px; overflow: hidden;
+  }
+  thead { background: var(--bg-2); }
+  th, td { padding: 11px 14px; text-align: left; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+  th { font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-2); }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: rgba(52,226,226,.04); }
+  td.num { text-align: right; font-family: 'JetBrains Mono', monospace; }
+
+  /* Validation chain visualization */
+  .validation {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+    margin: 24px 0;
+  }
+  @media (max-width: 800px) { .validation { grid-template-columns: 1fr 1fr; } }
+  .gate {
+    background: var(--bg-1); border: 1px solid var(--line); border-radius: 12px; padding: 18px;
+    position: relative;
+  }
+  .gate::after {
+    content: '→'; position: absolute; right: -16px; top: 50%; transform: translateY(-50%);
+    color: var(--ink-2); font-size: 22px; z-index: 2;
+  }
+  .gate:last-child::after { content: ''; }
+  .gate h4 { margin: 0 0 6px; font-size: 14px; }
+  .gate .when { font-size: 11px; color: var(--acc-amber); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+  .gate p { margin: 0; color: var(--ink-1); font-size: 13px; }
+
+  /* FactForge */
+  .factforge-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 18px 0;
+  }
+  @media (max-width: 800px) { .factforge-grid { grid-template-columns: 1fr; } }
+  .ff-box {
+    background: var(--bg-1); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px;
+  }
+  .ff-box h4 { margin: 0 0 10px; }
+  .ff-box pre {
+    background: var(--bg-0); border: 1px solid var(--line); border-radius: 8px;
+    padding: 12px; font-size: 12px; overflow-x: auto; color: var(--ink-1);
+  }
+
+  /* Latency */
+  .latency-grid {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin: 24px 0;
+  }
+  @media (max-width: 800px) { .latency-grid { grid-template-columns: 1fr; } }
+  .latbox {
+    background: var(--bg-1); border: 1px solid var(--line); border-radius: 12px;
+    padding: 18px; text-align: center;
+  }
+  .latbox .big {
+    font-size: 32px; font-weight: 800; margin: 8px 0;
+    background: var(--grad-final); background-clip: text; -webkit-background-clip: text;
+    color: transparent; -webkit-text-fill-color: transparent;
+  }
+  .latbox .small { font-size: 11px; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.08em; }
+  .latbox .desc { font-size: 13px; color: var(--ink-1); margin-top: 8px; }
+
+  .topo { font-family: 'JetBrains Mono', monospace; font-size: 12px;
+          background: var(--bg-0); border: 1px solid var(--line); border-radius: 10px;
+          padding: 18px; color: var(--ink-1); white-space: pre; overflow-x: auto; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: var(--ink-2); margin-top: 6px; }
+  .legend .dot { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: middle; }
+  .dot.r { background: var(--acc-cyan); }
+  .dot.b { background: #60a5fa; }
+  .dot.p { background: var(--acc-violet); }
+  .dot.g { background: var(--acc-green); }
+  .dot.pk { background: var(--acc-pink); }
+  .dot.am { background: var(--acc-amber); }
+  .dot.rd { background: var(--acc-red); }
+
+  footer.foot {
+    padding: 56px 0; text-align: center; color: var(--ink-2); font-size: 12px;
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="eyebrow">TechNova Inc. · Hybrid Agentic SQL + RAG</div>
+  <h1>From Vague Question<br/>to Cited, Validated Answer.</h1>
+  <p class="lede">
+    A locally-deployable, defence-in-depth chatbot that turns plain-English
+    business questions into auditable answers. 13 LLM agents collaborate over a
+    DuckDB warehouse and a contextual-retrieval vector store, with a validation
+    chain that gates every answer before it reaches the user.
+  </p>
+  <div class="stat-row">
+    <div class="stat"><div class="num">13</div><div class="lbl">Agents</div></div>
+    <div class="stat"><div class="num">15</div><div class="lbl">SQL tables</div></div>
+    <div class="stat"><div class="num">15</div><div class="lbl">PDF policies</div></div>
+    <div class="stat"><div class="num">898</div><div class="lbl">FactForge facts</div></div>
+  </div>
+</header>
+
+<!-- ─────────────────────────── 1. Topology ─────────────────────────── -->
+<section id="topology">
+  <div class="container">
+    <h2><span class="num-badge">01</span>Container Topology</h2>
+    <p class="sub">
+      Six containers behind a single bridge network. CPU-only. No outbound
+      traffic except the OpenAI API.
+    </p>
+
+    <div class="topo">┌──────────────────────────────────────────────────────────────────────────┐
+│  React 19 / Tailwind · localhost:8080                                    │
+│  Streaming chat UI · clarification chips · readback card · evidence pane │
+└────────────────────────────────────┬─────────────────────────────────────┘
+                              SSE  │  POST /api/chat/message
+                                   ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│  FastAPI · Python 3.12 · LangGraph orchestrator · localhost:8081         │
+│                                                                          │
+│   Router → Intent → [Clarify] → Readback → SQL│RAG│Hybrid                │
+│       → Critic → [Cross-Validator] → [Arbiter] → Completeness → Finaliser│
+└─────────┬──────────┬─────────────┬──────────────────┬────────────────────┘
+          │          │             │                  │
+   ┌──────▼─────┐ ┌──▼────────┐ ┌──▼─────────┐  ┌─────▼──────┐
+   │  DuckDB    │ │  Qdrant   │ │   Redis    │  │  Langfuse  │
+   │  embedded  │ │  :6333    │ │  :16379    │  │  :8082     │
+   │  15 tables │ │ contextual│ │  sessions  │  │ trace tree │
+   │  ~1800 rows│ │ retrieval │ │  + ckpts   │  │  + replay  │
+   └────────────┘ └───────────┘ └────────────┘  └────────────┘
+</div>
+
+    <div class="legend">
+      <span><span class="dot r"></span>Routing / classification</span>
+      <span><span class="dot b"></span>Intent / planning</span>
+      <span><span class="dot g"></span>SQL execution</span>
+      <span><span class="dot pk"></span>RAG retrieval</span>
+      <span><span class="dot p"></span>Synthesis / hybrid merge</span>
+      <span><span class="dot am"></span>User-facing pause (clarify, readback)</span>
+      <span><span class="dot rd"></span>Validation gate</span>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────────── 2. Pipeline at a glance ─────────────────────── -->
+<section id="pipeline">
+  <div class="container">
+    <h2><span class="num-badge">02</span>End-to-end Pipeline</h2>
+    <p class="sub">
+      A LangGraph state machine. Conditional edges fire only when the
+      preceding node's verdict says they need to.
+    </p>
+
+    <div class="pipeline">
+      <div class="stage s-router"><div class="pos">01</div>Router</div>
+      <div class="stage s-intent"><div class="pos">02</div>Intent<br/>Classifier</div>
+      <div class="stage s-clar"><div class="pos">03</div>Clarification<br/>(opt.)</div>
+      <div class="stage s-plan"><div class="pos">04</div>Planner<br/>(hybrid)</div>
+      <div class="stage s-sql"><div class="pos">05</div>SQL Agent</div>
+      <div class="stage s-rag"><div class="pos">06</div>RAG Agent</div>
+      <div class="stage s-hyb"><div class="pos">07</div>Hybrid<br/>Executor</div>
+      <div class="stage s-syn"><div class="pos">08</div>Synthesiser</div>
+      <div class="stage s-rb"><div class="pos">09</div>Read-back<br/>(opt.)</div>
+      <div class="stage s-crit"><div class="pos">10</div>Critic</div>
+      <div class="stage s-cv"><div class="pos">11</div>Cross-<br/>Validator</div>
+      <div class="stage s-arb"><div class="pos">12</div>Arbiter<br/>(rare)</div>
+      <div class="stage s-fin"><div class="pos">13</div>Finaliser</div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────── 3. Agent roster ──────────────────────── -->
+<section id="agents">
+  <div class="container">
+    <h2><span class="num-badge">03</span>Agent Roster — every brain, every job</h2>
+    <p class="sub">
+      Each agent has a narrow contract: a JSON shape it must emit and a set of
+      tools it may call. This separation is what makes the pipeline auditable.
+    </p>
+
+    <div class="agents">
+      <!-- Router -->
+      <div class="agent t-router">
+        <div class="row"><h4><span class="ord">01</span>Router</h4><span class="pill always">always fires</span></div>
+        <dl>
+          <dt>Job</dt><dd>Classify the user query as <code>sql</code>, <code>rag</code>, <code>hybrid</code>, or <code>clarify</code> by looking at lexical cues, table-name mentions, and the presence of policy/governance language.</dd>
+          <dt>Tools</dt><dd>None — single LLM call, structured JSON output.</dd>
+          <dt>Bias</dt><dd>Strategic framings ("if X happened to Y", "exposure", "lock-in") tilt toward <code>hybrid</code> so policy facts are pulled even when user asks data-only.</dd>
+        </dl>
+        <footer class="json">Output: <code>{"route": "sql|rag|hybrid|clarify", "rationale": "..."}</code></footer>
+      </div>
+
+      <!-- Intent Classifier -->
+      <div class="agent t-router">
+        <div class="row"><h4><span class="ord">02</span>Intent Classifier</h4><span class="pill always">always fires</span></div>
+        <dl>
+          <dt>Job</dt><dd>Extract structured intent: entities, ops, metrics, filters, time-range, and a list of <code>ambiguities</code> with severity scores.</dd>
+          <dt>Tools</dt><dd>Few-shot selector retrieves top-3 structurally-nearest goldens from <code>eval/goldens.json</code> (cosine on intent vectors, never on raw text).</dd>
+          <dt>Output</dt><dd>Drives the clarification gate, the planner, and the SQL/RAG agents downstream.</dd>
+        </dl>
+        <footer class="json">Output: <code>{intent, entities[], ops[], ambiguities[], clarity_score}</code></footer>
+      </div>
+
+      <!-- Clarification -->
+      <div class="agent t-router">
+        <div class="row"><h4><span class="ord">03</span>Clarification Agent</h4><span class="pill cond">clarity &lt; 0.7</span></div>
+        <dl>
+          <dt>Job</dt><dd>Pick the highest-severity ambiguity and ask <em>one</em> targeted question. Emits multiple-choice when enumerable, free-text otherwise.</dd>
+          <dt>Pause</dt><dd>LangGraph <code>interrupt()</code> halts the graph. The frontend shows chips. User reply re-enters as a new turn.</dd>
+          <dt>Cap</dt><dd>3 rounds, then escalates to best-guess with low-confidence badge.</dd>
+        </dl>
+        <footer class="json">Output: <code>{question, options[], round, severity}</code></footer>
+      </div>
+
+      <!-- Planner -->
+      <div class="agent t-rag">
+        <div class="row"><h4><span class="ord">04</span>Planner</h4><span class="pill cond">hybrid only</span></div>
+        <dl>
+          <dt>Job</dt><dd>Decompose a hybrid question into ordered sub-questions, each tagged <code>sql</code> or <code>rag</code>. Sub-answers feed forward to the next sub-question.</dd>
+          <dt>Why</dt><dd>Prevents the model from flailing across SQL+RAG in a single prompt. Each sub-step has a single tool focus.</dd>
+        </dl>
+        <footer class="json">Output: <code>{plan: [{type, question, depends_on}]}</code></footer>
+      </div>
+
+      <!-- SQL Agent -->
+      <div class="agent t-sql">
+        <div class="row"><h4><span class="ord">05</span>SQL Agent</h4><span class="pill always">sql + hybrid</span></div>
+        <dl>
+          <dt>Job</dt><dd>Generate, execute, and self-correct DuckDB SQL. Schema-aware via <code>schema.yaml</code> with 30 FK relationships including self-referential manager hierarchy and <code>purpose:</code> semantic hints.</dd>
+          <dt>Tools</dt><dd><div class="tools"><span>list_tables</span><span>describe_table</span><span>sample_rows</span><span>count_rows</span><span>run_sql</span></div></dd>
+          <dt>Loop</dt><dd>Up to 3 retries on syntax / runtime errors. Failure rows feed back into the next attempt as evidence.</dd>
+          <dt>Hard rules</dt><dd>No silent prorating of annual values. OpEx + CapEx must both be summed for "spend". Cross-department AI spend rolls up from all flagged depts.</dd>
+        </dl>
+        <footer class="json">Output: <code>{query, rows_markdown, columns, row_count, attempts}</code></footer>
+      </div>
+
+      <!-- RAG Agent -->
+      <div class="agent t-rag">
+        <div class="row"><h4><span class="ord">06</span>RAG Agent</h4><span class="pill always">rag + hybrid</span></div>
+        <dl>
+          <dt>Job</dt><dd>Hybrid retrieval (dense + BM25 + RRF) → cross-encoder rerank → grounded synthesis with inline <code>[doc.pdf::secN]</code> citations.</dd>
+          <dt>Tools</dt><dd><div class="tools"><span>hybrid_search</span><span>rerank</span><span>fetch_full_chunk</span><span>fetch_full_doc</span></div></dd>
+          <dt>Stack</dt><dd>nomic-embed-text-v1.5 (768-dim, CPU) · BM25 · RRF k=60 · BAAI/bge-reranker-base.</dd>
+          <dt>Contextual prefix</dt><dd>Each chunk is embedded WITH a 1–2 sentence "this section is about…" preamble generated at ingestion. Anthropic's contextual-retrieval technique.</dd>
+        </dl>
+        <footer class="json">Output: <code>{answer, citations: [{chunk_id, raw_text}]}</code></footer>
+      </div>
+
+      <!-- Hybrid Executor -->
+      <div class="agent t-rag">
+        <div class="row"><h4><span class="ord">07</span>Hybrid Executor</h4><span class="pill cond">hybrid only</span></div>
+        <dl>
+          <dt>Job</dt><dd>Run the planner's sub-questions in order, feeding each prior sub-answer into the next sub-question's prompt as <em>"Prior sub-answer N"</em> context.</dd>
+          <dt>Why</dt><dd>Sub-step 2 needs the IDs from sub-step 1's SQL. Prior version ran each sub-step blind and lost row-level continuity.</dd>
+        </dl>
+        <footer class="json">Output: <code>{sub_results: [{type, question, answer, evidence}]}</code></footer>
+      </div>
+
+      <!-- Synthesiser -->
+      <div class="agent t-rag">
+        <div class="row"><h4><span class="ord">08</span>Synthesiser</h4><span class="pill cond">hybrid only</span></div>
+        <dl>
+          <dt>Job</dt><dd>Merge SQL sub-answer rows with RAG sub-answer policy excerpts into one coherent response. Reconcile citations.</dd>
+          <dt>Hard rules</dt><dd><strong>Row-level enumeration</strong>: never collapse N rows of SQL into a sentence; render every row. Arithmetic-completeness: when retention bonus = 30% × CTC, show both inputs and the result.</dd>
+        </dl>
+        <footer class="json">Output: <code>{answer (markdown w/ row tables + inline citations)}</code></footer>
+      </div>
+
+      <!-- Read-back -->
+      <div class="agent t-validator">
+        <div class="row"><h4><span class="ord">09</span>Read-back</h4><span class="pill cond">complex queries</span></div>
+        <dl>
+          <dt>Fires</dt><dd>≥ 1 join · any aggregation · TOP-N · ≥ 2 filters · any time range.</dd>
+          <dt>Job</dt><dd>Paraphrase the resolved interpretation in one sentence with concrete values: <em>"To confirm: top 5 customers, tier='Tier 1' AND region='APAC', ranked by arr_inr_lakhs DESC. Run?"</em></dd>
+          <dt>Pause</dt><dd>Emits <code>readback</code> SSE event. Frontend shows Yes/Adjust chips. "Adjust" loops back to Intent Classifier.</dd>
+        </dl>
+        <footer class="json">Output: <code>{readback, mentions, chips: ["Yes, run", "Adjust"]}</code></footer>
+      </div>
+
+      <!-- Critic -->
+      <div class="agent t-validator">
+        <div class="row"><h4><span class="ord">10</span>Critic</h4><span class="pill always">always fires</span></div>
+        <dl>
+          <dt>Job</dt><dd>Score the draft answer against the evidence. Looks for missing rows, wrong joins, fuzzy timeframes, missing citations, arithmetic inconsistencies.</dd>
+          <dt>Tools</dt><dd>Read-only DB + retriever — can re-query to spot-check.</dd>
+          <dt>Verdict</dt><dd><code>pass</code> · <code>retry</code> (loop back to SQL/RAG) · <code>uncertain</code> (escalate) · <code>fail</code> (escalate).</dd>
+        </dl>
+        <footer class="json">Output: <code>{confidence: 0–1, reasons[], issues[], verdict}</code></footer>
+      </div>
+
+      <!-- Cross-Validator -->
+      <div class="agent t-validator">
+        <div class="row"><h4><span class="ord">11</span>Cross-Validator</h4><span class="pill cond">conf ∈ [0.5, 0.85] OR uncertain/retry/fail</span></div>
+        <dl>
+          <dt>Job</dt><dd>Re-derive the answer by a <em>different method</em>: subqueries instead of joins · alternate retrieval phrasing · alternate aggregation order. Compare against original.</dd>
+          <dt>Tools</dt><dd>Same toolkit as SQL + RAG agents; FactForge facts pre-loaded.</dd>
+          <dt>Special</dt><dd>On grounding-failure, emits a <code>revised_answer</code> with weave-in citations. Finaliser picks the higher-confidence verdict.</dd>
+        </dl>
+        <footer class="json">Output: <code>{confidence, verdict, revised_answer?}</code></footer>
+      </div>
+
+      <!-- Arbiter -->
+      <div class="agent t-validator">
+        <div class="row"><h4><span class="ord">12</span>Arbiter</h4><span class="pill rare">rare · ~5%</span></div>
+        <dl>
+          <dt>Fires</dt><dd>Critic and Cross-Validator disagree by &gt; 0.2 confidence OR conflicting verdicts.</dd>
+          <dt>Job</dt><dd>Run an independent third derivation from scratch with full DB + retriever access. Ties broken by majority on factual claims.</dd>
+        </dl>
+        <footer class="json">Output: <code>{confidence, verdict, authoritative_answer?}</code></footer>
+      </div>
+
+      <!-- Completeness Checker -->
+      <div class="agent t-validator">
+        <div class="row"><h4><span class="ord">13</span>Completeness Checker</h4><span class="pill cond">post-validation</span></div>
+        <dl>
+          <dt>Job</dt><dd>Compare clarified-intent expectations ("show top 3 with retention bonus") against the rendered answer. Flags missing columns, missing arithmetic, dropped rows.</dd>
+          <dt>Reground</dt><dd>If a fact is referenced but not cited, runs another <code>hybrid_search</code> and weaves the citation back in.</dd>
+        </dl>
+        <footer class="json">Output: <code>{complete, missing[], regrounded?}</code></footer>
+      </div>
+
+      <!-- Finaliser -->
+      <div class="agent t-final">
+        <div class="row"><h4><span class="ord">14</span>Finaliser</h4><span class="pill always">always fires</span></div>
+        <dl>
+          <dt>Job</dt><dd>Pick the authoritative draft (Cross-Validator's revision &gt; Arbiter's verdict &gt; original) and assemble the final SSE payload: answer + confidence + trace + evidence panel.</dd>
+          <dt>Output</dt><dd>The single <code>final</code> SSE event the frontend renders.</dd>
+        </dl>
+        <footer class="json">Output: <code>{answer, confidence, trace, evidence: {sql, citations}}</code></footer>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────── 4. Data layer ──────────────────────── -->
+<section id="data">
+  <div class="container">
+    <h2><span class="num-badge">04</span>Data Layer</h2>
+    <p class="sub">Three persistent stores plus a cold ingestion pipeline that runs once at build time.</p>
+
+    <div class="data-cards">
+      <div class="dc">
+        <h4>DuckDB</h4>
+        <div class="who">embedded · 15 tables · ~1,800 rows</div>
+        <ul>
+          <li>Reads <code>.xlsx</code> directly via <code>read_excel_auto</code>.</li>
+          <li>Schema normalised to <code>snake_case</code>.</li>
+          <li>Recursive CTEs for manager hierarchy.</li>
+          <li>30 FK relationships in <code>schema.yaml</code> with <code>purpose:</code> semantic hints.</li>
+        </ul>
+      </div>
+      <div class="dc">
+        <h4>Qdrant</h4>
+        <div class="who">vector store · ~50 chunks</div>
+        <ul>
+          <li>Section-based PDF chunking (regex on numbered headings).</li>
+          <li>Contextual prefix prepended before embedding.</li>
+          <li>nomic-embed-text-v1.5, 768-dim, CPU.</li>
+          <li>Hybrid query: dense + BM25 + RRF k=60.</li>
+        </ul>
+      </div>
+      <div class="dc">
+        <h4>Redis</h4>
+        <div class="who">session store · checkpoints</div>
+        <ul>
+          <li>Stores LangGraph checkpoints for <code>interrupt()</code> resume.</li>
+          <li>Conversation history per <code>thread_id</code>.</li>
+          <li>24h TTL.</li>
+          <li>Remapped to host port 16379.</li>
+        </ul>
+      </div>
+      <div class="dc">
+        <h4>Langfuse v2</h4>
+        <div class="who">observability · trace replay</div>
+        <ul>
+          <li>Every agent call logged with input/output/duration.</li>
+          <li>Full trace tree per query, replayable.</li>
+          <li>Postgres-only (pinned to v2 — v3 needs ClickHouse).</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>15 Tables, classified</h3>
+    <table>
+      <thead>
+        <tr><th>Domain</th><th>Tables</th><th>Joinable via</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Org / People</td><td>departments, employees, salary_records, training_compliance, oncall_rotations</td><td>employee_id, department_id, manager_employee_id (self-ref)</td></tr>
+        <tr><td>Customers / Revenue</td><td>customers, customer_contracts, sales_pipeline, product_feature_adoption</td><td>customer_id, account_manager_employee_id, account_executive_employee_id</td></tr>
+        <tr><td>Operations</td><td>incidents, products, vendors, assets_licenses, financial_transactions</td><td>vendor_id, product_id, reporter_employee_id</td></tr>
+        <tr><td>Audit</td><td>audit_findings (with self-ref to <code>previous_finding_id</code>)</td><td>finding_id, department_id, assigned_owner_employee_id</td></tr>
+      </tbody>
+    </table>
+
+    <h3>15 PDFs</h3>
+    <table>
+      <thead><tr><th>Document</th><th>Sections</th><th>Used for</th></tr></thead>
+      <tbody>
+        <tr><td>TechNova_Salary_Structure</td><td>~7</td><td>Retention bonus cap, level bands, ESOP eligibility</td></tr>
+        <tr><td>TechNova_OnCall_Runbook</td><td>~6</td><td>Stipend rates, response-time SLAs, burnout policy</td></tr>
+        <tr><td>TechNova_Q4_FY25_Financial_Report</td><td>~6</td><td>Departmental Q4 budgets, OpEx vs CapEx</td></tr>
+        <tr><td>TechNova_Board_Minutes_Q4FY25</td><td>~6</td><td>Strategic decisions referenced by ID</td></tr>
+        <tr><td>TechNova_DRHP_Draft</td><td>~6</td><td>IPO milestones, NRR thresholds</td></tr>
+        <tr><td>TechNova_AI_Governance_Framework</td><td>~6</td><td>Model risk policy, AI spend definitions</td></tr>
+        <tr><td>TechNova_ISMS_Policy</td><td>~6</td><td>Control families per finding category</td></tr>
+        <tr><td>TechNova_Sales_Comp_Plan_FY25_26</td><td>~6</td><td>OTE structure, churn-risk policy</td></tr>
+        <tr><td>TechNova_DR_BCP_Plan</td><td>~6</td><td>RPO/RTO targets, breach absorption</td></tr>
+        <tr><td>+ 6 more (training, vendors, assets, roadmap, security, architecture)</td><td>—</td><td>—</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ─────────────────────── 5. FactForge ─────────────────────── -->
+<section id="factforge">
+  <div class="container">
+    <h2><span class="num-badge">05</span>FactForge — extracted facts as a first-class index</h2>
+    <p class="sub">
+      Embeddings alone collapse on <em>semantic-but-not-keyword</em> matches.
+      FactForge solves it by extracting structured facts at ingestion and
+      injecting the relevant ones directly into agent prompts.
+    </p>
+
+    <div class="factforge-grid">
+      <div class="ff-box">
+        <h4>What it is</h4>
+        <ul>
+          <li><strong>898 facts total</strong> — 200 curated + 698 auto-extracted at ingestion.</li>
+          <li>Every fact has: <code>id</code>, <code>statement</code>, <code>categories</code>, <code>origin</code> (curated/auto), <code>source</code> (PDF + section or table + column), <code>confidence</code>.</li>
+          <li>De-duplication threshold: cosine 0.92 between fact embeddings.</li>
+          <li>Confidence gate: 0.8 minimum to be included in retrieval pool.</li>
+        </ul>
+      </div>
+      <div class="ff-box">
+        <h4>Category co-activation</h4>
+        <pre>_CATEGORY_EXPANSIONS = {
+  "ipo_readiness": {
+    "ipo_milestone", "ipo_timeline",
+    "nrr", "customer_growth",
+    "valuation", "certification"
+  },
+  "breach": {
+    "breach_absorption",
+    "cybersecurity_budget",
+    "incident_baseline", "insurance"
+  },
+  ...
+}</pre>
+        <p style="color:var(--ink-2);font-size:12px;margin:0;">A query mentioning "IPO" pulls facts tagged with <em>any</em> of the co-activated categories — fixes narrow keyword matching.</p>
+      </div>
+    </div>
+
+    <div class="ff-box">
+      <h4>Curated-first ordering</h4>
+      <p style="margin:0 0 8px;color:var(--ink-1);">
+        When a query matches both a curated fact and an auto-extracted fact, the
+        curated one wins — they're hand-checked. Tie-break order:
+      </p>
+      <ol style="color:var(--ink-1);font-size:13.5px;margin:8px 0 0;">
+        <li>Highest category-overlap with query.</li>
+        <li>Origin priority: <code>curated</code> &gt; <code>auto-pdf</code> &gt; <code>auto-schema</code>.</li>
+        <li>Stable sort by <code>fact.id</code> for deterministic ordering.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────── 6. Validation chain ─────────────────── -->
+<section id="validation">
+  <div class="container">
+    <h2><span class="num-badge">06</span>Validation Chain — defence in depth</h2>
+    <p class="sub">
+      Every answer passes through up to four gates. Cheap gates fire first;
+      expensive ones only when needed.
+    </p>
+
+    <div class="validation">
+      <div class="gate">
+        <h4>Critic</h4>
+        <div class="when">Always fires</div>
+        <p>Score-and-reasons review against evidence. Verdict ∈ pass / retry / uncertain / fail.</p>
+      </div>
+      <div class="gate">
+        <h4>Cross-Validator</h4>
+        <div class="when">conf ∈ [0.5, 0.85]<br/>OR uncertain/retry/fail</div>
+        <p>Re-derive by a different method. Compare. Emits <code>revised_answer</code> on grounding fixes.</p>
+      </div>
+      <div class="gate">
+        <h4>Arbiter</h4>
+        <div class="when">disagreement &gt; 0.2</div>
+        <p>Independent third derivation with full corpus access. Tie-breaks at majority on factual claims.</p>
+      </div>
+      <div class="gate">
+        <h4>Completeness</h4>
+        <div class="when">post-validation</div>
+        <p>Compare clarified-intent expectations vs final answer. Reground missing citations or flag.</p>
+      </div>
+    </div>
+
+    <p style="color:var(--ink-2);font-size:13px;">
+      <strong>Graceful degradation</strong> — if all gates fail, the Finaliser still
+      emits an answer but with a low-confidence badge and an evidence panel
+      showing raw rows + chunks, plus a "ask me a clarifying question" chip
+      that loops back to clarification.
+    </p>
+  </div>
+</section>
+
+<!-- ─────────────────── 7. Latency profile ─────────────────── -->
+<section id="latency">
+  <div class="container">
+    <h2><span class="num-badge">07</span>Latency Profile</h2>
+    <p class="sub">
+      End-to-end wall-clock from POST <code>/api/chat/message</code> to
+      <code>final</code> SSE event arriving. Times measured on a Windows
+      workstation, CPU-only, against gpt-5.4.
+    </p>
+
+    <div class="latency-grid">
+      <div class="latbox">
+        <div class="small">Pure SQL · simple</div>
+        <div class="big">5 – 9 s</div>
+        <div class="desc">Single table, no aggregation. Router → Intent → SQL → Critic → Finaliser.</div>
+      </div>
+      <div class="latbox">
+        <div class="small">Pure SQL · complex</div>
+        <div class="big">15 – 35 s</div>
+        <div class="desc">3-4 joins, aggregations, window functions. Plus 1 clarification round + readback.</div>
+      </div>
+      <div class="latbox">
+        <div class="small">Pure RAG</div>
+        <div class="big">8 – 18 s</div>
+        <div class="desc">Hybrid retrieval + rerank + grounded synthesis. First call adds embedder/reranker load (+20s cold).</div>
+      </div>
+      <div class="latbox">
+        <div class="small">Hybrid · medium</div>
+        <div class="big">45 – 90 s</div>
+        <div class="desc">Planner + 2-3 sub-questions + Synthesiser + Critic. Typical for retention/IPO queries.</div>
+      </div>
+      <div class="latbox">
+        <div class="small">Hybrid · full chain</div>
+        <div class="big">120 – 180 s</div>
+        <div class="desc">Cross-Validator + Completeness + reground. Observed on audit-IPO and oncall-burnout queries.</div>
+      </div>
+      <div class="latbox">
+        <div class="small">Cold start</div>
+        <div class="big">+25 s</div>
+        <div class="desc">First query of a session — embedder + reranker model load + Qdrant warm-up.</div>
+      </div>
+    </div>
+
+    <h3>Where the time goes</h3>
+    <table>
+      <thead><tr><th>Stage</th><th>Typical</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Router + Intent + few-shot select</td><td class="num">2–4 s</td><td>Two LLM calls + cosine NN over 40 goldens.</td></tr>
+        <tr><td>Clarification round (each)</td><td class="num">2–3 s + user time</td><td>One LLM call per round; up to 3 rounds.</td></tr>
+        <tr><td>Read-back</td><td class="num">1–2 s + user time</td><td>One LLM call. User confirms via chip.</td></tr>
+        <tr><td>SQL agent (per attempt)</td><td class="num">3–8 s</td><td>Includes <code>describe_table</code> + <code>run_sql</code> tool calls.</td></tr>
+        <tr><td>RAG agent</td><td class="num">5–10 s</td><td>Hybrid search + rerank + grounded synth.</td></tr>
+        <tr><td>Hybrid plan + execute</td><td class="num">15–60 s</td><td>2–3 sub-steps × (SQL or RAG).</td></tr>
+        <tr><td>Synthesiser</td><td class="num">3–8 s</td><td>Merge + reconcile citations.</td></tr>
+        <tr><td>Critic</td><td class="num">3–6 s</td><td>One LLM call plus optional read-only re-query.</td></tr>
+        <tr><td>Cross-Validator (when fired)</td><td class="num">15–40 s</td><td>Full re-derivation with tools.</td></tr>
+        <tr><td>Completeness check (when fired)</td><td class="num">5–20 s</td><td>Plus reground if needed.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ─────────────────── 8. Tech stack ─────────────────── -->
+<section id="stack">
+  <div class="container">
+    <h2><span class="num-badge">08</span>Stack</h2>
+
+    <table>
+      <thead><tr><th>Layer</th><th>Tooling</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td>Orchestration</td><td>LangGraph 0.2 + MemorySaver</td><td><code>interrupt()</code> for clarify/readback; replayable graph state.</td></tr>
+        <tr><td>LLM</td><td>OpenAI gpt-5.4 (configurable via <code>OPENAI_MODEL_NAME</code>)</td><td>Tool-calling + structured outputs.</td></tr>
+        <tr><td>Backend</td><td>FastAPI · uvicorn · sse-starlette</td><td>Async streaming over SSE.</td></tr>
+        <tr><td>SQL</td><td>DuckDB (embedded)</td><td>Reads Excel directly; in-process; fast.</td></tr>
+        <tr><td>Vectors</td><td>Qdrant 1.17 + nomic-embed-text-v1.5</td><td>768-dim, CPU; <code>query_points</code> API.</td></tr>
+        <tr><td>Sparse</td><td>rank_bm25</td><td>Small corpus → in-memory BM25 is enough.</td></tr>
+        <tr><td>Reranker</td><td>BAAI/bge-reranker-base</td><td>Cross-encoder; 100ms on CPU for 20 candidates.</td></tr>
+        <tr><td>Sessions</td><td>Redis 7-alpine</td><td>LangGraph checkpoint store.</td></tr>
+        <tr><td>Observability</td><td>Langfuse v2 (Postgres-only)</td><td>Trace tree, replay, decision log.</td></tr>
+        <tr><td>Frontend</td><td>React 19 · Vite · Tailwind v4</td><td>Streaming chat, chips, evidence panel.</td></tr>
+        <tr><td>Eval</td><td>pytest + 40-query golden set</td><td>Structured-intent NN, not raw text.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ─────────────────── 9. Live demo ─────────────────── -->
+<section id="demo">
+  <div class="container">
+    <h2><span class="num-badge">09</span>Live Demo Run — measured end-to-end</h2>
+    <p class="sub">
+      Query fired against the running backend on this machine. Wall-clock
+      timed from <code>POST /api/chat/session</code> to the
+      <code>final</code> SSE event arriving.
+    </p>
+
+    <div class="ff-box" style="margin-bottom:18px;">
+      <h4 style="color:var(--acc-cyan);">User query</h4>
+      <p style="margin:0;color:var(--ink-1);font-style:italic;font-size:15px;">
+        "Which active customers in our top revenue tier are based in regulated
+        Asian markets, and who are their account managers? Sort by ARR
+        descending."
+      </p>
+    </div>
+
+    <div class="latency-grid" style="grid-template-columns: repeat(4, 1fr);">
+      <div class="latbox">
+        <div class="small">Total wall-clock</div>
+        <div class="big">52.29 s</div>
+        <div class="desc">Query → final SSE event</div>
+      </div>
+      <div class="latbox">
+        <div class="small">Confidence</div>
+        <div class="big">0.93</div>
+        <div class="desc">After cross-validator pass</div>
+      </div>
+      <div class="latbox">
+        <div class="small">SQL attempts</div>
+        <div class="big">3</div>
+        <div class="desc">Schema explore + final query</div>
+      </div>
+      <div class="latbox">
+        <div class="small">Citations</div>
+        <div class="big">3</div>
+        <div class="desc">DRHP §2, §3 · Board Minutes §5</div>
+      </div>
+    </div>
+
+    <h3>Stage-by-stage timing</h3>
+    <table>
+      <thead><tr><th>T+</th><th>Δ</th><th>Stage</th></tr></thead>
+      <tbody>
+        <tr><td class="num">0.02 s</td><td class="num">—</td><td>Session created · POST /api/chat/session</td></tr>
+        <tr><td class="num">6.52 s</td><td class="num">+6.50 s</td><td>First response stream complete (Router + Intent + Clarification)</td></tr>
+        <tr><td class="num">12.76 s</td><td class="num">+6.24 s</td><td>Clarification round 1 answered → re-intent → Read-back issued</td></tr>
+        <tr><td class="num">52.29 s</td><td class="num">+39.53 s</td><td>Read-back approved → SQL (3 iter) → Critic → Cross-Validator → Completeness → Finaliser</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Trace</h3>
+    <div class="topo">router -> sql -> intent -> clarity=0.62, 1 ambiguity
+  -> clarify r1
+  -> intent -> clarity=0.98, 0 ambiguities
+  -> readback -> approved
+  -> sql_agent -> 3 iter
+  -> critic -> retry (grounding: 'regulated Asian markets' fuzzy)
+  -> cross_validator -> pass (0.93)
+  -> completeness -> pass (0 missing)
+  -> finalise -> pass (0.93) via cross_validator</div>
+
+    <h3>LLM-polished final answer</h3>
+    <div class="ff-box">
+      <p style="margin:0 0 12px;">
+        Using TechNova's strategy docs, <em>"regulated APAC markets"</em> explicitly
+        includes <strong>India, Japan, and South Korea</strong>
+        <code>[TechNova_DRHP_Draft.pdf::sec2]</code>. Separately, board/MD&amp;A
+        materials highlight <strong>APAC localisation requirements</strong> and
+        the approved <strong>Singapore data-centre expansion</strong>
+        <code>[TechNova_DRHP_Draft.pdf::sec3]</code>
+        <code>[TechNova_Board_Minutes_Q4.pdf::sec5]</code>. Using the requested
+        country set <strong>(India, Japan, South Korea, Singapore)</strong>, the
+        active <strong>Tier 1</strong> customers and their account managers are:
+      </p>
+      <ol style="color:var(--ink-1);font-size:14px;line-height:1.8;">
+        <li><strong>Ember Retail</strong> — Singapore — <strong>₹1,743.02 L ARR</strong> — Aarti Iyer</li>
+        <li><strong>Beacon Logistics</strong> — India — <strong>₹1,720.14 L ARR</strong> — Divya Pillai</li>
+        <li><strong>Crescent Media</strong> — Japan — <strong>₹1,486.67 L ARR</strong> — Rohit Jain</li>
+        <li><strong>Atlas Telecom</strong> — India — <strong>₹1,325.29 L ARR</strong> — Kiran Malhotra</li>
+        <li><strong>Ascend Logistics</strong> — Singapore — <strong>₹1,186.54 L ARR</strong> — Rohit Jain</li>
+        <li><strong>Nova Systems</strong> — Singapore — <strong>₹1,029.43 L ARR</strong> — Divya Desai</li>
+        <li><strong>Ascend Motors</strong> — India — <strong>₹987.76 L ARR</strong> — Divya Pillai</li>
+        <li><strong>Zenith Capital</strong> — Singapore — <strong>₹893.94 L ARR</strong> — Divya Pillai</li>
+      </ol>
+      <p style="margin:0;"><strong>Combined ARR: ₹10,372.80 L (≈ ₹103.73 Cr).</strong></p>
+      <p style="margin:8px 0 0;color:var(--ink-2);font-size:13px;">
+        Note: no matching active Tier 1 customers from South Korea, even though
+        Japan and South Korea are both called out as APAC growth markets
+        <code>[TechNova_Q4_Financial_Report.pdf::sec1]</code>.
+      </p>
+    </div>
+
+    <p style="color:var(--ink-2);font-size:12px;margin-top:14px;">
+      <strong>Why 52 s?</strong> The query exercised the most expensive
+      branch outside of full hybrid execution: clarification round +
+      read-back + 3 SQL attempts + a Critic <em>retry</em> on grounding +
+      Cross-Validator re-derivation + Completeness check. A simple SQL query
+      without clarification would land at 5–9 s; a fully cached repeat of
+      this exact query in the same session would land at ~30 s (no model
+      cold-start, no clarification, fewer SQL attempts).
+    </p>
+  </div>
+</section>
+
+<footer class="foot">
+  <div class="container">
+    TechNova Hybrid Agentic Chatbot · built locally on Docker Compose ·
+    no cloud, no GPU, no telemetry leak ·
+    <span style="color:var(--acc-cyan);">© 2026</span>
+  </div>
+</footer>
+
+</body>
+</html>

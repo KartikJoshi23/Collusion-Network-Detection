@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TechNova Agentic Chatbot — Live Agent Communication</title>
+<style>
+  :root {
+    --bg-0: #05070d;
+    --bg-1: #0d1220;
+    --bg-2: #131a2e;
+    --bg-3: #1b2440;
+    --line: #2a3559;
+    --line-soft: #1f2742;
+    --ink-0: #f3f6ff;
+    --ink-1: #c7d0e6;
+    --ink-2: #8a96b8;
+    --ink-3: #5a6688;
+    --acc-cyan: #34e2e2;
+    --acc-violet: #a78bfa;
+    --acc-pink: #f472b6;
+    --acc-amber: #fbbf24;
+    --acc-green: #4ade80;
+    --acc-red: #f87171;
+    --acc-blue: #60a5fa;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    background: radial-gradient(ellipse at top, #1a1f3d 0%, #05070d 60%) fixed;
+    color: var(--ink-0);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    overflow-x: hidden;
+  }
+  code, pre, .mono { font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace; }
+
+  /* ─── Hero ─── */
+  header.hero {
+    padding: 32px 40px 20px;
+    text-align: center;
+    border-bottom: 1px solid var(--line);
+    background:
+      radial-gradient(circle at 20% 0%, rgba(52,226,226,.10), transparent 50%),
+      radial-gradient(circle at 80% 0%, rgba(167,139,250,.10), transparent 50%);
+  }
+  header.hero .eyebrow {
+    color: var(--acc-cyan); font-weight: 600; letter-spacing: 0.18em;
+    text-transform: uppercase; font-size: 11px; margin-bottom: 8px;
+  }
+  header.hero h1 {
+    margin: 0 0 8px;
+    font-size: clamp(24px, 3vw, 36px);
+    font-weight: 800; letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #fff 0%, #c7d0e6 50%, #34e2e2 100%);
+    background-clip: text; -webkit-background-clip: text;
+    color: transparent; -webkit-text-fill-color: transparent;
+  }
+  header.hero p { color: var(--ink-2); margin: 0 auto; max-width: 760px; font-size: 14px; }
+
+  /* ─── Controls bar ─── */
+  .controls {
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    padding: 16px 40px; border-bottom: 1px solid var(--line);
+    background: rgba(13,18,32,.7); backdrop-filter: blur(8px);
+    position: sticky; top: 0; z-index: 30;
+  }
+  .btn {
+    background: var(--bg-2); color: var(--ink-0);
+    border: 1px solid var(--line); border-radius: 8px;
+    padding: 8px 16px; font: inherit; font-weight: 600; font-size: 13px;
+    cursor: pointer; transition: all 0.15s ease;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn:hover { border-color: var(--acc-cyan); color: var(--acc-cyan); }
+  .btn.primary { background: linear-gradient(135deg, #34e2e2, #60a5fa); color: #05070d; border: none; }
+  .btn.primary:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(52,226,226,.3); color: #05070d; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn:disabled:hover { border-color: var(--line); color: var(--ink-0); transform: none; box-shadow: none; }
+  .control-label { color: var(--ink-2); font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; margin-left: 8px; }
+  select.speed-sel {
+    background: var(--bg-2); color: var(--ink-0); border: 1px solid var(--line);
+    border-radius: 8px; padding: 7px 12px; font: inherit; font-size: 13px; cursor: pointer;
+  }
+  .progress {
+    flex-grow: 1; max-width: 320px; height: 6px;
+    background: var(--bg-2); border-radius: 3px; overflow: hidden; margin: 0 8px;
+  }
+  .progress-bar {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, var(--acc-cyan), var(--acc-violet));
+    transition: width 0.3s ease;
+  }
+  .step-counter {
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink-2);
+    min-width: 56px; text-align: center;
+  }
+
+  /* ─── Main split ─── */
+  .main-split {
+    display: grid; grid-template-columns: 720px 1fr;
+    gap: 0; min-height: calc(100vh - 200px);
+  }
+  @media (max-width: 1280px) { .main-split { grid-template-columns: 1fr; } }
+
+  /* ─── Stage (pipeline canvas) ─── */
+  .stage-wrap {
+    border-right: 1px solid var(--line);
+    padding: 20px;
+    background: linear-gradient(180deg, transparent, rgba(13,18,32,.4));
+  }
+  .stage {
+    position: relative; width: 680px; height: 1080px;
+    margin: 0 auto;
+  }
+  svg.wires {
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 1;
+  }
+  svg.wires line, svg.wires path {
+    stroke: var(--line); stroke-width: 1.5; fill: none;
+    transition: stroke 0.2s ease, stroke-width 0.2s ease;
+  }
+  svg.wires .arrow-head {
+    fill: var(--line); transition: fill 0.2s ease;
+  }
+  svg.wires .wire.hot {
+    stroke: var(--acc-cyan); stroke-width: 2.5;
+    filter: drop-shadow(0 0 6px rgba(52,226,226,.6));
+    stroke-dasharray: 6 4;
+    animation: dash 0.6s linear infinite;
+  }
+  svg.wires .wire.hot + .arrow-head, svg.wires .arrow-head.hot { fill: var(--acc-cyan); }
+  @keyframes dash {
+    from { stroke-dashoffset: 20; }
+    to { stroke-dashoffset: 0; }
+  }
+
+  /* Agent node */
+  .node {
+    position: absolute; z-index: 2;
+    width: 140px; padding: 10px 12px;
+    border-radius: 10px;
+    background: var(--bg-1); border: 1px solid var(--line);
+    text-align: center; cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(0,0,0,.3);
+  }
+  .node:hover { transform: translateY(-2px); border-color: var(--acc-cyan); }
+  .node .label {
+    font-size: 12px; font-weight: 700; color: var(--ink-0);
+    margin-bottom: 2px; line-height: 1.2;
+  }
+  .node .role {
+    font-size: 10px; color: var(--ink-2);
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .node .role-dot {
+    display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--ink-3); margin-right: 4px; vertical-align: middle;
+  }
+
+  /* Active state */
+  .node.active {
+    transform: scale(1.08);
+    border-color: var(--acc-cyan);
+    background: linear-gradient(135deg, rgba(52,226,226,.18), rgba(167,139,250,.12));
+    box-shadow:
+      0 0 0 4px rgba(52,226,226,.15),
+      0 0 30px rgba(52,226,226,.4),
+      0 8px 24px rgba(0,0,0,.4);
+    z-index: 4;
+  }
+  .node.active .label { color: var(--acc-cyan); }
+
+  .node.fired {
+    border-color: var(--acc-green);
+    background: linear-gradient(135deg, rgba(74,222,128,.08), transparent);
+  }
+  .node.fired .role-dot { background: var(--acc-green); }
+  .node.fired .label { color: var(--acc-green); }
+
+  /* Agent role colours */
+  .node.user { border-color: rgba(52,226,226,.5); background: rgba(52,226,226,.06); }
+  .node.user .role-dot { background: var(--acc-cyan); }
+  .node.tool { border-color: rgba(96,165,250,.5); background: rgba(96,165,250,.06); }
+  .node.tool .role-dot { background: var(--acc-blue); }
+  .node.decision { border-color: rgba(251,191,36,.4); }
+  .node.decision .role-dot { background: var(--acc-amber); }
+  .node.exec { border-color: rgba(74,222,128,.4); }
+  .node.exec .role-dot { background: var(--acc-green); }
+  .node.synth { border-color: rgba(167,139,250,.4); }
+  .node.synth .role-dot { background: var(--acc-violet); }
+  .node.validator { border-color: rgba(248,113,113,.4); }
+  .node.validator .role-dot { background: var(--acc-red); }
+
+  /* Branch labels */
+  .branch-label {
+    position: absolute; z-index: 1;
+    font-size: 10px; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.1em;
+    background: var(--bg-0); padding: 2px 8px; border-radius: 4px;
+    border: 1px solid var(--line);
+  }
+
+  /* Packet animation */
+  .packet {
+    position: absolute; z-index: 5;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #fff 0%, var(--acc-cyan) 50%, transparent 80%);
+    box-shadow: 0 0 16px rgba(52,226,226,.8), 0 0 32px rgba(52,226,226,.4);
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-50%, -50%);
+    transition: transform var(--travel-ms, 600ms) cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
+  }
+  .packet.visible { opacity: 1; }
+  .packet.tool { background: radial-gradient(circle, #fff 0%, var(--acc-blue) 50%, transparent 80%); box-shadow: 0 0 16px rgba(96,165,250,.8); }
+  .packet.user { background: radial-gradient(circle, #fff 0%, var(--acc-amber) 50%, transparent 80%); box-shadow: 0 0 16px rgba(251,191,36,.8); }
+  .packet.validator { background: radial-gradient(circle, #fff 0%, var(--acc-red) 50%, transparent 80%); box-shadow: 0 0 16px rgba(248,113,113,.8); }
+  .packet.synth { background: radial-gradient(circle, #fff 0%, var(--acc-violet) 50%, transparent 80%); box-shadow: 0 0 16px rgba(167,139,250,.8); }
+
+  /* Right pane */
+  .right-pane {
+    display: grid; grid-template-rows: auto auto 1fr;
+    gap: 16px; padding: 20px; min-height: 800px;
+  }
+  .panel {
+    background: var(--bg-1); border: 1px solid var(--line);
+    border-radius: 12px; padding: 16px 18px;
+  }
+  .panel h3 {
+    margin: 0 0 8px; font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.12em; color: var(--ink-2); font-weight: 700;
+  }
+  .panel.active-agent {
+    border-left: 3px solid var(--acc-cyan);
+    background: linear-gradient(90deg, rgba(52,226,226,.06), var(--bg-1) 30%);
+  }
+  .panel .agent-name {
+    font-size: 18px; font-weight: 800; color: var(--ink-0);
+    margin-bottom: 4px;
+  }
+  .panel .agent-tagline { font-size: 13px; color: var(--ink-1); margin-bottom: 12px; }
+  .panel dl { margin: 0; display: grid; grid-template-columns: 90px 1fr; row-gap: 6px; font-size: 12px; }
+  .panel dt { color: var(--ink-2); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; padding-top: 1px; }
+  .panel dd { margin: 0; color: var(--ink-1); }
+  .panel .pill {
+    display: inline-block; padding: 1px 8px; font-size: 10px; font-weight: 600;
+    border-radius: 999px; letter-spacing: 0.04em;
+    background: rgba(52,226,226,.12); color: var(--acc-cyan);
+    border: 1px solid rgba(52,226,226,.4);
+  }
+  .panel .pill.always { background: rgba(74,222,128,.12); color: var(--acc-green); border-color: rgba(74,222,128,.4); }
+  .panel .pill.cond { background: rgba(251,191,36,.12); color: var(--acc-amber); border-color: rgba(251,191,36,.4); }
+  .panel .pill.rare { background: rgba(248,113,113,.12); color: var(--acc-red); border-color: rgba(248,113,113,.4); }
+
+  /* Console */
+  .console {
+    background: #02040a; border: 1px solid var(--line); border-radius: 12px;
+    padding: 0; overflow: hidden; display: flex; flex-direction: column;
+    min-height: 380px;
+  }
+  .console-head {
+    background: var(--bg-2); padding: 10px 16px;
+    border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 8px;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-2);
+  }
+  .console-head .dots { display: flex; gap: 6px; }
+  .console-head .dots span {
+    display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+  }
+  .console-head .dots span:nth-child(1) { background: #ef4444; }
+  .console-head .dots span:nth-child(2) { background: #f59e0b; }
+  .console-head .dots span:nth-child(3) { background: #10b981; }
+  .console-head .title { flex: 1; }
+  .console-body {
+    padding: 16px; flex: 1;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; line-height: 1.6;
+    color: var(--ink-1);
+    max-height: 600px; overflow-y: auto;
+    white-space: pre-wrap; word-break: break-word;
+  }
+  .console-body::-webkit-scrollbar { width: 8px; }
+  .console-body::-webkit-scrollbar-track { background: var(--bg-2); }
+  .console-body::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; }
+  .log-entry { margin-bottom: 18px; padding-bottom: 10px; border-bottom: 1px dashed var(--line-soft); }
+  .log-entry:last-child { border-bottom: none; }
+  .log-arrow {
+    color: var(--acc-cyan); font-weight: 700;
+    margin-bottom: 4px; font-size: 12px;
+  }
+  .log-arrow .from { color: var(--acc-amber); }
+  .log-arrow .to { color: var(--acc-green); }
+  .log-payload { color: var(--ink-1); }
+  .log-payload .json-key { color: var(--acc-cyan); }
+  .log-payload .json-string { color: var(--acc-green); }
+  .log-payload .json-number { color: var(--acc-violet); }
+  .log-payload .json-bool { color: var(--acc-pink); }
+  .log-desc {
+    margin-top: 8px; padding: 8px 12px;
+    background: rgba(167,139,250,.06);
+    border-left: 2px solid var(--acc-violet);
+    color: var(--ink-1); font-family: 'Inter', sans-serif; font-size: 12.5px;
+    border-radius: 0 6px 6px 0;
+  }
+  .cursor { display: inline-block; width: 8px; height: 14px; background: var(--acc-cyan);
+            vertical-align: text-bottom; animation: blink 1s steps(2) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* Legend */
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 10px; font-size: 10.5px; color: var(--ink-2);
+    margin-bottom: 14px;
+  }
+  .legend .chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: var(--bg-2); padding: 3px 9px; border-radius: 5px;
+    border: 1px solid var(--line);
+  }
+  .legend .chip .dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; }
+
+  /* Query banner */
+  .query-banner {
+    margin: 14px 40px 0;
+    padding: 14px 18px;
+    background: linear-gradient(90deg, rgba(52,226,226,.08), rgba(167,139,250,.05));
+    border: 1px solid var(--line); border-left: 3px solid var(--acc-cyan);
+    border-radius: 8px;
+    font-size: 13.5px; color: var(--ink-1);
+  }
+  .query-banner .label {
+    color: var(--acc-cyan); font-weight: 700; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.12em; margin-right: 8px;
+  }
+
+  /* Timeline at bottom */
+  .timeline {
+    padding: 18px 40px; border-top: 1px solid var(--line);
+    background: var(--bg-1);
+    overflow-x: auto;
+  }
+  .timeline-track { display: flex; gap: 6px; min-width: max-content; padding-bottom: 6px; }
+  .timeline-step {
+    flex-shrink: 0;
+    padding: 6px 10px; background: var(--bg-2);
+    border: 1px solid var(--line); border-radius: 6px;
+    font-size: 10.5px; color: var(--ink-2); cursor: pointer;
+    white-space: nowrap; min-width: 92px; text-align: center;
+    transition: all 0.15s ease; font-family: 'JetBrains Mono', monospace;
+  }
+  .timeline-step .num { font-size: 9px; color: var(--ink-3); display: block; }
+  .timeline-step:hover { border-color: var(--acc-cyan); color: var(--ink-0); }
+  .timeline-step.active {
+    background: linear-gradient(135deg, var(--acc-cyan), var(--acc-violet));
+    color: #05070d; border-color: transparent; font-weight: 700;
+  }
+  .timeline-step.fired { background: rgba(74,222,128,.1); border-color: rgba(74,222,128,.4); color: var(--acc-green); }
+
+  /* Hint banner */
+  .hint {
+    margin: 18px auto; max-width: 800px; padding: 14px 18px;
+    background: rgba(167,139,250,.06); border: 1px dashed var(--acc-violet);
+    border-radius: 10px; color: var(--ink-1); font-size: 13px; text-align: center;
+  }
+  .hint .kbd {
+    display: inline-block; padding: 1px 6px; margin: 0 3px;
+    background: var(--bg-2); border: 1px solid var(--line);
+    border-bottom-width: 2px; border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="eyebrow">Live Pipeline · Agents in Motion</div>
+  <h1>Watch your query travel through 13 agents</h1>
+  <p>
+    Hit <strong>Play</strong> below. A real query enters the system at the top. Each
+    agent lights up when it's working, sends typed-out JSON to the next agent in
+    the wire log on the right, and the glowing packet flying along the lines shows
+    the actual data handoff. Click any step to jump there.
+  </p>
+</header>
+
+<div class="query-banner">
+  <span class="label">Query</span>
+  Which active customers in our top revenue tier are based in regulated Asian
+  markets, and who are their account managers? Sort by ARR descending.
+</div>
+
+<div class="controls">
+  <button class="btn primary" id="btnPlay">▶ Play</button>
+  <button class="btn" id="btnPause" disabled>⏸ Pause</button>
+  <button class="btn" id="btnStep">⏭ Step</button>
+  <button class="btn" id="btnReset">↺ Reset</button>
+  <span class="control-label">Speed</span>
+  <select class="speed-sel" id="speedSel">
+    <option value="2">0.5x (slow)</option>
+    <option value="1" selected>1x (normal)</option>
+    <option value="0.5">2x (fast)</option>
+    <option value="0.25">4x (zoom)</option>
+  </select>
+  <div class="progress"><div class="progress-bar" id="progressBar"></div></div>
+  <span class="step-counter" id="stepCounter">0 / 22</span>
+</div>
+
+<div class="main-split">
+
+  <!-- ── Pipeline canvas ── -->
+  <div class="stage-wrap">
+    <div class="legend">
+      <span class="chip"><span class="dot" style="background:var(--acc-cyan)"></span>User / IO</span>
+      <span class="chip"><span class="dot" style="background:var(--acc-amber)"></span>Decision</span>
+      <span class="chip"><span class="dot" style="background:var(--acc-green)"></span>Execution</span>
+      <span class="chip"><span class="dot" style="background:var(--acc-violet)"></span>Synthesis</span>
+      <span class="chip"><span class="dot" style="background:var(--acc-red)"></span>Validation</span>
+      <span class="chip"><span class="dot" style="background:var(--acc-blue)"></span>Tool / Store</span>
+    </div>
+
+    <div class="stage" id="stage">
+
+      <!-- SVG wires drawn first -->
+      <svg class="wires" id="wires" viewBox="0 0 680 1080" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" class="arrow-head" />
+          </marker>
+          <marker id="arrowHot" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--acc-cyan)" />
+          </marker>
+        </defs>
+        <!-- wires drawn in JS -->
+      </svg>
+
+      <!-- Agent nodes (positioned absolutely) -->
+      <div class="node user"          id="n_user"          style="left:270px; top:10px;">
+        <div class="label"><span class="role-dot"></span>USER</div>
+        <div class="role">browser · SSE</div>
+      </div>
+      <div class="node decision"      id="n_router"        style="left:270px; top:90px;">
+        <div class="label"><span class="role-dot"></span>Router</div>
+        <div class="role">classify route</div>
+      </div>
+      <div class="node decision"      id="n_intent"        style="left:270px; top:170px;">
+        <div class="label"><span class="role-dot"></span>Intent Classifier</div>
+        <div class="role">extract structure</div>
+      </div>
+      <div class="node decision"      id="n_clarification" style="left:480px; top:170px;">
+        <div class="label"><span class="role-dot"></span>Clarification</div>
+        <div class="role">interrupt → user</div>
+      </div>
+      <div class="node decision"      id="n_readback"      style="left:270px; top:250px;">
+        <div class="label"><span class="role-dot"></span>Read-back</div>
+        <div class="role">interrupt → confirm</div>
+      </div>
+
+      <div class="node tool"          id="n_duckdb"        style="left:60px; top:340px;">
+        <div class="label"><span class="role-dot"></span>DuckDB</div>
+        <div class="role">15 tables</div>
+      </div>
+      <div class="node exec"          id="n_sql"           style="left:240px; top:340px;">
+        <div class="label"><span class="role-dot"></span>SQL Agent</div>
+        <div class="role">tool-call loop</div>
+      </div>
+      <div class="node exec"          id="n_rag"           style="left:400px; top:340px;">
+        <div class="label"><span class="role-dot"></span>RAG Agent</div>
+        <div class="role">retrieve + synth</div>
+      </div>
+      <div class="node tool"          id="n_qdrant"        style="left:560px; top:340px;">
+        <div class="label"><span class="role-dot"></span>Qdrant</div>
+        <div class="role">vector + BM25</div>
+      </div>
+
+      <div class="node exec"          id="n_planner"       style="left:60px; top:430px;">
+        <div class="label"><span class="role-dot"></span>Planner</div>
+        <div class="role">decompose hybrid</div>
+      </div>
+      <div class="node exec"          id="n_hybrid"        style="left:240px; top:430px;">
+        <div class="label"><span class="role-dot"></span>Hybrid Executor</div>
+        <div class="role">chain sub-answers</div>
+      </div>
+      <div class="node synth"         id="n_synth"         style="left:400px; top:430px;">
+        <div class="label"><span class="role-dot"></span>Synthesiser</div>
+        <div class="role">merge SQL + RAG</div>
+      </div>
+
+      <div class="node validator"     id="n_critic"        style="left:270px; top:530px;">
+        <div class="label"><span class="role-dot"></span>Critic</div>
+        <div class="role">always fires</div>
+      </div>
+      <div class="node validator"     id="n_crossval"      style="left:270px; top:620px;">
+        <div class="label"><span class="role-dot"></span>Cross-Validator</div>
+        <div class="role">re-derive differently</div>
+      </div>
+      <div class="node validator"     id="n_arbiter"       style="left:480px; top:620px;">
+        <div class="label"><span class="role-dot"></span>Arbiter</div>
+        <div class="role">~5% · disagreement</div>
+      </div>
+      <div class="node validator"     id="n_completeness"  style="left:270px; top:720px;">
+        <div class="label"><span class="role-dot"></span>Completeness</div>
+        <div class="role">expectation gate</div>
+      </div>
+      <div class="node synth"         id="n_finaliser"     style="left:270px; top:810px;">
+        <div class="label"><span class="role-dot"></span>Finaliser</div>
+        <div class="role">SSE final event</div>
+      </div>
+      <div class="node user"          id="n_user2"         style="left:270px; top:900px;">
+        <div class="label"><span class="role-dot"></span>USER</div>
+        <div class="role">polished answer</div>
+      </div>
+
+      <!-- Branch labels -->
+      <div class="branch-label" style="left:480px; top:140px;">if ambiguous</div>
+      <div class="branch-label" style="left:480px; top:600px;">if disagreement</div>
+      <div class="branch-label" style="left:25px; top:430px;">if hybrid</div>
+
+      <!-- Packet (single re-used div) -->
+      <div class="packet" id="packet"></div>
+
+    </div>
+  </div>
+
+  <!-- ── Right pane (active agent + console) ── -->
+  <div class="right-pane">
+
+    <div class="panel active-agent" id="agentPanel">
+      <h3>Active agent</h3>
+      <div class="agent-name" id="agentName">— idle —</div>
+      <div class="agent-tagline" id="agentTagline">Press Play to start the simulation. The active agent's role appears here as the query travels through the pipeline.</div>
+      <dl id="agentMeta"></dl>
+    </div>
+
+    <div class="panel">
+      <h3>What's happening</h3>
+      <div id="stepDesc" style="color:var(--ink-1); font-size:13.5px; line-height:1.6;">
+        The simulation will narrate every state transition — clarification asks, read-back confirms, SQL retries, grounding flags, cross-validator re-derivations.
+      </div>
+    </div>
+
+    <div class="console">
+      <div class="console-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <div class="title">wire log · streaming JSON between agents</div>
+        <div style="color:var(--ink-3); font-size:10px;">UTF-8 · application/json</div>
+      </div>
+      <div class="console-body" id="consoleBody"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Timeline -->
+<div class="timeline">
+  <div class="timeline-track" id="timelineTrack"></div>
+</div>
+
+<div class="hint">
+  Tip: <span class="kbd">Space</span> = play/pause · <span class="kbd">→</span> = step ·
+  <span class="kbd">R</span> = reset · click any agent to see its full role · click any timeline step to jump
+</div>
+
+<script>
+/* ─────────────────────────── Agent metadata ─────────────────────────── */
+const AGENTS = {
+  user:          { name: "User",                tag: "Browser/SSE client", fires: "always",    tools: "—",                       output: "user_query / clarification reply / readback approval" },
+  router:        { name: "Router",              tag: "Classifies the route at the entry point.", fires: "always", tools: "—",     output: '{"route":"sql|rag|hybrid|clarify"}' },
+  intent:        { name: "Intent Classifier",   tag: "Extracts entities, ops, ambiguities, clarity_score.", fires: "always", tools: "few-shot selector (cosine over goldens)", output: '{intent, ambiguities[], clarity_score}' },
+  clarification: { name: "Clarification Agent", tag: "When clarity_score < 0.7 OR severity ≥ 0.8 — ask one targeted question.", fires: "conditional", tools: "—", output: '{question, options[], round}' },
+  readback:      { name: "Read-back",           tag: "Paraphrases the resolved interpretation before execution.", fires: "complex queries only", tools: "—", output: '{readback, chips:[Yes, Adjust]}' },
+  planner:       { name: "Planner",             tag: "Decomposes hybrid into ordered sub-questions.", fires: "hybrid only", tools: "—", output: '{plan:[{type, question, depends_on}]}' },
+  sql:           { name: "SQL Agent",           tag: "Generates + executes + self-corrects DuckDB SQL.", fires: "sql + hybrid", tools: "list_tables, describe_table, sample_rows, run_sql", output: '{sql, rows_markdown, row_count, attempts}' },
+  rag:           { name: "RAG Agent",           tag: "Hybrid retrieval (dense + BM25 + RRF) + cross-encoder rerank + grounded synth.", fires: "rag + hybrid", tools: "hybrid_search, rerank, fetch_full_chunk", output: '{answer, citations:[{chunk_id}]}' },
+  hybrid:        { name: "Hybrid Executor",     tag: "Runs sub-questions in order, feeds prior sub-answers forward.", fires: "hybrid only", tools: "delegates to SQL/RAG", output: '{sub_results:[{type, question, answer}]}' },
+  synth:         { name: "Synthesiser",         tag: "Merges SQL rows + RAG policy excerpts. Row-level enumeration enforced.", fires: "hybrid only", tools: "—", output: '{answer (markdown w/ row tables + inline cites)}' },
+  critic:        { name: "Critic",              tag: "Scores draft against evidence. Looks for missing rows / wrong joins / fuzzy timeframes / grounding gaps.", fires: "always", tools: "read-only DB + retriever", output: '{confidence 0-1, reasons[], issues[], verdict}' },
+  crossval:      { name: "Cross-Validator",     tag: "Re-derives by a DIFFERENT method. On grounding failures, emits a revised_answer with citations woven in.", fires: "conf ∈ [0.5, 0.85] OR uncertain/retry/fail", tools: "all SQL + RAG tools", output: '{confidence, verdict, revised_answer?}' },
+  arbiter:       { name: "Arbiter",             tag: "Independent third derivation when Critic and Cross-Validator disagree by >0.2.", fires: "rare · ~5%", tools: "full DB + retriever", output: '{confidence, verdict, authoritative_answer?}' },
+  completeness:  { name: "Completeness Checker", tag: "Compares clarified-intent expectations vs final answer; regrounds missing citations.", fires: "post-validation", tools: "hybrid_search (re-ground)", output: '{complete, missing[], regrounded?}' },
+  finaliser:     { name: "Finaliser",           tag: "Picks the authoritative draft (Cross-Validator > Arbiter > original) and assembles SSE final event.", fires: "always", tools: "—", output: '{answer, confidence, trace, evidence}' },
+  duckdb:        { name: "DuckDB",              tag: "Embedded OLAP DB · 15 tables · ~1,800 rows · 30 FK relationships.", fires: "tool", tools: "list_tables, describe_table, run_sql", output: "rows / schema / column metadata" },
+  qdrant:        { name: "Qdrant",              tag: "Vector store · ~50 contextually-prefixed PDF chunks · hybrid (dense + BM25 + RRF k=60).", fires: "tool", tools: "query_points, BM25 rank, rerank", output: "ranked chunks with scores" },
+};
+
+const PILL_CLASS = {
+  "always": "always",
+  "conditional": "cond",
+  "complex queries only": "cond",
+  "hybrid only": "cond",
+  "sql + hybrid": "always",
+  "rag + hybrid": "always",
+  "post-validation": "always",
+  "rare · ~5%": "rare",
+  "tool": "cond",
+  "conf ∈ [0.5, 0.85] OR uncertain/retry/fail": "cond"
+};
+
+/* ─────────────────────────── Wire layout ─────────────────────────── */
+const NODE_POS = {
+  user:          { cx: 340, cy: 35 },
+  router:        { cx: 340, cy: 115 },
+  intent:        { cx: 340, cy: 195 },
+  clarification: { cx: 550, cy: 195 },
+  readback:      { cx: 340, cy: 275 },
+  duckdb:        { cx: 130, cy: 365 },
+  sql:           { cx: 310, cy: 365 },
+  rag:           { cx: 470, cy: 365 },
+  qdrant:        { cx: 630, cy: 365 },
+  planner:       { cx: 130, cy: 455 },
+  hybrid:        { cx: 310, cy: 455 },
+  synth:         { cx: 470, cy: 455 },
+  critic:        { cx: 340, cy: 555 },
+  crossval:      { cx: 340, cy: 645 },
+  arbiter:       { cx: 550, cy: 645 },
+  completeness:  { cx: 340, cy: 745 },
+  finaliser:     { cx: 340, cy: 835 },
+  user2:         { cx: 340, cy: 925 },
+};
+
+const WIRES = [
+  // Pipeline
+  ["user", "router"], ["router", "intent"],
+  ["intent", "clarification"], ["clarification", "intent"],   // loop
+  ["intent", "readback"],
+  // Execution branch (any of the three)
+  ["readback", "sql"], ["readback", "rag"], ["readback", "hybrid"],
+  // Tools
+  ["sql", "duckdb"], ["duckdb", "sql"],
+  ["rag", "qdrant"], ["qdrant", "rag"],
+  ["hybrid", "sql"], ["hybrid", "rag"],
+  // Hybrid tributaries
+  ["planner", "hybrid"],
+  // Synth merges
+  ["sql", "synth"], ["rag", "synth"], ["hybrid", "synth"],
+  // Validation chain
+  ["synth", "critic"], ["sql", "critic"], ["rag", "critic"],
+  ["critic", "crossval"], ["crossval", "arbiter"],
+  ["crossval", "completeness"], ["arbiter", "completeness"], ["critic", "completeness"],
+  ["completeness", "finaliser"],
+  ["finaliser", "user2"],
+];
+
+/* ─────────────────────────── Scenario events ─────────────────────────── */
+/* The actual sequence the live demo query just produced.
+   Each event has: actor → target, JSON-y payload, and a human description. */
+const EVENTS = [
+  {
+    actor: "user", target: "router",
+    title: "User submits query",
+    payload: '{ "user_query": "Which active customers in our top revenue tier are based in regulated Asian markets, and who are their account managers? Sort by ARR descending." }',
+    desc: "User submits via SSE POST. The graph kicks off with the Router node.",
+    activate: "router", duration: 1400,
+  },
+  {
+    actor: "router", target: "intent",
+    title: "Router classifies route",
+    payload: '{ "route": "sql", "rationale": "Concrete entity (customers, account_managers) + sort. No fuzzy policy term yet." }',
+    desc: "Router scans for policy/governance tells; sees concrete entities + a sort. Classifies as SQL initially.",
+    activate: "intent", duration: 1600,
+  },
+  {
+    actor: "intent", target: "clarification",
+    title: "Intent flags an ambiguity",
+    payload: '{ "intent": { "entities": ["customer", "account_manager", "country"], "ops": ["filter:tier", "filter:country", "rank:arr_desc"] }, "clarity_score": 0.62, "ambiguities": [ { "field": "filter", "issue": "regulated Asian markets — country set undefined", "severity": 0.85 } ] }',
+    desc: "Intent extracts entities + ops, but flags 'regulated Asian markets' as a high-severity ambiguity. Clarity 0.62 is below the 0.7 threshold → Clarification fires.",
+    activate: "clarification", duration: 2200,
+  },
+  {
+    actor: "clarification", target: "user",
+    title: "Clarification asks ONE question",
+    payload: '{ "question": "Which countries should count as regulated Asian markets for this query?", "round": 1, "options": [] }',
+    desc: "LangGraph interrupt() pauses the graph. Frontend shows the question. State is checkpointed to Redis so the resume is exact.",
+    activate: "user", duration: 1800, packetClass: "user",
+  },
+  {
+    actor: "user", target: "intent",
+    title: "User answers",
+    payload: '{ "answer": "Top revenue tier = Tier 1. Regulated Asian markets = India, Japan, South Korea, Singapore. Active = customers.status = \'Active\'." }',
+    desc: "User answers via the chips/free-text. Graph resumes from checkpoint and re-runs Intent with the original query enriched by the clarification.",
+    activate: "intent", duration: 1600, packetClass: "user",
+  },
+  {
+    actor: "intent", target: "readback",
+    title: "Re-classified intent → Read-back gate",
+    payload: '{ "intent": { "filters": { "tier": "Tier 1", "country": ["India","Japan","South Korea","Singapore"], "status": "Active" }, "sort": "arr_inr_lakhs DESC" }, "clarity_score": 0.98, "ambiguities": [] }',
+    desc: "Ambiguity resolved. Clarity 0.98. Read-back gate triggers because the query has joins + filters + sort.",
+    activate: "readback", duration: 1800,
+  },
+  {
+    actor: "readback", target: "user",
+    title: "Read-back paraphrase",
+    payload: '{ "readback": "To confirm: active Tier-1 customers in India / Japan / South Korea / Singapore, with account managers, sorted by ARR DESC. Run?", "chips": ["Yes, run", "Adjust"] }',
+    desc: "Read-back paraphrases the resolved interpretation in concrete values. interrupt() pauses again — user can approve or send 'Adjust' to loop back to Intent.",
+    activate: "user", duration: 1800, packetClass: "user",
+  },
+  {
+    actor: "user", target: "sql",
+    title: "User approves",
+    payload: '{ "approved": true }',
+    desc: "User taps 'Yes, run'. Graph resumes; Router's earlier sql verdict means SQL Agent picks up.",
+    activate: "sql", duration: 1200, packetClass: "user",
+  },
+  {
+    actor: "sql", target: "duckdb",
+    title: "SQL Agent · tool call 1/3",
+    payload: '{ "tool": "list_tables" }',
+    desc: "SQL Agent doesn\'t hallucinate schema. First it asks DuckDB what tables exist.",
+    activate: "duckdb", duration: 1200, packetClass: "tool",
+  },
+  {
+    actor: "duckdb", target: "sql",
+    title: "DuckDB returns 15 tables",
+    payload: '[ "departments", "employees", "salary_records", "customers", "products_services", "incidents", "vendors", "financial_transactions", "training_compliance", "assets_licenses", "customer_contracts", "sales_pipeline", "product_feature_adoption", "audit_findings", "oncall_rotations" ]',
+    desc: "DuckDB returns all 15 tables.",
+    activate: "sql", duration: 1400, packetClass: "tool",
+  },
+  {
+    actor: "sql", target: "duckdb",
+    title: "SQL Agent · tool call 2/3",
+    payload: '{ "tool": "describe_table", "args": { "table": "customers" } }',
+    desc: "SQL Agent inspects the customers table to find the right columns.",
+    activate: "duckdb", duration: 1200, packetClass: "tool",
+  },
+  {
+    actor: "duckdb", target: "sql",
+    title: "DuckDB returns column schema",
+    payload: '[ { "col": "customer_id", "type": "VARCHAR" }, { "col": "customer_name", "type": "VARCHAR" }, { "col": "tier", "type": "VARCHAR" }, { "col": "country", "type": "VARCHAR" }, { "col": "arr_inr_lakhs", "type": "DOUBLE" }, { "col": "status", "type": "VARCHAR" }, { "col": "account_manager_employee_id", "type": "VARCHAR" } ]',
+    desc: "Schema confirms the column names. Agent now has enough to compose the final SQL.",
+    activate: "sql", duration: 1600, packetClass: "tool",
+  },
+  {
+    actor: "sql", target: "duckdb",
+    title: "SQL Agent · tool call 3/3 (final query)",
+    payload: '{ "tool": "run_sql", "args": { "query": "SELECT c.customer_id, c.customer_name, c.country, c.arr_inr_lakhs, e.first_name || \' \' || e.last_name AS account_manager FROM customers c JOIN employees e ON c.account_manager_employee_id = e.employee_id WHERE c.tier = \'Tier 1\' AND c.status = \'Active\' AND c.country IN (\'India\',\'Japan\',\'South Korea\',\'Singapore\') ORDER BY c.arr_inr_lakhs DESC" } }',
+    desc: "Final SQL. JOIN + 3 filters + ORDER BY — exactly what the read-back paraphrased.",
+    activate: "duckdb", duration: 2200, packetClass: "tool",
+  },
+  {
+    actor: "duckdb", target: "sql",
+    title: "DuckDB returns 8 rows",
+    payload: '{ "row_count": 8, "rows": [ { "customer": "Ember Retail",       "country": "Singapore",   "arr_inr_lakhs": 1743.02, "account_manager": "Aarti Iyer" }, { "customer": "Beacon Logistics",  "country": "India",       "arr_inr_lakhs": 1720.14, "account_manager": "Divya Pillai" }, { "customer": "Crescent Media",    "country": "Japan",       "arr_inr_lakhs": 1486.67, "account_manager": "Rohit Jain" }, { "customer": "Atlas Telecom",     "country": "India",       "arr_inr_lakhs": 1325.29, "account_manager": "Kiran Malhotra" }, { "customer": "Ascend Logistics",  "country": "Singapore",   "arr_inr_lakhs": 1186.54, "account_manager": "Rohit Jain" }, "...3 more" ] }',
+    desc: "8 matching customers. Combined ARR ≈ ₹103.73 Cr. SQL Agent now hands the result + a draft answer to the Critic.",
+    activate: "sql", duration: 2200, packetClass: "tool",
+  },
+  {
+    actor: "sql", target: "critic",
+    title: "Draft answer → Critic",
+    payload: '{ "draft_answer": "The 8 active Tier-1 customers in regulated Asian markets are: Ember Retail (Singapore, ₹1,743.02L)...", "sql_result": { "row_count": 8, "iterations": 3 } }',
+    desc: "SQL Agent emits its draft + the result rows. Critic always fires next.",
+    activate: "critic", duration: 1800, packetClass: "synth",
+  },
+  {
+    actor: "critic", target: "crossval",
+    title: "Critic flags grounding issue",
+    payload: '{ "verdict": "retry", "confidence": 0.72, "reasons": [ "grounding: answer asserts what counts as \'regulated Asian markets\' but cites no policy document", "row data is correct, but the framing claim is unsupported" ], "issues": [ "missing PDF citation for the regulated-market definition" ] }',
+    desc: "Critic accepts the rows but flags a grounding gap: the answer uses a policy term without citing a policy. Verdict 'retry' + confidence 0.72 → Cross-Validator fires (also fires on uncertain/fail).",
+    activate: "crossval", duration: 2400, packetClass: "validator",
+  },
+  {
+    actor: "crossval", target: "qdrant",
+    title: "Cross-Validator re-grounds — searches PDFs",
+    payload: '{ "tool": "hybrid_search", "args": { "query": "regulated APAC markets data localization", "k": 20 } }',
+    desc: "Cross-Validator runs a different search: it queries the vector store for the policy basis. This is what makes Cross-Validator different from Critic — it RE-DERIVES, doesn\'t just re-score.",
+    activate: "qdrant", duration: 1800, packetClass: "tool",
+  },
+  {
+    actor: "qdrant", target: "crossval",
+    title: "Qdrant returns top-3 reranked chunks",
+    payload: '[ { "chunk_id": "TechNova_DRHP_Draft.pdf::sec2", "score": 0.91, "snippet": "...regulated APAC markets — India, Japan, South Korea — collectively account for..." }, { "chunk_id": "TechNova_DRHP_Draft.pdf::sec3", "score": 0.87, "snippet": "...approved Singapore data-centre expansion to satisfy localisation requirements..." }, { "chunk_id": "TechNova_Board_Minutes_Q4.pdf::sec5", "score": 0.84, "snippet": "...APAC localisation requirements discussed — board approved Singapore expansion..." } ]',
+    desc: "Hybrid search (dense + BM25 + RRF) → cross-encoder rerank → top-3 most relevant chunks. DRHP §2 explicitly defines the regulated-market list.",
+    activate: "crossval", duration: 2400, packetClass: "validator",
+  },
+  {
+    actor: "crossval", target: "completeness",
+    title: "Cross-Validator emits revised answer",
+    payload: '{ "verdict": "pass", "confidence": 0.93, "revised_answer": "Using TechNova\'s strategy docs, \'regulated APAC markets\' explicitly includes India, Japan, and South Korea [TechNova_DRHP_Draft.pdf::sec2]. Board materials highlight the Singapore data-centre expansion [TechNova_DRHP_Draft.pdf::sec3] [TechNova_Board_Minutes_Q4.pdf::sec5]. Using the requested set (India, Japan, South Korea, Singapore), the active Tier 1 customers are: ...8 rows..." }',
+    desc: "Cross-Validator weaves the citations back in. Confidence climbs from 0.72 → 0.93. The revised draft replaces the original in shared state.",
+    activate: "completeness", duration: 2600, packetClass: "validator",
+  },
+  {
+    actor: "completeness", target: "finaliser",
+    title: "Completeness gate · pass",
+    payload: '{ "complete": true, "missing": [], "checks": { "row_count_matches_intent": true, "all_filters_applied": true, "citations_present": true, "arithmetic_consistent": true } }',
+    desc: "Completeness verifies every clarified-intent expectation: the 4 filters, the sort, the columns, the citations. All present.",
+    activate: "finaliser", duration: 1600, packetClass: "validator",
+  },
+  {
+    actor: "finaliser", target: "user2",
+    title: "Finaliser · SSE final event",
+    payload: '{ "event": "final", "data": { "answer": "Using TechNova\'s strategy docs, \'regulated APAC markets\' explicitly includes India, Japan, and South Korea [TechNova_DRHP_Draft.pdf::sec2]...", "confidence": 0.93, "trace": [ "router→sql", "intent→clarify r1", "intent→readback→approved", "sql_agent (3 iter)", "critic→retry (grounding)", "cross_validator→pass (0.93)", "completeness→pass", "finalise via cross_validator" ], "evidence": { "sql": { "row_count": 8 }, "citations": [ "DRHP::sec2", "DRHP::sec3", "Board::sec5" ] } } }',
+    desc: "Finaliser picks Cross-Validator\'s revised answer (highest authoritative confidence), assembles the SSE final event, ships it to the browser. Total wall-clock: ~52s.",
+    activate: "user2", duration: 2400, packetClass: "synth",
+  },
+];
+
+/* ─────────────────────────── State ─────────────────────────── */
+let stepIdx = 0;
+let playing = false;
+let timer = null;
+let typeTimer = null;
+const STAGE = document.getElementById("stage");
+const PACKET = document.getElementById("packet");
+const CONSOLE = document.getElementById("consoleBody");
+const PROGRESS = document.getElementById("progressBar");
+const STEP_COUNTER = document.getElementById("stepCounter");
+const SPEED_SEL = document.getElementById("speedSel");
+const TIMELINE = document.getElementById("timelineTrack");
+
+/* ─────────────────────────── Wires ─────────────────────────── */
+function buildWires() {
+  const svg = document.getElementById("wires");
+  WIRES.forEach(([from, to], i) => {
+    const a = NODE_POS[from], b = NODE_POS[to];
+    if (!a || !b) return;
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    line.classList.add("wire");
+    line.dataset.from = from; line.dataset.to = to;
+    line.setAttribute("marker-end", "url(#arrow)");
+    // Use cubic Bezier with vertical tension, gives a clean flow look
+    const dx = b.cx - a.cx, dy = b.cy - a.cy;
+    const c1x = a.cx + dx * 0.1, c1y = a.cy + dy * 0.5;
+    const c2x = b.cx - dx * 0.1, c2y = b.cy - dy * 0.5;
+    line.setAttribute("d", `M ${a.cx},${a.cy} C ${c1x},${c1y} ${c2x},${c2y} ${b.cx},${b.cy}`);
+    svg.appendChild(line);
+  });
+}
+buildWires();
+
+/* ─────────────────────────── Timeline ─────────────────────────── */
+function buildTimeline() {
+  EVENTS.forEach((ev, i) => {
+    const step = document.createElement("div");
+    step.className = "timeline-step";
+    step.dataset.idx = i;
+    step.innerHTML = `<span class="num">step ${i + 1}</span>${ev.activate}`;
+    step.onclick = () => jumpTo(i);
+    TIMELINE.appendChild(step);
+  });
+}
+buildTimeline();
+
+/* ─────────────────────────── Helpers ─────────────────────────── */
+function nodeEl(key) { return document.getElementById("n_" + key); }
+
+function center(el) {
+  const stageRect = STAGE.getBoundingClientRect();
+  const r = el.getBoundingClientRect();
+  return {
+    x: r.left - stageRect.left + r.width / 2,
+    y: r.top - stageRect.top + r.height / 2,
+  };
+}
+
+function clearActive() {
+  document.querySelectorAll(".node.active").forEach(n => n.classList.remove("active"));
+  document.querySelectorAll(".wire.hot").forEach(w => w.classList.remove("hot"));
+}
+
+function setActive(key) {
+  if (!key) return;
+  const el = nodeEl(key);
+  if (el) el.classList.add("active");
+}
+
+function setFired(keys) {
+  keys.forEach(k => {
+    const el = nodeEl(k);
+    if (el && !el.classList.contains("active")) el.classList.add("fired");
+  });
+}
+
+function highlightWire(from, to) {
+  document.querySelectorAll(".wire").forEach(w => {
+    if (w.dataset.from === from && w.dataset.to === to) {
+      w.classList.add("hot");
+      w.setAttribute("marker-end", "url(#arrowHot)");
+    }
+  });
+}
+function clearWires() {
+  document.querySelectorAll(".wire.hot").forEach(w => {
+    w.classList.remove("hot");
+    w.setAttribute("marker-end", "url(#arrow)");
+  });
+}
+
+/* ─────────────────────────── Packet animation ─────────────────────────── */
+function travel(fromKey, toKey, duration, klass) {
+  const fromEl = nodeEl(fromKey === "user" ? "user" : (fromKey === "user2" ? "user2" : fromKey));
+  const toEl = nodeEl(toKey === "user" ? "user" : (toKey === "user2" ? "user2" : toKey));
+  if (!fromEl || !toEl) return Promise.resolve();
+  const a = center(fromEl), b = center(toEl);
+
+  PACKET.className = "packet" + (klass ? " " + klass : "");
+  PACKET.style.setProperty("--travel-ms", duration + "ms");
+  // place at start without transition
+  PACKET.style.transition = "none";
+  PACKET.style.transform = `translate(${a.x}px, ${a.y}px) translate(-50%, -50%)`;
+  // force reflow
+  void PACKET.offsetWidth;
+  // re-enable transitions
+  PACKET.style.transition = "";
+  PACKET.classList.add("visible");
+  PACKET.style.transform = `translate(${b.x}px, ${b.y}px) translate(-50%, -50%)`;
+  highlightWire(fromKey, toKey);
+
+  return new Promise(resolve => {
+    setTimeout(() => {
+      PACKET.classList.remove("visible");
+      setTimeout(() => { clearWires(); resolve(); }, 200);
+    }, duration);
+  });
+}
+
+/* ─────────────────────────── Streaming JSON typewriter ─────────────────────────── */
+function syntaxColor(s) {
+  // simple JSON-ish coloring
+  return s
+    .replace(/("(?:[^"\\]|\\.)*")(\s*:)/g, '<span class="json-key">$1</span>$2')
+    .replace(/:\s*("(?:[^"\\]|\\.)*")/g, ': <span class="json-string">$1</span>')
+    .replace(/:\s*(true|false|null)/g, ': <span class="json-bool">$1</span>')
+    .replace(/:\s*(-?\d+(?:\.\d+)?)/g, ': <span class="json-number">$1</span>');
+}
+
+function appendLogEntry(ev, idx) {
+  const div = document.createElement("div");
+  div.className = "log-entry";
+  div.dataset.idx = idx;
+  div.innerHTML =
+    `<div class="log-arrow"><span class="from">${AGENTS[ev.actor]?.name || ev.actor}</span> ━━▶ <span class="to">${AGENTS[ev.target]?.name || ev.target}</span> &nbsp;<span style="color:var(--ink-3); font-size:11px;">${ev.title || ""}</span></div>` +
+    `<div class="log-payload mono"><span class="streaming"></span><span class="cursor"></span></div>` +
+    `<div class="log-desc">${ev.desc || ""}</div>`;
+  CONSOLE.appendChild(div);
+  CONSOLE.scrollTop = CONSOLE.scrollHeight;
+  return div;
+}
+
+function streamPayload(div, payload, totalMs) {
+  return new Promise(resolve => {
+    const target = div.querySelector(".streaming");
+    const cursor = div.querySelector(".cursor");
+    if (!target) { resolve(); return; }
+    const text = payload || "";
+    let i = 0;
+    // Vary speed: ~totalMs to type all chars, but with min/max
+    const charDelay = Math.max(2, Math.min(20, totalMs / Math.max(40, text.length)));
+    function tick() {
+      if (i >= text.length) { cursor.style.display = "none"; resolve(); return; }
+      const chunk = text.slice(i, i + 3);  // 3 chars per tick for speed
+      i += 3;
+      target.innerHTML = syntaxColor(target.textContent + chunk);
+      CONSOLE.scrollTop = CONSOLE.scrollHeight;
+      typeTimer = setTimeout(tick, charDelay);
+    }
+    tick();
+  });
+}
+
+/* ─────────────────────────── Active panel ─────────────────────────── */
+function pillFor(fires) {
+  const cls = PILL_CLASS[fires] || "cond";
+  return `<span class="pill ${cls}">${fires}</span>`;
+}
+
+function showAgent(key) {
+  const a = AGENTS[key];
+  if (!a) {
+    document.getElementById("agentName").textContent = "— idle —";
+    document.getElementById("agentTagline").textContent = "Press Play to start the simulation.";
+    document.getElementById("agentMeta").innerHTML = "";
+    return;
+  }
+  document.getElementById("agentName").textContent = a.name;
+  document.getElementById("agentTagline").textContent = a.tag;
+  document.getElementById("agentMeta").innerHTML =
+    `<dt>Fires</dt><dd>${pillFor(a.fires)}</dd>` +
+    `<dt>Tools</dt><dd>${a.tools}</dd>` +
+    `<dt>Output</dt><dd><span class="mono" style="color:var(--acc-cyan);font-size:11.5px;">${a.output}</span></dd>`;
+}
+
+/* ─────────────────────────── Step driver ─────────────────────────── */
+async function runStep(idx) {
+  if (idx >= EVENTS.length) { stop(); return; }
+  const ev = EVENTS[idx];
+  const speed = parseFloat(SPEED_SEL.value);
+  const dur = (ev.duration || 1500) * speed;
+
+  // Mark previous active as fired
+  document.querySelectorAll(".node.active").forEach(n => {
+    n.classList.remove("active");
+    n.classList.add("fired");
+  });
+  // Activate the destination
+  const activeKey = ev.activate || ev.target;
+  setActive(activeKey === "user2" ? "user2" : activeKey);
+  showAgent(activeKey);
+
+  // Update timeline
+  document.querySelectorAll(".timeline-step").forEach((s, i) => {
+    s.classList.remove("active");
+    if (i < idx) s.classList.add("fired");
+    if (i === idx) s.classList.add("active");
+  });
+
+  // Step description
+  document.getElementById("stepDesc").innerHTML =
+    `<strong style="color:var(--acc-cyan);">${ev.title || ""}</strong><br/>${ev.desc || ""}`;
+
+  // Append log entry
+  const logDiv = appendLogEntry(ev, idx);
+
+  // Animate packet & stream payload in parallel
+  const travelP = travel(ev.actor, ev.target, Math.min(dur * 0.5, 1200), ev.packetClass);
+  const streamP = streamPayload(logDiv, ev.payload, dur * 0.85);
+  await Promise.all([travelP, streamP]);
+
+  // Update progress
+  stepIdx = idx + 1;
+  PROGRESS.style.width = `${(stepIdx / EVENTS.length) * 100}%`;
+  STEP_COUNTER.textContent = `${stepIdx} / ${EVENTS.length}`;
+
+  if (playing && stepIdx < EVENTS.length) {
+    timer = setTimeout(() => runStep(stepIdx), 400 * speed);
+  } else if (stepIdx >= EVENTS.length) {
+    playing = false;
+    document.getElementById("btnPlay").disabled = false;
+    document.getElementById("btnPause").disabled = true;
+    setActive("user2");
+    showAgent("user");
+  }
+}
+
+function play() {
+  if (stepIdx >= EVENTS.length) reset();
+  playing = true;
+  document.getElementById("btnPlay").disabled = true;
+  document.getElementById("btnPause").disabled = false;
+  runStep(stepIdx);
+}
+
+function pause() {
+  playing = false;
+  if (timer) clearTimeout(timer);
+  if (typeTimer) clearTimeout(typeTimer);
+  document.getElementById("btnPlay").disabled = false;
+  document.getElementById("btnPause").disabled = true;
+}
+
+function step() {
+  if (playing) pause();
+  if (stepIdx < EVENTS.length) runStep(stepIdx);
+}
+
+function stop() {
+  playing = false;
+  if (timer) clearTimeout(timer);
+  if (typeTimer) clearTimeout(typeTimer);
+  document.getElementById("btnPlay").disabled = false;
+  document.getElementById("btnPause").disabled = true;
+}
+
+function reset() {
+  stop();
+  stepIdx = 0;
+  PROGRESS.style.width = "0%";
+  STEP_COUNTER.textContent = `0 / ${EVENTS.length}`;
+  CONSOLE.innerHTML = "";
+  document.querySelectorAll(".node").forEach(n => n.classList.remove("active", "fired"));
+  document.querySelectorAll(".timeline-step").forEach(s => s.classList.remove("active", "fired"));
+  clearWires();
+  PACKET.classList.remove("visible");
+  showAgent(null);
+  document.getElementById("stepDesc").innerHTML =
+    "The simulation will narrate every state transition — clarification asks, read-back confirms, SQL retries, grounding flags, cross-validator re-derivations.";
+}
+
+function jumpTo(idx) {
+  stop();
+  reset();
+  // Run all preceding steps quickly into the log, then play from idx
+  const origSpeed = SPEED_SEL.value;
+  SPEED_SEL.value = "0.25";
+  (async () => {
+    for (let i = 0; i < idx; i++) {
+      await runStepInstant(i);
+    }
+    SPEED_SEL.value = origSpeed;
+    stepIdx = idx;
+    runStep(idx);
+  })();
+}
+
+async function runStepInstant(idx) {
+  const ev = EVENTS[idx];
+  document.querySelectorAll(".node.active").forEach(n => {
+    n.classList.remove("active");
+    n.classList.add("fired");
+  });
+  const activeKey = ev.activate || ev.target;
+  setActive(activeKey);
+
+  document.querySelectorAll(".timeline-step").forEach((s, i) => {
+    s.classList.remove("active");
+    if (i <= idx) s.classList.add("fired");
+  });
+  // Append log without typing
+  const div = document.createElement("div");
+  div.className = "log-entry";
+  div.innerHTML =
+    `<div class="log-arrow"><span class="from">${AGENTS[ev.actor]?.name || ev.actor}</span> ━━▶ <span class="to">${AGENTS[ev.target]?.name || ev.target}</span></div>` +
+    `<div class="log-payload mono">${syntaxColor(ev.payload || "")}</div>` +
+    `<div class="log-desc">${ev.desc || ""}</div>`;
+  CONSOLE.appendChild(div);
+  CONSOLE.scrollTop = CONSOLE.scrollHeight;
+  PROGRESS.style.width = `${((idx + 1) / EVENTS.length) * 100}%`;
+  STEP_COUNTER.textContent = `${idx + 1} / ${EVENTS.length}`;
+}
+
+/* ─────────────────────────── Wire up controls ─────────────────────────── */
+document.getElementById("btnPlay").onclick = play;
+document.getElementById("btnPause").onclick = pause;
+document.getElementById("btnStep").onclick = step;
+document.getElementById("btnReset").onclick = reset;
+
+document.querySelectorAll(".node").forEach(n => {
+  n.addEventListener("click", () => {
+    const key = n.id.replace("n_", "");
+    showAgent(key === "user2" ? "user" : key);
+  });
+});
+
+document.addEventListener("keydown", e => {
+  if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
+  if (e.code === "Space") { e.preventDefault(); playing ? pause() : play(); }
+  else if (e.code === "ArrowRight") { e.preventDefault(); step(); }
+  else if (e.code === "KeyR") { e.preventDefault(); reset(); }
+});
+
+reset();
+</script>
+</body>
+</html>

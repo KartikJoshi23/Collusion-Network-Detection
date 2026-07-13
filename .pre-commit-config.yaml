@@ -1,6 +1,7 @@
 # Runs on every commit from the very first one (implementation-plan.md §7 Week 1, R18).
 # Install once per machine: uv run pre-commit install
-exclude: '^(reference/|notebooks/)'
+# NOTE: reference/ and notebooks/ are excluded from lint/format hooks only —
+# secret scanning (gitleaks, detect-private-key) covers EVERYTHING.
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -20,11 +21,13 @@ repos:
     hooks:
       - id: ruff
         args: ["--fix"]
+        exclude: '^(reference/|notebooks/)'
 
   - repo: https://github.com/psf/black
     rev: 26.5.1
     hooks:
       - id: black
+        exclude: '^(reference/|notebooks/)'
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v2.3.0

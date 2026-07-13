@@ -1,0 +1,369 @@
+# TechNova schema — this file is the single source of truth for the SQL Agent.
+# The SQL Agent system prompt embeds the contents of this file so the model
+# knows every table, column, and foreign-key relationship without having to
+# discover them at runtime.
+#
+# Derived from 00_README_and_Schema.xlsx and verified against each Excel file.
+
+database: duckdb
+dialect: duckdb  # PostgreSQL-compatible SQL
+
+tables:
+  departments:
+    source_file: "01_Departments.xlsx"
+    description: "12 business departments at TechNova Inc., each with a cost centre and quarterly budget."
+    primary_key: department_id
+    columns:
+      department_id: {type: INTEGER, notes: "PK. Range 1-12."}
+      department_name: {type: VARCHAR, notes: "e.g. 'Engineering', 'Product & Strategy', 'Sales & Marketing'."}
+      cost_center_code: {type: VARCHAR, notes: "e.g. 'ENG-01', 'PRD-01'."}
+      quarterly_budget_inr_crores: {type: DOUBLE, notes: "Budget in INR crores."}
+      primary_location: {type: VARCHAR, notes: "Bangalore, Mumbai, Pune, etc."}
+
+  employees:
+    source_file: "02_Employees.xlsx"
+    description: "142 TechNova employees, levels L1 (entry) to L8 (C-suite). Self-referential manager hierarchy."
+    primary_key: employee_id
+    columns:
+      employee_id: {type: INTEGER, notes: "PK. Range 1001-1142."}
+      first_name: {type: VARCHAR}
+      last_name: {type: VARCHAR}
+      email: {type: VARCHAR}
+      level: {type: VARCHAR, notes: "L1-L8. L1=entry, L8=C-suite/Chairman."}
+      department_id: {type: INTEGER, notes: "FK to departments."}
+      manager_employee_id: {type: INTEGER, notes: "FK to employees.employee_id. NULL for C-suite (L8)."}
+      job_title: {type: VARCHAR}
+      hire_date: {type: DATE}
+      work_location: {type: VARCHAR}
+      employment_status: {type: VARCHAR, notes: "'Active', 'Inactive', 'On Leave'."}
+
+  salary_records:
+    source_file: "03_Salary_Records.xlsx"
+    description: "131 salary snapshots (one active row per employee for FY2025-26)."
+    primary_key: salary_record_id
+    columns:
+      salary_record_id: {type: INTEGER, notes: "PK. Starts at 5001."}
+      employee_id: {type: INTEGER, notes: "FK to employees."}
+      level: {type: VARCHAR, notes: "Denormalised from employees.level."}
+      base_salary_inr_lakhs: {type: DOUBLE}
+      variable_pay_inr_lakhs: {type: DOUBLE}
+      total_ctc_inr_lakhs: {type: DOUBLE, notes: "Total Cost to Company."}
+      esop_units_granted: {type: INTEGER}
+      esop_fmv_per_share_inr: {type: DOUBLE, notes: "~INR 842 per share (Dec 2025 409A valuation)."}
+      effective_date: {type: DATE}
+      review_cycle: {type: VARCHAR, notes: "e.g. 'FY2025-26'."}
+      performance_rating: {type: VARCHAR, notes: "'Exceeds', 'Meets', 'Below', etc."}
+
+  customers:
+    source_file: "04_Customers.xlsx"
+    description: "90 enterprise customers. Each has an account manager (employee)."
+    primary_key: customer_id
+    columns:
+      customer_id: {type: INTEGER, notes: "PK. Range 7001-7090."}
+      customer_name: {type: VARCHAR}
+      tier: {type: VARCHAR, notes: "'Tier 1' (largest ARR), 'Tier 2', 'Tier 3'."}
+      region: {type: VARCHAR, notes: "'North America', 'Europe', 'APAC', 'MEA'."}
+      country: {type: VARCHAR}
+      industry: {type: VARCHAR, notes: "'Media', 'Manufacturing', 'Financial Services', etc."}
+      arr_inr_lakhs: {type: DOUBLE, notes: "Annual Recurring Revenue in INR lakhs."}
+      contract_start_date: {type: DATE}
+      contract_renewal_date: {type: DATE}
+      account_status: {type: VARCHAR, notes: "'Active', 'Churned', 'At Risk'."}
+      account_manager_employee_id: {type: INTEGER, notes: "FK to employees."}
+      licensed_seats: {type: INTEGER}
+
+  products_services:
+    source_file: "05_Products_Services.xlsx"
+    description: "147 microservices that make up the Nova Platform."
+    primary_key: service_id
+    columns:
+      service_id: {type: INTEGER, notes: "PK. Range 9001-9147."}
+      service_name: {type: VARCHAR, notes: "e.g. 'user-svc-01', 'auth-svc-05'."}
+      domain: {type: VARCHAR, notes: "'User Management', 'Authentication', 'Analytics', 'Integration Hub', 'AI Services', 'Data Processing'."}
+      owner_department_id: {type: INTEGER, notes: "FK to departments (team responsible)."}
+      deployment_environment: {type: VARCHAR, notes: "'AWS Prod', 'GCP DR', 'Multi-Region'."}
+      primary_tech_stack: {type: VARCHAR, notes: "'Java', 'Node.js', 'Python', 'Go'."}
+      criticality_tier: {type: VARCHAR, notes: "'Critical', 'High', 'Medium', 'Low'."}
+      uptime_sla_percent: {type: DOUBLE}
+
+  incidents:
+    source_file: "06_Incidents.xlsx"
+    description: "61 production incidents with severity, impact, and cost."
+    primary_key: incident_id
+    columns:
+      incident_id: {type: INTEGER, notes: "PK. Starts at 20001."}
+      incident_ref: {type: VARCHAR, notes: "Human-readable ref, e.g. 'INC-2025-0847'."}
+      incident_type: {type: VARCHAR, notes: "'Security Breach', 'Data Pipeline Failure', 'Database Incident', etc."}
+      severity: {type: VARCHAR, notes: "'SEV-1' (critical) to 'SEV-4' (low)."}
+      reported_date: {type: DATE}
+      resolved_date: {type: DATE, notes: "NULL if still open."}
+      status: {type: VARCHAR, notes: "'Resolved', 'Open', 'Escalated'."}
+      affected_service_id: {type: INTEGER, notes: "FK to products_services."}
+      reporter_employee_id: {type: INTEGER, notes: "FK to employees (who reported)."}
+      customers_affected_count: {type: INTEGER}
+      data_exfiltrated_gb: {type: DOUBLE, notes: "0 if no data breach."}
+      description: {type: VARCHAR, notes: "Free text, 100+ chars."}
+      impact_region: {type: VARCHAR}
+      remediation_cost_inr_lakhs: {type: DOUBLE}
+
+  vendors:
+    source_file: "07_Vendors.xlsx"
+    description: "30 third-party vendors with contracts and risk scores."
+    primary_key: vendor_id
+    columns:
+      vendor_id: {type: INTEGER, notes: "PK. Range 30001-30030."}
+      vendor_code: {type: VARCHAR, notes: "e.g. 'V-001'."}
+      vendor_name: {type: VARCHAR, notes: "'AWS', 'Google Cloud', 'Salesforce', etc."}
+      category: {type: VARCHAR, notes: "'Cloud Infrastructure', 'SaaS CRM', 'Hardware', etc."}
+      contract_currency: {type: VARCHAR, notes: "'USD', 'INR', 'EUR'."}
+      annual_committed_spend: {type: DOUBLE, notes: "Amount in contract_currency units."}
+      contract_start_date: {type: DATE}
+      contract_end_date: {type: DATE}
+      risk_status: {type: VARCHAR, notes: "'Passed', 'Conditional', 'Suspended' (security/compliance)."}
+      owner_department_id: {type: INTEGER, notes: "FK to departments."}
+      sig_lite_score: {type: INTEGER, notes: "Security Information Gathering Lite score 0-100."}
+
+  financial_transactions:
+    source_file: "08_Financial_Transactions.xlsx"
+    description: "165 quarterly financial rows (revenue, expense, capex) linked to departments and optionally customers or vendors."
+    primary_key: transaction_id
+    columns:
+      transaction_id: {type: INTEGER, notes: "PK. Starts at 40001."}
+      period_quarter: {type: VARCHAR, notes: "e.g. 'Q1 FY2025-26'."}
+      category: {type: VARCHAR, notes: "Actual values in the data: 'Revenue', 'Operating Expense', 'Capital Expenditure'. For 'total spend' / 'total investment' / 'actual spend', filter `category IN ('Operating Expense', 'Capital Expenditure')` — filtering to only Operating Expense silently excludes capital spend (e.g. GPU hardware purchases under 'Capital Expenditure' subcategory='GPU Hardware Purchase', booked against Engineering dept_id=1)."}
+      subcategory: {type: VARCHAR, notes: "FREE-FORM values, NOT normalized. Examples: 'Subscription', 'Professional Services', 'Licensing', 'GPU Compute', 'GPU Hardware Purchase', 'Data Warehouse', 'Salaries & Benefits', 'Hardware Procurement'. Before filtering, run SELECT DISTINCT subcategory FROM financial_transactions WHERE ... to see what actually exists for your scope, then use LIKE with wildcards for theme-matching (e.g. subcategory ILIKE '%hardware%' catches both 'Hardware Procurement' and 'GPU Hardware Purchase')."}
+      region: {type: VARCHAR}
+      department_id: {type: INTEGER, notes: "FK to departments."}
+      customer_id: {type: INTEGER, notes: "FK to customers. NULLABLE (not all rows tie to a customer)."}
+      vendor_id: {type: INTEGER, notes: "FK to vendors. NULLABLE (revenue rows have no vendor)."}
+      amount: {type: DOUBLE, notes: "In INR crores."}
+      amount_unit: {type: VARCHAR, notes: "'INR crores'."}
+      description: {type: VARCHAR}
+
+  training_compliance:
+    source_file: "09_Training_Compliance.xlsx"
+    description: "572 training records — one per employee per required module."
+    primary_key: training_record_id
+    columns:
+      training_record_id: {type: INTEGER, notes: "PK. Starts at 50001."}
+      employee_id: {type: INTEGER, notes: "FK to employees."}
+      module_name: {type: VARCHAR, notes: "'InfoSec Awareness', 'DPDP Act 2023', 'Code of Conduct', etc."}
+      deadline_date: {type: DATE}
+      hours: {type: INTEGER, notes: "Typically 4."}
+      completion_date: {type: DATE, notes: "NULL if not completed."}
+      status: {type: VARCHAR, notes: "'Completed', 'In Progress', 'Not Started', 'Overdue'."}
+      score: {type: INTEGER, notes: "0-100; NULL if not completed."}
+      delivery_mode: {type: VARCHAR, notes: "'LMS Online', 'Instructor-Led', 'Video'."}
+
+  assets_licenses:
+    source_file: "10_Assets_Licenses.xlsx"
+    description: "435 company-issued assets (laptops, monitors, software licenses) allocated to employees."
+    primary_key: asset_id
+    columns:
+      asset_id: {type: INTEGER, notes: "PK. Starts at 60001."}
+      employee_id: {type: INTEGER, notes: "FK to employees (current owner)."}
+      asset_type: {type: VARCHAR, notes: "'Laptop', 'GPU Workstation', 'Monitor', 'Software License'."}
+      model_or_license_name: {type: VARCHAR, notes: "'MacBook Pro 16-inch M4 Max', 'ThinkPad X1 Carbon', etc."}
+      asset_tag: {type: VARCHAR, notes: "Unique tag, e.g. 'TN-1001-LT'."}
+      issued_date: {type: DATE}
+      expiry_or_return_date: {type: DATE, notes: "NULL for in-use assets."}
+      annual_cost: {type: DOUBLE, notes: "FULL-YEAR cost. This is NEVER a quarterly or monthly value. DO NOT divide by 4 when a question mentions 'Q4 spend' or by 12 for a month — the stored figure is already the yearly rate. If the question asks for a quarterly basis on this column, STATE the annual figure and explicitly note the granularity mismatch."}
+      cost_currency: {type: VARCHAR, notes: "'INR', 'USD', 'EUR'."}
+      vendor_id: {type: INTEGER, notes: "FK to vendors."}
+      status: {type: VARCHAR, notes: "'In Use', 'Returned', 'Decommissioned', 'Pending'."}
+
+  customer_contracts:
+    source_file: "11_Customer_Contracts.xlsx"
+    description: "~136 customer contracts (MSAs, amendments, SOWs, renewals). One customer typically has 1-3 contracts."
+    primary_key: contract_id
+    columns:
+      contract_id: {type: INTEGER, notes: "PK. Starts at 80001."}
+      customer_id: {type: INTEGER, notes: "FK to customers."}
+      msa_reference: {type: VARCHAR, notes: "MSA reference string, e.g. 'MSA-7045-2023'."}
+      contract_type: {type: VARCHAR, notes: "'MSA', 'Amendment', 'SOW', 'Renewal'."}
+      contract_title: {type: VARCHAR}
+      effective_date: {type: DATE}
+      expiry_date: {type: DATE}
+      term_months: {type: INTEGER, notes: "12, 24, or 36."}
+      auto_renew: {type: VARCHAR, notes: "'Yes' or 'No'."}
+      notice_period_days: {type: INTEGER, notes: "30, 60, or 90."}
+      payment_terms: {type: VARCHAR, notes: "'Net 30', 'Net 45', 'Net 60', 'Net 90'."}
+      currency: {type: VARCHAR, notes: "'INR', 'USD', 'EUR'."}
+      base_acv_inr_lakhs: {type: DOUBLE, notes: "Annual Contract Value at base pricing, in INR lakhs."}
+      discount_pct: {type: DOUBLE}
+      annual_uplift_pct: {type: DOUBLE, notes: "Annual price escalation rate."}
+      governing_law: {type: VARCHAR}
+      jurisdiction: {type: VARCHAR}
+      data_processing_addendum_signed: {type: VARCHAR, notes: "'Yes' or 'No' — DPA execution status."}
+      dpa_signed_date: {type: DATE}
+      liability_cap_inr_lakhs: {type: DOUBLE, notes: "Cap on TechNova's liability under this contract."}
+      termination_for_convenience: {type: VARCHAR, notes: "'Yes' or 'No'."}
+      service_credit_floor_pct: {type: DOUBLE, notes: "Minimum SLA service credit, 5/10/15/20."}
+      signed_by_technova_employee_id: {type: INTEGER, notes: "FK to employees (the AE/manager who signed)."}
+      status: {type: VARCHAR, notes: "'Active', 'Expired', 'In Renewal', 'Terminated'."}
+      last_amendment_date: {type: DATE}
+
+  sales_pipeline:
+    source_file: "12_Sales_Pipeline.xlsx"
+    description: "~85 sales opportunities — open + closed-won + closed-lost. Each row is one deal owned by an Account Executive."
+    primary_key: opportunity_id
+    columns:
+      opportunity_id: {type: INTEGER, notes: "PK. Starts at 600001."}
+      opportunity_name: {type: VARCHAR}
+      customer_id: {type: INTEGER, notes: "FK to customers. NULL for new prospects (no existing customer record)."}
+      prospect_name: {type: VARCHAR, notes: "Used when customer_id is NULL."}
+      account_executive_employee_id: {type: INTEGER, notes: "FK to employees — the AE owning the deal."}
+      solution_consultant_employee_id: {type: INTEGER, notes: "FK to employees — the SC supporting the deal."}
+      stage: {type: VARCHAR, notes: "'Discovery', 'Qualified', 'Proposal', 'Negotiation', 'Closed-Won', 'Closed-Lost'."}
+      expected_acv_inr_lakhs: {type: DOUBLE}
+      weighted_acv_inr_lakhs: {type: DOUBLE, notes: "= expected_acv * probability/100. Use this for forecasting."}
+      probability_pct: {type: DOUBLE}
+      forecast_category: {type: VARCHAR, notes: "'Commit', 'Best Case', 'Pipeline', 'Omitted', 'Closed Won', 'Closed Lost'."}
+      expected_close_date: {type: DATE}
+      actual_close_date: {type: DATE, notes: "NULL until closed."}
+      created_date: {type: DATE}
+      last_activity_date: {type: DATE}
+      lead_source: {type: VARCHAR, notes: "'Inbound Web', 'Outbound SDR', 'Partner Referral', 'Field Event', 'Customer Referral'."}
+      tier_intent: {type: VARCHAR, notes: "'Tier 1', 'Tier 2', 'Tier 3' — intended customer tier."}
+      region: {type: VARCHAR}
+      country: {type: VARCHAR}
+      industry: {type: VARCHAR}
+      deal_type: {type: VARCHAR, notes: "'New Logo', 'Expansion', 'Renewal'."}
+      competitor_in_play: {type: VARCHAR, notes: "Salesforce, ServiceNow, etc. NULL if none."}
+      quarterly_period: {type: VARCHAR, notes: "e.g. 'Q1 FY2025-26'."}
+      lost_reason: {type: VARCHAR, notes: "NULL unless closed-lost."}
+      lost_to_competitor: {type: VARCHAR}
+      notes: {type: VARCHAR}
+
+  product_feature_adoption:
+    source_file: "13_Product_Feature_Adoption.xlsx"
+    description: "~513 per-customer-per-feature adoption records. Tracks usage, health, churn risk, expansion opportunities."
+    primary_key: adoption_id
+    columns:
+      adoption_id: {type: INTEGER, notes: "PK. Starts at 700001."}
+      customer_id: {type: INTEGER, notes: "FK to customers."}
+      service_id: {type: INTEGER, notes: "FK to products_services."}
+      feature_name: {type: VARCHAR, notes: "Named feature, e.g. 'AI Co-pilot (Beta)', 'Single Sign-On (SSO)'."}
+      feature_category: {type: VARCHAR, notes: "'Core', 'Advanced', 'AI/ML', 'Integration'."}
+      feature_release_date: {type: DATE}
+      adoption_status: {type: VARCHAR, notes: "'Active', 'Trialing', 'Disabled', 'Deprecated'."}
+      activation_date: {type: DATE, notes: "NULL if Disabled."}
+      last_used_date: {type: DATE}
+      usage_frequency: {type: VARCHAR, notes: "'Daily', 'Weekly', 'Monthly', 'Rarely'."}
+      mau_last_30d: {type: INTEGER, notes: "Monthly Active Users from this customer's tenant."}
+      wau_last_7d: {type: INTEGER, notes: "Weekly Active Users."}
+      dau: {type: INTEGER, notes: "Daily Active Users."}
+      configuration_completeness_pct: {type: DOUBLE}
+      integrations_enabled_count: {type: INTEGER}
+      api_calls_last_30d: {type: BIGINT}
+      error_rate_pct: {type: DOUBLE}
+      customer_satisfaction_score: {type: DOUBLE, notes: "0-10 NPS-style score."}
+      nps_rating_date: {type: DATE}
+      enabled_by_employee_id: {type: INTEGER, notes: "FK to employees — AM/CSM who pitched the feature."}
+      health_score: {type: INTEGER, notes: "0-100 derived health score."}
+      churn_risk_flag: {type: VARCHAR, notes: "'Yes' if low health on an Active customer."}
+      expansion_opportunity_flag: {type: VARCHAR, notes: "'Yes' if high health on AI/ML or Advanced features."}
+      feedback_count_last_quarter: {type: INTEGER}
+
+  audit_findings:
+    source_file: "14_Audit_Findings.xlsx"
+    description: "~66 findings from internal audit + external audits (SOC 2 Type II, ISO 27001, Pen Tests, DPDP, Statutory). Critical for IPO-readiness questions."
+    primary_key: finding_id
+    columns:
+      finding_id: {type: INTEGER, notes: "PK. Starts at 80001."}
+      audit_engagement: {type: VARCHAR, notes: "Named engagement, e.g. 'SOC 2 Type II', 'ISO 27001', 'Internal Audit FY2025-26 Q3'."}
+      audit_type: {type: VARCHAR}
+      audit_year: {type: INTEGER}
+      audit_quarter: {type: VARCHAR}
+      auditor_firm: {type: VARCHAR, notes: "'Deloitte Touche Tohmatsu', 'BSI India', 'NCC Group', 'Khaitan & Co Legal', 'Internal'."}
+      auditor_lead_name: {type: VARCHAR}
+      audit_period_start: {type: DATE}
+      audit_period_end: {type: DATE}
+      report_date: {type: DATE}
+      department_id: {type: INTEGER, notes: "FK to departments."}
+      finding_category: {type: VARCHAR, notes: "'Control Gap', 'Documentation', 'Process', 'Technical Debt', 'Vulnerability', 'Configuration', 'Access Management', 'Data Handling', 'Vendor Management'."}
+      severity: {type: VARCHAR, notes: "'Critical', 'High', 'Medium', 'Low', 'Observation'."}
+      finding_summary: {type: VARCHAR}
+      control_id: {type: VARCHAR, notes: "e.g. 'CC6.1', 'A.7.2'."}
+      status: {type: VARCHAR, notes: "'Open', 'In Progress', 'Remediated', 'Accepted Risk', 'Closed'."}
+      assigned_owner_employee_id: {type: INTEGER, notes: "FK to employees."}
+      due_date: {type: DATE}
+      completion_date: {type: DATE, notes: "NULL unless Remediated/Closed."}
+      remediation_cost_inr_lakhs: {type: DOUBLE}
+      is_repeat_finding: {type: VARCHAR, notes: "'Yes' if same root cause as a previous finding."}
+      previous_finding_id: {type: INTEGER, notes: "FK self-ref to audit_findings.finding_id, NULL unless is_repeat_finding=Yes."}
+      customer_visibility: {type: VARCHAR, notes: "'Internal', 'Customer-Audit-Visible', 'Investor-Visible'."}
+      ipo_blocker_flag: {type: VARCHAR, notes: "'Yes' for Critical/High findings still Open or In Progress that would block IPO. Use this for any IPO-readiness question about audit posture."}
+      evidence_artifacts: {type: VARCHAR}
+
+  oncall_rotations:
+    source_file: "15_OnCall_Rotations.xlsx"
+    description: "~720 weekly on-call rotation records, last 24 weeks × 15 critical/high services × 2 roles (Primary + Secondary)."
+    primary_key: rotation_id
+    columns:
+      rotation_id: {type: INTEGER, notes: "PK. Starts at 90001."}
+      service_id: {type: INTEGER, notes: "FK to products_services."}
+      service_name: {type: VARCHAR, notes: "Denormalised for convenience."}
+      employee_id: {type: INTEGER, notes: "FK to employees — the person on rotation."}
+      employee_name: {type: VARCHAR, notes: "Denormalised."}
+      role: {type: VARCHAR, notes: "'Primary' or 'Secondary' or 'Manager Escalation'."}
+      department_id: {type: INTEGER, notes: "FK to departments."}
+      team_name: {type: VARCHAR, notes: "Denormalised dept name."}
+      rotation_start_date: {type: DATE, notes: "Week start."}
+      rotation_end_date: {type: DATE, notes: "Week end."}
+      shift_type: {type: VARCHAR, notes: "'Business Hours', 'After Hours', 'Weekend', '24/7'."}
+      timezone: {type: VARCHAR, notes: "'IST', 'PST', 'UTC', 'GMT'."}
+      pages_received_count: {type: INTEGER}
+      acknowledged_within_sla_count: {type: INTEGER}
+      avg_response_time_minutes: {type: DOUBLE}
+      mean_time_to_resolve_minutes: {type: DOUBLE}
+      weekly_stipend_inr: {type: INTEGER, notes: "5000 for Primary, 2500 for Secondary, per OnCall_Runbook policy."}
+      holiday_premium_paid_inr: {type: INTEGER}
+      swap_count: {type: INTEGER, notes: "Number of times this rotation was swapped to another engineer."}
+      covered_by_employee_id: {type: INTEGER, notes: "FK to employees, NULL unless this rotation was swapped."}
+      burnout_risk_score: {type: INTEGER, notes: "0-100 derived from page volume + tenure."}
+      status: {type: VARCHAR, notes: "'Active', 'Completed', 'Cancelled'."}
+      handoff_notes: {type: VARCHAR}
+      created_by_employee_id: {type: INTEGER, notes: "FK to employees."}
+
+# All 14 foreign-key relationships, including self-referential and nullable FKs.
+# The SQL Agent uses this list to build JOINs correctly.
+#
+# IMPORTANT: the `purpose` field tells the agent WHICH FK to pick when there
+# are multiple valid paths between two tables. Example: vendors can be linked
+# to departments either directly (vendors.owner_department_id → compliance /
+# risk / accountability) or indirectly via financial_transactions (→ spend /
+# invoice / payment). The agent MUST pick based on the question's intent.
+foreign_keys:
+  - {from_table: employees,               from_column: department_id,              to_table: departments,       to_column: department_id, nullable: false, purpose: "org structure, team affiliation, reporting chain",      note: "Every employee belongs to one department."}
+  - {from_table: employees,               from_column: manager_employee_id,        to_table: employees,         to_column: employee_id,   nullable: true,  purpose: "reporting hierarchy, manager/report lookups, spans of control", note: "Self-referential. NULL for L8/C-suite."}
+  - {from_table: salary_records,          from_column: employee_id,                to_table: employees,         to_column: employee_id,   nullable: false, purpose: "compensation, CTC, variable pay, ESOP grants, performance rating"}
+  - {from_table: customers,               from_column: account_manager_employee_id, to_table: employees,        to_column: employee_id,   nullable: false, purpose: "account ownership, AM assignment, book of business, customer relationship", note: "Account owner / sales rep."}
+  - {from_table: products_services,       from_column: owner_department_id,        to_table: departments,       to_column: department_id, nullable: false, purpose: "service ownership, team accountability for a microservice, platform domain",  note: "Which team owns this microservice."}
+  - {from_table: incidents,               from_column: affected_service_id,        to_table: products_services, to_column: service_id,    nullable: false, purpose: "incident impact on services, reliability, uptime, SLA breach"}
+  - {from_table: incidents,               from_column: reporter_employee_id,       to_table: employees,         to_column: employee_id,   nullable: false, purpose: "incident reporter, on-call attribution, alert source"}
+  - {from_table: vendors,                 from_column: owner_department_id,        to_table: departments,       to_column: department_id, nullable: false, purpose: "VENDOR GOVERNANCE / compliance / risk accountability / SIG-Lite owner. Use this for ANY compliance, 'flagged', 'risky', 'governance', 'owns-vendor' question.", note: "Which team owns the vendor relationship."}
+  - {from_table: financial_transactions,  from_column: department_id,              to_table: departments,       to_column: department_id, nullable: false, purpose: "cost centre, budget allocation, spend by department"}
+  - {from_table: financial_transactions,  from_column: customer_id,                to_table: customers,         to_column: customer_id,   nullable: true,  purpose: "revenue attribution, customer ARR, billing / revenue recognition", note: "Revenue rows have customer; internal costs do not."}
+  - {from_table: financial_transactions,  from_column: vendor_id,                  to_table: vendors,           to_column: vendor_id,     nullable: true,  purpose: "vendor SPEND / invoice / procurement / payment. Use ONLY for money-flow questions ('how much did we pay X', 'hardware procurement line'). Do NOT use for compliance/risk/'owns' questions.", note: "Vendor-paid expenses only."}
+  - {from_table: training_compliance,     from_column: employee_id,                to_table: employees,         to_column: employee_id,   nullable: false, purpose: "training status, mandatory module completion, compliance certification"}
+  - {from_table: assets_licenses,         from_column: employee_id,                to_table: employees,         to_column: employee_id,   nullable: false, purpose: "asset allocation, laptop/license issued to employee, hardware ownership"}
+  - {from_table: assets_licenses,         from_column: vendor_id,                  to_table: vendors,           to_column: vendor_id,     nullable: false, purpose: "asset supplier, hardware procurement source", note: "Every asset has a supplier vendor."}
+
+  # ---- New FKs added for tables 11-15 ----
+  - {from_table: customer_contracts,       from_column: customer_id,                to_table: customers,         to_column: customer_id,   nullable: false, purpose: "Contract → customer link. Use for MSA / contract-renewal / liability-cap / DPA questions."}
+  - {from_table: customer_contracts,       from_column: signed_by_technova_employee_id, to_table: employees,    to_column: employee_id,   nullable: false, purpose: "Who at TechNova signed the contract — usually the AE or sales manager."}
+  - {from_table: sales_pipeline,           from_column: customer_id,                to_table: customers,         to_column: customer_id,   nullable: true,  purpose: "Existing-customer pipeline (NULL = new prospect, not yet a customer)."}
+  - {from_table: sales_pipeline,           from_column: account_executive_employee_id, to_table: employees,     to_column: employee_id,   nullable: false, purpose: "AE who owns the deal — use for quota-attainment / pipeline-by-AE questions."}
+  - {from_table: sales_pipeline,           from_column: solution_consultant_employee_id, to_table: employees,   to_column: employee_id,   nullable: false, purpose: "SC supporting the deal."}
+  - {from_table: product_feature_adoption, from_column: customer_id,                to_table: customers,         to_column: customer_id,   nullable: false, purpose: "Adoption per customer — use for product-led-growth / churn-risk questions."}
+  - {from_table: product_feature_adoption, from_column: service_id,                 to_table: products_services, to_column: service_id,    nullable: false, purpose: "Which service hosts this feature."}
+  - {from_table: product_feature_adoption, from_column: enabled_by_employee_id,     to_table: employees,         to_column: employee_id,   nullable: false, purpose: "AM/CSM who enabled the feature — for attribution analysis."}
+  - {from_table: audit_findings,           from_column: department_id,              to_table: departments,       to_column: department_id, nullable: false, purpose: "Which department owns the finding."}
+  - {from_table: audit_findings,           from_column: assigned_owner_employee_id, to_table: employees,         to_column: employee_id,   nullable: false, purpose: "Employee accountable for remediation."}
+  - {from_table: audit_findings,           from_column: previous_finding_id,        to_table: audit_findings,    to_column: finding_id,    nullable: true,  purpose: "Self-ref. Set when this finding is a repeat of a prior issue. Use for repeat-finding analysis."}
+  - {from_table: oncall_rotations,         from_column: service_id,                 to_table: products_services, to_column: service_id,    nullable: false, purpose: "Which service is on call."}
+  - {from_table: oncall_rotations,         from_column: employee_id,                to_table: employees,         to_column: employee_id,   nullable: false, purpose: "The person on rotation."}
+  - {from_table: oncall_rotations,         from_column: department_id,              to_table: departments,       to_column: department_id, nullable: false, purpose: "Owning team for the on-call rotation."}
+  - {from_table: oncall_rotations,         from_column: covered_by_employee_id,     to_table: employees,         to_column: employee_id,   nullable: true,  purpose: "Whoever covered if the rotation was swapped — for fairness / burnout analysis."}
+  - {from_table: oncall_rotations,         from_column: created_by_employee_id,     to_table: employees,         to_column: employee_id,   nullable: false, purpose: "Manager who scheduled the rotation."}
