@@ -1,11 +1,17 @@
 # CollusionGraph — Progress Ledger
 
 ## Current milestone
-M0 — Foundations (see implementation-plan.md §7 milestone table: M0–M5, MC, M6–M8).
-**M0 status: COMPLETE — all 5 datasets downloaded/checksummed/licensed/EDA'd, repo pushed to GitHub. Outstanding user actions: OpenAI key rotation (R18) and flipping the GitHub repo to private.**
+Between M0 and M1 (see implementation-plan.md §7 milestone table: M0–M5, MC, M6–M8).
+**M0 COMPLETE** (all 5 datasets acquired/checksummed/licensed/EDA'd; repo pushed; CI green on run #2).
+**Week 2 (§7 steps 4–7) COMPLETE** on this machine: IR schema, both adapters, splitters + real leakage suite — committed locally, **not yet pushed (user asked to hold pushes)**.
+Outstanding user actions: OpenAI key rotation (R18); flip the GitHub repo to private; say when to push.
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-14 · **§7 step 4** — CollusionGraph IR: pyarrow schemas + Pydantic rows for nodes/edges/labels/communities/alerts (§4.2, §3.2 verbatim), `GraphStore` (validated parquet write/read + zero-server DuckDB views + meta.json), `conform()` schema gate, alert-caveat lock (weakened ethics string is unconstructable) · b93717c · [master]
+- 2026-07-14 · **§7 step 5** — financial adapters: Elliptic++ tx-graph (183 raw features, verified 203,769/234,355 on real data in 8.5s) and AMLworld account-graph (515,088 accounts / 5,078,345 pays edges with amounts; edge ground truth in raw_attrs; post-window fence value in meta) + golden-file fixture tests · 20e5a1c · [master]
+- 2026-07-14 · **§7 step 6** — procurement adapters: Mendeley award-first (14,555 nodes / 24,251 edges, 7 countries; null-buyer rows → no buys_from edge) and García per-market (77,007 nodes / 111,046 edges; firm identities on 4/6 markets — Japan/Italy/Brazil/America carry `Competitors`, Swiss markets don't) + degradation-path fixtures (§9.1) · adc34a1 · [master]
+- 2026-07-14 · **§7 step 7** — strict-inductive temporal splitter (train-induced subgraph only at train time; optional fence; unplaceable-time nodes excluded) + LOCO splitter (entity-disjoint, cross-group edges never bridge folds) + leakage checks that run at split construction AND in CI; 12-test leakage suite with negative controls replaces the wiring placeholder. Verified on real data: Elliptic++ 1–34/35–49 split withholds 77,512 test-period edges; AMLworld fence drops exactly the 1,108 poisoned tail edges; Mendeley yields 7 disjoint LOCO folds · 63d6e67 · [master]
 - 2026-07-13 · Environment verified: Python 3.11.2, uv 0.11.28 (installed this session), Node 22.21.1/npm 9.6.4, git 2.51.2 · [master]
 - 2026-07-13 · Repo scaffold per §8: monorepo layout, pyproject.toml (uv-managed, PyTorch/PyG pinned **without** compiled extensions, PyGOD), poethepoet tasks, package skeleton with all §8 subpackages, unit + leakage-wiring tests (14 passing), ruff/black/mypy green · 46dc03e · [master]
 - 2026-07-13 · Pre-commit (ruff, black, mypy, gitleaks — gitleaks scans **everything** incl. reference/) + GitHub Actions CI skeleton (gitleaks, lint, unit + leakage tests, conditional frontend build) · 5717b29 · [master]
@@ -23,10 +29,10 @@ M0 — Foundations (see implementation-plan.md §7 milestone table: M0–M5, MC,
 ## Next actions (ordered, self-contained)
 1. **[user]** Rotate/revoke the OpenAI API key exposed in `Gen-AI Chatbot/.../.env` AND embedded in the original `FIX_FRONTEND.md` (two exposures) at platform.openai.com.
 2. **[user]** Make the GitHub repo private (plan requires a private repo): repo Settings → General → Danger Zone → Change visibility, or `gh repo edit KartikJoshi23/Collusion-Network-Detection --visibility private` after `gh auth login`. Also consider rotating the Kaggle token that was shared in a chat session.
-3. Week 2 (§7 step 4): implement CollusionGraph IR (Parquet schemas + Pydantic models + DuckDB catalog + alert schema per §3.2/§4.2) in `backend/collusiongraph/schema/`.
-4. Week 2 (§7 step 5): financial adapter Elliptic++ → IR with golden-file tests on tiny fixtures. AMLworld adapter must drop/flag the post-window tail (see Decision log).
-5. Week 2 (§7 step 6): procurement adapter Mendeley → IR (award-first + cartel labels) and García Rodríguez → IR (bid-level, co-bid edges); include an award-only fixture to prove the enrichment-degradation path (§9.1).
-6. Week 2 (§7 step 7): strict-inductive temporal splitter + LOCO splitter with leakage assertion tests, **replacing** `backend/tests/leakage/test_leakage_wiring.py`.
+3. **[user]** Say when to push — 4 local commits (b93717c, 20e5a1c, adc34a1, 63d6e67) are ready on `main`; plain `git push` (works via credential manager even though `gh` token is stale).
+4. Week 3 (§7 step 8): shared structural feature template (degrees, motif counts, clustering, k-core, community-relative stats, temporal burstiness — z-scored per graph §4.2 rule 2) in `backend/collusiongraph/features/structural.py` + domain packs (financial burstiness/velocity; screens incl. award-derived tier) — feature functions must take an as-of timestamp (§9.1b) with leakage tests extended alongside.
+5. Week 3 (§7 step 9): evaluation harness in `backend/collusiongraph/eval/`: alert unit + ≥1-confirmed-member hit rule + Jaccard-0.5 NMS dedup (§4.5); Precision@k, AUC-PR, FPR/Recall@budget vs. hand-computed values on toy vectors (§9.1); config-driven runs, W&B offline mode.
+6. Week 3 (§7 step 10): baselines B1 (rules engine), B2 (XGBoost tabular), B3 (XGB-Graph per GADBench protocol), B4 (screens-only, procurement) on Elliptic++ and Mendeley → **Milestone M1** (baseline scoreboard on both anchors).
 
 ## Decision log
 <!-- - YYYY-MM-DD · decision · rationale · plan section affected -->
@@ -38,6 +44,10 @@ M0 — Foundations (see implementation-plan.md §7 milestone table: M0–M5, MC,
 - 2026-07-13 · Mendeley countries are **anonymized** (`country_1..country_7`) — LOCO folds fine, but country-name-keyed analyses are impossible without the companion paper's mapping · §4.3 D4.
 - 2026-07-13 · `facts*.yaml` (218 KB TechNova domain content) NOT archived (Replace-list); `schema.yaml` + `goldens.json` archived as **structural templates** for the Week-11 rebuild · §4.6.
 - 2026-07-13 · AMLworld post-window artifact **measured** (not "all laundering" as the Kaggle discussion suggests: 59.1% of the 1,108 post-Sep-10 tx) — Week-2 temporal splitter must drop or explicitly fence the post-window tail; `HI-Small_accounts.csv` (not in the plan's file list) also acquired for the adapter · §4.3 D2, §9.1.
+- 2026-07-14 · **García "co-bid graphs apply fully" corrected**: the combined `All` file has NO bidder identities; per-market files carry `Competitors` (company ID) in Japan/Italy/Brazil/America only — the two Swiss markets are bid-price-without-identity. Adapter ingests per-market files; co-bid/awarded tier on 4/6 markets; earlier DATASETS.md phrasing overstated coverage · §4.3 D3, §4.2 rule 1.
+- 2026-07-14 · IR conventions fixed at implementation: int64 dataset-specific time unit recorded in meta (`elliptic_time_step` / `epoch_minutes` / `year`); raw dataset features in `nodes.raw_features` (list<f32>); domain specifics in JSON `raw_attrs` (AMLworld edge-level ground truth rides there); the §4.2 structural template will live in a separate features artifact, never in nodes · §4.2.
+- 2026-07-14 · Mendeley labels attach to **firms and tenders** (max of `is_cartel` over their awards, source `mendeley_is_cartel`); García labels attach to **bids** everywhere and **firms** where identified; rows with null `buyer_id` (~19.5%) yield no buyer node/edge · §4.3 D3/D4.
+- 2026-07-14 · Splitter policy: nodes with null time are excluded from both sides of temporal splits (counted as `n_unplaced_nodes`); temporal gaps (embargo) supported via `test_start`; AMLworld fencing is the splitter's job (`fence_after=meta.primary_window_end`), adapters stay faithful to the raw data · §4.3, §9.1.
 
 ## Known issues
 <!-- - description · discovered when · severity -->

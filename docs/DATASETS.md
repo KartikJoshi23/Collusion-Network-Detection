@@ -47,8 +47,12 @@ counts shared with base).
 
 - 64,348 bid rows, 9,781 tenders, 6 market datasets (`Dataset` 0–5; market-name
   mapping in the supplement's README.txt, wired in the Week-2 adapter).
-- **54,389 losing-bid rows present** (`Winner`=0) — full bid-level data incl. losing
-  bidders, so co-bid graphs and bid-price screens fully apply here (unlike Mendeley).
+- **54,389 losing-bid rows present** (`Winner`=0) — bid-price screens apply on all
+  markets. **Correction (Week 2):** bidder *identities* (`Competitors` company IDs)
+  exist only in the per-market files for **Japan, Italy, Brazil, and the USA** — the
+  combined `All` file drops the column and the two Swiss markets never had it. Co-bid
+  identity graphs therefore apply on 4 of 6 markets; the Swiss markets carry the
+  anonymous bid-price tier only (adapter: `garcia_to_ir`, per-market ingestion).
 - Collusive share per market ranges 11.3%–81.8%; bids-per-tender from 2.3 to 91.9 —
   strong cross-market heterogeneity, exactly the LOMO/LOCO transfer terrain.
 - All seven screen variables (CV, SPD, DIFFP, RD, KURT, SKEW, KSTEST) 100% populated.
