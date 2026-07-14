@@ -1,0 +1,4 @@
+Tender,Date,Competitors,Winner,Collusive_competitor,Bid_value,Number_bids,CV
+T1,2003-04-17,1,1,1,100.0,2,0.05
+T1,2003-04-17,2,0,1,110.0,2,0.05
+T2,2004-06-01,2,1,0,200.0,1,0.10

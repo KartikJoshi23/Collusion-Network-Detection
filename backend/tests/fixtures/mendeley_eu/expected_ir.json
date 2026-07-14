@@ -1,0 +1,162 @@
+{
+ "nodes": [
+  {
+   "node_id": "buyer:country_1:B1",
+   "node_type": "buyer",
+   "domain": "procurement",
+   "time_first_seen": 2010,
+   "raw_features": null,
+   "raw_attrs": null
+  },
+  {
+   "node_id": "buyer:country_2:B7",
+   "node_type": "buyer",
+   "domain": "procurement",
+   "time_first_seen": 2015,
+   "raw_features": null,
+   "raw_attrs": null
+  },
+  {
+   "node_id": "firm:country_1:F1",
+   "node_type": "firm",
+   "domain": "procurement",
+   "time_first_seen": 2010,
+   "raw_features": null,
+   "raw_attrs": null
+  },
+  {
+   "node_id": "firm:country_1:F2",
+   "node_type": "firm",
+   "domain": "procurement",
+   "time_first_seen": 2010,
+   "raw_features": null,
+   "raw_attrs": null
+  },
+  {
+   "node_id": "firm:country_2:F9",
+   "node_type": "firm",
+   "domain": "procurement",
+   "time_first_seen": 2015,
+   "raw_features": null,
+   "raw_attrs": null
+  },
+  {
+   "node_id": "tender:country_1:T1",
+   "node_type": "tender",
+   "domain": "procurement",
+   "time_first_seen": 2010,
+   "raw_features": null,
+   "raw_attrs": null
+  },
+  {
+   "node_id": "tender:country_1:T2",
+   "node_type": "tender",
+   "domain": "procurement",
+   "time_first_seen": 2011,
+   "raw_features": null,
+   "raw_attrs": null
+  },
+  {
+   "node_id": "tender:country_2:T9",
+   "node_type": "tender",
+   "domain": "procurement",
+   "time_first_seen": 2015,
+   "raw_features": null,
+   "raw_attrs": null
+  }
+ ],
+ "edges": [
+  {
+   "src": "buyer:country_1:B1",
+   "dst": "tender:country_1:T1",
+   "edge_type": "buys_from",
+   "timestamp": 2010,
+   "amount": null,
+   "directed": true,
+   "raw_attrs": null
+  },
+  {
+   "src": "buyer:country_2:B7",
+   "dst": "tender:country_2:T9",
+   "edge_type": "buys_from",
+   "timestamp": 2015,
+   "amount": null,
+   "directed": true,
+   "raw_attrs": null
+  },
+  {
+   "src": "tender:country_1:T1",
+   "dst": "firm:country_1:F1",
+   "edge_type": "awarded",
+   "timestamp": 2010,
+   "amount": null,
+   "directed": true,
+   "raw_attrs": "{\"lot_id\":\"L1\",\"is_cartel\":1,\"cartel_id\":10,\"lot_bidscount\":3,\"relative_value\":0.5}"
+  },
+  {
+   "src": "tender:country_1:T1",
+   "dst": "firm:country_1:F2",
+   "edge_type": "awarded",
+   "timestamp": 2010,
+   "amount": null,
+   "directed": true,
+   "raw_attrs": "{\"lot_id\":\"L2\",\"is_cartel\":0,\"cartel_id\":null,\"lot_bidscount\":2,\"relative_value\":0.4}"
+  },
+  {
+   "src": "tender:country_1:T2",
+   "dst": "firm:country_1:F1",
+   "edge_type": "awarded",
+   "timestamp": 2011,
+   "amount": null,
+   "directed": true,
+   "raw_attrs": "{\"lot_id\":\"L1\",\"is_cartel\":0,\"cartel_id\":null,\"lot_bidscount\":1,\"relative_value\":0.9}"
+  },
+  {
+   "src": "tender:country_2:T9",
+   "dst": "firm:country_2:F9",
+   "edge_type": "awarded",
+   "timestamp": 2015,
+   "amount": null,
+   "directed": true,
+   "raw_attrs": "{\"lot_id\":\"L1\",\"is_cartel\":1,\"cartel_id\":11,\"lot_bidscount\":4,\"relative_value\":1.2}"
+  }
+ ],
+ "labels": [
+  {
+   "node_id": "firm:country_1:F1",
+   "label": "illicit",
+   "label_source": "mendeley_is_cartel",
+   "confidence": 1.0
+  },
+  {
+   "node_id": "firm:country_1:F2",
+   "label": "licit",
+   "label_source": "mendeley_is_cartel",
+   "confidence": 1.0
+  },
+  {
+   "node_id": "firm:country_2:F9",
+   "label": "illicit",
+   "label_source": "mendeley_is_cartel",
+   "confidence": 1.0
+  },
+  {
+   "node_id": "tender:country_1:T1",
+   "label": "illicit",
+   "label_source": "mendeley_is_cartel",
+   "confidence": 1.0
+  },
+  {
+   "node_id": "tender:country_1:T2",
+   "label": "licit",
+   "label_source": "mendeley_is_cartel",
+   "confidence": 1.0
+  },
+  {
+   "node_id": "tender:country_2:T9",
+   "label": "illicit",
+   "label_source": "mendeley_is_cartel",
+   "confidence": 1.0
+  }
+ ]
+}
