@@ -1,0 +1,100 @@
+{
+ "nodes": [
+  {
+   "node_id": "acct:10:A1",
+   "node_type": "account",
+   "domain": "financial",
+   "time_first_seen": 27699860,
+   "raw_features": null,
+   "raw_attrs": null
+  },
+  {
+   "node_id": "acct:10:A2",
+   "node_type": "account",
+   "domain": "financial",
+   "time_first_seen": 27699860,
+   "raw_features": null,
+   "raw_attrs": null
+  },
+  {
+   "node_id": "acct:20:B1",
+   "node_type": "account",
+   "domain": "financial",
+   "time_first_seen": 27701880,
+   "raw_features": null,
+   "raw_attrs": null
+  },
+  {
+   "node_id": "acct:20:B2",
+   "node_type": "account",
+   "domain": "financial",
+   "time_first_seen": 27716160,
+   "raw_features": null,
+   "raw_attrs": null
+  }
+ ],
+ "edges": [
+  {
+   "src": "acct:10:A1",
+   "dst": "acct:10:A2",
+   "edge_type": "pays",
+   "timestamp": 27699860,
+   "amount": 100.0,
+   "directed": true,
+   "raw_attrs": "{\"fmt\":\"Cheque\",\"cur_paid\":\"US Dollar\",\"cur_recv\":\"US Dollar\",\"amount_received\":100.0,\"is_laundering\":0}"
+  },
+  {
+   "src": "acct:10:A2",
+   "dst": "acct:20:B1",
+   "edge_type": "pays",
+   "timestamp": 27701880,
+   "amount": 250.5,
+   "directed": true,
+   "raw_attrs": "{\"fmt\":\"ACH\",\"cur_paid\":\"Euro\",\"cur_recv\":\"Euro\",\"amount_received\":250.5,\"is_laundering\":1}"
+  },
+  {
+   "src": "acct:20:B1",
+   "dst": "acct:10:A1",
+   "edge_type": "pays",
+   "timestamp": 27703470,
+   "amount": 75.25,
+   "directed": true,
+   "raw_attrs": "{\"fmt\":\"Wire\",\"cur_paid\":\"US Dollar\",\"cur_recv\":\"US Dollar\",\"amount_received\":75.25,\"is_laundering\":0}"
+  },
+  {
+   "src": "acct:20:B2",
+   "dst": "acct:10:A1",
+   "edge_type": "pays",
+   "timestamp": 27716160,
+   "amount": 999.99,
+   "directed": true,
+   "raw_attrs": "{\"fmt\":\"Bitcoin\",\"cur_paid\":\"US Dollar\",\"cur_recv\":\"US Dollar\",\"amount_received\":999.99,\"is_laundering\":1}"
+  }
+ ],
+ "labels": [
+  {
+   "node_id": "acct:10:A1",
+   "label": "illicit",
+   "label_source": "amlworld_edge_rollup",
+   "confidence": 1.0
+  },
+  {
+   "node_id": "acct:10:A2",
+   "label": "illicit",
+   "label_source": "amlworld_edge_rollup",
+   "confidence": 1.0
+  },
+  {
+   "node_id": "acct:20:B1",
+   "label": "illicit",
+   "label_source": "amlworld_edge_rollup",
+   "confidence": 1.0
+  },
+  {
+   "node_id": "acct:20:B2",
+   "label": "illicit",
+   "label_source": "amlworld_edge_rollup",
+   "confidence": 1.0
+  }
+ ]
+}

@@ -1,0 +1,107 @@
+{
+ "nodes": [
+  {
+   "node_id": "tx:100",
+   "node_type": "transaction",
+   "domain": "financial",
+   "time_first_seen": 1,
+   "raw_features": [
+    1.0,
+    0.5,
+    -1.0
+   ],
+   "raw_attrs": null
+  },
+  {
+   "node_id": "tx:101",
+   "node_type": "transaction",
+   "domain": "financial",
+   "time_first_seen": 1,
+   "raw_features": [
+    1.0,
+    0.25,
+    2.0
+   ],
+   "raw_attrs": null
+  },
+  {
+   "node_id": "tx:102",
+   "node_type": "transaction",
+   "domain": "financial",
+   "time_first_seen": 2,
+   "raw_features": [
+    2.0,
+    -0.75,
+    0.0
+   ],
+   "raw_attrs": null
+  },
+  {
+   "node_id": "tx:103",
+   "node_type": "transaction",
+   "domain": "financial",
+   "time_first_seen": 2,
+   "raw_features": [
+    2.0,
+    1.5,
+    3.25
+   ],
+   "raw_attrs": null
+  }
+ ],
+ "edges": [
+  {
+   "src": "tx:100",
+   "dst": "tx:101",
+   "edge_type": "pays",
+   "timestamp": 1,
+   "amount": null,
+   "directed": true,
+   "raw_attrs": null
+  },
+  {
+   "src": "tx:101",
+   "dst": "tx:102",
+   "edge_type": "pays",
+   "timestamp": 1,
+   "amount": null,
+   "directed": true,
+   "raw_attrs": null
+  },
+  {
+   "src": "tx:102",
+   "dst": "tx:103",
+   "edge_type": "pays",
+   "timestamp": 2,
+   "amount": null,
+   "directed": true,
+   "raw_attrs": null
+  }
+ ],
+ "labels": [
+  {
+   "node_id": "tx:100",
+   "label": "illicit",
+   "label_source": "elliptic_pp",
+   "confidence": 1.0
+  },
+  {
+   "node_id": "tx:101",
+   "label": "licit",
+   "label_source": "elliptic_pp",
+   "confidence": 1.0
+  },
+  {
+   "node_id": "tx:102",
+   "label": "unknown",
+   "label_source": "elliptic_pp",
+   "confidence": 1.0
+  },
+  {
+   "node_id": "tx:103",
+   "label": "licit",
+   "label_source": "elliptic_pp",
+   "confidence": 1.0
+  }
+ ]
+}
