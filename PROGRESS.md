@@ -6,9 +6,12 @@ Between M0 and M1 (see implementation-plan.md §7 milestone table: M0–M5, MC, 
 note was stale — origin/main carries b93717c…1713806, verified by anonymous clone 2026-07-15).
 **Week 3 step 8 (§7) COMPLETE** on laptop-B: shared structural feature template + financial +
 screens packs, all with as-of discipline (§9.1b), verified on real Elliptic++/Mendeley/García —
-on branch `feat/features-structural`, PR open, awaiting master-laptop merge.
-Outstanding user actions: OpenAI key rotation (R18); flip the GitHub repo to private (re-verified
-still public 2026-07-15 — anonymous clone succeeded).
+committed on local branch `feat/features-structural`; **push blocked: laptop-B's GitHub account
+(gagu00000) has no write access to KartikJoshi23/Collusion-Network-Detection (403)**.
+Outstanding user actions: grant gagu00000 collaborator access (Settings → Collaborators), then
+`git push -u origin feat/features-structural` + open the PR from laptop-B; OpenAI key rotation
+(R18); flip the GitHub repo to private (re-verified still public 2026-07-15 — anonymous clone
+succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
@@ -31,15 +34,16 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## In-flight
 <!-- exactly what is unfinished, where, why, and which machine/branch has it -->
-- `feat/features-structural` (laptop-B) awaits review + merge by the master laptop — Week-3 step 8 + bootstrap fix; suite 92/92, ruff/black/mypy green at commit time.
+- `feat/features-structural` (laptop-B, **local only** — 5 commits c5d5063…) cannot be pushed until gagu00000 gets collaborator access (403 on push; `gh` is authed fine, the account simply isn't authorized on the repo). Once access lands: `git push -u origin feat/features-structural`, then `gh pr create` (description drafted in the ledger entry below). Suite 92/92, ruff/black/mypy green at commit time. Deliberately NOT forked as a workaround — the repo is meant to become private and a fork would spread it.
 - AMLworld raw data is absent on laptop-B (Kaggle credentials are per-machine; script reports `blocked` as designed). Financial pack is untested at AMLworld scale (5M edges) — see Next action 5.
 
 ## Next actions (ordered, self-contained)
 1. **[user]** Rotate/revoke the OpenAI API key exposed in `Gen-AI Chatbot/.../.env` AND embedded in the original `FIX_FRONTEND.md` (two exposures) at platform.openai.com.
 2. **[user]** Make the GitHub repo private (plan requires a private repo): repo Settings → General → Danger Zone → Change visibility, or `gh repo edit KartikJoshi23/Collusion-Network-Detection --visibility private` after `gh auth login`. Also consider rotating the Kaggle token that was shared in a chat session.
-3. **[master]** Review + merge PR `feat/features-structural` (Week-3 step 8 + collaborator bootstrap fix).
-4. Week 3 (§7 step 9): evaluation harness in `backend/collusiongraph/eval/`: alert unit + ≥1-confirmed-member hit rule + Jaccard-0.5 NMS dedup (§4.5); Precision@k, AUC-PR, FPR/Recall@budget vs. hand-computed values on toy vectors (§9.1); config-driven runs, W&B offline mode.
-5. Week 3 (§7 step 10): baselines B1 (rules engine), B2 (XGBoost tabular), B3 (XGB-Graph per GADBench protocol), B4 (screens-only, procurement) on Elliptic++ and Mendeley → **Milestone M1** (baseline scoreboard on both anchors). While building B4: wire the datasets' **precomputed screens** through (Mendeley `lot_bidscount`/`relative_value` in awarded `raw_attrs`; García CV/SPD/DIFFP/RD/KURT/SKEW/KSTEST in bids_on `raw_attrs`) — computed screens exist per §4.4, but the plan says to use shipped screen variables directly where present. Also exercise `financial_features`/`structural_features` on AMLworld HI-Small (5M edges) on a machine that has it — expect NeighborLoader-style chunking to be unnecessary for features, but timing is unverified.
+3. **[user]** Grant laptop-B's GitHub account (gagu00000) collaborator access to the repo so `feat/features-structural` can be pushed and PR'd (see In-flight).
+4. **[master]** Review + merge PR `feat/features-structural` (Week-3 step 8 + collaborator bootstrap fix) once it lands.
+5. Week 3 (§7 step 9): evaluation harness in `backend/collusiongraph/eval/`: alert unit + ≥1-confirmed-member hit rule + Jaccard-0.5 NMS dedup (§4.5); Precision@k, AUC-PR, FPR/Recall@budget vs. hand-computed values on toy vectors (§9.1); config-driven runs, W&B offline mode.
+6. Week 3 (§7 step 10): baselines B1 (rules engine), B2 (XGBoost tabular), B3 (XGB-Graph per GADBench protocol), B4 (screens-only, procurement) on Elliptic++ and Mendeley → **Milestone M1** (baseline scoreboard on both anchors). While building B4: wire the datasets' **precomputed screens** through (Mendeley `lot_bidscount`/`relative_value` in awarded `raw_attrs`; García CV/SPD/DIFFP/RD/KURT/SKEW/KSTEST in bids_on `raw_attrs`) — computed screens exist per §4.4, but the plan says to use shipped screen variables directly where present. Also exercise `financial_features`/`structural_features` on AMLworld HI-Small (5M edges) on a machine that has it — expect NeighborLoader-style chunking to be unnecessary for features, but timing is unverified.
 
 ## Decision log
 <!-- - YYYY-MM-DD · decision · rationale · plan section affected -->
