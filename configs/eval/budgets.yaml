@@ -1,0 +1,6 @@
+# Canonical §4.5 operational budgets. Financial queues use absolute k (the
+# problem statement's "top 100"); procurement uses top-% of the tender queue
+# (statement's "top 5%") — percent budgets are resolved to absolute k against
+# the dataset's queue length by the experiment config that uses them.
+budgets: [50, 100, 200]
+procurement_budget_percents: [1, 5, 10]
