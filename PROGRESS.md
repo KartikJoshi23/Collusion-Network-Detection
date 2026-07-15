@@ -6,14 +6,19 @@ Between M0 and M1 (see implementation-plan.md §7 milestone table: M0–M5, MC, 
 note was stale — origin/main carries b93717c…1713806, verified by anonymous clone 2026-07-15).
 **Week 3 step 8 (§7) COMPLETE** on laptop-B: shared structural feature template + financial +
 screens packs, all with as-of discipline (§9.1b), verified on real Elliptic++/Mendeley/García —
-pushed as `feat/features-structural`, **PR #1 open**, awaiting master-laptop review + merge.
-(The earlier 403 push blocker resolved itself the right way: KartikJoshi23's pending collaborator
-invitation to gagu00000 was accepted via `gh api` — write access confirmed 2026-07-15.)
+pushed as `feat/features-structural`, **PR #1 open and CI-green** (all four jobs; the lint failure
+was an environment bug, fixed by pinning Python 3.11 — see Decision log), awaiting master-laptop
+review + merge. (The earlier 403 push blocker resolved the right way: KartikJoshi23's pending
+collaborator invitation to gagu00000 was accepted via `gh api` — write access confirmed 2026-07-15.)
+**Week 3 step 9 (§7) COMPLETE** on laptop-B: evaluation harness (alert unit + hit rule + NMS dedup,
+Precision@k / AUC-PR / FPR-Recall@budget, config-driven runs, `collusiongraph eval` CLI) — pushed as
+`feat/eval-harness` (**stacked on PR #1**), PR #2 open.
 Outstanding user actions: OpenAI key rotation (R18); flip the GitHub repo to private (re-verified
 still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-15 · **§7 step 9** — evaluation harness in `eval/`: `alert_unit.py` (greedy NMS dedup, Jaccard **strictly >** 0.5 suppresses, suppressed alerts carry their suppressor's `overlap_group`; n_members ≤ 100 size cap; ≥1-confirmed-member hit rule with `min_fraction` param ready for the Phase-2 ≥10%/≥25% sensitivity); `metrics.py` (node-level P@k / Recall@k / FPR@k / AUC-PR-with-prevalence-baseline validated against hand-computed values AND sklearn; alert-level queue metrics with honest `k_effective` truncation + illicit-coverage@budget); `report.py` (one YAML → `metrics.json`, optional W&B offline); first real CLI subcommand `collusiongraph eval -c <yaml>`; canonical §4.5 fragments in `configs/eval/`. 17 new tests incl. the §9.1 60%-overlap NMS fixture. Real-scale smoke: naive degree scorer on Elliptic++ 46,564 confirmed nodes in 0.03s — AUC-PR 0.084 vs prevalence 0.098 (degree alone is anti-informative; the baselines will contextualize) · (PR #2) · [laptop-B]
 - 2026-07-15 · **§7 step 8** — feature layer: `features/structural.py` (§4.2 rule-2 template: multi-edge in/out degrees, triangle + mutual-dyad motif participation, clustering, k-core, Goh–Barabási burstiness, community-relative stats defaulting to weak components until Leiden, `zscore_per_graph`), `features/financial.py` (retention ratio, velocity, holding time via per-node asof-join, round-amount share, directional burstiness, sinusoidal time encodings), `features/screens.py` (award tier: within-market share, buyer/supplier HHI, normalized winner-rotation entropy; bid tier: CV/spread/DIFFP/RD/kurtosis/skew with quorum-nulls; co-bid stats) — every function takes `as_of` (§9.1b); 8-test as-of leakage suite with negative controls; `GraphStore.write_features` artifact path (+ DuckDB views). Real-data verified: Elliptic++ 203,769 nodes structural in 1.9s, as-of@34 = 136,265 visible nodes and equals the truncated graph exactly; Mendeley bid tier degrades to empty, 710 buyers with rotation entropy; García screens on 9,781 tenders, co-bid on exactly the 4 identified markets · a77e8d7 + 1855dc8 · [laptop-B]
 - 2026-07-15 · **Bootstrap fix** — `download_data.py` now downloads when a manifest exists but the raw dir is absent (collaborator machines could previously never bootstrap: verify-only reported mismatch), then checksum-verifies against the committed manifest; 5 unit tests; proven live on this machine (4/5 datasets downloaded and `verified`; amlworld correctly `blocked` pending this machine's Kaggle token) · c5d5063 · [laptop-B]
 - 2026-07-15 · laptop-B environment bootstrapped from a bare clone: uv 0.11.3 → Python 3.11.15, 188 packages, cold-clone suite 54/54 green before any changes · [laptop-B]
@@ -33,15 +38,16 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## In-flight
 <!-- exactly what is unfinished, where, why, and which machine/branch has it -->
-- **PR #1** (`feat/features-structural`, laptop-B) awaits master-laptop review + merge — Week-3 step 8 + collaborator bootstrap fix; 92/92 tests, ruff/black/mypy green; watch the CI run it triggers (gitleaks data point, Known issues).
+- **PR #1** (`feat/features-structural`, laptop-B) awaits master-laptop review + merge — Week-3 step 8 + collaborator bootstrap fix + Python-3.11 pin; **CI green on all four jobs** (incl. gitleaks — the run-#1 failure theory holds).
+- **PR #2** (`feat/eval-harness`, laptop-B, **stacked on PR #1**) awaits review — Week-3 step 9; merge PR #1 first, then PR #2 rebases cleanly (or merge in order). 109/109 tests, ruff/black/mypy green.
+- Procurement top-% budget resolution (§4.5: top 1/5/10% of tender queue) is declared in `configs/eval/budgets.yaml` but not yet resolved to absolute k inside `run_eval` — small addition when the B4 screens baseline lands (step 10 needs it).
 - AMLworld raw data is absent on laptop-B (Kaggle credentials are per-machine; script reports `blocked` as designed). Financial pack is untested at AMLworld scale (5M edges) — see Next action 5.
 
 ## Next actions (ordered, self-contained)
 1. **[user]** Rotate/revoke the OpenAI API key exposed in `Gen-AI Chatbot/.../.env` AND embedded in the original `FIX_FRONTEND.md` (two exposures) at platform.openai.com.
 2. **[user]** Make the GitHub repo private (plan requires a private repo): repo Settings → General → Danger Zone → Change visibility, or `gh repo edit KartikJoshi23/Collusion-Network-Detection --visibility private` after `gh auth login`. Also consider rotating the Kaggle token that was shared in a chat session.
-3. **[master]** Review + merge **PR #1** `feat/features-structural` (Week-3 step 8 + collaborator bootstrap fix).
-4. Week 3 (§7 step 9): evaluation harness in `backend/collusiongraph/eval/`: alert unit + ≥1-confirmed-member hit rule + Jaccard-0.5 NMS dedup (§4.5); Precision@k, AUC-PR, FPR/Recall@budget vs. hand-computed values on toy vectors (§9.1); config-driven runs, W&B offline mode.
-5. Week 3 (§7 step 10): baselines B1 (rules engine), B2 (XGBoost tabular), B3 (XGB-Graph per GADBench protocol), B4 (screens-only, procurement) on Elliptic++ and Mendeley → **Milestone M1** (baseline scoreboard on both anchors). While building B4: wire the datasets' **precomputed screens** through (Mendeley `lot_bidscount`/`relative_value` in awarded `raw_attrs`; García CV/SPD/DIFFP/RD/KURT/SKEW/KSTEST in bids_on `raw_attrs`) — computed screens exist per §4.4, but the plan says to use shipped screen variables directly where present. Also exercise `financial_features`/`structural_features` on AMLworld HI-Small (5M edges) on a machine that has it — expect NeighborLoader-style chunking to be unnecessary for features, but timing is unverified.
+3. **[master]** Review + merge **PR #1** `feat/features-structural`, then **PR #2** `feat/eval-harness` (stacked, in that order).
+4. Week 3 (§7 step 10): baselines B1 (rules engine), B2 (XGBoost tabular), B3 (XGB-Graph per GADBench protocol), B4 (screens-only, procurement) on Elliptic++ and Mendeley → **Milestone M1** (baseline scoreboard on both anchors). While building B4: wire the datasets' **precomputed screens** through (Mendeley `lot_bidscount`/`relative_value` in awarded `raw_attrs`; García CV/SPD/DIFFP/RD/KURT/SKEW/KSTEST in bids_on `raw_attrs`) — computed screens exist per §4.4, but the plan says to use shipped screen variables directly where present. Also exercise `financial_features`/`structural_features` on AMLworld HI-Small (5M edges) on a machine that has it — expect NeighborLoader-style chunking to be unnecessary for features, but timing is unverified.
 
 ## Decision log
 <!-- - YYYY-MM-DD · decision · rationale · plan section affected -->
@@ -64,6 +70,8 @@ still public 2026-07-15 — anonymous clone succeeded).
 - 2026-07-15 · Bid screens take **winner = lowest bid** (first-price sealed-bid convention of the García markets); winner-rotation entropy is Shannon entropy of a buyer's winner shares normalized to [0,1], null for single-winner buyers (rotation undefined, not zero) · §4.4.
 - 2026-07-15 · `download_data.py` bootstrap semantics: manifest present + raw dir absent → fetch then verify against committed checksums; manifest present + raw dir present but mismatched → report mismatch, never silently re-fetch (corruption needs a human) · §7 handoff workflow.
 - 2026-07-15 · **Python pinned to 3.11 via `.python-version`**: uv.lock forks numpy at the 3.12 boundary (2.4.6 below, 2.5.1 above); CI's setup-uv floated to Python 3.12 → numpy 2.5.1, whose PEP 695 `type`-statement stubs crash mypy (target 3.11). Surfaced by PR #1's `import igraph` (first checked import transitively reaching numpy stubs). Pinning the interpreter makes dev and CI resolve the same lock branch · §4.1 environment reproducibility.
+- 2026-07-15 · **Alert-level FPR is reported as `false_alert_rate` (1 − precision@k)**: alert-level true negatives are ill-defined (there is no enumerable universe of non-alerts), so the §4.5 "FPR@budget" cell is served by node-level FPR@k (FP / all confirmed negatives) plus the alert-level false-alert rate — both in `metrics.json` · §4.5.
+- 2026-07-15 · Harness conventions fixed: NMS suppresses on Jaccard **strictly greater** than the threshold; budgets larger than the queue truncate honestly (`k_effective` reported, never padded); the fractional hit rule's denominator is **confirmed members only** (unknowns are neither hits nor misses, §4.3 D1); AUC-PR always ships with its prevalence baseline · §4.5, §9.1.
 
 ## Known issues
 <!-- - description · discovered when · severity -->
@@ -72,4 +80,4 @@ still public 2026-07-15 — anonymous clone succeeded).
 - `gh` CLI token invalid on the master machine (pushes work via git credential manager; `gh`-dependent commands don't) — `gh auth login` when convenient. laptop-B status noted in the PR handoff · 2026-07-13 · low.
 - CI gitleaks job failed on run #1 despite a clean local full-history scan — suspected gitleaks-action empty-`before` quirk on the first push to an empty repo; ledger header says run #2 was green; the `feat/features-structural` push will produce another data point · 2026-07-13 · low-medium.
 - pre-commit's gitleaks hook builds via Go on first run (pre-commit bootstraps its own Go toolchain); first-commit hook setup took ~2 min on the master machine — expected, one-time per machine · 2026-07-13 · low.
-- `collusiongraph` CLI subcommands are all still roadmap stubs (incl. `ingest`, whose adapters exist as library functions) — wiring is naturally part of step 9's config-driven runs · 2026-07-15 · low.
+- `collusiongraph` CLI: `eval` is implemented (step 9); the rest remain roadmap stubs (incl. `ingest`, whose adapters exist as library functions — wire with step 10's config-driven baseline runs) · 2026-07-15 · low.
