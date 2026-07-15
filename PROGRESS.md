@@ -1,7 +1,9 @@
 # CollusionGraph — Progress Ledger
 
 ## Current milestone
-Between M0 and M1 (see implementation-plan.md §7 milestone table: M0–M5, MC, M6–M8).
+**M1 reached on laptop-B** (baseline scoreboard B1–B3(+B4) exists on both anchors — §7 milestone
+table definition), pending master-laptop review of the PR stack #1→#2→#3. Next: Week 4 (§7 steps
+11–13, supervised GNN core → M2).
 **M0 COMPLETE**; **Week 2 (§7 steps 4–7) COMPLETE and pushed** (the previous "not yet pushed"
 note was stale — origin/main carries b93717c…1713806, verified by anonymous clone 2026-07-15).
 **Week 3 step 8 (§7) COMPLETE** on laptop-B: shared structural feature template + financial +
@@ -12,12 +14,16 @@ review + merge. (The earlier 403 push blocker resolved the right way: KartikJosh
 collaborator invitation to gagu00000 was accepted via `gh api` — write access confirmed 2026-07-15.)
 **Week 3 step 9 (§7) COMPLETE** on laptop-B: evaluation harness (alert unit + hit rule + NMS dedup,
 Precision@k / AUC-PR / FPR-Recall@budget, config-driven runs, `collusiongraph eval` CLI) — pushed as
-`feat/eval-harness` (**stacked on PR #1**), PR #2 open.
+`feat/eval-harness` (**stacked on PR #1**), PR #2 open, **CI green on all four jobs**.
+**Week 3 step 10 (§7) COMPLETE → M1** on laptop-B: baselines B1–B3 on Elliptic++ and B1–B4 on
+Mendeley firms, config-driven, leakage-safe — pushed as `feat/baselines-m1` (**stacked on PR #2**),
+PR #3 open. Headline numbers in the Completed entry below.
 Outstanding user actions: OpenAI key rotation (R18); flip the GitHub repo to private (re-verified
 still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-15 · **§7 step 10 → MILESTONE M1** — baselines: `models/baselines.py` (B1 rules engine with train-only percentile thresholds; B2/B3 XGBoost with `scale_pos_weight`, NaN-native; GADBench-style `neighbor_mean_features` via scipy sparse matmul, NaN for isolated/unknown; B4 direction-adjusted screen z-composite) + `training/baseline_run.py` (one YAML = one sweep: strict split → as-of features → scores → harness → `scoreboard.json`) + committed experiment configs. `run_eval` now skips (never fakes) alert-level metrics when no alert queue exists yet. 20 new tests incl. as-of leakage negative controls for neighbor aggregation and rule thresholds. **Scoreboard (test-period, confirmed nodes only): Elliptic++ (train 1–34/test 35–49, 16,670 confirmed test nodes, 1,083 illicit): B1 rules AUC-PR 0.056 (below the 0.065 prevalence baseline; P@100=0 — the rules-FP-overload critique, measured), B2 XGB 0.808 / P@100 1.00, B3 XGB-Graph 0.810 / P@100 1.00 (B3≈B2 expected: Elliptic raw features already embed one-hop aggregates). Mendeley firms (within-sample, train ≤2013/test ≥2014, 363 test firms, 35.8% prevalence; budgets 4/18/36 = top 1/5/10%): B1 0.343, B2 0.393, B3 0.377, B4 screens 0.381 with P@18 0.78 — everything near prevalence: award-tier-only signals are weak firm discriminators; the GNN + co-bid/LOCO settings own that headroom.** · (PR #3) · [laptop-B]
 - 2026-07-15 · **§7 step 9** — evaluation harness in `eval/`: `alert_unit.py` (greedy NMS dedup, Jaccard **strictly >** 0.5 suppresses, suppressed alerts carry their suppressor's `overlap_group`; n_members ≤ 100 size cap; ≥1-confirmed-member hit rule with `min_fraction` param ready for the Phase-2 ≥10%/≥25% sensitivity); `metrics.py` (node-level P@k / Recall@k / FPR@k / AUC-PR-with-prevalence-baseline validated against hand-computed values AND sklearn; alert-level queue metrics with honest `k_effective` truncation + illicit-coverage@budget); `report.py` (one YAML → `metrics.json`, optional W&B offline); first real CLI subcommand `collusiongraph eval -c <yaml>`; canonical §4.5 fragments in `configs/eval/`. 17 new tests incl. the §9.1 60%-overlap NMS fixture. Real-scale smoke: naive degree scorer on Elliptic++ 46,564 confirmed nodes in 0.03s — AUC-PR 0.084 vs prevalence 0.098 (degree alone is anti-informative; the baselines will contextualize) · (PR #2) · [laptop-B]
 - 2026-07-15 · **§7 step 8** — feature layer: `features/structural.py` (§4.2 rule-2 template: multi-edge in/out degrees, triangle + mutual-dyad motif participation, clustering, k-core, Goh–Barabási burstiness, community-relative stats defaulting to weak components until Leiden, `zscore_per_graph`), `features/financial.py` (retention ratio, velocity, holding time via per-node asof-join, round-amount share, directional burstiness, sinusoidal time encodings), `features/screens.py` (award tier: within-market share, buyer/supplier HHI, normalized winner-rotation entropy; bid tier: CV/spread/DIFFP/RD/kurtosis/skew with quorum-nulls; co-bid stats) — every function takes `as_of` (§9.1b); 8-test as-of leakage suite with negative controls; `GraphStore.write_features` artifact path (+ DuckDB views). Real-data verified: Elliptic++ 203,769 nodes structural in 1.9s, as-of@34 = 136,265 visible nodes and equals the truncated graph exactly; Mendeley bid tier degrades to empty, 710 buyers with rotation entropy; García screens on 9,781 tenders, co-bid on exactly the 4 identified markets · a77e8d7 + 1855dc8 · [laptop-B]
 - 2026-07-15 · **Bootstrap fix** — `download_data.py` now downloads when a manifest exists but the raw dir is absent (collaborator machines could previously never bootstrap: verify-only reported mismatch), then checksum-verifies against the committed manifest; 5 unit tests; proven live on this machine (4/5 datasets downloaded and `verified`; amlworld correctly `blocked` pending this machine's Kaggle token) · c5d5063 · [laptop-B]
@@ -38,16 +44,19 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## In-flight
 <!-- exactly what is unfinished, where, why, and which machine/branch has it -->
-- **PR #1** (`feat/features-structural`, laptop-B) awaits master-laptop review + merge — Week-3 step 8 + collaborator bootstrap fix + Python-3.11 pin; **CI green on all four jobs** (incl. gitleaks — the run-#1 failure theory holds).
-- **PR #2** (`feat/eval-harness`, laptop-B, **stacked on PR #1**) awaits review — Week-3 step 9; merge PR #1 first, then PR #2 rebases cleanly (or merge in order). 109/109 tests, ruff/black/mypy green.
-- Procurement top-% budget resolution (§4.5: top 1/5/10% of tender queue) is declared in `configs/eval/budgets.yaml` but not yet resolved to absolute k inside `run_eval` — small addition when the B4 screens baseline lands (step 10 needs it).
+- **PR stack awaiting master-laptop review, merge in order #1 → #2 → #3:** PR #1 `feat/features-structural` (step 8 + bootstrap fix + Python pin; CI green), PR #2 `feat/eval-harness` (step 9; CI green), PR #3 `feat/baselines-m1` (step 10 → M1). Each retargets automatically as its base merges. 126/126 tests at PR #3 head.
+- Procurement top-% budgets were resolved manually for Mendeley (4/18/36 = top 1/5/10% of the 363-firm test queue, in the experiment config); automatic percent→k resolution inside `run_eval` remains a nice-to-have.
+- `eval_outputs/` is regenerable and gitignored: scoreboard numbers live in this ledger and PR #3's description; rerun `run_baselines('configs/experiment/baselines_<anchor>.yaml')` to reproduce (seeded, deterministic).
 - AMLworld raw data is absent on laptop-B (Kaggle credentials are per-machine; script reports `blocked` as designed). Financial pack is untested at AMLworld scale (5M edges) — see Next action 5.
 
 ## Next actions (ordered, self-contained)
 1. **[user]** Rotate/revoke the OpenAI API key exposed in `Gen-AI Chatbot/.../.env` AND embedded in the original `FIX_FRONTEND.md` (two exposures) at platform.openai.com.
 2. **[user]** Make the GitHub repo private (plan requires a private repo): repo Settings → General → Danger Zone → Change visibility, or `gh repo edit KartikJoshi23/Collusion-Network-Detection --visibility private` after `gh auth login`. Also consider rotating the Kaggle token that was shared in a chat session.
-3. **[master]** Review + merge **PR #1** `feat/features-structural`, then **PR #2** `feat/eval-harness` (stacked, in that order).
-4. Week 3 (§7 step 10): baselines B1 (rules engine), B2 (XGBoost tabular), B3 (XGB-Graph per GADBench protocol), B4 (screens-only, procurement) on Elliptic++ and Mendeley → **Milestone M1** (baseline scoreboard on both anchors). While building B4: wire the datasets' **precomputed screens** through (Mendeley `lot_bidscount`/`relative_value` in awarded `raw_attrs`; García CV/SPD/DIFFP/RD/KURT/SKEW/KSTEST in bids_on `raw_attrs`) — computed screens exist per §4.4, but the plan says to use shipped screen variables directly where present. Also exercise `financial_features`/`structural_features` on AMLworld HI-Small (5M edges) on a machine that has it — expect NeighborLoader-style chunking to be unnecessary for features, but timing is unverified.
+3. **[master]** Review + merge the PR stack **#1 → #2 → #3** (in order; each retargets automatically).
+4. Week 4 (§7 step 11): GraphSAGE + GATv2 with `NeighborLoader`, bidirectional edges + direction flags, focal loss vs. class weights, early stopping on val AUC-PR; Elliptic++ first (unknown-label policy §4.3 D1). The B2/B3 scoreboard (AUC-PR 0.81, P@100 1.0) is the yardstick — GADBench predicts the GNNs may NOT beat it; report honestly either way (M2 definition allows "gap understood & documented").
+5. Week 4 (§7 step 12): R-GCN on the heterogeneous procurement graph (forward/reverse relations).
+6. Week 4 (§7 step 13): Leiden communities + roll-up + isotonic calibration + NMS → first end-to-end alert queue (unlocks the harness's alert-level metrics) → **Milestone M2**.
+7. Deferred small items: wire the datasets' **precomputed screens** through as B4 inputs (Mendeley `lot_bidscount`/`relative_value` in awarded `raw_attrs`; García CV/SPD/DIFFP/RD/KURT/SKEW/KSTEST in bids_on `raw_attrs`); exercise the feature packs + baselines on AMLworld HI-Small (5M edges) on a machine with Kaggle credentials; automatic percent→k budget resolution in `run_eval`.
 
 ## Decision log
 <!-- - YYYY-MM-DD · decision · rationale · plan section affected -->
@@ -72,6 +81,10 @@ still public 2026-07-15 — anonymous clone succeeded).
 - 2026-07-15 · **Python pinned to 3.11 via `.python-version`**: uv.lock forks numpy at the 3.12 boundary (2.4.6 below, 2.5.1 above); CI's setup-uv floated to Python 3.12 → numpy 2.5.1, whose PEP 695 `type`-statement stubs crash mypy (target 3.11). Surfaced by PR #1's `import igraph` (first checked import transitively reaching numpy stubs). Pinning the interpreter makes dev and CI resolve the same lock branch · §4.1 environment reproducibility.
 - 2026-07-15 · **Alert-level FPR is reported as `false_alert_rate` (1 − precision@k)**: alert-level true negatives are ill-defined (there is no enumerable universe of non-alerts), so the §4.5 "FPR@budget" cell is served by node-level FPR@k (FP / all confirmed negatives) plus the alert-level false-alert rate — both in `metrics.json` · §4.5.
 - 2026-07-15 · Harness conventions fixed: NMS suppresses on Jaccard **strictly greater** than the threshold; budgets larger than the queue truncate honestly (`k_effective` reported, never padded); the fractional hit rule's denominator is **confirmed members only** (unknowns are neither hits nor misses, §4.3 D1); AUC-PR always ships with its prevalence baseline · §4.5, §9.1.
+- 2026-07-15 · Baseline feature-group boundary: **B2 "tabular" = per-node attributes only** (raw dataset features + financial pack on financial; award-tier screens on procurement); **B3 adds the graph channel** (structural template + GADBench neighborhood means — neighbor base: raw features on financial, structural on procurement). Train-side inputs (rule thresholds, matrices, neighbor means) computed as-of `train_end`; test rows featurized on the full inference graph (§4.3 D1 inference regime) · §4.5 B2/B3.
+- 2026-07-15 · **Mendeley M1 baselines are firm-level and within-sample** (case-control file, 41.9% overall / 35.8% test prevalence — per the 2026-07-13 prevalence decision): tender-queue budgets resolved manually to k=4/18/36 (top 1/5/10% of the 363-firm test queue). Population-style claims wait for opentender/LOCO settings · §4.3 D4, §4.5.
+- 2026-07-15 · `run_eval` skips alert-level metrics when no alert queue exists (M1 baselines are node-score-only; alerts arrive with the §7 step-13 roll-up) — skipped, never faked · §4.5.
+- 2026-07-15 · Empty-graph dtype guard: frames built from possibly-empty node lists pin `node_id` to Utf8 (an empty as-of graph must not degrade schemas downstream) — found by the step-10 single-class split test · §9.1.
 
 ## Known issues
 <!-- - description · discovered when · severity -->
