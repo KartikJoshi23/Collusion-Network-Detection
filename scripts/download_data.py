@@ -5,8 +5,10 @@ Per implementation-plan.md §4.3 and §7 Week 1: raw data lands in ``data/raw/``
 download dates + licenses) are committed.
 
 Behavior per dataset:
-  * no manifest yet  -> download, checksum, write manifest (first run on the master machine)
-  * manifest exists  -> verify local files against the committed checksums (bootstrap mode)
+  * no manifest yet             -> download, checksum, write manifest (first run, master machine)
+  * manifest exists, no raw dir -> download, then verify against the committed checksums
+                                   (collaborator bootstrap)
+  * manifest exists, raw dir    -> verify local files against the committed checksums
 
 Blocked datasets (e.g. missing Kaggle credentials) are reported loudly and recorded
 with ``status: blocked`` — the script continues with the rest (never stall the session
@@ -136,16 +138,21 @@ def verify_against_manifest(name: str, dataset_dir: Path) -> Result:
 
 
 def acquire(name: str, source: str, license_: str, notes: str, fetch) -> Result:
-    """Shared skeleton: verify if manifest exists, otherwise fetch + manifest."""
+    """Shared skeleton: fetch when absent, verify against the committed manifest."""
     dataset_dir = RAW / name
-    if (MANIFESTS / f"{name}.json").exists():
-        return verify_against_manifest(name, dataset_dir)
-    fetch(dataset_dir)
-    files = collect_files(dataset_dir)
-    if not files:
-        raise RuntimeError("fetch produced no files")
-    write_manifest(name, source, license_, files, notes)
-    return Result(name, "complete", f"{len(files)} files downloaded + checksummed", files)
+    if not (MANIFESTS / f"{name}.json").exists():
+        fetch(dataset_dir)
+        files = collect_files(dataset_dir)
+        if not files:
+            raise RuntimeError("fetch produced no files")
+        write_manifest(name, source, license_, files, notes)
+        return Result(name, "complete", f"{len(files)} files downloaded + checksummed", files)
+    if not dataset_dir.exists():
+        # Collaborator bootstrap: manifest is committed but raw data (gitignored)
+        # is absent on this machine — download, then verify the checksums below.
+        # A dir that exists but mismatches stays a mismatch (corruption, not bootstrap).
+        fetch(dataset_dir)
+    return verify_against_manifest(name, dataset_dir)
 
 
 # ── Dataset-specific fetchers ─────────────────────────────────────────────
