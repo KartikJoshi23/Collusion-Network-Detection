@@ -63,6 +63,7 @@ still public 2026-07-15 — anonymous clone succeeded).
 - 2026-07-15 · Feature packs are **variable-width artifacts** (`features_<pack>.parquet` + optional `features_<pack>.meta.json` recording `as_of`), written via `GraphStore.write_features` (only `node_id` is required), exposed as DuckDB views alongside IR tables; never merged into `nodes.parquet` (per the 2026-07-14 IR decision) · §3.2, §4.2.
 - 2026-07-15 · Bid screens take **winner = lowest bid** (first-price sealed-bid convention of the García markets); winner-rotation entropy is Shannon entropy of a buyer's winner shares normalized to [0,1], null for single-winner buyers (rotation undefined, not zero) · §4.4.
 - 2026-07-15 · `download_data.py` bootstrap semantics: manifest present + raw dir absent → fetch then verify against committed checksums; manifest present + raw dir present but mismatched → report mismatch, never silently re-fetch (corruption needs a human) · §7 handoff workflow.
+- 2026-07-15 · **Python pinned to 3.11 via `.python-version`**: uv.lock forks numpy at the 3.12 boundary (2.4.6 below, 2.5.1 above); CI's setup-uv floated to Python 3.12 → numpy 2.5.1, whose PEP 695 `type`-statement stubs crash mypy (target 3.11). Surfaced by PR #1's `import igraph` (first checked import transitively reaching numpy stubs). Pinning the interpreter makes dev and CI resolve the same lock branch · §4.1 environment reproducibility.
 
 ## Known issues
 <!-- - description · discovered when · severity -->
