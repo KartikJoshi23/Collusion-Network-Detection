@@ -2,12 +2,19 @@
 
 ## Current milestone
 Between M0 and M1 (see implementation-plan.md §7 milestone table: M0–M5, MC, M6–M8).
-**M0 COMPLETE** (all 5 datasets acquired/checksummed/licensed/EDA'd; repo pushed; CI green on run #2).
-**Week 2 (§7 steps 4–7) COMPLETE** on this machine: IR schema, both adapters, splitters + real leakage suite — committed locally, **not yet pushed (user asked to hold pushes)**.
-Outstanding user actions: OpenAI key rotation (R18); flip the GitHub repo to private; say when to push.
+**M0 COMPLETE**; **Week 2 (§7 steps 4–7) COMPLETE and pushed** (the previous "not yet pushed"
+note was stale — origin/main carries b93717c…1713806, verified by anonymous clone 2026-07-15).
+**Week 3 step 8 (§7) COMPLETE** on laptop-B: shared structural feature template + financial +
+screens packs, all with as-of discipline (§9.1b), verified on real Elliptic++/Mendeley/García —
+on branch `feat/features-structural`, PR open, awaiting master-laptop merge.
+Outstanding user actions: OpenAI key rotation (R18); flip the GitHub repo to private (re-verified
+still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-15 · **§7 step 8** — feature layer: `features/structural.py` (§4.2 rule-2 template: multi-edge in/out degrees, triangle + mutual-dyad motif participation, clustering, k-core, Goh–Barabási burstiness, community-relative stats defaulting to weak components until Leiden, `zscore_per_graph`), `features/financial.py` (retention ratio, velocity, holding time via per-node asof-join, round-amount share, directional burstiness, sinusoidal time encodings), `features/screens.py` (award tier: within-market share, buyer/supplier HHI, normalized winner-rotation entropy; bid tier: CV/spread/DIFFP/RD/kurtosis/skew with quorum-nulls; co-bid stats) — every function takes `as_of` (§9.1b); 8-test as-of leakage suite with negative controls; `GraphStore.write_features` artifact path (+ DuckDB views). Real-data verified: Elliptic++ 203,769 nodes structural in 1.9s, as-of@34 = 136,265 visible nodes and equals the truncated graph exactly; Mendeley bid tier degrades to empty, 710 buyers with rotation entropy; García screens on 9,781 tenders, co-bid on exactly the 4 identified markets · a77e8d7 + 1855dc8 · [laptop-B]
+- 2026-07-15 · **Bootstrap fix** — `download_data.py` now downloads when a manifest exists but the raw dir is absent (collaborator machines could previously never bootstrap: verify-only reported mismatch), then checksum-verifies against the committed manifest; 5 unit tests; proven live on this machine (4/5 datasets downloaded and `verified`; amlworld correctly `blocked` pending this machine's Kaggle token) · c5d5063 · [laptop-B]
+- 2026-07-15 · laptop-B environment bootstrapped from a bare clone: uv 0.11.3 → Python 3.11.15, 188 packages, cold-clone suite 54/54 green before any changes · [laptop-B]
 - 2026-07-14 · **§7 step 4** — CollusionGraph IR: pyarrow schemas + Pydantic rows for nodes/edges/labels/communities/alerts (§4.2, §3.2 verbatim), `GraphStore` (validated parquet write/read + zero-server DuckDB views + meta.json), `conform()` schema gate, alert-caveat lock (weakened ethics string is unconstructable) · b93717c · [master]
 - 2026-07-14 · **§7 step 5** — financial adapters: Elliptic++ tx-graph (183 raw features, verified 203,769/234,355 on real data in 8.5s) and AMLworld account-graph (515,088 accounts / 5,078,345 pays edges with amounts; edge ground truth in raw_attrs; post-window fence value in meta) + golden-file fixture tests · 20e5a1c · [master]
 - 2026-07-14 · **§7 step 6** — procurement adapters: Mendeley award-first (14,555 nodes / 24,251 edges, 7 countries; null-buyer rows → no buys_from edge) and García per-market (77,007 nodes / 111,046 edges; firm identities on 4/6 markets — Japan/Italy/Brazil/America carry `Competitors`, Swiss markets don't) + degradation-path fixtures (§9.1) · adc34a1 · [master]
@@ -24,15 +31,15 @@ Outstanding user actions: OpenAI key rotation (R18); flip the GitHub repo to pri
 
 ## In-flight
 <!-- exactly what is unfinished, where, why, and which machine/branch has it -->
-- Nothing mid-implementation. Remaining M0 loose ends are user actions (Next actions 1–2).
+- `feat/features-structural` (laptop-B) awaits review + merge by the master laptop — Week-3 step 8 + bootstrap fix; suite 92/92, ruff/black/mypy green at commit time.
+- AMLworld raw data is absent on laptop-B (Kaggle credentials are per-machine; script reports `blocked` as designed). Financial pack is untested at AMLworld scale (5M edges) — see Next action 5.
 
 ## Next actions (ordered, self-contained)
 1. **[user]** Rotate/revoke the OpenAI API key exposed in `Gen-AI Chatbot/.../.env` AND embedded in the original `FIX_FRONTEND.md` (two exposures) at platform.openai.com.
 2. **[user]** Make the GitHub repo private (plan requires a private repo): repo Settings → General → Danger Zone → Change visibility, or `gh repo edit KartikJoshi23/Collusion-Network-Detection --visibility private` after `gh auth login`. Also consider rotating the Kaggle token that was shared in a chat session.
-3. **[user]** Say when to push — 4 local commits (b93717c, 20e5a1c, adc34a1, 63d6e67) are ready on `main`; plain `git push` (works via credential manager even though `gh` token is stale).
-4. Week 3 (§7 step 8): shared structural feature template (degrees, motif counts, clustering, k-core, community-relative stats, temporal burstiness — z-scored per graph §4.2 rule 2) in `backend/collusiongraph/features/structural.py` + domain packs (financial burstiness/velocity; screens incl. award-derived tier) — feature functions must take an as-of timestamp (§9.1b) with leakage tests extended alongside.
-5. Week 3 (§7 step 9): evaluation harness in `backend/collusiongraph/eval/`: alert unit + ≥1-confirmed-member hit rule + Jaccard-0.5 NMS dedup (§4.5); Precision@k, AUC-PR, FPR/Recall@budget vs. hand-computed values on toy vectors (§9.1); config-driven runs, W&B offline mode.
-6. Week 3 (§7 step 10): baselines B1 (rules engine), B2 (XGBoost tabular), B3 (XGB-Graph per GADBench protocol), B4 (screens-only, procurement) on Elliptic++ and Mendeley → **Milestone M1** (baseline scoreboard on both anchors).
+3. **[master]** Review + merge PR `feat/features-structural` (Week-3 step 8 + collaborator bootstrap fix).
+4. Week 3 (§7 step 9): evaluation harness in `backend/collusiongraph/eval/`: alert unit + ≥1-confirmed-member hit rule + Jaccard-0.5 NMS dedup (§4.5); Precision@k, AUC-PR, FPR/Recall@budget vs. hand-computed values on toy vectors (§9.1); config-driven runs, W&B offline mode.
+5. Week 3 (§7 step 10): baselines B1 (rules engine), B2 (XGBoost tabular), B3 (XGB-Graph per GADBench protocol), B4 (screens-only, procurement) on Elliptic++ and Mendeley → **Milestone M1** (baseline scoreboard on both anchors). While building B4: wire the datasets' **precomputed screens** through (Mendeley `lot_bidscount`/`relative_value` in awarded `raw_attrs`; García CV/SPD/DIFFP/RD/KURT/SKEW/KSTEST in bids_on `raw_attrs`) — computed screens exist per §4.4, but the plan says to use shipped screen variables directly where present. Also exercise `financial_features`/`structural_features` on AMLworld HI-Small (5M edges) on a machine that has it — expect NeighborLoader-style chunking to be unnecessary for features, but timing is unverified.
 
 ## Decision log
 <!-- - YYYY-MM-DD · decision · rationale · plan section affected -->
@@ -48,11 +55,18 @@ Outstanding user actions: OpenAI key rotation (R18); flip the GitHub repo to pri
 - 2026-07-14 · IR conventions fixed at implementation: int64 dataset-specific time unit recorded in meta (`elliptic_time_step` / `epoch_minutes` / `year`); raw dataset features in `nodes.raw_features` (list<f32>); domain specifics in JSON `raw_attrs` (AMLworld edge-level ground truth rides there); the §4.2 structural template will live in a separate features artifact, never in nodes · §4.2.
 - 2026-07-14 · Mendeley labels attach to **firms and tenders** (max of `is_cartel` over their awards, source `mendeley_is_cartel`); García labels attach to **bids** everywhere and **firms** where identified; rows with null `buyer_id` (~19.5%) yield no buyer node/edge · §4.3 D3/D4.
 - 2026-07-14 · Splitter policy: nodes with null time are excluded from both sides of temporal splits (counted as `n_unplaced_nodes`); temporal gaps (embargo) supported via `test_start`; AMLworld fencing is the splitter's job (`fence_after=meta.primary_window_end`), adapters stay faithful to the raw data · §4.3, §9.1.
+- 2026-07-15 · **Feature as-of policy**: under `as_of=T`, undated edges are EXCLUDED (they cannot be proven past — stricter than the splitter, which can afford undated train edges because it also gates on endpoint membership); `as_of=None` means "no temporal restriction" and is reserved for entity-disjoint LOCO/LOMO evaluation (the regime where undated data like García Italy stays usable). Leakage tests assert as-of ≡ truncated-graph equality plus negative controls · §9.1b.
+- 2026-07-15 · Amount-derived financial features are **null (unknown), never 0.0 or NaN**, on amount-less datasets (Elliptic++): polars sums all-null columns to 0, which would have silently produced 0/0=NaN retention and poisoned per-graph z-scoring — guarded with quorum `when()` clauses; same quorum-null rule for bid screens below 2/3/4 bids · §4.3 D1, §4.4.
+- 2026-07-15 · Community-relative structural stats default to **weakly connected components** until Leiden lands (§7 step 13); `structural_features` accepts an IR `communities` frame to swap them in without API change · §4.2 rule 2.
+- 2026-07-15 · Feature packs are **variable-width artifacts** (`features_<pack>.parquet` + optional `features_<pack>.meta.json` recording `as_of`), written via `GraphStore.write_features` (only `node_id` is required), exposed as DuckDB views alongside IR tables; never merged into `nodes.parquet` (per the 2026-07-14 IR decision) · §3.2, §4.2.
+- 2026-07-15 · Bid screens take **winner = lowest bid** (first-price sealed-bid convention of the García markets); winner-rotation entropy is Shannon entropy of a buyer's winner shares normalized to [0,1], null for single-winner buyers (rotation undefined, not zero) · §4.4.
+- 2026-07-15 · `download_data.py` bootstrap semantics: manifest present + raw dir absent → fetch then verify against committed checksums; manifest present + raw dir present but mismatched → report mismatch, never silently re-fetch (corruption needs a human) · §7 handoff workflow.
 
 ## Known issues
 <!-- - description · discovered when · severity -->
 - **Live OpenAI key exposed in TWO places** in the original chatbot folder (`.env` and `FIX_FRONTEND.md` line ~124). Redacted in the archived copy; originals untouched (user's data). **Rotate now** · 2026-07-13 · high until rotated.
-- **GitHub repo is PUBLIC** (plan §7 requires private) — flip visibility; see Next action 2 · 2026-07-13 · medium.
-- `gh` CLI token still invalid (pushes work via git credential manager; `gh`-dependent commands don't) — `gh auth login` when convenient · 2026-07-13 · low.
-- CI gitleaks job failed on run #1 despite a clean local full-history scan — suspected gitleaks-action empty-`before` quirk on the first push to an empty repo; if run #2 also fails, replace the action with a direct `gitleaks detect` CLI step · 2026-07-13 · low-medium.
-- pre-commit's gitleaks hook builds via Go on first run (pre-commit bootstraps its own Go toolchain); first-commit hook setup took ~2 min on this machine — expected, one-time per machine · 2026-07-13 · low.
+- **GitHub repo is PUBLIC** (plan §7 requires private) — flip visibility; see Next action 2; re-verified still public 2026-07-15 (anonymous clone succeeded on laptop-B) · 2026-07-13 · medium.
+- `gh` CLI token invalid on the master machine (pushes work via git credential manager; `gh`-dependent commands don't) — `gh auth login` when convenient. laptop-B status noted in the PR handoff · 2026-07-13 · low.
+- CI gitleaks job failed on run #1 despite a clean local full-history scan — suspected gitleaks-action empty-`before` quirk on the first push to an empty repo; ledger header says run #2 was green; the `feat/features-structural` push will produce another data point · 2026-07-13 · low-medium.
+- pre-commit's gitleaks hook builds via Go on first run (pre-commit bootstraps its own Go toolchain); first-commit hook setup took ~2 min on the master machine — expected, one-time per machine · 2026-07-13 · low.
+- `collusiongraph` CLI subcommands are all still roadmap stubs (incl. `ingest`, whose adapters exist as library functions) — wiring is naturally part of step 9's config-driven runs · 2026-07-15 · low.
