@@ -88,6 +88,14 @@ class TestStructuralTemplate:
         assert feats["burstiness"][0] == pytest.approx((sigma - mu) / (sigma + mu))
         assert feats["burstiness"][4] is None  # e: no events
 
+    def test_empty_as_of_graph_keeps_schema(self) -> None:
+        """An as-of before anything exists yields an empty frame with intact
+        dtypes — downstream joins must not meet a Null-typed node_id."""
+        nodes, edges = structural_fixture()
+        feats = structural_features(nodes, edges, as_of=0)
+        assert feats.is_empty()
+        assert feats.schema["node_id"] == pl.Utf8
+
     def test_zscore_per_graph(self) -> None:
         df = pl.DataFrame({"node_id": ["a", "b"], "x": [0.0, 10.0], "const": [7.0, 7.0]})
         z = zscore_per_graph(df)

@@ -125,7 +125,8 @@ def _igraph_metrics(nodes: pl.DataFrame, edges: pl.DataFrame) -> pl.DataFrame:
     component = g.connected_components(mode="weak").membership
     return pl.DataFrame(
         {
-            "node_id": node_ids,
+            # explicit dtype: an empty node set must not degrade node_id to Null
+            "node_id": pl.Series(node_ids, dtype=pl.Utf8),
             "clustering": pl.Series(clustering, dtype=pl.Float64),
             "kcore": pl.Series(coreness, dtype=pl.Int64),
             "triangles": pl.Series(triangles, dtype=pl.Int64),

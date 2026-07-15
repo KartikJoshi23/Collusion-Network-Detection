@@ -53,32 +53,42 @@ def run_eval(config: dict[str, Any] | str | Path) -> dict[str, Any]:
     budgets: list[int] = cfg.get("budgets", DEFAULT_BUDGETS)
     labels = store.read(dataset, "labels")
 
-    alert_cfg = cfg.get("alert_unit", {})
-    hit_cfg = cfg.get("hit_rule", {})
-    alerts = pl.read_parquet(cfg["alerts"]) if "alerts" in cfg else store.read(dataset, "alerts")
-
-    dedup = nms_dedup(
-        alerts,
-        jaccard_threshold=alert_cfg.get("jaccard_threshold", DEFAULT_JACCARD_THRESHOLD),
-        max_members=alert_cfg.get("max_members", DEFAULT_MAX_MEMBERS),
-    )
-    queue = apply_hit_rule(
-        dedup.kept,
-        labels,
-        min_confirmed=hit_cfg.get("min_confirmed", 1),
-        min_fraction=hit_cfg.get("min_fraction"),
-    )
-
     metrics: dict[str, Any] = {
         "dataset": dataset,
         "created_at": datetime.now(UTC).isoformat(),
         "config": cfg,
-        "dedup": dedup.report,
-        "alert_level": {
+    }
+
+    # Alert-level evaluation is skipped (not faked) when no alert queue exists
+    # yet — node-score-only runs are the M1 baseline regime; alerts arrive with
+    # the community roll-up (§7 step 13).
+    alerts: pl.DataFrame | None
+    if "alerts" in cfg:
+        alerts = pl.read_parquet(cfg["alerts"])
+    else:
+        try:
+            alerts = store.read(dataset, "alerts")
+        except FileNotFoundError:
+            alerts = None
+    if alerts is not None:
+        alert_cfg = cfg.get("alert_unit", {})
+        hit_cfg = cfg.get("hit_rule", {})
+        dedup = nms_dedup(
+            alerts,
+            jaccard_threshold=alert_cfg.get("jaccard_threshold", DEFAULT_JACCARD_THRESHOLD),
+            max_members=alert_cfg.get("max_members", DEFAULT_MAX_MEMBERS),
+        )
+        queue = apply_hit_rule(
+            dedup.kept,
+            labels,
+            min_confirmed=hit_cfg.get("min_confirmed", 1),
+            min_fraction=hit_cfg.get("min_fraction"),
+        )
+        metrics["dedup"] = dedup.report
+        metrics["alert_level"] = {
             "queue": alert_queue_metrics(queue, budgets),
             "illicit_coverage": illicit_coverage_at_budget(queue, labels, budgets),
-        },
-    }
+        }
 
     if "node_scores" in cfg:
         scores = pl.read_parquet(cfg["node_scores"])
@@ -114,7 +124,7 @@ def _maybe_log_wandb(metrics: dict[str, Any], cfg: dict[str, Any]) -> None:
     )
     flat = {
         f"alert/{budget}/{name}": value
-        for budget, entry in metrics["alert_level"]["queue"].items()
+        for budget, entry in metrics.get("alert_level", {}).get("queue", {}).items()
         for name, value in entry.items()
     }
     if "node_level" in metrics:
