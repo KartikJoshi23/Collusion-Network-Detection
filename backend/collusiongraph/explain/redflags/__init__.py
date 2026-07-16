@@ -26,18 +26,27 @@ def load_indicators(domain: str) -> dict:
 
 def map_red_flags(matches: list[MotifMatch], domain: str) -> list[dict]:
     """Motif matches → red-flag citations {framework, indicator_id,
-    indicator_text, matched_because}, §4.4 bundle schema."""
+    indicator_text, matched_because}, §4.4 bundle schema.
+
+    One citation per indicator (audit F9): a dense subgraph with dozens of
+    cycle instances yields ONE round-tripping flag carrying the instance
+    count, not dozens of duplicate citations."""
     table = load_indicators(domain)
-    flags = []
+    flags: dict[str, dict] = {}
+    counts: dict[str, int] = {}
     for match in matches:
         for indicator in table["indicators"]:
             if match.motif_type in indicator["motifs"]:
-                flags.append(
-                    {
+                key = indicator["id"]
+                counts[key] = counts.get(key, 0) + 1
+                if key not in flags:
+                    flags[key] = {
                         "framework": table["framework"],
-                        "indicator_id": indicator["id"],
+                        "indicator_id": key,
                         "indicator_text": indicator["text"].strip(),
                         "matched_because": match.because(),
                     }
-                )
-    return flags
+    for key, flag in flags.items():
+        if counts[key] > 1:
+            flag["matched_because"] += f" [+{counts[key] - 1} more instances]"
+    return list(flags.values())

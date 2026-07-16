@@ -23,7 +23,12 @@ import polars as pl
 import torch
 
 from collusiongraph.eval import load_config, run_eval
-from collusiongraph.features import restrict_as_of, zscore_per_graph
+from collusiongraph.features import (
+    apply_zscore,
+    restrict_as_of,
+    structural_features,
+    zscore_per_graph,
+)
 from collusiongraph.injection import inject, recovery_at_budget
 from collusiongraph.models import rank_fusion, structural_floor, unsupervised_scores
 from collusiongraph.models.ensemble import calibrated_fusion
@@ -33,6 +38,17 @@ from collusiongraph.schema import GraphStore, Label
 from .baseline_run import raw_feature_frame
 from .graph_build import build_graph
 from .trainer import _forward
+
+
+def load_feature_stats(checkpoint: str | Path) -> tuple[str, dict[str, tuple[float, float]]]:
+    """The frozen normalization a checkpoint was trained under (audit F3):
+    scoring any graph with a trained model must reuse these stats, never
+    re-fit normalization on the scored graph."""
+    payload = json.loads(
+        (Path(checkpoint).parent / "feature_stats.json").read_text(encoding="utf-8")
+    )
+    return payload["features"], {k: (v[0], v[1]) for k, v in payload["stats"].items()}
+
 
 _TIME = "time_first_seen"
 
@@ -53,14 +69,26 @@ def _member_scores(
     n_raw: int,
     cfg: dict[str, Any],
 ) -> dict[str, pl.DataFrame]:
-    """The in-house members: unsupervised detectors + the transparent floor."""
-    pays = edges.filter(pl.col("edge_type") == "pays")  # homogeneous projection
-    features = zscore_per_graph(raw_feature_frame(nodes, n_raw))
+    """The in-house members: unsupervised detectors + the transparent floor.
+
+    The homogeneous projection edge type is configurable (audit F7): "pays"
+    fits financial account/tx graphs only — a procurement run must name its
+    projection ("awarded", "bids_on", …), and an empty projection is an error,
+    never a silent attribute-only autoencoder.
+    """
     unsup_cfg = cfg.get("unsupervised", {})
+    edge_type = unsup_cfg.get("edge_type", "pays")
+    projection = edges.filter(pl.col("edge_type") == edge_type)
+    if projection.is_empty():
+        raise ValueError(
+            f"homogeneous projection {edge_type!r} has no edges — "
+            "set unsupervised.edge_type to an edge type this dataset carries"
+        )
+    features = zscore_per_graph(raw_feature_frame(nodes, n_raw))
     members = {
         name: unsupervised_scores(
             nodes,
-            pays,
+            projection,
             features,
             method=name,
             hid_dim=unsup_cfg.get("hid_dim", 32),
@@ -73,24 +101,17 @@ def _member_scores(
     return members
 
 
-def run_ensemble(config: dict[str, Any] | str | Path) -> dict[str, Any]:
-    cfg = load_config(config)
-    store = GraphStore(cfg.get("store_root", "data/interim"))
-    dataset: str = cfg["dataset"]
-    out_dir = Path(cfg["output_dir"])
+def _validation_members(
+    cfg: dict[str, Any],
+    store: GraphStore,
+    dataset: str,
+    n_raw: int,
+) -> tuple[dict[str, pl.DataFrame], pl.DataFrame]:
+    """Validation-pool member scores + binary labels for calibration (§4.4):
+    unsupervised members refit on the TRAIN-window graph (never test), floor
+    as-of train_end, supervised from the trainer's saved validation scores
+    (train-graph forward per audit F2)."""
     split = cfg["split"]
-    test_start: int = split["test_start"]
-    n_raw = store.read_meta(dataset).get("n_features", 0)
-
-    test_nodes, test_edges = _test_window(store, dataset, test_start)
-    members = _member_scores(test_nodes, test_edges, n_raw, cfg)
-    members["supervised"] = pl.read_parquet(
-        Path(cfg["supervised_scores_dir"]) / "scores_test.parquet"
-    )
-
-    # Validation-pool member scores for calibration (§4.4): unsupervised
-    # members refit on the TRAIN-window graph (never test), floor as-of
-    # train_end, supervised from the trainer's saved validation scores.
     nodes = store.read(dataset, "nodes")
     edges = store.read(dataset, "edges")
     labels = store.read(dataset, "labels")
@@ -109,7 +130,25 @@ def run_ensemble(config: dict[str, Any] | str | Path) -> dict[str, Any]:
     val_labels = labels.filter(
         pl.col("label").is_in([Label.ILLICIT.value, Label.LICIT.value])
     ).select("node_id", (pl.col("label") == Label.ILLICIT.value).cast(pl.Int8).alias("y"))
+    return members_val, val_labels
 
+
+def run_ensemble(config: dict[str, Any] | str | Path) -> dict[str, Any]:
+    cfg = load_config(config)
+    store = GraphStore(cfg.get("store_root", "data/interim"))
+    dataset: str = cfg["dataset"]
+    out_dir = Path(cfg["output_dir"])
+    split = cfg["split"]
+    test_start: int = split["test_start"]
+    n_raw = store.read_meta(dataset).get("n_features", 0)
+
+    test_nodes, test_edges = _test_window(store, dataset, test_start)
+    members = _member_scores(test_nodes, test_edges, n_raw, cfg)
+    members["supervised"] = pl.read_parquet(
+        Path(cfg["supervised_scores_dir"]) / "scores_test.parquet"
+    )
+
+    members_val, val_labels = _validation_members(cfg, store, dataset, n_raw)
     fused_cal = calibrated_fusion(members, members_val, val_labels, weights=cfg.get("weights"))
     fused_rank = rank_fusion(members, weights=cfg.get("weights"))
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -163,7 +202,10 @@ def run_injection_recovery(config: dict[str, Any] | str | Path) -> dict[str, Any
         scorers["supervised"] = _supervised_scores_on(
             result.nodes, result.edges, store.read(dataset, "labels"), n_raw, cfg
         )
-    scorers["ensemble"] = rank_fusion(dict(scorers))
+    # the ensemble arm uses the PRIMARY fusion (calibrated on the train-window
+    # validation pool), not the rank-fusion ablation mode (audit F5)
+    members_val, val_labels = _validation_members(cfg, store, dataset, n_raw)
+    scorers["ensemble"] = calibrated_fusion(dict(scorers), members_val, val_labels)
 
     budgets: list[int] = cfg["budgets"]
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -199,10 +241,16 @@ def _supervised_scores_on(
     model_cfg = dict(cfg["supervised_model"])
     checkpoint = model_cfg.pop("checkpoint")
     name = model_cfg.pop("name")
+    model_cfg.pop("features", None)  # feature kind comes from the checkpoint's stats
     fence = cfg["split"].get("fence_after")
     if fence is not None:
         nodes, edges = restrict_as_of(nodes, edges, fence)
-    data = build_graph(nodes, edges, labels, zscore_per_graph(raw_feature_frame(nodes, n_raw)))
+    feature_kind, stats = load_feature_stats(checkpoint)
+    if feature_kind == "raw":
+        raw = raw_feature_frame(nodes, n_raw)
+    else:
+        raw = structural_features(nodes, edges)
+    data = build_graph(nodes, edges, labels, apply_zscore(raw, stats))
     model = make_model(
         name, in_dim=data.x.shape[1], num_relations=int(data.num_relations), **model_cfg
     )

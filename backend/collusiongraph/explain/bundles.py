@@ -22,10 +22,9 @@ from pydantic import BaseModel, Field, field_validator
 
 from collusiongraph import SCREENING_CAVEAT
 from collusiongraph.eval import load_config
-from collusiongraph.explain.explainer_runner import explain_nodes
+from collusiongraph.explain.explainer_runner import attention_summaries, explain_nodes
 from collusiongraph.explain.motif_matcher import match_motifs
 from collusiongraph.explain.redflags import map_red_flags
-from collusiongraph.features import zscore_per_graph
 from collusiongraph.models.gnn import make_model
 from collusiongraph.schema import GraphStore
 from collusiongraph.training.baseline_run import raw_feature_frame
@@ -55,6 +54,10 @@ class ExplanationBundle(BaseModel):
     evidence_sources: dict[str, list[str]]
     red_flags: list[dict[str, str]]
     fidelity: dict[str, float] | None = None
+    # §9.1 sanity: fidelity+ >= fidelity−. Recorded, never silently dropped —
+    # an insane explanation ships flagged so the queue is never blocked but
+    # the defect is visible (audit F13).
+    fidelity_sane: bool | None = None
     caveats: str = SCREENING_CAVEAT
 
     @field_validator("caveats")
@@ -82,9 +85,11 @@ def build_bundle(
     nodes: pl.DataFrame,
     explanation: Any | None,
     budget_position: int,
+    attention: dict[str, float] | None = None,
+    matcher_params: dict[str, float] | None = None,
 ) -> ExplanationBundle:
     """Assemble one alert's bundle from matcher + (optional) explainer output."""
-    matches = match_motifs(member_edges, domain)
+    matches = match_motifs(member_edges, domain, **(matcher_params or {}))
     top_match = max(matches, key=lambda m: len(m.member_node_ids), default=None)
     red_flags = map_red_flags(matches, domain)
 
@@ -114,13 +119,17 @@ def build_bundle(
             "fidelity_plus": explanation.fidelity_plus,
             "fidelity_minus": explanation.fidelity_minus,
         }
+        fidelity_sane = explanation.fidelity_plus >= explanation.fidelity_minus
         learned = [f"gnn_explainer(top member {explanation.node_id})"]
+        if attention is not None:
+            learned.append("gatv2_attention(top member incoming messages)")
     else:
         subgraph = MinimalSubgraph(
             nodes=members,
             edges=list(member_edges.select("src", "dst").iter_rows()),
         )
         fidelity = None
+        fidelity_sane = None
         learned = []
 
     return ExplanationBundle(
@@ -131,6 +140,7 @@ def build_bundle(
         risk_score=alert["risk_score"],
         budget_position=budget_position,
         minimal_subgraph=subgraph,
+        attention_summary=attention,
         motif=({"type": top_match.motif_type, "params": top_match.params} if top_match else None),
         evidence=evidence,
         evidence_sources={
@@ -140,6 +150,7 @@ def build_bundle(
         },
         red_flags=red_flags,
         fidelity=fidelity,
+        fidelity_sane=fidelity_sane,
     )
 
 
@@ -157,10 +168,14 @@ def run_explanations(config: dict[str, Any] | str | Path) -> dict[str, Any]:
     alerts = pl.read_parquet(cfg["alerts"]).sort("rank").head(top_k)
 
     explanations: dict[str, Any] = {}
+    attention: dict[str, dict[str, float]] = {}
     top_member_of: dict[str, str] = {}
     if "supervised_model" in cfg:
-        explanations, top_member_of = _explain_top_members(cfg, store, nodes, edges, alerts)
+        explanations, attention, top_member_of = _explain_top_members(
+            cfg, store, nodes, edges, alerts
+        )
 
+    matcher_params = cfg.get("matcher", {})
     out_dir.mkdir(parents=True, exist_ok=True)
     written = []
     for position, alert in enumerate(alerts.iter_rows(named=True), start=1):
@@ -178,6 +193,8 @@ def run_explanations(config: dict[str, Any] | str | Path) -> dict[str, Any]:
             nodes,
             explanations.get(top_member) if top_member else None,
             budget_position=position,
+            attention=attention.get(top_member) if top_member else None,
+            matcher_params=matcher_params,
         )
         path = out_dir / f"{bundle.alert_id.replace(':', '_')}.json"
         path.write_text(bundle.model_dump_json(indent=2) + "\n", encoding="utf-8")
@@ -187,6 +204,8 @@ def run_explanations(config: dict[str, Any] | str | Path) -> dict[str, Any]:
                 "motif": bundle.motif["type"] if bundle.motif else None,
                 "n_red_flags": len(bundle.red_flags),
                 "fidelity": bundle.fidelity,
+                "fidelity_sane": bundle.fidelity_sane,
+                "attention": bundle.attention_summary is not None,
             }
         )
 
@@ -196,6 +215,8 @@ def run_explanations(config: dict[str, Any] | str | Path) -> dict[str, Any]:
         "n_with_motif": sum(1 for w in written if w["motif"]),
         "n_with_red_flags": sum(1 for w in written if w["n_red_flags"]),
         "n_with_fidelity": sum(1 for w in written if w["fidelity"]),
+        "n_fidelity_insane": sum(1 for w in written if w["fidelity_sane"] is False),
+        "n_with_attention": sum(1 for w in written if w["attention"]),
         "bundles": written,
     }
     (out_dir / "explanations_summary.json").write_text(
@@ -210,23 +231,27 @@ def _explain_top_members(
     nodes: pl.DataFrame,
     edges: pl.DataFrame,
     alerts: pl.DataFrame,
-) -> tuple[dict[str, Any], dict[str, str]]:
+) -> tuple[dict[str, Any], dict[str, dict[str, float]], dict[str, str]]:
     """GNNExplainer over each alert's highest-scored member (§4.4: k ≤ 200
     bounds the per-alert optimization budget). Returns (explanations by node,
-    top member by alert id)."""
+    attention summaries by node, top member by alert id)."""
     model_cfg = dict(cfg["supervised_model"])
     checkpoint = model_cfg.pop("checkpoint")
     name = model_cfg.pop("name")
-    feature_kind = model_cfg.pop("features", "raw")
+    model_cfg.pop("features", None)  # feature kind comes from the checkpoint's stats
     n_raw = store.read_meta(cfg["dataset"]).get("n_features", 0)
 
-    if feature_kind == "raw":
-        features = zscore_per_graph(raw_feature_frame(nodes, n_raw))
-    else:
-        from collusiongraph.features import structural_features
+    # the model is explained under the SAME frozen normalization it was
+    # trained and scored with (audit F3) — never re-fit on the explained graph
+    from collusiongraph.features import apply_zscore, structural_features
+    from collusiongraph.training.ensemble_run import load_feature_stats
 
-        features = zscore_per_graph(structural_features(nodes, edges))
-    data = build_graph(nodes, edges, store.read(cfg["dataset"], "labels"), features)
+    feature_kind, stats = load_feature_stats(checkpoint)
+    if feature_kind == "raw":
+        raw = raw_feature_frame(nodes, n_raw)
+    else:
+        raw = structural_features(nodes, edges)
+    data = build_graph(nodes, edges, store.read(cfg["dataset"], "labels"), apply_zscore(raw, stats))
     model = make_model(
         name, in_dim=data.x.shape[1], num_relations=int(data.num_relations), **model_cfg
     )
@@ -243,13 +268,17 @@ def _explain_top_members(
             top_member_of[alert["alert_id"]] = member_scores.sort("score", descending=True)[
                 "node_id"
             ][0]
+    targets = sorted(set(top_member_of.values()))
     explanations = explain_nodes(
         model,
         data,
-        sorted(set(top_member_of.values())),
+        targets,
         num_hops=cfg.get("num_hops", 2),
         epochs=cfg.get("explainer_epochs", 100),
         top_edges=cfg.get("top_edges", 20),
         seed=cfg.get("seed", 0),
     )
-    return explanations, top_member_of
+    from collusiongraph.models.gnn import GATv2
+
+    attention = attention_summaries(model, data, targets) if isinstance(model, GATv2) else {}
+    return explanations, attention, top_member_of

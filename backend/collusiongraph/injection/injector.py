@@ -100,10 +100,23 @@ def _bridge_edges(
     n: int,
 ) -> pl.DataFrame | None:
     """Light camouflage: connect injected nodes to random background nodes so
-    the motif is embedded, not a floating component."""
+    the motif is embedded, not a floating component.
+
+    Endpoints respect edge-type semantics (audit F26): financial bridges are
+    ``pays`` between accounts (either direction); procurement bridges are
+    ``bids_on`` from an injected FIRM to a background TENDER — never a
+    schema-legal-but-nonsensical pairing."""
     if n <= 0 or not background_ids:
         return None
-    edge_type = "pays" if domain == "financial" else "bids_on"
+    if domain == "financial":
+        edge_type, symmetric = "pays", True
+        srcs_pool, dsts_pool = members, background_ids
+    else:
+        edge_type, symmetric = "bids_on", False
+        srcs_pool = [m for m in members if m.startswith("firm:")]
+        dsts_pool = [b for b in background_ids if b.startswith("tender:")]
+        if not srcs_pool or not dsts_pool:
+            return None  # nothing semantically valid to bridge with
     rows: dict[str, list] = {
         "src": [],
         "dst": [],
@@ -114,9 +127,9 @@ def _bridge_edges(
         "raw_attrs": [],
     }
     for _ in range(n):
-        member = members[int(rng.integers(len(members)))]
-        other = background_ids[int(rng.integers(len(background_ids)))]
-        src, dst = (member, other) if rng.random() < 0.5 else (other, member)
+        a = srcs_pool[int(rng.integers(len(srcs_pool)))]
+        b = dsts_pool[int(rng.integers(len(dsts_pool)))]
+        src, dst = (a, b) if (not symmetric or rng.random() < 0.5) else (b, a)
         rows["src"].append(src)
         rows["dst"].append(dst)
         rows["edge_type"].append(edge_type)
@@ -141,7 +154,7 @@ def recovery_at_budget(
     for motif in ground_truth["motif_type"].unique().sort().to_list():
         members = set(
             ground_truth.filter(pl.col("motif_type") == motif)["member_node_ids"]
-            .explode()
+            .explode(empty_as_null=False)
             .to_list()
         )
         row: dict[str, object] = {"motif_type": motif, "n_members": len(members)}

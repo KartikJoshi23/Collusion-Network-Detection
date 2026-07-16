@@ -39,6 +39,41 @@ class NodeExplanation:
     fidelity_minus: float
 
 
+def attention_summaries(
+    model: GATv2, data: Data, node_ids: list[str]
+) -> dict[str, dict[str, float]]:
+    """§4.4 attention corroboration (audit F15): one full-graph forward, then
+    per requested node the mean/max last-layer attention over its INCOMING
+    messages — the learned counterpart to the explainer's edge mask."""
+    index_of = {nid: i for i, nid in enumerate(data.node_ids)}
+    model.eval()
+    with torch.no_grad():
+        model(
+            x=data.x,
+            edge_index=data.edge_index,
+            edge_direction=data.edge_direction,
+            edge_rel=data.edge_rel,
+        )
+    assert model.last_attention is not None
+    att_edge_index, att = model.last_attention  # att: (E', heads)
+    out: dict[str, dict[str, float]] = {}
+    for node_id in node_ids:
+        idx = index_of.get(node_id)
+        if idx is None:
+            continue
+        incoming = att_edge_index[1] == idx
+        if not bool(incoming.any()):
+            continue
+        weights = att[incoming]
+        out[node_id] = {
+            "mean_incoming_attention": float(weights.mean()),
+            "max_incoming_attention": float(weights.max()),
+            "n_heads": float(weights.shape[1]),
+            "n_incoming": float(weights.shape[0]),
+        }
+    return out
+
+
 def _ego(data: Data, node_idx: int, num_hops: int) -> tuple[Data, int]:
     subset, edge_index, mapping, edge_mask = k_hop_subgraph(
         node_idx, num_hops, data.edge_index, relabel_nodes=True, num_nodes=data.x.shape[0]
