@@ -1,0 +1,24 @@
+# §7 steps 17+19 — explanation bundles for the top-k Elliptic++ ensemble-queue
+# alerts: GNNExplainer (GATv2 checkpoint) on each alert's top member +
+# motif matcher + FATF red flags. k ≤ 200 bounds the per-alert budget (§4.4).
+dataset: elliptic_pp
+domain: financial
+store_root: data/interim
+alerts: eval_outputs/elliptic_pp/alert_queue_ensemble/alerts.parquet
+member_scores: eval_outputs/elliptic_pp/ensemble/scores_ensemble_calibrated.parquet
+output_dir: eval_outputs/elliptic_pp/explanations
+top_k: 50
+seed: 0
+
+supervised_model:
+  name: gatv2
+  checkpoint: eval_outputs/elliptic_pp/gnn_gatv2_focal/model.pt
+  features: raw
+  hidden_dim: 64
+  num_layers: 2
+  heads: 4
+  dropout: 0.3
+
+num_hops: 2
+explainer_epochs: 100
+top_edges: 20

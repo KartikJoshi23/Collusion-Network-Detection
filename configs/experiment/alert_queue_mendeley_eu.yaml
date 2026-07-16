@@ -1,0 +1,20 @@
+# First procurement alert queue (M4 needs bundles on BOTH domains): Leiden on
+# the Mendeley test window (firms/tenders/buyers ≥2014), members scored by the
+# R-GCN run, isotonic calibration on its validation pool. Within-sample framing
+# per the M1 decision; the R-GCN's weak test transfer (ledger) rides along
+# honestly — the queue mechanics and bundles are what M4 validates.
+dataset: mendeley_eu
+domain: procurement
+store_root: data/interim
+scores_dir: eval_outputs/mendeley_eu/gnn_rgcn_focal
+output_dir: eval_outputs/mendeley_eu/alert_queue
+model_run_id: rgcn_focal_s0
+seed: 0
+
+split:
+  test_start: 2014
+
+resolution: 1.0
+min_community_size: 2
+top_p: 0.25
+budgets: [4, 18, 36]

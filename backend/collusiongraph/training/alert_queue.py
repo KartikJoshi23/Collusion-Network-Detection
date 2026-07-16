@@ -42,19 +42,23 @@ def build_alert_queue(config: dict[str, Any] | str | Path) -> dict[str, Any]:
     kept = test_nodes["node_id"].implode()
     test_edges = edges.filter(pl.col("src").is_in(kept) & pl.col("dst").is_in(kept))
 
-    # calibrate on the validation pool (never test), apply to test scores
-    val_scores = pl.read_parquet(run_dir / "scores_val.parquet").join(
-        labels.filter(pl.col("label").is_in([Label.ILLICIT.value, Label.LICIT.value])).select(
-            "node_id", (pl.col("label") == Label.ILLICIT.value).cast(pl.Int8).alias("y")
-        ),
-        on="node_id",
-        how="inner",
-    )
-    calibrator = isotonic_calibrator(val_scores["score"].to_numpy(), val_scores["y"].to_numpy())
-    test_scores = pl.read_parquet(run_dir / "scores_test.parquet")
-    calibrated = test_scores.with_columns(
-        pl.Series("score", calibrator.predict(test_scores["score"].to_numpy()))
-    )
+    if cfg.get("precalibrated", False):
+        # e.g. the calibrated-fusion ensemble: scores are already probabilities
+        calibrated = pl.read_parquet(run_dir / cfg["scores_file"])
+    else:
+        # calibrate on the validation pool (never test), apply to test scores
+        val_scores = pl.read_parquet(run_dir / "scores_val.parquet").join(
+            labels.filter(pl.col("label").is_in([Label.ILLICIT.value, Label.LICIT.value])).select(
+                "node_id", (pl.col("label") == Label.ILLICIT.value).cast(pl.Int8).alias("y")
+            ),
+            on="node_id",
+            how="inner",
+        )
+        calibrator = isotonic_calibrator(val_scores["score"].to_numpy(), val_scores["y"].to_numpy())
+        test_scores = pl.read_parquet(run_dir / "scores_test.parquet")
+        calibrated = test_scores.with_columns(
+            pl.Series("score", calibrator.predict(test_scores["score"].to_numpy()))
+        )
 
     communities = leiden_communities(
         test_nodes,
