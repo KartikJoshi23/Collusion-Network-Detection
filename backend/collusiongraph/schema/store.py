@@ -85,6 +85,34 @@ class GraphStore:
             raise FileNotFoundError(f"{path} — run the adapter first (poe ingest)")
         return pl.read_parquet(path)
 
+    def write_features(
+        self, dataset: str, pack: str, df: pl.DataFrame, meta: dict[str, Any] | None = None
+    ) -> Path:
+        """Feature-pack artifact: ``features_<pack>.parquet`` beside the IR tables.
+
+        Features never live in ``nodes.parquet`` (decision log 2026-07-14); packs
+        are variable-width by design, so the only schema requirement is the
+        ``node_id`` key. ``meta`` (e.g. the as-of timestamp — §9.1b audit trail)
+        lands in ``features_<pack>.meta.json``.
+        """
+        if "node_id" not in df.columns:
+            raise SchemaError(f"features_{pack}: feature packs must carry a node_id column")
+        out = self.dataset_dir(dataset)
+        out.mkdir(parents=True, exist_ok=True)
+        path = out / f"features_{pack}.parquet"
+        df.write_parquet(path)
+        if meta is not None:
+            (out / f"features_{pack}.meta.json").write_text(
+                json.dumps(meta, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+            )
+        return path
+
+    def read_features(self, dataset: str, pack: str) -> pl.DataFrame:
+        path = self.dataset_dir(dataset) / f"features_{pack}.parquet"
+        if not path.is_file():
+            raise FileNotFoundError(f"{path} — compute the feature pack first")
+        return pl.read_parquet(path)
+
     def write_meta(self, dataset: str, meta: dict[str, Any]) -> Path:
         out = self.dataset_dir(dataset)
         out.mkdir(parents=True, exist_ok=True)
@@ -96,9 +124,13 @@ class GraphStore:
         return json.loads((self.dataset_dir(dataset) / "meta.json").read_text(encoding="utf-8"))
 
     def connect(self, dataset: str) -> duckdb.DuckDBPyConnection:
-        """In-memory DuckDB with one view per existing IR table (zero-server SQL)."""
+        """In-memory DuckDB with one view per existing IR table and feature pack
+        (zero-server SQL)."""
         con = duckdb.connect()
-        for table_name in TABLE_SCHEMAS:
+        views = list(TABLE_SCHEMAS) + [
+            p.stem for p in self.dataset_dir(dataset).glob("features_*.parquet")
+        ]
+        for table_name in views:
             path = self.dataset_dir(dataset) / f"{table_name}.parquet"
             if path.is_file():
                 con.execute(
