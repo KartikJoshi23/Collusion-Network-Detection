@@ -36,6 +36,8 @@ from collusiongraph.models.baselines import (
 from collusiongraph.schema import GraphStore, Label
 from collusiongraph.splits import strict_temporal_split
 
+from .labels import resolve_train_labels
+
 
 def raw_feature_frame(nodes: pl.DataFrame, n_features: int) -> pl.DataFrame:
     """Unpack ``nodes.raw_features`` (list<f32>) into wide columns raw_0..raw_{n-1}."""
@@ -129,7 +131,12 @@ def run_baselines(config: dict[str, Any] | str | Path) -> dict[str, Any]:
 
     train_features = train_view.filter(pl.col("node_id").is_in(train_ids.implode()))
     test_features = test_view.filter(pl.col("node_id").is_in(test_ids.implode()))
-    train_labeled = train_features.join(_binary_labels(labels), on="node_id", how="inner")
+    # training targets: what a supervisor could have known at train_end (F1) —
+    # test evaluation (inside run_eval) keeps the stored full-knowledge labels
+    train_labels = resolve_train_labels(
+        cfg.get("train_label_policy", "static"), labels, edges, split_cfg["train_end"]
+    )
+    train_labeled = train_features.join(_binary_labels(train_labels), on="node_id", how="inner")
     if train_labeled["y"].n_unique() < 2:
         raise ValueError("training split lacks both classes — check the split boundaries")
 

@@ -27,36 +27,64 @@ def _validate_binary(y_true: np.ndarray) -> None:
         raise ValueError(f"y_true must be binary 0/1 (confirmed nodes only), got {sorted(uniques)}")
 
 
+def _expected_positives_at_k(y_true: np.ndarray, scores: np.ndarray, k: int) -> float:
+    """Expected number of positives in a top-k selection under UNIFORM RANDOM
+    tie-breaking at the k-th score.
+
+    Tie-heavy scorers (rules engines, structural floors) make argsort-order
+    top-k arbitrary: with thousands of nodes tied at the cutoff, P@k would
+    depend on row order. The expected value is order-free and reproducible:
+    positives strictly above the cutoff count fully; the remaining slots take
+    the tie group's positive rate.
+    """
+    if k <= 0:
+        raise ValueError(f"k must be positive, got {k}")
+    threshold = np.sort(scores)[::-1][k - 1]
+    above = scores > threshold
+    pos_above = float(y_true[above].sum())
+    tie = scores == threshold
+    slots = k - int(above.sum())
+    return pos_above + slots * float(y_true[tie].sum()) / float(tie.sum())
+
+
+def _effective_k(k: int, n: int) -> int:
+    """Budgets larger than the scored population truncate honestly (mirrors the
+    alert-level k_effective policy) — never silently dropped, never padded."""
+    if k <= 0:
+        raise ValueError(f"k must be positive, got {k}")
+    if n == 0:
+        raise ValueError("no scored nodes")
+    return min(k, n)
+
+
 def precision_at_k(y_true: np.ndarray, scores: np.ndarray, k: int) -> float:
-    """Precision within the top-k nodes by score (descending, stable order)."""
+    """Expected precision within the top-k nodes (tie-aware, order-free)."""
     y_true, scores = np.asarray(y_true), np.asarray(scores)
     _validate_binary(y_true)
-    if not 0 < k <= len(scores):
-        raise ValueError(f"k={k} out of range for {len(scores)} scored nodes")
-    top = np.argsort(-scores, kind="stable")[:k]
-    return float(y_true[top].mean())
+    k_eff = _effective_k(k, len(scores))
+    return _expected_positives_at_k(y_true, scores, k_eff) / k_eff
 
 
 def recall_at_k(y_true: np.ndarray, scores: np.ndarray, k: int) -> float:
-    """Share of all positives captured in the top-k (captured illicit mass)."""
+    """Expected share of all positives captured in the top-k (tie-aware)."""
     y_true, scores = np.asarray(y_true), np.asarray(scores)
     _validate_binary(y_true)
     n_pos = int(y_true.sum())
     if n_pos == 0:
         raise ValueError("recall undefined: no positives in y_true")
-    top = np.argsort(-scores, kind="stable")[:k]
-    return float(y_true[top].sum() / n_pos)
+    k_eff = _effective_k(k, len(scores))
+    return _expected_positives_at_k(y_true, scores, k_eff) / n_pos
 
 
 def fpr_at_k(y_true: np.ndarray, scores: np.ndarray, k: int) -> float:
-    """Share of all negatives falsely flagged in the top-k (FP / total negatives)."""
+    """Expected share of all negatives falsely flagged in the top-k (tie-aware)."""
     y_true, scores = np.asarray(y_true), np.asarray(scores)
     _validate_binary(y_true)
     n_neg = int((1 - y_true).sum())
     if n_neg == 0:
         raise ValueError("FPR undefined: no negatives in y_true")
-    top = np.argsort(-scores, kind="stable")[:k]
-    return float((1 - y_true[top]).sum() / n_neg)
+    k_eff = _effective_k(k, len(scores))
+    return (k_eff - _expected_positives_at_k(y_true, scores, k_eff)) / n_neg
 
 
 def auc_pr(y_true: np.ndarray, scores: np.ndarray) -> dict[str, float]:

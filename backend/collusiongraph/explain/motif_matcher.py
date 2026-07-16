@@ -14,6 +14,7 @@ injection-recovery report showed graph-scale statistics miss.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from itertools import islice
 
 import networkx as nx
 import polars as pl
@@ -45,6 +46,7 @@ def match_financial(
     edges: pl.DataFrame,
     fan_min: int = 5,
     cycle_max_len: int = 8,
+    max_cycles: int = 100,
     chain_min_len: int = 3,
     retention_min: float = 0.9,
     hold_max: int = 2,
@@ -54,7 +56,9 @@ def match_financial(
     g = _pays_digraph(edges)
     matches: list[MotifMatch] = []
 
-    for cycle in nx.simple_cycles(g, length_bound=cycle_max_len):
+    # dense subgraphs can hold combinatorially many short cycles — cap the
+    # enumeration so a single alert can never hang the bundle run (audit F9)
+    for cycle in islice(nx.simple_cycles(g, length_bound=cycle_max_len), max_cycles):
         if len(cycle) >= 3:
             matches.append(MotifMatch("cycle", sorted(cycle), {"length": len(cycle)}))
 
@@ -75,38 +79,48 @@ def match_financial(
 def _pass_through_chains(
     g: nx.DiGraph, min_len: int, retention_min: float, hold_max: int
 ) -> list[MotifMatch]:
-    """Maximal chains of consecutive hops with near-full retention and short
-    holds: for middle nodes in==out==1, each hop forwards >= retention_min of
-    the amount within <= hold_max time units."""
+    """Maximal EDGE-level chains with near-full retention and short holds.
 
-    def hop_ok(a: str, b: str, c: str) -> bool:
-        e1, e2 = g.edges[a, b], g.edges[b, c]
-        if e1["amount"] is None or e2["amount"] is None or not e1["amount"]:
+    A qualifying hop is a pair of consecutive edges (a→b, b→c) forwarding
+    >= ``retention_min`` of the amount within <= ``hold_max`` time units.
+    A head is an edge with no qualifying predecessor. Edge-level chaining
+    means EMBEDDED chains — heads fed by unrelated upstream edges, members
+    carrying bridge edges — still match (audit F8: the old node-level rule
+    required a pristine in-degree-0 head, so any real-world chain attached to
+    background traffic was invisible). At a fork, the hop with the highest
+    forwarded amount continues the chain (deterministic, never duplicated).
+    """
+
+    def hop_ok(e_in: tuple[str, str], e_out: tuple[str, str]) -> bool:
+        a1, a2 = g.edges[e_in]["amount"], g.edges[e_out]["amount"]
+        t1, t2 = g.edges[e_in]["timestamp"], g.edges[e_out]["timestamp"]
+        if a1 is None or a2 is None or not a1 or t1 is None or t2 is None:
             return False
-        if e1["timestamp"] is None or e2["timestamp"] is None:
-            return False
-        return (
-            e2["amount"] / e1["amount"] >= retention_min
-            and 0 <= e2["timestamp"] - e1["timestamp"] <= hold_max
-        )
+        return a2 / a1 >= retention_min and 0 <= t2 - t1 <= hold_max
+
+    def qualifying_successors(edge: tuple[str, str]) -> list[tuple[str, str]]:
+        _, b = edge
+        return [(b, c) for c in g.successors(b) if hop_ok(edge, (b, c))]
+
+    def has_qualifying_predecessor(edge: tuple[str, str]) -> bool:
+        a, _ = edge
+        return any(hop_ok((p, a), edge) for p in g.predecessors(a))
 
     matches = []
-    seen: set[tuple[str, ...]] = set()
-    starts = [n for n in g.nodes if g.out_degree(n) == 1 and g.in_degree(n) == 0]
-    for start in starts:
-        chain = [start]
-        node = start
-        while g.out_degree(node) == 1:
-            (nxt,) = g.successors(node)
-            if len(chain) >= 2 and not hop_ok(chain[-2], node, nxt):
+    seen: set[tuple[tuple[str, str], ...]] = set()
+    for head in g.edges:
+        if has_qualifying_predecessor(head):
+            continue
+        chain = [head]
+        while True:
+            nxt = qualifying_successors(chain[-1])
+            if not nxt:
                 break
-            chain.append(nxt)
-            if g.in_degree(nxt) != 1:
-                break
-            node = nxt
-        if len(chain) - 1 >= min_len and tuple(chain) not in seen:
+            chain.append(max(nxt, key=lambda e: g.edges[e]["amount"]))
+        if len(chain) >= min_len and tuple(chain) not in seen:
             seen.add(tuple(chain))
-            matches.append(MotifMatch("pass_through", sorted(chain), {"hops": len(chain) - 1}))
+            members = sorted({n for e in chain for n in e})
+            matches.append(MotifMatch("pass_through", members, {"hops": len(chain)}))
     return matches
 
 

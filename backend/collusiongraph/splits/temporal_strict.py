@@ -61,7 +61,10 @@ def strict_temporal_split(
     n_fenced_nodes = n_fenced_edges = 0
     if fence_after is not None:
         before_n, before_e = nodes.height, edges.height
-        nodes = nodes.filter(pl.col(time_col) <= fence_after)
+        # null-time nodes are UNPLACED, not post-window: the fence keeps them
+        # (they are excluded from both split sides below and counted as
+        # unplaced) — matching features.restrict_as_of semantics (audit F6)
+        nodes = nodes.filter(pl.col(time_col).is_null() | (pl.col(time_col) <= fence_after))
         kept = nodes["node_id"].implode()
         edges = edges.filter(
             (pl.col("timestamp") <= fence_after)

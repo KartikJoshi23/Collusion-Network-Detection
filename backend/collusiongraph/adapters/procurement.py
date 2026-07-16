@@ -302,5 +302,44 @@ def garcia_to_ir(
     return stats
 
 
+def mendeley_firm_labels_as_of(edges: pl.DataFrame, as_of: int) -> pl.DataFrame:
+    """Firm labels reconstructed from award-level ground truth AT ``as_of``.
+
+    The stored ``labels`` table rolls ``is_cartel`` up over a firm's ENTIRE
+    history — training on it under a temporal split leaks future cartel
+    activity into train-period targets (audit F1). This derives the label a
+    supervisor could have known at ``as_of``: illicit iff any award timestamped
+    ≤ as_of carries ``is_cartel=1``; licit otherwise. Firms with no awards by
+    ``as_of`` are simply absent (unknowable then). Evaluation of TEST
+    predictions still uses the stored full-knowledge labels — ground truth is
+    assessed after the fact; training targets must not be.
+    """
+    awarded = edges.filter(
+        (pl.col("edge_type") == EdgeType.AWARDED.value)
+        & pl.col("timestamp").is_not_null()
+        & (pl.col("timestamp") <= as_of)
+    )
+    per_firm = (
+        awarded.with_columns(
+            pl.col("raw_attrs")
+            .str.json_path_match("$.is_cartel")
+            .cast(pl.Int64, strict=False)
+            .fill_null(0)
+            .alias("_cartel")
+        )
+        .group_by(pl.col("dst").alias("node_id"))
+        .agg(pl.col("_cartel").max())
+    )
+    return per_firm.select(
+        "node_id",
+        pl.when(pl.col("_cartel") == 1)
+        .then(pl.lit(Label.ILLICIT.value))
+        .otherwise(pl.lit(Label.LICIT.value))
+        .alias("label"),
+        pl.lit(f"mendeley_is_cartel_asof_{as_of}").alias("label_source"),
+        pl.lit(1.0, dtype=pl.Float32).alias("confidence"),
+    )
+
+
 def _json_attrs(**kwargs: Any) -> str:  # small helper for tests/fixtures
     return json.dumps(kwargs, ensure_ascii=False)
