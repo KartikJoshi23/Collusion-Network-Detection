@@ -1,0 +1,27 @@
+# §7 step 11 — focal-vs-class-weights ablation arm: identical to the focal run
+# except the loss (class-weighted cross-entropy).
+dataset: elliptic_pp
+store_root: data/interim
+output_dir: eval_outputs/elliptic_pp/gnn_sage_wce
+seed: 0
+features: raw
+
+split:
+  loss_end: 29
+  train_end: 34
+  test_start: 35
+
+model:
+  name: graphsage
+  hidden_dim: 128
+  num_layers: 2
+  dropout: 0.3
+
+loss:
+  name: weighted_ce
+
+lr: 0.01
+weight_decay: 0.0005
+epochs: 200
+patience: 20
+budgets: [50, 100, 200]
