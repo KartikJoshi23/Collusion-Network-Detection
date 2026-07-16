@@ -1,9 +1,10 @@
 # CollusionGraph — Progress Ledger
 
 ## Current milestone
-**M1 reached on laptop-B** (baseline scoreboard B1–B3(+B4) exists on both anchors — §7 milestone
-table definition), pending master-laptop review of the PR stack #1→#2→#3. Next: Week 4 (§7 steps
-11–13, supervised GNN core → M2).
+**M1 COMPLETE and merged to main** (baseline scoreboard B1–B3(+B4) exists on both anchors — §7
+milestone table definition). Week-3 stack merged 2026-07-16 (PR #1 and PR #3; see Decision log on
+the direct-merge deviation and PR #2's closed-unmerged state). main @ 030b2fa: 126/126 tests, CI
+green. Next: Week 4 (§7 steps 11–13, supervised GNN core → M2).
 **M0 COMPLETE**; **Week 2 (§7 steps 4–7) COMPLETE and pushed** (the previous "not yet pushed"
 note was stale — origin/main carries b93717c…1713806, verified by anonymous clone 2026-07-15).
 **Week 3 step 8 (§7) COMPLETE** on laptop-B: shared structural feature template + financial +
@@ -44,7 +45,7 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## In-flight
 <!-- exactly what is unfinished, where, why, and which machine/branch has it -->
-- **PR stack awaiting master-laptop review, merge in order #1 → #2 → #3:** PR #1 `feat/features-structural` (step 8 + bootstrap fix + Python pin; CI green), PR #2 `feat/eval-harness` (step 9; CI green), PR #3 `feat/baselines-m1` (step 10 → M1). Each retargets automatically as its base merges. 126/126 tests at PR #3 head.
+- Nothing mid-implementation. The Week-3 stack is merged to main; feature branches deleted.
 - Procurement top-% budgets were resolved manually for Mendeley (4/18/36 = top 1/5/10% of the 363-firm test queue, in the experiment config); automatic percent→k resolution inside `run_eval` remains a nice-to-have.
 - `eval_outputs/` is regenerable and gitignored: scoreboard numbers live in this ledger and PR #3's description; rerun `run_baselines('configs/experiment/baselines_<anchor>.yaml')` to reproduce (seeded, deterministic).
 - AMLworld raw data is absent on laptop-B (Kaggle credentials are per-machine; script reports `blocked` as designed). Financial pack is untested at AMLworld scale (5M edges) — see Next action 5.
@@ -52,11 +53,10 @@ still public 2026-07-15 — anonymous clone succeeded).
 ## Next actions (ordered, self-contained)
 1. **[user]** Rotate/revoke the OpenAI API key exposed in `Gen-AI Chatbot/.../.env` AND embedded in the original `FIX_FRONTEND.md` (two exposures) at platform.openai.com.
 2. **[user]** Make the GitHub repo private (plan requires a private repo): repo Settings → General → Danger Zone → Change visibility, or `gh repo edit KartikJoshi23/Collusion-Network-Detection --visibility private` after `gh auth login`. Also consider rotating the Kaggle token that was shared in a chat session.
-3. **[master]** Review + merge the PR stack **#1 → #2 → #3** (in order; each retargets automatically).
-4. Week 4 (§7 step 11): GraphSAGE + GATv2 with `NeighborLoader`, bidirectional edges + direction flags, focal loss vs. class weights, early stopping on val AUC-PR; Elliptic++ first (unknown-label policy §4.3 D1). The B2/B3 scoreboard (AUC-PR 0.81, P@100 1.0) is the yardstick — GADBench predicts the GNNs may NOT beat it; report honestly either way (M2 definition allows "gap understood & documented").
-5. Week 4 (§7 step 12): R-GCN on the heterogeneous procurement graph (forward/reverse relations).
-6. Week 4 (§7 step 13): Leiden communities + roll-up + isotonic calibration + NMS → first end-to-end alert queue (unlocks the harness's alert-level metrics) → **Milestone M2**.
-7. Deferred small items: wire the datasets' **precomputed screens** through as B4 inputs (Mendeley `lot_bidscount`/`relative_value` in awarded `raw_attrs`; García CV/SPD/DIFFP/RD/KURT/SKEW/KSTEST in bids_on `raw_attrs`); exercise the feature packs + baselines on AMLworld HI-Small (5M edges) on a machine with Kaggle credentials; automatic percent→k budget resolution in `run_eval`.
+3. Week 4 (§7 step 11): GraphSAGE + GATv2 with `NeighborLoader`, bidirectional edges + direction flags, focal loss vs. class weights, early stopping on val AUC-PR; Elliptic++ first (unknown-label policy §4.3 D1). The B2/B3 scoreboard (AUC-PR 0.81, P@100 1.0) is the yardstick — GADBench predicts the GNNs may NOT beat it; report honestly either way (M2 definition allows "gap understood & documented").
+4. Week 4 (§7 step 12): R-GCN on the heterogeneous procurement graph (forward/reverse relations).
+5. Week 4 (§7 step 13): Leiden communities + roll-up + isotonic calibration + NMS → first end-to-end alert queue (unlocks the harness's alert-level metrics) → **Milestone M2**.
+6. Deferred small items: wire the datasets' **precomputed screens** through as B4 inputs (Mendeley `lot_bidscount`/`relative_value` in awarded `raw_attrs`; García CV/SPD/DIFFP/RD/KURT/SKEW/KSTEST in bids_on `raw_attrs`); exercise the feature packs + baselines on AMLworld HI-Small (5M edges) on a machine with Kaggle credentials; automatic percent→k budget resolution in `run_eval`.
 
 ## Decision log
 <!-- - YYYY-MM-DD · decision · rationale · plan section affected -->
@@ -85,6 +85,7 @@ still public 2026-07-15 — anonymous clone succeeded).
 - 2026-07-15 · **Mendeley M1 baselines are firm-level and within-sample** (case-control file, 41.9% overall / 35.8% test prevalence — per the 2026-07-13 prevalence decision): tender-queue budgets resolved manually to k=4/18/36 (top 1/5/10% of the 363-firm test queue). Population-style claims wait for opentender/LOCO settings · §4.3 D4, §4.5.
 - 2026-07-15 · `run_eval` skips alert-level metrics when no alert queue exists (M1 baselines are node-score-only; alerts arrive with the §7 step-13 roll-up) — skipped, never faked · §4.5.
 - 2026-07-15 · Empty-graph dtype guard: frames built from possibly-empty node lists pin `node_id` to Utf8 (an empty as-of graph must not degrade schemas downstream) — found by the step-10 single-class split test · §9.1.
+- 2026-07-16 · **Week-3 stack merged to main from laptop-B on explicit user instruction** — a recorded deviation from the "master laptop integrates" rule (§7 collaboration workflow). CI was green on every PR head before merging; 126/126 tests re-verified on merged main. Bookkeeping note: PR #2 (`feat/eval-harness`) ended **closed-unmerged** — deleting PR #1's branch outside the PR flow closed it and GitHub cannot reopen a PR whose base ref is gone; its commits (d2ad3c3, beec8dc) reached main via PR #3, which was retargeted to main and merged. Merge refs: PR #1 380465c, PR #3 030b2fa · §7.
 
 ## Known issues
 <!-- - description · discovered when · severity -->
