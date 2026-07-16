@@ -12,6 +12,7 @@ cannot silently emit a malformed table.
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -21,6 +22,9 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 from .tables import TABLE_SCHEMAS
+
+# artifact names become file paths and SQL identifiers — keep them boring
+_NAME_RE = re.compile(r"^[A-Za-z0-9_]+$")
 
 
 class SchemaError(ValueError):
@@ -95,6 +99,8 @@ class GraphStore:
         ``node_id`` key. ``meta`` (e.g. the as-of timestamp — §9.1b audit trail)
         lands in ``features_<pack>.meta.json``.
         """
+        if not _NAME_RE.match(pack):
+            raise SchemaError(f"invalid pack name {pack!r} (letters, digits, underscores only)")
         if "node_id" not in df.columns:
             raise SchemaError(f"features_{pack}: feature packs must carry a node_id column")
         out = self.dataset_dir(dataset)
@@ -108,6 +114,8 @@ class GraphStore:
         return path
 
     def read_features(self, dataset: str, pack: str) -> pl.DataFrame:
+        if not _NAME_RE.match(pack):
+            raise SchemaError(f"invalid pack name {pack!r} (letters, digits, underscores only)")
         path = self.dataset_dir(dataset) / f"features_{pack}.parquet"
         if not path.is_file():
             raise FileNotFoundError(f"{path} — compute the feature pack first")
@@ -128,7 +136,9 @@ class GraphStore:
         (zero-server SQL)."""
         con = duckdb.connect()
         views = list(TABLE_SCHEMAS) + [
-            p.stem for p in self.dataset_dir(dataset).glob("features_*.parquet")
+            p.stem
+            for p in self.dataset_dir(dataset).glob("features_*.parquet")
+            if _NAME_RE.match(p.stem)  # never interpolate a hostile stem into SQL
         ]
         for table_name in views:
             path = self.dataset_dir(dataset) / f"{table_name}.parquet"

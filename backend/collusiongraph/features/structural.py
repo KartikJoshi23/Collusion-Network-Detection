@@ -184,6 +184,46 @@ def structural_features(
     return _community_stats(features, communities).sort("node_id")
 
 
+def fit_zscore(features: pl.DataFrame, id_col: str = "node_id") -> dict[str, tuple[float, float]]:
+    """Column means/stds to FREEZE from one graph (the training graph) and
+    re-apply elsewhere (audit F3): training under one normalization and scoring
+    under another is a train/serve skew — the trainer fits stats on the train
+    graph and applies them to the inference graph. ``zscore_per_graph`` remains
+    the §4.2 rule-2 transfer-channel transform (each graph normalized to
+    itself); this pair is the model-input transform."""
+    stats: dict[str, tuple[float, float]] = {}
+    for name, dtype in features.schema.items():
+        if name == id_col or not dtype.is_numeric():
+            continue
+        col = features[name].cast(pl.Float64)
+        mean, std = col.mean(), col.std()
+        stats[name] = (
+            float(mean) if isinstance(mean, float) else 0.0,
+            float(std) if isinstance(std, float) and std > 0 else 0.0,
+        )
+    return stats
+
+
+def apply_zscore(
+    features: pl.DataFrame,
+    stats: dict[str, tuple[float, float]],
+    id_col: str = "node_id",
+    fill_null: bool = True,
+) -> pl.DataFrame:
+    """Apply frozen z-scoring stats. Columns unseen at fit time are dropped
+    (the model has no weights for them); zero-variance columns become 0.0."""
+    exprs: list[pl.Expr] = [pl.col(id_col)]
+    for name, (mean, std) in stats.items():
+        if name not in features.columns:
+            raise ValueError(f"column {name!r} missing from features at apply time")
+        col = pl.col(name).cast(pl.Float64)
+        z = ((col - mean) / std) if std > 0 else pl.lit(0.0)
+        if fill_null:
+            z = z.fill_null(0.0)
+        exprs.append(z.alias(name))
+    return features.select(exprs)
+
+
 def zscore_per_graph(
     features: pl.DataFrame, id_col: str = "node_id", fill_null: bool = True
 ) -> pl.DataFrame:

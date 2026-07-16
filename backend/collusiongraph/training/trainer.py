@@ -22,29 +22,30 @@ import torch
 from sklearn.metrics import average_precision_score
 
 from collusiongraph.eval import load_config, run_eval
-from collusiongraph.features import restrict_as_of, structural_features, zscore_per_graph
+from collusiongraph.features import (
+    apply_zscore,
+    fit_zscore,
+    restrict_as_of,
+    structural_features,
+)
 from collusiongraph.models.gnn import make_model
 from collusiongraph.schema import GraphStore
 
 from .baseline_run import raw_feature_frame
 from .graph_build import build_graph, confirmed_mask_for
+from .labels import resolve_train_labels
 from .losses import make_loss
 
 _TIME = "time_first_seen"
 
 
-def _feature_frame(
+def _raw_feature_source(
     kind: str, nodes: pl.DataFrame, edges: pl.DataFrame, as_of: int | None, n_raw: int
 ) -> pl.DataFrame:
-    # Inputs are z-scored per graph in BOTH kinds: tree baselines are scale-
-    # invariant but gradient training is not — Elliptic's raw feature columns
-    # span wildly different scales and stall optimization unstandardized.
-    # Train-graph stats normalize training; inference-graph stats normalize
-    # scoring (the model may see the graph as it exists then — §4.3 D1).
     if kind == "raw":
-        return zscore_per_graph(raw_feature_frame(nodes, n_raw))
+        return raw_feature_frame(nodes, n_raw)
     if kind == "structural":
-        return zscore_per_graph(structural_features(nodes, edges, as_of=as_of))
+        return structural_features(nodes, edges, as_of=as_of)
     raise ValueError(f"unknown feature kind {kind!r} (expected raw/structural)")
 
 
@@ -76,6 +77,10 @@ def train_gnn(config: dict[str, Any] | str | Path) -> dict[str, Any]:
     loss_end: int = split["loss_end"]
     if not loss_end < train_end:
         raise ValueError("loss_end must precede train_end (temporal validation tail)")
+    epochs: int = cfg.get("epochs", 200)
+    patience: int = cfg.get("patience", 20)
+    if epochs < 1 or patience < 1:
+        raise ValueError(f"epochs and patience must be >= 1 (got {epochs}, {patience})")
     fence = split.get("fence_after")
     if fence is not None:
         nodes, edges = restrict_as_of(nodes, edges, fence)
@@ -84,11 +89,20 @@ def train_gnn(config: dict[str, Any] | str | Path) -> dict[str, Any]:
     feature_kind: str = cfg.get("features", "raw")
 
     t_nodes, t_edges = restrict_as_of(nodes, edges, train_end)
-    train_data = build_graph(
-        t_nodes, t_edges, labels, _feature_frame(feature_kind, t_nodes, t_edges, train_end, n_raw)
+    # training targets: what a supervisor could have known at train_end (F1)
+    train_labels = resolve_train_labels(
+        cfg.get("train_label_policy", "static"), labels, t_edges, train_end
     )
+    # normalization stats are FIT on the train graph and FROZEN for inference
+    # (F3): the model trains and scores under one normalization, not two
+    train_raw = _raw_feature_source(feature_kind, t_nodes, t_edges, train_end, n_raw)
+    stats = fit_zscore(train_raw)
+    train_data = build_graph(t_nodes, t_edges, train_labels, apply_zscore(train_raw, stats))
     infer_data = build_graph(
-        nodes, edges, labels, _feature_frame(feature_kind, nodes, edges, None, n_raw)
+        nodes,
+        edges,
+        labels,
+        apply_zscore(_raw_feature_source(feature_kind, nodes, edges, None, n_raw), stats),
     )
 
     prefix = f"{cfg['node_type']}:" if cfg.get("node_type") else ""
@@ -120,8 +134,6 @@ def train_gnn(config: dict[str, Any] | str | Path) -> dict[str, Any]:
         model.parameters(), lr=cfg.get("lr", 0.01), weight_decay=cfg.get("weight_decay", 5e-4)
     )
 
-    epochs: int = cfg.get("epochs", 200)
-    patience: int = cfg.get("patience", 20)
     best_val, best_state, best_epoch = -1.0, None, -1
     val_y = train_data.y[val_mask].numpy()
     t0 = time.perf_counter()
@@ -148,8 +160,15 @@ def train_gnn(config: dict[str, Any] | str | Path) -> dict[str, Any]:
     model.eval()
     with torch.no_grad():
         infer_scores = torch.sigmoid(_forward(model, infer_data)).numpy()
+        # validation scores come from the TRAIN graph (F2): the same forward
+        # that drove early stopping — test-period adjacency must not touch the
+        # scores downstream calibration is fit on
+        train_scores = torch.sigmoid(_forward(model, train_data)).numpy()
     scores_all = pl.DataFrame(
         {"node_id": pl.Series(infer_data.node_ids, dtype=pl.Utf8), "score": infer_scores}
+    )
+    train_scores_all = pl.DataFrame(
+        {"node_id": pl.Series(train_data.node_ids, dtype=pl.Utf8), "score": train_scores}
     )
 
     test_start = split.get("test_start", train_end + 1)
@@ -163,8 +182,11 @@ def train_gnn(config: dict[str, Any] | str | Path) -> dict[str, Any]:
     scores_all.filter(pl.col("node_id").is_in(test_ids.implode())).write_parquet(scores_path)
     # validation-pool scores ride along for downstream calibration (§7 step 13)
     val_path = out_dir / "scores_val.parquet"
-    scores_all.filter(pl.col("node_id").is_in(pl.Series(sorted(val_ids)).implode())).write_parquet(
-        val_path
+    train_scores_all.filter(
+        pl.col("node_id").is_in(pl.Series(sorted(val_ids)).implode())
+    ).write_parquet(val_path)
+    (out_dir / "feature_stats.json").write_text(
+        json.dumps({"features": feature_kind, "stats": stats}, indent=2) + "\n", encoding="utf-8"
     )
 
     metrics = run_eval(
@@ -173,6 +195,7 @@ def train_gnn(config: dict[str, Any] | str | Path) -> dict[str, Any]:
             "store_root": str(store.root),
             "budgets": cfg["budgets"],
             "node_scores": str(scores_path),
+            "per_time_step": cfg.get("per_time_step", False),
             "output_dir": str(out_dir),
         }
     )

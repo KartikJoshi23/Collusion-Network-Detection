@@ -18,9 +18,11 @@ from typing import Any
 import polars as pl
 
 from collusiongraph.artifacts.alert_store import build_alerts
-from collusiongraph.eval import load_config, run_eval
+from collusiongraph.eval import DEFAULT_MAX_MEMBERS, load_config, run_eval
 from collusiongraph.models.rollup import community_scores, isotonic_calibrator, leiden_communities
 from collusiongraph.schema import GraphStore, Label
+
+from .labels import resolve_train_labels
 
 _TIME = "time_first_seen"
 
@@ -46,11 +48,18 @@ def build_alert_queue(config: dict[str, Any] | str | Path) -> dict[str, Any]:
         # e.g. the calibrated-fusion ensemble: scores are already probabilities
         calibrated = pl.read_parquet(run_dir / cfg["scores_file"])
     else:
-        # calibrate on the validation pool (never test), apply to test scores
+        # calibrate on the validation pool (never test), apply to test scores;
+        # calibration targets obey the same as-of policy as training (F1)
+        train_labels = resolve_train_labels(
+            cfg.get("train_label_policy", "static"),
+            labels,
+            edges,
+            cfg["split"].get("train_end", test_start - 1),
+        )
         val_scores = pl.read_parquet(run_dir / "scores_val.parquet").join(
-            labels.filter(pl.col("label").is_in([Label.ILLICIT.value, Label.LICIT.value])).select(
-                "node_id", (pl.col("label") == Label.ILLICIT.value).cast(pl.Int8).alias("y")
-            ),
+            train_labels.filter(
+                pl.col("label").is_in([Label.ILLICIT.value, Label.LICIT.value])
+            ).select("node_id", (pl.col("label") == Label.ILLICIT.value).cast(pl.Int8).alias("y")),
             on="node_id",
             how="inner",
         )
@@ -68,12 +77,14 @@ def build_alert_queue(config: dict[str, Any] | str | Path) -> dict[str, Any]:
         min_size=cfg.get("min_community_size", 2),
     )
     scored = community_scores(communities, calibrated, top_p=cfg.get("top_p", 0.25))
+    max_members = cfg.get("alert_unit", {}).get("max_members", DEFAULT_MAX_MEMBERS)
     alerts = build_alerts(
         scored,
         test_nodes,
         dataset=dataset,
         domain=cfg["domain"],
         model_run_id=cfg.get("model_run_id", "gnn"),
+        max_members=max_members,
     )
 
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -100,6 +111,7 @@ def build_alert_queue(config: dict[str, Any] | str | Path) -> dict[str, Any]:
         "n_test_edges": test_edges.height,
         "n_communities": communities.height,
         "n_alerts": alerts.height,
+        "n_oversized_excluded": scored.height - alerts.height,  # F11: cap at the artifact
         "dedup": metrics.get("dedup"),
         "alert_level": metrics.get("alert_level"),
     }

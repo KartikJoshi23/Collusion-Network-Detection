@@ -24,9 +24,20 @@ def build_alerts(
     dataset: str,
     domain: str,
     model_run_id: str,
+    max_members: int = 100,
 ) -> pl.DataFrame:
-    """Ranked alerts frame (ALERTS_SCHEMA-conformant via ``GraphStore.write``)."""
-    ranked = scored_communities.sort("score", descending=True).with_row_index("_rank", offset=1)
+    """Ranked alerts frame (ALERTS_SCHEMA-conformant via ``GraphStore.write``).
+
+    The §4.5 size cap is enforced AT THE ARTIFACT (audit F11): mega-communities
+    never enter the queue any consumer reads — the harness's NMS cap remains as
+    defense in depth. Ties on score break deterministically by community_id
+    (audit F29), so ranks are stable across runs and platforms.
+    """
+    ranked = (
+        scored_communities.filter(pl.col("member_node_ids").list.len() <= max_members)
+        .sort(["score", "community_id"], descending=[True, False])
+        .with_row_index("_rank", offset=1)
+    )
 
     windows = (
         ranked.select("community_id", "member_node_ids")
