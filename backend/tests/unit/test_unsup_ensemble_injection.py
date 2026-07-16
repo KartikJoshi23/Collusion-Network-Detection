@@ -278,7 +278,9 @@ class TestInjector:
         )
         assert result.ground_truth.height == 3
         assert result.nodes.head(20).equals(nodes)  # background rows untouched
-        injected_ids = set(result.ground_truth["member_node_ids"].explode().to_list())
+        injected_ids = set(
+            result.ground_truth["member_node_ids"].explode(empty_as_null=False).to_list()
+        )
         assert injected_ids <= set(result.nodes["node_id"].to_list())
         # augmented frames still pass the IR schema gate
         store = GraphStore(tmp_path)

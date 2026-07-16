@@ -18,3 +18,8 @@ resolution: 1.0
 min_community_size: 2
 top_p: 0.25
 budgets: [4, 18, 36]
+
+# audit F1: training/calibration targets use award-derived labels AT train_end
+# (the stored labels roll up a firm's entire history); test evaluation keeps
+# the stored full-knowledge labels
+train_label_policy: mendeley_as_of

@@ -14,10 +14,13 @@ budgets: [50, 100, 200] # the problem statement's financial "top 100" ± one ste
 baselines: [b1_rules, b2_xgb, b3_xgb_graph]
 
 # B1 — classic red-flag thresholds; percentiles fit on the TRAIN distribution only.
+# NOTE (audit): the burstiness rule was removed — Elliptic edges connect
+# transactions within a single time step, so inter-event gaps are all zero and
+# burstiness is undefined for every node (the old NaN made the rule silently
+# dead; the null fix makes RulesEngine fail loudly on an all-null column).
 rules:
   - { column: degree_in, direction: high, percentile: 99 } # fan-in (smurfing target)
   - { column: degree_out, direction: high, percentile: 99 } # fan-out (dispersal)
-  - { column: burstiness, direction: high, percentile: 95 } # bursty activity
   - { column: velocity, direction: high, percentile: 95 } # high tx velocity
   - { column: holding_time_median, direction: low, percentile: 5 } # fast pass-through
   - { column: mutual_degree, direction: high, percentile: 99 } # round-tripping dyads

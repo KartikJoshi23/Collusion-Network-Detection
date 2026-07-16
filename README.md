@@ -42,7 +42,25 @@ uv run poe test              # unit + leakage tests
 ```
 
 All tasks are [poethepoet](https://poethepoet.natn.io/) tasks declared in `pyproject.toml` and
-work identically in PowerShell and bash (`poe data`, `poe train`, `poe eval`, `poe demo`, …).
+work identically in PowerShell and bash. Implemented today: `poe data`, `poe test`,
+`poe lint`, `poe ingest`, `poe train`, `poe score`, `poe explain`, `poe eval`;
+`poe serve` (Week 7) and `poe demo` (Week 8) arrive with their roadmap weeks.
+
+## Running experiments
+
+Everything is config-driven — one YAML in `configs/experiment/` = one reproducible run
+(seeded; outputs land in the gitignored `eval_outputs/`):
+
+```powershell
+uv run poe ingest -- --dataset elliptic_pp             # adapter → IR store
+uv run poe train  -- -c configs/experiment/gnn_elliptic_pp_gatv2_focal.yaml
+uv run poe train  -- -c configs/experiment/baselines_elliptic_pp.yaml   # auto-dispatch
+uv run poe score  -- -c configs/experiment/alert_queue_elliptic_pp_ensemble.yaml
+uv run poe explain -- -c configs/experiment/explanations_elliptic_pp.yaml
+```
+
+Headline numbers and protocol decisions live in [`PROGRESS.md`](PROGRESS.md); reproducibility
+is same-machine (XGBoost/torch thread-level determinism is not guaranteed across platforms).
 
 ### What git does NOT carry (per-machine bootstrap)
 

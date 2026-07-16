@@ -1,5 +1,6 @@
-# §7 steps 14–15 — unsupervised members + rank-fusion ensemble on the
-# Elliptic++ test window; every member individually reportable (ablation B5).
+# §7 steps 14–15 — unsupervised members + fusion on the Elliptic++ test
+# window; every member individually reportable (ablation B5). Calibrated
+# fusion is primary; rank fusion rides along as the ablation.
 dataset: elliptic_pp
 store_root: data/interim
 output_dir: eval_outputs/elliptic_pp/ensemble
@@ -12,6 +13,7 @@ split:
   test_start: 35
 
 unsupervised:
+  edge_type: pays # homogeneous projection (audit F7: explicit, empty = error)
   hid_dim: 32
   epochs: 50
 

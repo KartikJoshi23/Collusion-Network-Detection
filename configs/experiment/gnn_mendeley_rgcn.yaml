@@ -29,3 +29,8 @@ weight_decay: 0.0005
 epochs: 300
 patience: 30
 budgets: [4, 18, 36] # top 1/5/10% of the 363-firm test queue (M1 convention)
+
+# audit F1: training/calibration targets use award-derived labels AT train_end
+# (the stored labels roll up a firm's entire history); test evaluation keeps
+# the stored full-knowledge labels
+train_label_policy: mendeley_as_of

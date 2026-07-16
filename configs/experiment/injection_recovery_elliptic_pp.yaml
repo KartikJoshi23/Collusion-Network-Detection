@@ -1,14 +1,19 @@
 # §7 step 16 — synthetic motif injection into the Elliptic++ test window:
 # all five financial motif-table rows, 5 instances each; recall of injected
 # members at budget per scoring arm (RQ2's controlled measurement).
-# AMLworld ground-truth calibration deferred (needs Kaggle credentials).
+# The ensemble arm uses the PRIMARY calibrated fusion (audit F5), calibrated
+# on the train-window validation pool. AMLworld ground-truth calibration
+# remains deferred (needs Kaggle credentials).
 dataset: elliptic_pp
 domain: financial
 store_root: data/interim
 output_dir: eval_outputs/elliptic_pp/injection_recovery
+supervised_scores_dir: eval_outputs/elliptic_pp/gnn_gatv2_focal
 seed: 0
 
 split:
+  loss_end: 29 # calibration pool = confirmed nodes in (loss_end, train_end]
+  train_end: 34
   test_start: 35
   window_end: 49
 
@@ -22,6 +27,7 @@ motifs:
 n_bridge_edges: 2
 
 unsupervised:
+  edge_type: pays
   hid_dim: 32
   epochs: 50
 

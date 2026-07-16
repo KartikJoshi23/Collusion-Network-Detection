@@ -32,3 +32,8 @@ xgb:
   n_estimators: 400
   max_depth: 6
   learning_rate: 0.1
+
+# audit F1: training/calibration targets use award-derived labels AT train_end
+# (the stored labels roll up a firm's entire history); test evaluation keeps
+# the stored full-knowledge labels
+train_label_policy: mendeley_as_of
