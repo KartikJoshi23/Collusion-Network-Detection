@@ -95,14 +95,18 @@ def run_eval(config: dict[str, Any] | str | Path) -> dict[str, Any]:
     if "node_scores" in cfg:
         scores = pl.read_parquet(cfg["node_scores"])
         y, s = confirmed_node_vectors(scores, labels)
-        node_budgets = [k for k in budgets if k <= len(s)]
+        # budgets larger than the confirmed queue truncate honestly (k_effective
+        # reported) — mirroring the alert-level policy, never silently dropped
         metrics["node_level"] = {
             **auc_pr(y, s),
             "n_confirmed": len(y),
-            **{f"precision@{k}": precision_at_k(y, s, k) for k in node_budgets},
-            **{f"recall@{k}": recall_at_k(y, s, k) for k in node_budgets},
-            **{f"fpr@{k}": fpr_at_k(y, s, k) for k in node_budgets},
+            **{f"precision@{k}": precision_at_k(y, s, k) for k in budgets},
+            **{f"recall@{k}": recall_at_k(y, s, k) for k in budgets},
+            **{f"fpr@{k}": fpr_at_k(y, s, k) for k in budgets},
+            **{f"k_effective@{k}": len(s) for k in budgets if k > len(s)},
         }
+        if cfg.get("per_time_step", False):
+            metrics["node_level"]["per_time_step"] = _per_time_step(scores, labels, store, dataset)
 
     out_dir = Path(cfg.get("output_dir", f"eval_outputs/{dataset}"))
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -113,10 +117,37 @@ def run_eval(config: dict[str, Any] | str | Path) -> dict[str, Any]:
     return metrics
 
 
+def _per_time_step(
+    scores: pl.DataFrame, labels: pl.DataFrame, store: GraphStore, dataset: str
+) -> dict[str, dict[str, Any]]:
+    """Per-time-step node metrics (§4.3 D1: Elliptic results are reported per
+    step so the step-43 distribution shift is visible, not averaged away)."""
+    from collusiongraph.schema import Label
+
+    nodes = store.read(dataset, "nodes").select("node_id", "time_first_seen")
+    joined = (
+        scores.join(labels.select("node_id", "label"), on="node_id", how="inner")
+        .filter(pl.col("label").is_in([Label.ILLICIT.value, Label.LICIT.value]))
+        .join(nodes, on="node_id", how="left")
+        .drop_nulls("time_first_seen")
+    )
+    out: dict[str, dict[str, Any]] = {}
+    for (step,), grp in sorted(joined.group_by("time_first_seen"), key=lambda g: g[0]):
+        y = (grp["label"] == Label.ILLICIT.value).cast(pl.Int8).to_numpy()
+        entry: dict[str, Any] = {"n_confirmed": len(y), "n_illicit": int(y.sum())}
+        if 0 < y.sum() < len(y):  # AUC-PR needs both classes
+            entry.update(auc_pr(y, grp["score"].to_numpy()))
+        out[str(step)] = entry
+    return out
+
+
 def _maybe_log_wandb(metrics: dict[str, Any], cfg: dict[str, Any]) -> None:
     wandb_cfg = cfg.get("wandb", {})
     if not wandb_cfg.get("enabled", False):
         return
+    import os
+
+    os.environ.setdefault("WANDB_MODE", "offline")  # never hit the network unasked
     import wandb  # deferred: optional dependency path, offline-safe via WANDB_MODE
 
     run = wandb.init(

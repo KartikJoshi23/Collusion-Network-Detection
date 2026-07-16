@@ -173,9 +173,25 @@ class TestNodeMetrics:
         with pytest.raises(ValueError, match="binary"):
             precision_at_k(np.array([1, 2, 0]), np.array([0.3, 0.2, 0.1]), 1)
 
-    def test_k_out_of_range_rejected(self) -> None:
-        with pytest.raises(ValueError, match="out of range"):
-            precision_at_k(Y, S, 6)
+    def test_oversized_budget_truncates_honestly(self) -> None:
+        """Audit F12: budgets beyond the scored population compute at the
+        population size (mirroring alert-level k_effective), never dropped."""
+        assert precision_at_k(Y, S, 6) == precision_at_k(Y, S, 5)
+        with pytest.raises(ValueError, match="positive"):
+            precision_at_k(Y, S, 0)
+
+    def test_ties_scored_as_expected_value(self) -> None:
+        """Audit F4: tie-heavy scorers (rules engines) must not have
+        order-dependent P@k — ties at the cutoff take their expected rate."""
+        y = np.array([1, 0, 0, 0, 1])
+        scores = np.array([0.9, 0.5, 0.5, 0.5, 0.5])  # 4-way tie after rank 1
+        # top-3 = 1 sure positive + 2 slots from a tie group with rate 1/4
+        assert precision_at_k(y, scores, 3) == pytest.approx((1 + 2 * 0.25) / 3)
+        # order-independence: shuffling the tied rows changes nothing
+        perm = np.array([0, 4, 3, 2, 1])
+        assert precision_at_k(y[perm], scores[perm], 3) == precision_at_k(y, scores, 3)
+        assert recall_at_k(y, scores, 3) == pytest.approx((1 + 0.5) / 2)
+        assert fpr_at_k(y, scores, 3) == pytest.approx((3 - 1.5) / 3)
 
     def test_unknowns_are_dropped_before_scoring(self) -> None:
         scores = pl.DataFrame({"node_id": ["a", "b", "c"], "score": [0.9, 0.8, 0.7]})
