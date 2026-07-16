@@ -1,0 +1,28 @@
+# §7 step 11 — GraphSAGE on Elliptic++, focal loss (primary M2 run).
+# Strict-inductive: train graph = steps 1–34; loss pool ≤29; temporal val 30–34.
+dataset: elliptic_pp
+store_root: data/interim
+output_dir: eval_outputs/elliptic_pp/gnn_sage_focal
+seed: 0
+features: raw
+
+split:
+  loss_end: 29
+  train_end: 34
+  test_start: 35
+
+model:
+  name: graphsage
+  hidden_dim: 128
+  num_layers: 2
+  dropout: 0.3
+
+loss:
+  name: focal
+  gamma: 2.0
+
+lr: 0.01
+weight_decay: 0.0005
+epochs: 200
+patience: 20
+budgets: [50, 100, 200]

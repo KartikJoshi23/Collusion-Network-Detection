@@ -51,7 +51,9 @@ def run_eval(config: dict[str, Any] | str | Path) -> dict[str, Any]:
     store = GraphStore(cfg.get("store_root", "data/interim"))
     dataset: str = cfg["dataset"]
     budgets: list[int] = cfg.get("budgets", DEFAULT_BUDGETS)
-    labels = store.read(dataset, "labels")
+    # optional override, e.g. labels restricted to the test window so coverage
+    # denominators match the queue's operational scope
+    labels = pl.read_parquet(cfg["labels"]) if "labels" in cfg else store.read(dataset, "labels")
 
     metrics: dict[str, Any] = {
         "dataset": dataset,

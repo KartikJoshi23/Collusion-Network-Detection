@@ -1,0 +1,174 @@
+"""Full-pipeline integration (§9.2): ingest → train (few epochs) → score →
+calibrate → Leiden → alerts → harness, on a tiny synthetic financial dataset.
+Runs in seconds; asserts the wiring, not model quality (units own correctness)."""
+
+from itertools import pairwise
+
+import numpy as np
+import polars as pl
+import pytest
+from collusiongraph.schema import GraphStore
+from collusiongraph.training import build_alert_queue, train_gnn
+
+pytestmark = pytest.mark.integration
+
+
+def synthetic_financial_store(tmp_path) -> GraphStore:
+    """Feature-separable illicit/licit accounts over two eras; test era holds
+    two clusters (one illicit-heavy, one clean) for the queue to rank."""
+    rng = np.random.default_rng(0)
+    store = GraphStore(tmp_path / "interim")
+
+    def make_nodes(n: int, t0: int, illicit_share: float, prefix: str):
+        rows = []
+        for i in range(n):
+            is_bad = i < int(n * illicit_share)
+            loc = 1.0 if is_bad else -1.0
+            rows.append(
+                {
+                    "node_id": f"acct:{prefix}{i}",
+                    "node_type": "account",
+                    "domain": "financial",
+                    "time_first_seen": t0 + (i % 2),
+                    "raw_features": (rng.normal(loc, 0.3, size=4)).astype(np.float32).tolist(),
+                    "raw_attrs": None,
+                    "_label": "illicit" if is_bad else ("unknown" if i % 7 == 6 else "licit"),
+                }
+            )
+        return rows
+
+    train_rows = make_nodes(40, 1, 0.25, "tr")  # t in {1,2}… val tail via t=3
+    for i, row in enumerate(train_rows):
+        row["time_first_seen"] = 1 + (i % 3)  # spread over t=1..3
+    test_rows = make_nodes(16, 5, 0.25, "te")  # t in {5,6}
+    all_rows = train_rows + test_rows
+
+    nodes = pl.DataFrame([{k: v for k, v in r.items() if k != "_label"} for r in all_rows])
+    labels = pl.DataFrame(
+        [
+            {
+                "node_id": r["node_id"],
+                "label": r["_label"],
+                "label_source": "toy",
+                "confidence": 1.0,
+            }
+            for r in all_rows
+        ]
+    )
+
+    def chain_edges(ids: list[str], t: int) -> list[dict]:
+        return [
+            {
+                "src": a,
+                "dst": b,
+                "edge_type": "pays",
+                "timestamp": t,
+                "amount": 100.0,
+                "directed": True,
+                "raw_attrs": None,
+            }
+            for a, b in pairwise(ids)
+        ]
+
+    train_ids = [r["node_id"] for r in train_rows]
+    test_ids = [r["node_id"] for r in test_rows]
+    edges = pl.DataFrame(
+        chain_edges(train_ids, 2)
+        + chain_edges(test_ids[:8], 5)  # cluster 1 (illicit-heavy: first 4 are illicit)
+        + chain_edges(test_ids[8:], 6)  # cluster 2 (clean)
+    )
+
+    store.write("toyfin", "nodes", nodes)
+    store.write("toyfin", "edges", edges)
+    store.write("toyfin", "labels", labels)
+    store.write_meta("toyfin", {"dataset": "toyfin", "time_unit": "step", "n_features": 4})
+    return store
+
+
+def test_train_score_queue_eval_end_to_end(tmp_path) -> None:
+    store = synthetic_financial_store(tmp_path)
+    out_dir = tmp_path / "run"
+    record = train_gnn(
+        {
+            "dataset": "toyfin",
+            "store_root": str(store.root),
+            "output_dir": str(out_dir),
+            "seed": 0,
+            "features": "raw",
+            "split": {"loss_end": 2, "train_end": 3, "test_start": 5},
+            "model": {"name": "graphsage", "hidden_dim": 16, "dropout": 0.0},
+            "loss": {"name": "focal", "gamma": 2.0},
+            "epochs": 60,
+            "patience": 15,
+            "lr": 0.05,
+            "budgets": [4],
+        }
+    )
+    assert (out_dir / "scores_test.parquet").is_file()
+    assert (out_dir / "scores_val.parquet").is_file()
+    assert (out_dir / "model.pt").is_file()
+    assert 0.0 <= record["best_val_auc_pr"] <= 1.0
+    # separable features: the GNN must beat the test prevalence baseline
+    assert record["node_level"]["auc_pr"] > record["node_level"]["prevalence_baseline"]
+
+    summary = build_alert_queue(
+        {
+            "dataset": "toyfin",
+            "domain": "financial",
+            "store_root": str(store.root),
+            "scores_dir": str(out_dir),
+            "output_dir": str(out_dir / "alerts"),
+            "split": {"test_start": 5},
+            "seed": 0,
+            "budgets": [2],
+            "model_run_id": "it0",
+        }
+    )
+    assert summary["n_communities"] >= 2
+    assert summary["n_alerts"] == summary["n_communities"]
+    queue = summary["alert_level"]["queue"]["@2"]
+    assert queue["k_effective"] == 2
+    alerts = pl.read_parquet(out_dir / "alerts" / "alerts.parquet")
+    assert alerts["rank"].to_list() == list(range(1, alerts.height + 1))
+    assert ((alerts["risk_score"] >= 0.0) & (alerts["risk_score"] <= 1.0)).all()
+
+
+def test_training_is_blind_to_test_period_edges(tmp_path) -> None:
+    """§9.1 leakage, end to end: adding test-period edges must not change the
+    trained model's validation trajectory or its scores on train-period nodes."""
+    store = synthetic_financial_store(tmp_path)
+    cfg = {
+        "dataset": "toyfin",
+        "store_root": str(store.root),
+        "output_dir": str(tmp_path / "runA"),
+        "seed": 3,
+        "features": "raw",
+        "split": {"loss_end": 2, "train_end": 3, "test_start": 5},
+        "model": {"name": "graphsage", "hidden_dim": 8, "dropout": 0.0},
+        "epochs": 15,
+        "patience": 15,
+        "budgets": [4],
+    }
+    record_a = train_gnn(cfg)
+    val_a = pl.read_parquet(tmp_path / "runA" / "scores_val.parquet").sort("node_id")
+
+    # poison the test period with heavy extra adjacency, retrain
+    edges = store.read("toyfin", "edges")
+    extra = pl.DataFrame(
+        {
+            "src": ["acct:te0"] * 5,
+            "dst": [f"acct:te{i}" for i in range(3, 8)],
+            "edge_type": ["pays"] * 5,
+            "timestamp": [6] * 5,
+            "amount": [9_999.0] * 5,
+            "directed": [True] * 5,
+            "raw_attrs": [None] * 5,
+        }
+    )
+    store.write("toyfin", "edges", pl.concat([edges, extra]))
+    cfg["output_dir"] = str(tmp_path / "runB")
+    record_b = train_gnn(cfg)
+    val_b = pl.read_parquet(tmp_path / "runB" / "scores_val.parquet").sort("node_id")
+
+    assert record_a["best_val_auc_pr"] == record_b["best_val_auc_pr"]
+    assert val_a.equals(val_b)

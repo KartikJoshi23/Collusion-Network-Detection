@@ -1,0 +1,18 @@
+# §7 step 13 — first end-to-end alert queue: Leiden on the Elliptic++ test
+# window (steps 35–49), members scored by the GraphSAGE-focal run, isotonic
+# calibration fit on its validation pool, §4.5 NMS + hit rule via the harness.
+dataset: elliptic_pp
+domain: financial
+store_root: data/interim
+scores_dir: eval_outputs/elliptic_pp/gnn_sage_focal
+output_dir: eval_outputs/elliptic_pp/alert_queue
+model_run_id: sage_focal_s0
+seed: 0
+
+split:
+  test_start: 35
+
+resolution: 1.0
+min_community_size: 2
+top_p: 0.25
+budgets: [50, 100, 200]
