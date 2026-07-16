@@ -71,9 +71,11 @@ def burstiness(nodes: pl.DataFrame, edges: pl.DataFrame, as_of: int | None = Non
     )
     b = stats.select(
         "node_id",
-        ((pl.col("_sigma") - pl.col("_mu")) / (pl.col("_sigma") + pl.col("_mu"))).alias(
-            "burstiness"
-        ),
+        # all-simultaneous events give sigma+mu = 0: burstiness is undefined
+        # (null), never 0/0 = NaN — NaN would poison per-graph z-scoring
+        pl.when((pl.col("_sigma") + pl.col("_mu")) > 0)
+        .then((pl.col("_sigma") - pl.col("_mu")) / (pl.col("_sigma") + pl.col("_mu")))
+        .alias("burstiness"),
     )
     return nodes.select("node_id").join(b, on="node_id", how="left")
 

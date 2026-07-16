@@ -80,6 +80,24 @@ class TestStructuralTemplate:
         feats = structural_features(nodes, edges, communities=communities).sort("node_id")
         assert feats["community_size"].to_list() == [2, 2, 3, 3, 3]
 
+    def test_simultaneous_events_give_null_burstiness_not_nan(self) -> None:
+        """All gaps zero -> sigma+mu = 0 -> burstiness undefined (null), never
+        0/0 = NaN, which would poison per-graph z-scoring downstream."""
+        nodes = pl.DataFrame({"node_id": ["hub", "x", "y"], "time_first_seen": [1, 1, 1]})
+        edges = pl.DataFrame(
+            {
+                "src": ["hub", "hub"],
+                "dst": ["x", "y"],
+                "timestamp": [5, 5],  # simultaneous
+                "edge_type": ["pays"] * 2,
+                "directed": [True] * 2,
+            }
+        )
+        feats = structural_features(nodes, edges).sort("node_id")
+        hub = feats.filter(pl.col("node_id") == "hub")
+        assert hub["burstiness"][0] is None
+        assert not feats["burstiness"].is_nan().any()
+
     def test_burstiness_hand_computed(self) -> None:
         nodes, edges = structural_fixture()
         feats = structural_features(nodes, edges).sort("node_id")

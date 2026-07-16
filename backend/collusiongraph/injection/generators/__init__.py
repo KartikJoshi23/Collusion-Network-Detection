@@ -1,2 +1,6 @@
-"""Motif generators (§4.4): cycle, fan_in, fan_out, scatter_gather, common_control,
-pass_through, rotation, cover_bid, partition, coordinated_cluster."""
+﻿"""Motif generators, one module per domain (§8 layout, consolidated by domain)."""
+
+from .financial import GENERATORS as FINANCIAL_GENERATORS
+from .procurement import GENERATORS as PROCUREMENT_GENERATORS
+
+__all__ = ["FINANCIAL_GENERATORS", "PROCUREMENT_GENERATORS"]

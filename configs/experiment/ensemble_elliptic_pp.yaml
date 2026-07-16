@@ -1,0 +1,18 @@
+# §7 steps 14–15 — unsupervised members + rank-fusion ensemble on the
+# Elliptic++ test window; every member individually reportable (ablation B5).
+dataset: elliptic_pp
+store_root: data/interim
+output_dir: eval_outputs/elliptic_pp/ensemble
+supervised_scores_dir: eval_outputs/elliptic_pp/gnn_gatv2_focal
+seed: 0
+
+split:
+  loss_end: 29 # validation pool = confirmed nodes in (loss_end, train_end]
+  train_end: 34
+  test_start: 35
+
+unsupervised:
+  hid_dim: 32
+  epochs: 50
+
+budgets: [50, 100, 200]

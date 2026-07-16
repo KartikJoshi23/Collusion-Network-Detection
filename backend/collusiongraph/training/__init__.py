@@ -18,3 +18,7 @@ __all__ = [
     "train_gnn",
     "weighted_ce_loss",
 ]
+
+from .ensemble_run import run_ensemble, run_injection_recovery
+
+__all__ += ["run_ensemble", "run_injection_recovery"]

@@ -1,0 +1,36 @@
+# §7 step 16 — synthetic motif injection into the Elliptic++ test window:
+# all five financial motif-table rows, 5 instances each; recall of injected
+# members at budget per scoring arm (RQ2's controlled measurement).
+# AMLworld ground-truth calibration deferred (needs Kaggle credentials).
+dataset: elliptic_pp
+domain: financial
+store_root: data/interim
+output_dir: eval_outputs/elliptic_pp/injection_recovery
+seed: 0
+
+split:
+  test_start: 35
+  window_end: 49
+
+motifs:
+  cycle: 5
+  fan_in: 5
+  fan_out: 5
+  common_control: 5
+  pass_through: 5
+
+n_bridge_edges: 2
+
+unsupervised:
+  hid_dim: 32
+  epochs: 50
+
+supervised_model:
+  name: gatv2
+  checkpoint: eval_outputs/elliptic_pp/gnn_gatv2_focal/model.pt
+  hidden_dim: 64
+  num_layers: 2
+  heads: 4
+  dropout: 0.3
+
+budgets: [200, 500, 1000]
