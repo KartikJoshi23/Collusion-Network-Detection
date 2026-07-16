@@ -22,3 +22,7 @@ __all__ = [
 from .ensemble_run import run_ensemble, run_injection_recovery
 
 __all__ += ["run_ensemble", "run_injection_recovery"]
+
+from .labels import resolve_train_labels  # noqa: E402
+
+__all__ += ["resolve_train_labels"]
