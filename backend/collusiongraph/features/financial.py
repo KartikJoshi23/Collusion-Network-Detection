@@ -34,9 +34,10 @@ def _direction_stats(edges: pl.DataFrame, endpoint: str, prefix: str) -> pl.Data
         .agg(pl.col("_gap").mean().alias("_mu"), pl.col("_gap").std().alias("_sigma"))
         .select(
             pl.col(endpoint).alias("node_id"),
-            ((pl.col("_sigma") - pl.col("_mu")) / (pl.col("_sigma") + pl.col("_mu"))).alias(
-                f"{prefix}_burstiness"
-            ),
+            # sigma+mu = 0 (all-simultaneous events): undefined, not 0/0 NaN
+            pl.when((pl.col("_sigma") + pl.col("_mu")) > 0)
+            .then((pl.col("_sigma") - pl.col("_mu")) / (pl.col("_sigma") + pl.col("_mu")))
+            .alias(f"{prefix}_burstiness"),
         )
     )
     # amount features stay NULL (unknown) where the dataset carries no amounts
