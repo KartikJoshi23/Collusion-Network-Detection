@@ -137,11 +137,87 @@ class RGCN(nn.Module):
         return self.head(x).squeeze(-1)
 
 
-def make_model(name: str, in_dim: int, num_relations: int = 2, **kwargs: object) -> nn.Module:
+class ContextFusionEncoder(nn.Module):
+    """Gated context fusion of per-node feature families (Appendix A13).
+
+    Each family (raw dataset features / structural template / domain packs)
+    gets its own linear encoder; a per-node sigmoid gate — computed from the
+    concatenated family embeddings — weighs each family's contribution:
+
+        fused = Σ_f  g_f ⊙ enc_f(x_f),   g = σ(W_g [enc_1 ‖ … ‖ enc_F])
+
+    With ``fusion: concat`` (the default everywhere) this module is absent and
+    the backbone consumes the plain concatenation — the B-CF ablation compares
+    exactly these two paths under an otherwise identical protocol.
+    """
+
+    def __init__(self, family_dims: list[int], out_dim: int = 64) -> None:
+        super().__init__()
+        if len(family_dims) < 2:
+            raise ValueError("context fusion needs >= 2 feature families; use concat otherwise")
+        self.family_dims = list(family_dims)
+        self.encoders = nn.ModuleList(nn.Linear(d, out_dim) for d in family_dims)
+        self.gate = nn.Linear(len(family_dims) * out_dim, len(family_dims))
+        self.out_dim = out_dim
+        self.last_gates: torch.Tensor | None = None  # kept for inspection/ablation
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        parts, start = [], 0
+        for dim, enc in zip(self.family_dims, self.encoders, strict=True):
+            parts.append(torch.relu(enc(x[:, start : start + dim])))
+            start += dim
+        if start != x.shape[1]:
+            raise ValueError(f"family dims {self.family_dims} do not cover x width {x.shape[1]}")
+        gates = torch.sigmoid(self.gate(torch.cat(parts, dim=-1)))  # [N, F]
+        self.last_gates = gates.detach()
+        stacked = torch.stack(parts, dim=1)  # [N, F, out_dim]
+        return (gates.unsqueeze(-1) * stacked).sum(dim=1)
+
+
+class FusedModel(nn.Module):
+    """Context-fusion encoder in front of any §4.4 backbone; forwards the
+    backbone's signature untouched so trainer/explainer code is agnostic."""
+
+    def __init__(self, encoder: ContextFusionEncoder, backbone: nn.Module) -> None:
+        super().__init__()
+        self.encoder = encoder
+        self.backbone = backbone
+
+    @property
+    def last_attention(self) -> object:  # GATv2 corroboration signal (§4.4)
+        return getattr(self.backbone, "last_attention", None)
+
+    def forward(self, x: torch.Tensor, *args: object, **kwargs: object) -> torch.Tensor:
+        return self.backbone(self.encoder(x), *args, **kwargs)
+
+
+def make_model(
+    name: str,
+    in_dim: int,
+    num_relations: int = 2,
+    fusion: str = "concat",
+    fusion_spans: list[int] | None = None,
+    fusion_dim: int = 64,
+    **kwargs: object,
+) -> nn.Module:
+    if fusion not in ("concat", "gated"):
+        raise ValueError(f"unknown fusion {fusion!r} (expected concat/gated)")
+    encoder: ContextFusionEncoder | None = None
+    if fusion == "gated":
+        if not fusion_spans:
+            raise ValueError("fusion: gated requires fusion_spans (per-family widths)")
+        if sum(fusion_spans) != in_dim:
+            raise ValueError(f"fusion_spans {fusion_spans} must sum to in_dim {in_dim}")
+        encoder = ContextFusionEncoder(fusion_spans, out_dim=fusion_dim)
+        in_dim = fusion_dim
+
+    backbone: nn.Module
     if name == "graphsage":
-        return GraphSAGE(in_dim, **kwargs)  # type: ignore[arg-type]
-    if name == "gatv2":
-        return GATv2(in_dim, **kwargs)  # type: ignore[arg-type]
-    if name == "rgcn":
-        return RGCN(in_dim, num_relations=num_relations, **kwargs)  # type: ignore[arg-type]
-    raise ValueError(f"unknown model {name!r} (expected graphsage/gatv2/rgcn)")
+        backbone = GraphSAGE(in_dim, **kwargs)  # type: ignore[arg-type]
+    elif name == "gatv2":
+        backbone = GATv2(in_dim, **kwargs)  # type: ignore[arg-type]
+    elif name == "rgcn":
+        backbone = RGCN(in_dim, num_relations=num_relations, **kwargs)  # type: ignore[arg-type]
+    else:
+        raise ValueError(f"unknown model {name!r} (expected graphsage/gatv2/rgcn)")
+    return FusedModel(encoder, backbone) if encoder is not None else backbone

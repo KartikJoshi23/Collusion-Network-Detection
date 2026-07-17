@@ -24,6 +24,7 @@ from sklearn.metrics import average_precision_score
 from collusiongraph.eval import load_config, run_eval
 from collusiongraph.features import (
     apply_zscore,
+    financial_features,
     fit_zscore,
     restrict_as_of,
     structural_features,
@@ -39,14 +40,43 @@ from .losses import make_loss
 _TIME = "time_first_seen"
 
 
-def _raw_feature_source(
+def _one_family(
     kind: str, nodes: pl.DataFrame, edges: pl.DataFrame, as_of: int | None, n_raw: int
 ) -> pl.DataFrame:
     if kind == "raw":
         return raw_feature_frame(nodes, n_raw)
     if kind == "structural":
         return structural_features(nodes, edges, as_of=as_of)
-    raise ValueError(f"unknown feature kind {kind!r} (expected raw/structural)")
+    if kind == "financial":
+        return financial_features(nodes, edges, as_of=as_of)
+    raise ValueError(f"unknown feature kind {kind!r} (expected raw/structural/financial)")
+
+
+def _feature_frame(
+    kinds: str | list[str],
+    nodes: pl.DataFrame,
+    edges: pl.DataFrame,
+    as_of: int | None,
+    n_raw: int,
+) -> tuple[pl.DataFrame, list[int]]:
+    """Per-node features for one or several families, joined on node_id in
+    config order, plus the per-family column widths (the context-fusion spans,
+    Appendix A13). Family column names must not collide — a collision would
+    silently corrupt the spans."""
+    kind_list = [kinds] if isinstance(kinds, str) else list(kinds)
+    frame = nodes.select("node_id")
+    spans: list[int] = []
+    seen: set[str] = set()
+    for kind in kind_list:
+        fam = _one_family(kind, nodes, edges, as_of, n_raw)
+        cols = [c for c, dt in fam.schema.items() if c != "node_id" and dt.is_numeric()]
+        clash = seen & set(cols)
+        if clash:
+            raise ValueError(f"feature family {kind!r} re-declares columns {sorted(clash)}")
+        seen |= set(cols)
+        spans.append(len(cols))
+        frame = frame.join(fam.select(["node_id", *cols]), on="node_id", how="left")
+    return frame, spans
 
 
 def _forward(model: torch.nn.Module, data: Any) -> torch.Tensor:
@@ -86,7 +116,7 @@ def train_gnn(config: dict[str, Any] | str | Path) -> dict[str, Any]:
         nodes, edges = restrict_as_of(nodes, edges, fence)
 
     n_raw = meta.get("n_features", 0)
-    feature_kind: str = cfg.get("features", "raw")
+    feature_kind: str | list[str] = cfg.get("features", "raw")
 
     t_nodes, t_edges = restrict_as_of(nodes, edges, train_end)
     # training targets: what a supervisor could have known at train_end (F1)
@@ -95,15 +125,11 @@ def train_gnn(config: dict[str, Any] | str | Path) -> dict[str, Any]:
     )
     # normalization stats are FIT on the train graph and FROZEN for inference
     # (F3): the model trains and scores under one normalization, not two
-    train_raw = _raw_feature_source(feature_kind, t_nodes, t_edges, train_end, n_raw)
+    train_raw, fusion_spans = _feature_frame(feature_kind, t_nodes, t_edges, train_end, n_raw)
     stats = fit_zscore(train_raw)
     train_data = build_graph(t_nodes, t_edges, train_labels, apply_zscore(train_raw, stats))
-    infer_data = build_graph(
-        nodes,
-        edges,
-        labels,
-        apply_zscore(_raw_feature_source(feature_kind, nodes, edges, None, n_raw), stats),
-    )
+    infer_raw, _ = _feature_frame(feature_kind, nodes, edges, None, n_raw)
+    infer_data = build_graph(nodes, edges, labels, apply_zscore(infer_raw, stats))
 
     prefix = f"{cfg['node_type']}:" if cfg.get("node_type") else ""
     placed = t_nodes.filter(pl.col(_TIME).is_not_null())
@@ -122,10 +148,14 @@ def train_gnn(config: dict[str, Any] | str | Path) -> dict[str, Any]:
 
     model_cfg = dict(cfg.get("model", {}))
     model_name = model_cfg.pop("name", "graphsage")
+    fusion: str = model_cfg.pop("fusion", "concat")
+    if fusion == "gated":  # context-fusion encoder needs the family widths (A13)
+        model_cfg["fusion_spans"] = fusion_spans
     model = make_model(
         model_name,
         in_dim=train_data.x.shape[1],
         num_relations=int(train_data.num_relations),
+        fusion=fusion,
         **model_cfg,
     )
     loss_cfg = dict(cfg.get("loss", {}))
@@ -201,7 +231,8 @@ def train_gnn(config: dict[str, Any] | str | Path) -> dict[str, Any]:
     )
     run_record = {
         "dataset": dataset,
-        "model": {"name": model_name, **model_cfg},
+        "model": {"name": model_name, "fusion": fusion, **model_cfg},
+        "features": feature_kind,
         "loss": cfg.get("loss", {}),
         "seed": seed,
         "epochs_run": epoch + 1,

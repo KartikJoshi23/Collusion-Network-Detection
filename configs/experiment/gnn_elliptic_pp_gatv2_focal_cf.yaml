@@ -1,0 +1,34 @@
+# B-CF ablation TREATMENT (Appendix A13): gated context-fusion input encoder
+# over raw + structural families. Adoption rule: ships as default only if it
+# beats the concat control on validation AUC-PR under this identical protocol.
+dataset: elliptic_pp
+store_root: data/interim
+output_dir: eval_outputs/elliptic_pp/gnn_gatv2_focal_cf
+seed: 0
+features: [raw, structural]
+
+split:
+  loss_end: 29
+  train_end: 34
+  test_start: 35
+
+model:
+  name: gatv2
+  fusion: gated
+  fusion_dim: 128
+  hidden_dim: 64
+  num_layers: 2
+  heads: 4
+  dropout: 0.3
+
+loss:
+  name: focal
+  gamma: 2.0
+
+lr: 0.005
+weight_decay: 0.0005
+epochs: 200
+patience: 20
+budgets: [50, 100, 200]
+
+per_time_step: true
