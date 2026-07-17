@@ -1,0 +1,25 @@
+# CollusionGraph serving image (docs/deployment.md §2).
+#
+# Deliberately NOT `uv sync`: the serving path never imports torch (pinned by
+# test_api.py::test_serving_never_imports_torch), so this image carries only
+# the read-only stack — ~200 MB instead of ~3 GB. The same image runs under
+# docker compose locally, on EC2, or as a Lambda container (Track B).
+FROM python:3.11-slim
+
+RUN pip install --no-cache-dir \
+    "fastapi>=0.115" "uvicorn>=0.32" "polars>=1.17" "pyarrow>=18" \
+    "duckdb>=1.1" "pydantic>=2.9" "pyyaml>=6.0"
+
+# Only the packages serving needs: the IR schema + the API app.
+COPY backend/collusiongraph/__init__.py /app/collusiongraph/__init__.py
+COPY backend/collusiongraph/schema /app/collusiongraph/schema
+COPY backend/api /app/api
+
+ENV PYTHONPATH=/app \
+    COLLUSIONGRAPH_SERVING=/artifacts/eval_outputs/serving.json
+# Artifacts (eval_outputs/ + data/interim/) are mounted at /artifacts —
+# baked-in variants (Lambda) COPY them here instead.
+WORKDIR /artifacts
+
+EXPOSE 8000
+CMD ["uvicorn", "api.app:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000"]

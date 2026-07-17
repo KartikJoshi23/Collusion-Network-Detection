@@ -21,7 +21,6 @@ import sys
 from typing import Any
 
 _ROADMAP = {
-    "serve": "Week 7 — FastAPI artifact serving (§7 step 22)",
     "demo": "Week 8 — one-command demo (§7 step 25)",
 }
 
@@ -109,6 +108,14 @@ def _cmd_eval(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_serve(args: argparse.Namespace) -> int:
+    import uvicorn
+    from api.app import create_app
+
+    uvicorn.run(create_app(args.serving), host=args.host, port=args.port)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="collusiongraph", description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -128,6 +135,12 @@ def main(argv: list[str] | None = None) -> int:
         p = sub.add_parser(name, help=helptext)
         p.add_argument("--config", "-c", required=True, help="experiment YAML")
         p.set_defaults(func=func)
+
+    serve = sub.add_parser("serve", help="serve precomputed artifacts (read-only API, §3.2)")
+    serve.add_argument("--serving", default="eval_outputs/serving.json", help="serving index")
+    serve.add_argument("--host", default="127.0.0.1")
+    serve.add_argument("--port", type=int, default=8000)
+    serve.set_defaults(func=_cmd_serve)
 
     for name, scheduled in _ROADMAP.items():
         sub.add_parser(name, help=f"[not yet implemented] {scheduled}")
