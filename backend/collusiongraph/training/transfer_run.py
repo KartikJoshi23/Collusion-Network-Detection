@@ -237,7 +237,13 @@ def run_cross_domain_probe(config: dict[str, Any] | str | Path) -> dict[str, Any
     infer_data = build_graph(nodes, edges, labels, infer_feats)
 
     # 3. Frozen encoder (weights from the source run; head is ignored).
-    model_kwargs = {k: v for k, v in source_record["model"].items() if k not in ("name", "fusion")}
+    if source_record["model"].get("name", "graphsage") != "graphsage":
+        raise ValueError("the frozen probe expects a GraphSAGE source encoder (embed() channel)")
+    model_kwargs = {
+        k: v
+        for k, v in source_record["model"].items()
+        if k not in ("name", "fusion", "fusion_spans", "fusion_dim")
+    }
     encoder = GraphSAGE(in_dim=train_data.x.shape[1], **model_kwargs)
     state = torch.load(checkpoint, weights_only=True)
     encoder.load_state_dict(state)

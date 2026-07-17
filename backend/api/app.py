@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from pathlib import Path
 
 import polars as pl
@@ -167,8 +168,14 @@ def create_app(index_path: str | Path | None = None) -> FastAPI:
         entry = entry_or_404(dataset)
         if not entry.explanations:
             raise HTTPException(404, f"no explanations published for {dataset!r}")
-        path = Path(entry.explanations) / f"{alert_id.replace(':', '_')}.json"
-        if not path.is_file():
+        # Audit 2026-07-17: alert ids map to filenames — an unvalidated id could
+        # traverse out of the bundles dir (proven with a backslash on Windows).
+        # Allowlist + resolved-path containment, defense in depth.
+        if not re.fullmatch(r"[A-Za-z0-9:_\-.]+", alert_id):
+            raise HTTPException(404, f"no bundle for alert {alert_id!r}")
+        base = Path(entry.explanations).resolve()
+        path = (base / f"{alert_id.replace(':', '_')}.json").resolve()
+        if not path.is_relative_to(base) or not path.is_file():
             raise HTTPException(404, f"no bundle for alert {alert_id!r}")
         return {"bundle": json.loads(path.read_text(encoding="utf-8")), "caveat": SCREENING_CAVEAT}
 

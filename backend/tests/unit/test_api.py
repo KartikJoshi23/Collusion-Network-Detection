@@ -132,6 +132,14 @@ class TestEndpoints:
         assert ok.json()["bundle"]["alert_id"] == "toyapi:run0:1"
         assert client.get("/api/v1/datasets/toyapi/explanations/toyapi:run0:2").status_code == 404
 
+    def test_explanations_path_traversal_rejected(self, client, tmp_path) -> None:
+        """Audit regression: separators in alert_id must never escape the
+        bundles dir (the backslash variant leaked on Windows before the fix)."""
+        (tmp_path / "outside.json").write_text("{}", encoding="utf-8")
+        for candidate in ("..%5Coutside", "..%2Foutside", "....//outside", "a%00b"):
+            r = client.get(f"/api/v1/datasets/toyapi/explanations/{candidate}")
+            assert r.status_code == 404, candidate
+
     def test_metrics(self, client) -> None:
         body = client.get("/api/v1/datasets/toyapi/metrics").json()
         assert body["runs"][0]["metrics"]["node_level"]["auc_pr"] == 0.5

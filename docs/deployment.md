@@ -68,7 +68,7 @@ charges until you upgrade), and **30+ always-free services**; the legacy
 | Piece | AWS service | Free-tier reality |
 |---|---|---|
 | Frontend | **S3 static site + CloudFront** | CloudFront always-free: 1 TB egress + 10M requests/month — effectively $0 forever |
-| API (+Copilot later) | **one small EC2 instance** (t4g.small ~ $12–15/mo) running `docker compose up` | Paid, but covered by the $100–$200 credits for ≈ the whole capstone window |
+| API (+Copilot later) | **one t3.micro EC2 instance** (per stakeholder guidance; 2 vCPU burstable / 1 GB RAM, ~ $8–10/mo) running `docker compose up` | Paid, but covered by the $100–$200 credits for ≈ the whole capstone window. 1 GB RAM is tight for polars over the larger parquet artifacts — add a swap file, and step up to t4g.small (~$12–15/mo) only if the API is memory-bound in practice |
 | Artifact store | **S3 bucket** (artifacts are MBs, not GBs) | Pennies; within credits |
 | Batch ML | **not on AWS** — local GPU / Colab / Kaggle | $0 |
 | Demo data egress | first 100 GB/month outbound free account-wide | $0 at demo traffic |
@@ -94,9 +94,9 @@ charges until you upgrade), and **30+ always-free services**; the legacy
 
 | Phase | Monthly cost |
 |---|---|
-| Capstone/demo (Track A, within 6-month credit window) | **$0 out of pocket** (≈$15/mo drawn from credits for EC2; everything else always-free) |
+| Capstone/demo (Track A, within 6-month credit window) | **$0 out of pocket** (≈$8–10/mo drawn from credits for a t3.micro EC2; everything else always-free) |
 | Post-credit, low traffic (Track B serverless) | **≈$0–5** (Lambda+API GW+S3+CloudFront all inside always-free tiers; egress <100 GB) |
-| Post-credit, always-on small EC2 alternative | ≈$12–18 (t4g.small + EBS) |
+| Post-credit, always-on EC2 alternative | ≈$8–12 (t3.micro + EBS; t4g.small if memory-bound) |
 | Growth (Fargate ×3 services + ALB) | ≈$40–80 |
 
 **Guardrails:** create the account on the *free account plan* (hard $0 until upgraded);
