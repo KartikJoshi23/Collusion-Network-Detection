@@ -48,6 +48,21 @@ class GraphSAGE(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.head = nn.Linear(hidden_dim, 1)
 
+    def embed(
+        self,
+        x: torch.Tensor,
+        edge_index: torch.Tensor,
+        edge_direction: torch.Tensor,
+    ) -> torch.Tensor:
+        """Penultimate node embeddings — the frozen-encoder channel for the
+        §4.4 cross-domain probe (RQ4)."""
+        flag = edge_direction.squeeze(-1)
+        fwd_index = edge_index[:, flag == 0]
+        rev_index = edge_index[:, flag == 1]  # already dst->src in the doubled set
+        for layer in self.layers:
+            x = self.dropout(torch.relu(layer(x, fwd_index, rev_index)))
+        return x
+
     def forward(
         self,
         x: torch.Tensor,
@@ -55,12 +70,7 @@ class GraphSAGE(nn.Module):
         edge_direction: torch.Tensor,
         **_: object,
     ) -> torch.Tensor:
-        flag = edge_direction.squeeze(-1)
-        fwd_index = edge_index[:, flag == 0]
-        rev_index = edge_index[:, flag == 1]  # already dst->src in the doubled set
-        for layer in self.layers:
-            x = self.dropout(torch.relu(layer(x, fwd_index, rev_index)))
-        return self.head(x).squeeze(-1)
+        return self.head(self.embed(x, edge_index, edge_direction)).squeeze(-1)
 
 
 class GATv2(nn.Module):

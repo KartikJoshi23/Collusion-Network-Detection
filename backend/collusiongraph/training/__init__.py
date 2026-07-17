@@ -26,3 +26,7 @@ __all__ += ["run_ensemble", "run_injection_recovery"]
 from .labels import resolve_train_labels  # noqa: E402
 
 __all__ += ["resolve_train_labels"]
+
+from .transfer_run import run_cross_domain_probe, run_loco_transfer  # noqa: E402
+
+__all__ += ["run_cross_domain_probe", "run_loco_transfer"]
