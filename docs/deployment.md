@@ -39,8 +39,11 @@ replaceable, and scalable:
 
 Rules:
 - The **ML pipeline is not a service** — it is a batch job whose only product is the
-  artifact directory. Serving never imports torch. This keeps the API image ~200 MB
-  instead of ~3 GB and is the single biggest cost/scalability lever.
+  artifact directory. Serving never imports torch (pinned by a test). Measured
+  2026-07-17: the serving image builds at **815 MB** (polars/pyarrow/duckdb wheels)
+  vs ~3.5 GB with torch — the single biggest cost/scalability lever. Container
+  verified on Docker Desktop: build → run with read-only artifact mounts →
+  endpoints serve with the caveat attached.
 - Containers communicate only over the declared interfaces (REST/SSE); no shared code
   imports across service boundaries except the published artifact schema.
 - One `docker-compose.yml` at the repo root runs the whole product locally
