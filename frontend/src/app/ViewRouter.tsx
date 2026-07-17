@@ -1,29 +1,22 @@
 import { useConsole } from "../state/console";
-import { Empty } from "../components/ui/States";
+import { AlertQueue } from "../views/alert-queue/AlertQueue";
+import { CaseDetail } from "../views/case-detail/CaseDetail";
+import { GraphExplorer } from "../views/graph-explorer/GraphExplorer";
+import { ModelLab } from "../views/model-lab/ModelLab";
+import { Overview } from "../views/overview/Overview";
 
-// Views are filled in Week 8B; the router + placeholders keep the shell
-// buildable and navigable now (Week 8A scaffold).
 export function ViewRouter() {
   const view = useConsole((s) => s.view);
-  const dataset = useConsole((s) => s.dataset);
-
-  const soon = (title: string) => (
-    <Empty
-      title={title}
-      hint={`Wired to ${dataset ?? "—"}. This view lands in Week 8B (§7 step 24).`}
-    />
-  );
-
   switch (view) {
     case "overview":
-      return soon("Overview / Command deck");
+      return <Overview />;
     case "queue":
-      return soon("Alert Queue");
+      return <AlertQueue />;
     case "explorer":
-      return soon("Graph Explorer");
+      return <GraphExplorer />;
     case "case":
-      return soon("Case Detail");
+      return <CaseDetail />;
     case "lab":
-      return soon("Model Lab");
+      return <ModelLab />;
   }
 }
