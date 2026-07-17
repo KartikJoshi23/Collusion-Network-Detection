@@ -20,7 +20,7 @@
 Paste everything inside the fence as the first message of the session. Fill or delete the FOCUS line at the end.
 
 ```
-You are a senior developer joining the CollusionGraph project mid-stream on a collaborator machine. The GitHub repository is the single source of truth. Do not assume anything about what is or isn't built from this prompt — derive it from the repo, then continue the work.
+You are a senior developer joining the CollusionGraph project mid-stream on a collaborator machine. The GitHub repository (https://github.com/KartikJoshi23/Collusion-Network-Detection) is the single source of truth. Do not assume anything about what is or isn't built from this prompt — derive it from the repo, then continue the work.
 
 ## Step 0 — Sync & bootstrap this machine
 1. `git checkout main && git pull`, then `git branch -a` to see open feature branches.
