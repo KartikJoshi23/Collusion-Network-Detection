@@ -1,0 +1,66 @@
+// TanStack Query hooks — caching, loading/error/empty states as first-class UI.
+import { useQuery } from "@tanstack/react-query";
+import { apiGet, enc } from "./client";
+import type {
+  AlertsResponse,
+  DatasetsResponse,
+  ExplanationResponse,
+  MetricsResponse,
+  SubgraphResponse,
+} from "./types";
+
+export function useDatasets() {
+  return useQuery({
+    queryKey: ["datasets"],
+    queryFn: () => apiGet<DatasetsResponse>("/datasets"),
+  });
+}
+
+export function useAlerts(dataset: string | undefined, budget: number) {
+  return useQuery({
+    queryKey: ["alerts", dataset, budget],
+    queryFn: () =>
+      apiGet<AlertsResponse>(`/datasets/${enc(dataset!)}/alerts`, { budget }),
+    enabled: !!dataset,
+  });
+}
+
+export function useSubgraph(
+  dataset: string | undefined,
+  alertId: string | undefined,
+  hops = 1,
+) {
+  return useQuery({
+    queryKey: ["subgraph", dataset, alertId, hops],
+    queryFn: () =>
+      apiGet<SubgraphResponse>(
+        `/datasets/${enc(dataset!)}/subgraph/${enc(alertId!)}`,
+        { hops },
+      ),
+    enabled: !!dataset && !!alertId,
+  });
+}
+
+export function useExplanation(
+  dataset: string | undefined,
+  alertId: string | undefined,
+) {
+  return useQuery({
+    queryKey: ["explanation", dataset, alertId],
+    queryFn: () =>
+      apiGet<ExplanationResponse>(
+        `/datasets/${enc(dataset!)}/explanations/${enc(alertId!)}`,
+      ),
+    enabled: !!dataset && !!alertId,
+    retry: false, // a missing bundle is a normal 404, not a transient error
+  });
+}
+
+export function useMetrics(dataset: string | undefined) {
+  return useQuery({
+    queryKey: ["metrics", dataset],
+    queryFn: () => apiGet<MetricsResponse>(`/datasets/${enc(dataset!)}/metrics`),
+    enabled: !!dataset,
+    retry: false,
+  });
+}

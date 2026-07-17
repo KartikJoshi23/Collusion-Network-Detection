@@ -1,0 +1,78 @@
+/* CollusionGraph design tokens (§5.2 — "intelligence console").
+   Dark-only investigator environment: near-black blue-graphite base, a
+   restrained risk signal system, per-domain accent recolor. */
+
+:root {
+  /* base surfaces */
+  --bg-0: #0a0e17; /* app background */
+  --bg-1: #0f1420; /* panels */
+  --bg-2: #151b2b; /* raised panels / rows */
+  --bg-3: #1c2333; /* hover */
+  --hairline: #232c40;
+
+  /* text */
+  --text-0: #e6ebf5; /* primary */
+  --text-1: #9aa7bf; /* secondary */
+  --text-2: #5f6c86; /* muted / labels */
+
+  /* risk signal system — coral reserved exclusively for flagged subgraphs */
+  --risk-high: #ff5a5f;
+  --risk-high-dim: #ff5a5f22;
+  --risk-med: #f5a524;
+  --risk-med-dim: #f5a52422;
+  --benign: #2dd4bf; /* teal — licit/benign */
+
+  /* domain accents (the toggle recolors the console) */
+  --accent-financial: #2dd4bf; /* teal */
+  --accent-procurement: #a78bfa; /* violet */
+  --accent: var(--accent-financial);
+  --accent-dim: color-mix(in srgb, var(--accent) 14%, transparent);
+
+  --radius: 10px;
+  --font-ui:
+    "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono:
+    "JetBrains Mono", "SF Mono", "Cascadia Code", ui-monospace, monospace;
+}
+
+:root[data-domain="procurement"] {
+  --accent: var(--accent-procurement);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg-0);
+  color: var(--text-0);
+  font-family: var(--font-ui);
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
+}
+
+/* tabular numbers everywhere data appears (§5.2) */
+.mono,
+.tnum {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--bg-3);
+  border-radius: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}

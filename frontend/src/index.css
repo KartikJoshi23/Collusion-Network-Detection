@@ -1,0 +1,20 @@
+@import "tailwindcss";
+@import "./styles/tokens.css";
+
+/* Map design tokens into Tailwind v4's theme so utilities like bg-bg-1,
+   text-text-1, border-hairline, text-risk-high resolve. */
+@theme {
+  --color-bg-0: var(--bg-0);
+  --color-bg-1: var(--bg-1);
+  --color-bg-2: var(--bg-2);
+  --color-bg-3: var(--bg-3);
+  --color-hairline: var(--hairline);
+  --color-text-0: var(--text-0);
+  --color-text-1: var(--text-1);
+  --color-text-2: var(--text-2);
+  --color-risk-high: var(--risk-high);
+  --color-risk-med: var(--risk-med);
+  --color-benign: var(--benign);
+  --color-accent: var(--accent);
+  --font-mono: var(--font-mono);
+}
