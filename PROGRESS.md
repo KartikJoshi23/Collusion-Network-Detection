@@ -8,6 +8,14 @@
 > metrics deflate rule/screen P@k; queue metrics shift accordingly.
 
 ## Current milestone
+**M5 COMPLETE — MVP exit criterion met [master, 2026-07-18].** Clone → `poe demo` (+ `npm run dev`)
+or `docker compose up` → dashboard → ranked alert → highlighted subgraph → explanation, both
+domains. All five §5.3 views live and verified against the read-only API; 235 backend tests +
+frontend build/test green. **Phase 1 MVP (M0–M5) done.** ⛔ Plan stop-point: MVP review with the
+stakeholder before Phase-2 development (§7). Next when resumed: Phase 2 — Weeks 9–10 model depth
+(line-graph/PNA/PGExplainer) then Week 11 Copilot (MC), or whatever the stakeholder review directs.
+Detail of prior milestones below.
+
 **M4 COMPLETE** (§7 definition: "Every top-k alert on both domains carries a validated explanation
 bundle" — Elliptic++ 50/50 bundles with GNNExplainer minimal subgraphs + fidelity, 24 with matched
 motifs + FATF flags; Mendeley 20/20 bundles with matcher + OECD evidence, learned attribution
@@ -52,6 +60,7 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-18 · **WEEK 8 (§7 steps 23–25) → MILESTONE M5 (MVP exit criterion).** React+TS+Vite console (`frontend/`): Tailwind v4 design tokens (§5.2 dark "intelligence console", per-domain teal/violet recolor), TanStack Query + Zustand, all **five views** — Overview command deck, Alert Queue (budget slider), Graph Explorer (Sigma.js WebGL ego-network, members in coral, server-windowed subgraph), Case Detail dossier (JSON export), Model Lab (metrics + per-step step-43 breakdown) — plus domain toggle, dataset selector, designed loading/error/empty states, ethics footer on every screen. **Verified live end-to-end** (API + Vite): drove Overview → click alert → Graph Explorer (101-node windowed subgraph) → Model Lab, both domains, **zero console errors**. Demo path: `poe demo` (build artifacts + serve API) + `npm run dev`, or `docker compose up` (api + nginx frontend); `scripts/build_demo_artifacts.py` regenerates the two queues + `serving.json`; `docs/demo_script.md` is the 90-second walk. CI builds+tests the frontend. Slices A/B/C pushed · [master]
 - 2026-07-17 · **§7 steps 20–21 RUNS → WEEK 7 COMPLETE.** *LOCO transfer (Mendeley, test=country_5, val=country_7, R-GCN on per-country z-scored structural channel):* test AUC-PR **0.8025 vs 0.667 prevalence**, P@10 0.90 / P@25 0.80 / R@50 0.825 (60 confirmed test firms — small pool, noted). *Cross-domain probes (frozen SAGE structural encoder → logistic probe):* **fin→proc NEGATIVE** — AUC-PR 0.284 < 0.358 prevalence; probe scores collapse to a near-single tie block (flat tie-aware P@k = 1/36), consistent with the weak structural-only source (elliptic source val 0.304). **proc→fin weakly POSITIVE** — AUC-PR 0.1502 vs 0.065 prevalence (~2.3×), P@200 0.41; far below within-domain models (GATv2 0.53 / XGB 0.81). RQ4 headline so far: transfer is asymmetric and source-strength-dependent — honest partial/negative result per §4.4; multi-seed + fine-tuning curves are the Phase-2 follow-up · runs under `eval_outputs/{mendeley_eu/transfer_loco_country_5, cross_domain/*}` · [master]
 - 2026-07-17 · **§7 step 22 — FastAPI artifact serving + containers**: `backend/api/` (serving index, 7 read-only endpoints, server-side ego-window subgraphs that never ship `raw_features`, caveat on every response — 9 tests incl. the torch-free-import pin), `collusiongraph serve` CLI, `docker/Dockerfile.api` + root `docker-compose.yml` + `.dockerignore`; verified live in a container against real mounted artifacts · 870049e · [master]
 - 2026-07-17 · **§7 steps 20–21 — transfer runners**: `training/transfer_run.py` — LOCO transfer (group-respecting early stopping on a held-out TRAIN country; test country scored on its own isolated subgraph; per-country z-scored structural channel) + cross-domain frozen probe (GraphSAGE encoder on source structural channel → frozen `embed()` → logistic probe on target train period → target test period; target-only normalization) — 4 tests; real runs recorded separately · 02eb9be · [master]

@@ -75,7 +75,11 @@ score = "python -m collusiongraph.cli score"
 explain = "python -m collusiongraph.cli explain"
 eval = "python -m collusiongraph.cli eval"
 serve = "python -m collusiongraph.cli serve"
-demo = "python -m collusiongraph.cli demo"
+demo-artifacts = "python scripts/build_demo_artifacts.py"
+# build the serving artifacts, then bring up the read-only API (the Windows
+# non-Docker demo path); open the frontend with `npm run dev` in frontend/,
+# or use `docker compose up` for the full API+frontend build (§5.4).
+demo = ["demo-artifacts", "serve"]
 
 # ─── Lint / format / types ───────────────────────────────────────────
 [tool.ruff]

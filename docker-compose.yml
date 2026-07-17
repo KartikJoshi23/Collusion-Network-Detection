@@ -1,17 +1,24 @@
 # Multi-service blueprint (docs/deployment.md §2): `docker compose up` runs the
 # product from precomputed artifacts. Batch ML is NOT a service — run the
-# pipeline first (poe/collusiongraph CLI), then serve its outputs.
+# pipeline first (poe demo-artifacts / collusiongraph CLI), then serve outputs.
 services:
   api:
     build:
       context: .
       dockerfile: docker/Dockerfile.api
-    ports:
-      - "8000:8000"
     volumes:
       - ./eval_outputs:/artifacts/eval_outputs:ro
       - ./data/interim:/artifacts/data/interim:ro
+    expose:
+      - "8000"
 
-  # frontend: joins in Week 8 (§7 steps 23–25) — nginx serving the React build,
-  # proxying /api to the api service.
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "8080:80" # open http://localhost:8080 for the demo
+    depends_on:
+      - api
+
   # copilot: joins in Week 11 (§4.6) — LLM key via env (NVIDIA NIM preferred).

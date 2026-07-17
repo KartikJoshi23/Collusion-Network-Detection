@@ -42,9 +42,20 @@ uv run poe test              # unit + leakage tests
 ```
 
 All tasks are [poethepoet](https://poethepoet.natn.io/) tasks declared in `pyproject.toml` and
-work identically in PowerShell and bash. Implemented today: `poe data`, `poe test`,
-`poe lint`, `poe ingest`, `poe train`, `poe score`, `poe explain`, `poe eval`;
-`poe serve` (Week 7) and `poe demo` (Week 8) arrive with their roadmap weeks.
+work identically in PowerShell and bash: `poe data`, `poe test`, `poe lint`, `poe ingest`,
+`poe train`, `poe score`, `poe explain`, `poe eval`, `poe serve`, `poe demo-artifacts`,
+`poe demo`.
+
+## Demo (M5)
+
+```powershell
+uv run poe demo            # builds serving artifacts, serves the read-only API on :8000
+# in another terminal:
+cd frontend; npm install; npm run dev    # dashboard on :5173 (proxies /api → :8000)
+```
+
+Or the full container build: `docker compose up --build` → open `http://localhost:8080`.
+Full walkthrough in [`docs/demo_script.md`](docs/demo_script.md).
 
 ## Running experiments
 
