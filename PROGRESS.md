@@ -16,7 +16,13 @@ ALL TEN injected motif families with 100% recall on fixtures — matcher and inj
 independent implementations cross-validating each other. First procurement alert queue shipped:
 Mendeley P@4 0.75 / P@18 0.56 vs 0.358 prevalence (within-sample) — the community roll-up
 substantially rescues the weak R-GCN node scores. Week-6 stack merged to main via PR #6 on the
-user's standing merge instruction. Next: Week 7 (§7 steps 20–22, transfer probes + API).
+user's standing merge instruction.
+**WEEK 7 COMPLETE (§7 steps 20–22) [master, 2026-07-17]:** transfer runners + real runs (LOCO
+country_5 AUC-PR 0.80 vs 0.67 prevalence; cross-domain probes: fin→proc negative, proc→fin
+weakly positive — see Completed), FastAPI artifact serving + torch-free docker image verified
+live on Docker Desktop. Also this session: user-directed decisions (context-fusion B-CF verdict:
+NOT adopted — negative result; AWS deployment plan in docs/deployment.md; NVIDIA NIM adopted
+for the Week-11 Copilot LLM). Next: Week 8 (§7 steps 23–25, dashboard → M5).
 **M3 COMPLETE** (§7 definition: "Ensemble + injection-recovery report" — both delivered on
 Elliptic++; headline: calibrated fusion preserves the strong member with weak co-members —
 AUC-PR 0.674 / P@100 1.00 vs the measured rank-fusion failure 0.056 — and the injection-recovery
@@ -46,6 +52,7 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-17 · **§7 steps 20–21 RUNS → WEEK 7 COMPLETE.** *LOCO transfer (Mendeley, test=country_5, val=country_7, R-GCN on per-country z-scored structural channel):* test AUC-PR **0.8025 vs 0.667 prevalence**, P@10 0.90 / P@25 0.80 / R@50 0.825 (60 confirmed test firms — small pool, noted). *Cross-domain probes (frozen SAGE structural encoder → logistic probe):* **fin→proc NEGATIVE** — AUC-PR 0.284 < 0.358 prevalence; probe scores collapse to a near-single tie block (flat tie-aware P@k = 1/36), consistent with the weak structural-only source (elliptic source val 0.304). **proc→fin weakly POSITIVE** — AUC-PR 0.1502 vs 0.065 prevalence (~2.3×), P@200 0.41; far below within-domain models (GATv2 0.53 / XGB 0.81). RQ4 headline so far: transfer is asymmetric and source-strength-dependent — honest partial/negative result per §4.4; multi-seed + fine-tuning curves are the Phase-2 follow-up · runs under `eval_outputs/{mendeley_eu/transfer_loco_country_5, cross_domain/*}` · [master]
 - 2026-07-17 · **§7 step 22 — FastAPI artifact serving + containers**: `backend/api/` (serving index, 7 read-only endpoints, server-side ego-window subgraphs that never ship `raw_features`, caveat on every response — 9 tests incl. the torch-free-import pin), `collusiongraph serve` CLI, `docker/Dockerfile.api` + root `docker-compose.yml` + `.dockerignore`; verified live in a container against real mounted artifacts · 870049e · [master]
 - 2026-07-17 · **§7 steps 20–21 — transfer runners**: `training/transfer_run.py` — LOCO transfer (group-respecting early stopping on a held-out TRAIN country; test country scored on its own isolated subgraph; per-country z-scored structural channel) + cross-domain frozen probe (GraphSAGE encoder on source structural channel → frozen `embed()` → logistic probe on target train period → target test period; target-only normalization) — 4 tests; real runs recorded separately · 02eb9be · [master]
 - 2026-07-17 · **Context-fusion (A13) implemented**: `ContextFusionEncoder` (per-family encoders + learned sigmoid gates) + `FusedModel` wrapper preserving GATv2 attention, multi-family `features: [raw, structural]` support with span tracking in the trainer, B-CF ablation configs, 10 tests. Verdict in the Decision log (NOT adopted — negative result recorded) · 0c7ca6c · [master]
@@ -82,12 +89,13 @@ still public 2026-07-15 — anonymous clone succeeded).
 - AMLworld raw data is absent on laptop-B (Kaggle credentials are per-machine; script reports `blocked` as designed). Financial pack is untested at AMLworld scale (5M edges) — see Next action 5.
 
 ## Next actions (ordered, self-contained)
-1. **[user]** Rotate/revoke the OpenAI API key exposed in `Gen-AI Chatbot/.../.env` AND embedded in the original `FIX_FRONTEND.md` (two exposures) at platform.openai.com.
-2. **[user]** Make the GitHub repo private (plan requires a private repo): repo Settings → General → Danger Zone → Change visibility, or `gh repo edit KartikJoshi23/Collusion-Network-Detection --visibility private` after `gh auth login`. Also consider rotating the Kaggle token that was shared in a chat session.
-3. Week 7 (§7 step 20): one LOCO split on procurement (train 6 countries → test 1); Precision@k reported — the splitter exists (`splits/loco.py`), wire it through features + a scorer + the harness.
-4. Week 7 (§7 step 21): cross-domain frozen-encoder probe on the shared structural channel (both directions) — honest reporting is a design requirement (RQ4).
-5. Week 7 (§7 step 22): FastAPI read-only artifact serving (`/domains /datasets /alerts /alerts/{id} /subgraph/{id} /explanations/{id} /metrics /transfer-matrix`), server-side ego-network windowing, OpenAPI → TS client.
-6. Deferred small items: HeteroExplanation for R-GCN (R12 finding — mask-based explainer is GATv2-only); AMLworld injection-recovery calibration + feature packs + baselines + `NeighborLoader` training on a machine with Kaggle credentials; wire the datasets' **precomputed screens** through as B4 inputs (Mendeley `lot_bidscount`/`relative_value`, García screen columns in `raw_attrs`); automatic percent→k budget resolution in `run_eval`; Mendeley R-GCN follow-up (firm+tender joint supervision, García co-bid enrichment) before concluding graph signal is absent; degree-preserving null-model z-scores for the structural floor (Phase 2).
+1. Week 8 (§7 step 23): frontend scaffold — Vite/TS/Tailwind v4 + design tokens per §5.2 in `frontend/`; layout shell, domain toggle, dataset selector, loading/error/empty states; wire to the live API (`collusiongraph serve`, endpoints in `backend/api/app.py`; generate the TS client from `/openapi.json`).
+2. Week 8 (§7 step 24): Alert Queue (virtualized, budget slider) → Graph Explorer (Sigma.js ego-networks via `/subgraph/{alert_id}`) → Case Detail dossier (`/explanations/{alert_id}`) → Model Lab charts with SVG/PNG export.
+3. Week 8 (§7 step 25): polish + demo script + `poe demo` + finish the compose file's frontend service (nginx serving the build, proxying /api) → **M5 exit criterion**: clone → one command → dashboard → alert → explained subgraph, both domains.
+4. Before M5 demo: produce serving artifacts on the demo machine (alert queues for elliptic_pp + mendeley_eu exist as configs; run `collusiongraph score`/`explain`, then point `eval_outputs/serving.json` at them).
+5. **[user]** Rotate/revoke the OpenAI API key exposed in `Gen-AI Chatbot/.../.env` AND embedded in the original `FIX_FRONTEND.md` (two exposures) at platform.openai.com.
+6. **[user]** Make the GitHub repo private (plan requires a private repo): repo Settings → General → Danger Zone → Change visibility, or `gh repo edit KartikJoshi23/Collusion-Network-Detection --visibility private` after `gh auth login`. Also consider rotating the Kaggle token that was shared in a chat session.
+7. Deferred small items: HeteroExplanation for R-GCN (R12 finding — mask-based explainer is GATv2-only); AMLworld injection-recovery calibration + feature packs + baselines + `NeighborLoader` training on a machine with Kaggle credentials; wire the datasets' **precomputed screens** through as B4 inputs (Mendeley `lot_bidscount`/`relative_value`, García screen columns in `raw_attrs`); automatic percent→k budget resolution in `run_eval`; Mendeley R-GCN follow-up (firm+tender joint supervision, García co-bid enrichment) before concluding graph signal is absent; degree-preserving null-model z-scores for the structural floor (Phase 2).
 
 ## Decision log
 <!-- - YYYY-MM-DD · decision · rationale · plan section affected -->
