@@ -97,6 +97,13 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-19 · **GOLDENS GATE CLEARED — 10/10, grounded_rate 1.0, zero guilt violations.**
+  The g09 premise-echo failure was fixed by prompt hardening alone (system-prompt rule: a
+  guilt-presupposing question is never quoted or denied in its own words — open with "This
+  system does not determine guilt", then screening language only). Live re-run with the real
+  key: `gate_passed: true`. The §4.6 release bar (≥90% grounded AND zero model-emitted guilt
+  language) is MET for the SQL/alert-tool goldens; the gate re-runs when RAG-citation goldens
+  join (corpus slice) and gates MC in CI (manual job, 27c remainder). Suite 289/289 · [master]
 - 2026-07-18 · **§7 STEP 27c (v1) — goldens gate built + first LIVE run: 90% grounded, gate
   honestly FAILS on one guilt violation.** `copilot/goldens.py` (pass = numbers grounded +
   expected substrings + ZERO model-emitted guilt language — the guard is defense in depth, not
