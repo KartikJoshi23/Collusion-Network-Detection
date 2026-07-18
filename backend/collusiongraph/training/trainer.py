@@ -41,6 +41,27 @@ from .losses import make_loss
 _TIME = "time_first_seen"
 
 
+def train_graph_restrict(
+    nodes: pl.DataFrame, edges: pl.DataFrame, train_end: int
+) -> tuple[pl.DataFrame, pl.DataFrame]:
+    """The TRAIN graph at ``train_end`` under the splitter's edge policy
+    (2026-07-15 decision): dated edges must be ``<= train_end``; UNDATED edges
+    survive only when both endpoints are train-member nodes (they cannot be
+    proven past, but they cannot bridge into the future either). This differs
+    from the feature layer's ``restrict_as_of``, which excludes undated edges
+    outright — an actor-graph training run (§7 step 26c, undated AddrAddr
+    edgelist) would otherwise train on an edgeless graph."""
+    t_nodes, t_edges = restrict_as_of(nodes, edges, train_end)
+    undated = edges.filter(pl.col("timestamp").is_null())
+    if undated.height == 0:
+        return t_nodes, t_edges
+    member = t_nodes.select(pl.col("node_id"))
+    kept = undated.join(member, left_on="src", right_on="node_id", how="semi").join(
+        member, left_on="dst", right_on="node_id", how="semi"
+    )
+    return t_nodes, pl.concat([t_edges, kept], how="vertical")
+
+
 def _one_family(
     kind: str, nodes: pl.DataFrame, edges: pl.DataFrame, as_of: int | None, n_raw: int
 ) -> pl.DataFrame:
@@ -121,11 +142,14 @@ def train_gnn(config: dict[str, Any] | str | Path) -> dict[str, Any]:
     n_raw = meta.get("n_features", 0)
     feature_kind: str | list[str] = cfg.get("features", "raw")
 
-    t_nodes, t_edges = restrict_as_of(nodes, edges, train_end)
-    # training targets: what a supervisor could have known at train_end (F1)
-    train_labels = resolve_train_labels(
-        cfg.get("train_label_policy", "static"), labels, t_edges, train_end
+    t_nodes, t_edges = train_graph_restrict(nodes, edges, train_end)
+    # training targets: what a supervisor could have known at train_end (F1);
+    # history_as_of policies read the adapter's per-step observation pack
+    label_policy = cfg.get("train_label_policy", "static")
+    history = (
+        store.read_features(dataset, "label_history") if label_policy == "history_as_of" else None
     )
+    train_labels = resolve_train_labels(label_policy, labels, t_edges, train_end, history)
     # normalization stats are FIT on the train graph and FROZEN for inference
     # (F3): the model trains and scores under one normalization, not two
     train_raw, fusion_spans = _feature_frame(feature_kind, t_nodes, t_edges, train_end, n_raw)

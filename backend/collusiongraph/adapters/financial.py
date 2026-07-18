@@ -93,6 +93,128 @@ def elliptic_pp_to_ir(
     return stats
 
 
+def elliptic_pp_actor_to_ir(
+    raw_dir: Path | str, store: GraphStore, dataset: str = "elliptic_pp_actor"
+) -> dict[str, Any]:
+    """Elliptic++ ACTOR (wallet) graph → IR (§7 step 26c, Phase-2 P2.1).
+
+    v1 scope — the wallet-level money-flow view:
+
+    * nodes: wallet addresses; ``raw_features`` is the 56-feature vector from
+      the wallet's FIRST-appearance row (knowable at ``time_first_seen`` by
+      construction — later rows describe later activity and would leak);
+      ``time_first_seen`` = the wallet's earliest time step.
+    * edges: the dataset's AddrAddr flow edgelist (input → output wallet),
+      ``pays`` relation. The raw edgelist is UNDATED — the strict splitter
+      already gates undated edges on endpoint membership (2026-07-15
+      decision), so faithfulness is preserved rather than fabricating
+      timestamps.
+    * labels: stored labels are the full-knowledge roll-up (any illicit
+      observation ever → illicit) for test-side evaluation; the per-step
+      class observations are written to the ``label_history`` feature pack so
+      TRAINING labels can be resolved as-of ``train_end`` (audit-F1
+      discipline — wallets span steps, so their roll-up label leaks future
+      activity exactly like Mendeley firms did).
+
+    The tx–wallet bipartite tables (AddrTx/TxAddr) are deliberately NOT in
+    v1 — mixed 183/56-wide feature spaces need true ``HeteroData``; recorded
+    as the follow-up.
+    """
+    raw = Path(raw_dir)
+    combined = pl.read_csv(
+        raw / "wallets_features_classes_combined.csv", infer_schema_length=10_000
+    )
+    edgelist = pl.read_csv(raw / "AddrAddr_edgelist.csv", infer_schema_length=10_000)
+
+    addr_col, ts_col, class_col = combined.columns[:3]
+    feature_cols = combined.columns[3:]
+
+    # first-appearance row per wallet (earliest step; deterministic)
+    first = combined.sort(ts_col).group_by(addr_col, maintain_order=True).first()
+    nodes = first.select(
+        (pl.lit("addr:") + pl.col(addr_col).cast(pl.Utf8)).alias("node_id"),
+        pl.lit(NodeType.ADDRESS.value).alias("node_type"),
+        pl.lit(Domain.FINANCIAL.value).alias("domain"),
+        pl.col(ts_col).cast(pl.Int64).alias("time_first_seen"),
+        pl.concat_list([pl.col(c).cast(pl.Float32) for c in feature_cols]).alias("raw_features"),
+        pl.lit(None, dtype=pl.Utf8).alias("raw_attrs"),
+    )
+
+    src_col, dst_col = edgelist.columns[0], edgelist.columns[1]
+    edges = edgelist.select(
+        (pl.lit("addr:") + pl.col(src_col).cast(pl.Utf8)).alias("src"),
+        (pl.lit("addr:") + pl.col(dst_col).cast(pl.Utf8)).alias("dst"),
+        pl.lit(EdgeType.PAYS.value).alias("edge_type"),
+        pl.lit(None, dtype=pl.Int64).alias("timestamp"),
+        pl.lit(None, dtype=pl.Float64).alias("amount"),
+        pl.lit(True).alias("directed"),
+        pl.lit(None, dtype=pl.Utf8).alias("raw_attrs"),
+    )
+
+    class_str = pl.col(class_col).cast(pl.Utf8)
+    # full-knowledge roll-up for evaluation: illicit dominates, then licit
+    labels = (
+        combined.select(
+            (pl.lit("addr:") + pl.col(addr_col).cast(pl.Utf8)).alias("node_id"),
+            class_str.replace_strict(
+                {k: v.value for k, v in _ELLIPTIC_CLASS_MAP.items()},
+                default=Label.UNKNOWN.value,
+            ).alias("label"),
+        )
+        .group_by("node_id")
+        .agg(
+            pl.when(pl.col("label").eq(Label.ILLICIT.value).any())
+            .then(pl.lit(Label.ILLICIT.value))
+            .when(pl.col("label").eq(Label.LICIT.value).any())
+            .then(pl.lit(Label.LICIT.value))
+            .otherwise(pl.lit(Label.UNKNOWN.value))
+            .alias("label")
+        )
+        .select(
+            "node_id",
+            "label",
+            pl.lit("elliptic_actor_rollup").alias("label_source"),
+            pl.lit(1.0, dtype=pl.Float32).alias("confidence"),
+        )
+    )
+
+    # per-step KNOWN class observations → the as-of training-label source
+    history = combined.select(
+        (pl.lit("addr:") + pl.col(addr_col).cast(pl.Utf8)).alias("node_id"),
+        pl.col(ts_col).cast(pl.Int64).alias("step"),
+        class_str.replace_strict(
+            {k: v.value for k, v in _ELLIPTIC_CLASS_MAP.items()},
+            default=Label.UNKNOWN.value,
+        ).alias("label"),
+    ).filter(pl.col("label") != Label.UNKNOWN.value)
+
+    store.write(dataset, "nodes", nodes)
+    store.write(dataset, "edges", edges)
+    store.write(dataset, "labels", labels)
+    store.write_features(
+        dataset,
+        "label_history",
+        history,
+        meta={"semantics": "per-step class observations for history_as_of training labels"},
+    )
+    stats = {
+        "dataset": dataset,
+        "adapter_version": ADAPTER_VERSION,
+        "time_unit": "elliptic_time_step",
+        "n_nodes": nodes.height,
+        "n_edges": edges.height,
+        "n_features": len(feature_cols),
+        "feature_names": feature_cols,
+        "n_history_rows": history.height,
+        "label_counts": dict(labels.group_by("label").len().sort("label").iter_rows()),
+        "note": "wallet-level flow view; AddrAddr edges are undated in the raw "
+        "data (splitter gates on endpoint membership); tx–wallet bipartite "
+        "tables deferred to the HeteroData follow-up",
+    }
+    store.write_meta(dataset, stats)
+    return stats
+
+
 # AMLworld's primary activity window for HI-Small ends 2022-09-10 (Kaggle
 # discussion #427517); measured in Week-1 EDA: the tail after it is 59.1%
 # laundering. Splitters fence on this value.

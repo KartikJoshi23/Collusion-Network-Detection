@@ -1,0 +1,37 @@
+# §7 step 26c (Phase-2 P2.1) — heterogeneous-relations experiment on the
+# Elliptic++ ACTOR (wallet) graph: R-GCN over the pays forward/reverse
+# relations, wallet first-appearance features, SAME temporal protocol as the
+# tx-graph runs (train ≤34 / test ≥35) so the actor-level vs tx-level queue
+# comparison (arXiv:2604.23494, §4.5 alert-unit note) is like-for-like.
+dataset: elliptic_pp_actor
+store_root: data/interim
+output_dir: eval_outputs/elliptic_pp_actor/gnn_rgcn_focal
+seed: 0
+features: raw
+
+split:
+  loss_end: 29
+  train_end: 34
+  test_start: 35
+
+model:
+  name: rgcn
+  hidden_dim: 64
+  num_layers: 2
+  dropout: 0.3
+
+loss:
+  name: focal
+  gamma: 2.0
+
+lr: 0.005
+weight_decay: 0.0005
+epochs: 120
+patience: 15
+budgets: [50, 100, 200]
+
+per_time_step: true
+
+# wallets span time steps, so their stored roll-up label leaks future
+# activity (the Mendeley-F1 pattern) — train on as-of observations instead
+train_label_policy: history_as_of

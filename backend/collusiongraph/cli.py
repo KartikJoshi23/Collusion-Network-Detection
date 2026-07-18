@@ -27,6 +27,7 @@ _ROADMAP = {
 
 _INGEST_DEFAULTS = {
     "elliptic_pp": ("data/raw/elliptic_pp", "financial", "elliptic_pp_to_ir"),
+    "elliptic_pp_actor": ("data/raw/elliptic_pp", "financial", "elliptic_pp_actor_to_ir"),
     "amlworld_hi_small": ("data/raw/amlworld_hi_small", "financial", "amlworld_to_ir"),
     "mendeley_eu": ("data/raw/mendeley_eu", "procurement", "mendeley_to_ir"),
     "garcia_rodriguez": (
