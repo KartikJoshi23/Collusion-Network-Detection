@@ -270,3 +270,57 @@ class TestAgentLoop:
         config.get_settings.cache_clear()
         assert "couldn't finalise" in out["answer"]
         assert "EXHAUSTED iteration budget" in out["trace"]
+
+
+class TestStreamEndpoint:  # SS7 step 27b - the dock's SSE variant
+    def _app_client(self, monkeypatch, script):
+        import copilot.agent as agent
+        from copilot.api import router
+        from fastapi import FastAPI
+        from fastapi.testclient import TestClient
+
+        monkeypatch.setattr(agent, "get_client", lambda: _scripted_client(script))
+        app = FastAPI()
+        app.include_router(router, prefix="/api/v1/copilot")
+        return TestClient(app)
+
+    def test_stream_emits_trace_then_final_with_crlf_framing(
+        self, serving_fixture, monkeypatch
+    ) -> None:
+        client = self._app_client(
+            monkeypatch,
+            [
+                _tool_msg("run_sql", json.dumps({"query": "SELECT COUNT(*) AS n FROM alerts"})),
+                _final_msg("The queue holds 2 alerts."),
+            ],
+        )
+        r = client.post("/api/v1/copilot/chat/stream", json={"question": "How many alerts?"})
+        assert r.status_code == 200
+        assert r.headers["content-type"].startswith("text/event-stream")
+        body = r.text
+        assert "\r\n\r\n" in body  # CRLF framing - the archive parser fix case
+        blocks = [b for b in body.replace("\r\n", "\n").split("\n\n") if b.strip()]
+        assert blocks[0].startswith("event: trace")
+        assert '"step"' in blocks[0]
+        assert blocks[-1].startswith("event: final")
+        payload = json.loads(blocks[-1].split("data: ", 1)[1])
+        # the final event IS the /chat contract, label and caveat included
+        assert payload["ai_generated"] is True
+        assert payload["caveat"] == SCREENING_CAVEAT
+        assert payload["numbers_grounded"] is True
+        assert payload["trace"] and payload["evidence"][0]["tool"] == "run_sql"
+
+    def test_stream_without_key_is_a_clean_503(self, serving_fixture, monkeypatch) -> None:
+        import copilot.agent as agent
+        from copilot.api import router
+        from fastapi import FastAPI
+        from fastapi.testclient import TestClient
+
+        def no_key():
+            raise RuntimeError("no LLM key configured")
+
+        monkeypatch.setattr(agent, "get_client", no_key)
+        app = FastAPI()
+        app.include_router(router, prefix="/api/v1/copilot")
+        r = TestClient(app).post("/api/v1/copilot/chat/stream", json={"question": "hi"})
+        assert r.status_code == 503

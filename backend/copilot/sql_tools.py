@@ -63,8 +63,8 @@ def list_tables() -> str:
     ).fetchall()
     out = ["| table | rows |", "|---|---|"]
     for (t,) in rows:
-        (n,) = con.execute(f'SELECT COUNT(*) FROM "{t}"').fetchone()
-        out.append(f"| {t} | {n} |")
+        row = con.execute(f'SELECT COUNT(*) FROM "{t}"').fetchone()
+        out.append(f"| {t} | {row[0] if row else 0} |")
     return "\n".join(out)
 
 

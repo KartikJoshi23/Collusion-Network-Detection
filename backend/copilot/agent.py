@@ -62,6 +62,20 @@ def answer_question(
     question: str, client: Any | None = None, context_alert_id: str | None = None
 ) -> dict[str, Any]:
     """One question → grounded, guarded answer with evidence and trace."""
+    for kind, data in answer_question_events(
+        question, client=client, context_alert_id=context_alert_id
+    ):
+        if kind == "final":
+            return data
+    raise RuntimeError("agent yielded no final answer")  # pragma: no cover
+
+
+def answer_question_events(
+    question: str, client: Any | None = None, context_alert_id: str | None = None
+):
+    """The agent loop as an event stream (§5.3 view 7's live trace timeline):
+    yields ``("trace", step_str)`` as each tool call happens, then one
+    ``("final", payload)`` — the same payload ``answer_question`` returns."""
     settings = get_settings()
     client = client or get_client()
 
@@ -101,7 +115,9 @@ def answer_question(
                 result = handler(args) if handler else f"Unknown tool: {name}"
             except Exception as e:
                 result = f"Tool raised: {e}"
-            trace.append(f"{name}({json.dumps(args)[:120]})")
+            step = f"{name}({json.dumps(args)[:120]})"
+            trace.append(step)
+            yield ("trace", step)
             evidence.append({"tool": name, "args": json.dumps(args), "result": result})
             messages.append({"role": "tool", "tool_call_id": tc.id, "content": result})
     else:
@@ -109,6 +125,7 @@ def answer_question(
             "I couldn't finalise this within the tool-call budget — " "please narrow the question."
         )
         trace.append("EXHAUSTED iteration budget")
+        yield ("trace", "EXHAUSTED iteration budget")
 
     evidence_text = "\n".join(e["result"] for e in evidence)
     numbers_ok, unsupported = numeric_sanity_gate(draft, evidence_text)
@@ -127,13 +144,16 @@ def answer_question(
     answer, rewrites = apply_guilt_guard(draft)
 
     all_ok = numbers_ok and corpus_ok
-    return {
-        "answer": answer,
-        "confidence": 0.9 if all_ok else 0.3,
-        "numbers_grounded": numbers_ok,
-        "corpus_grounded": corpus_ok,
-        "guard_rewrites": rewrites,
-        "evidence": evidence,
-        "trace": trace,
-        "model": settings.model,
-    }
+    yield (
+        "final",
+        {
+            "answer": answer,
+            "confidence": 0.9 if all_ok else 0.3,
+            "numbers_grounded": numbers_ok,
+            "corpus_grounded": corpus_ok,
+            "guard_rewrites": rewrites,
+            "evidence": evidence,
+            "trace": trace,
+            "model": settings.model,
+        },
+    )
