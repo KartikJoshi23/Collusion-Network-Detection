@@ -128,6 +128,13 @@ def _cmd_serve(args: argparse.Namespace) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
+    # Help text carries the project's §/→ typography (see the RUF001 decision);
+    # Windows consoles may be cp1252, which cannot encode it — degrade to
+    # replacement characters instead of crashing on `--help`.
+    for stream in (sys.stdout, sys.stderr):
+        enc = getattr(stream, "encoding", None)
+        if hasattr(stream, "reconfigure") and enc and enc.lower() not in ("utf-8", "utf8"):
+            stream.reconfigure(errors="replace")
     parser = argparse.ArgumentParser(prog="collusiongraph", description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
 

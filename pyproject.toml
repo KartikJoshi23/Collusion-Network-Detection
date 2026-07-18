@@ -52,6 +52,12 @@ dev = [
     "openpyxl>=3.1",
 ]
 
+[project.scripts]
+# The CLI the docs and ledger reference as `collusiongraph <cmd>`
+# (docs/demo_script.md, PROGRESS.md Next actions). `poe <cmd>` wraps the
+# same module for task-runner parity.
+collusiongraph = "collusiongraph.cli:main"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

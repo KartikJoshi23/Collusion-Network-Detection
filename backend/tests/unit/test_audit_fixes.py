@@ -251,6 +251,23 @@ class TestCliDispatch:  # F22
             == "cross_domain_probe"
         )
 
+    def test_help_survives_cp1252_console(self) -> None:
+        # The help epilog carries §/→ typography; a legacy Windows console
+        # (cp1252) must get degraded help, not a UnicodeEncodeError crash.
+        import os as _os
+        import subprocess
+        import sys as _sys
+
+        result = subprocess.run(
+            [_sys.executable, "-m", "collusiongraph.cli", "--help"],
+            env={**_os.environ, "PYTHONIOENCODING": "cp1252"},
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        assert result.returncode == 0, result.stderr
+        assert "collusiongraph" in result.stdout
+
 
 class TestWandbPath:  # F21
     def test_metrics_flattened_and_logged(self, monkeypatch, tmp_path) -> None:
