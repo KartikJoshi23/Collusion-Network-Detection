@@ -1,41 +1,63 @@
-/* CollusionGraph design tokens (§5.2 — "intelligence console").
-   Dark-only investigator environment: near-black blue-graphite base, aurora
-   accent washes, glass panels, a restrained risk signal system, per-domain
-   accent recolor (financial cyan→teal, procurement violet→magenta). */
+/* CollusionGraph design tokens — V2 (docs/frontend_overhaul.md §3).
+   Dark investigator console. V2 core rules:
+   - FUNCTIONAL MULTI-HUE: five hue families live simultaneously on every
+     screen (cyan=structure/financial, violet=models/procurement,
+     magenta=highlights, amber=amounts/medium-risk, coral=flagged ONLY,
+     teal=benign). The domain toggle shifts which hue DOMINATES (--accent);
+     it no longer recolors the whole inventory.
+   - VISIBLE GLASS: multi-hue aurora bright enough to feed the blur; panel
+     fills at 25–35% alpha gradients; neon edges on interactive glass.
+   - HOVER LANGUAGE: every interactive surface lifts/glows/reveals. */
 
 :root {
   /* base surfaces */
-  --bg-0: #060a13; /* app background */
-  --bg-1: #0c1120; /* panels */
-  --bg-2: #131a2c; /* raised panels / rows */
-  --bg-3: #1b2438; /* hover */
-  --hairline: #232c40;
+  --bg-0: #0a0e17;
+  --bg-1: #0d1220;
+  --bg-2: #141a2e;
+  --bg-3: #1c2440;
+  --hairline: #263050;
 
   /* text */
-  --text-0: #e8edf7;
+  --text-0: #eaeffa;
   --text-1: #9aa7bf;
-  --text-2: #5f6c86;
+  --text-2: #64718c;
 
-  /* risk signal system — coral reserved exclusively for flagged subgraphs */
+  /* ── the five simultaneous hue families (UI tier — bright, for glow/ink) */
+  --hue-cyan: #22d3ee;
+  --hue-violet: #a78bfa;
+  --hue-magenta: #e879f9;
+  --hue-amber: #fbbf24;
+  --hue-teal: #2dd4bf;
+  /* coral is EXCLUSIVELY flagged/high-risk (§5.2 rule, unchanged) */
   --risk-high: #ff5a5f;
-  --risk-high-dim: color-mix(in srgb, var(--risk-high) 14%, transparent);
-  --risk-med: #f5a524;
-  --risk-med-dim: color-mix(in srgb, var(--risk-med) 14%, transparent);
-  --benign: #2dd4bf;
+  --risk-high-dim: color-mix(in srgb, var(--risk-high) 16%, transparent);
+  --risk-med: var(--hue-amber);
+  --risk-med-dim: color-mix(in srgb, var(--risk-med) 16%, transparent);
+  --benign: var(--hue-teal);
 
-  /* domain accent ramps (the toggle recolors the whole console) */
-  --accent-financial: #22d3ee; /* cyan */
-  --accent-financial-2: #2dd4bf; /* → teal */
-  --accent-procurement: #a78bfa; /* violet */
-  --accent-procurement-2: #e879f9; /* → magenta */
-  --accent: var(--accent-financial);
-  --accent-2: var(--accent-financial-2);
-  --accent-dim: color-mix(in srgb, var(--accent) 14%, transparent);
-  --accent-grad: linear-gradient(120deg, var(--accent), var(--accent-2));
+  /* chart categorical tier — validated against #0a0e17 (dataviz six checks:
+     L band 0.48–0.67 dark, chroma ≥ .1, CVD ΔE ≥ 12, contrast ≥ 3:1) */
+  --chart-1: #0891b2; /* cyan */
+  --chart-2: #8b5cf6; /* violet */
+  --chart-3: #d97706; /* amber */
+  --chart-4: #c026d3; /* magenta */
+  --chart-5: #0d9488; /* teal */
 
-  /* glass */
-  --glass-fill: color-mix(in srgb, #aecdff 4%, transparent);
-  --glass-fill-strong: color-mix(in srgb, #aecdff 7%, transparent);
+  /* dominant accent — domain sets it; SUBORDINATE hues stay fixed */
+  --accent: var(--hue-cyan);
+  --accent-2: var(--hue-violet);
+  --accent-dim: color-mix(in srgb, var(--accent) 16%, transparent);
+  --accent-grad: linear-gradient(
+    120deg,
+    var(--hue-cyan),
+    var(--hue-violet) 55%,
+    var(--hue-magenta)
+  );
+
+  /* glass (V2 §3.2 — must be VISIBLE) */
+  --glass-fill-hi: rgb(44 52 84 / 0.38);
+  --glass-fill-lo: rgb(14 17 32 / 0.22);
+  --glass-blur: 16px;
 
   --radius: 12px;
   --font-ui:
@@ -48,8 +70,8 @@
 }
 
 :root[data-domain="procurement"] {
-  --accent: var(--accent-procurement);
-  --accent-2: var(--accent-procurement-2);
+  --accent: var(--hue-violet);
+  --accent-2: var(--hue-magenta);
 }
 
 * {
@@ -69,10 +91,10 @@ body {
   font-family: var(--font-ui);
   font-feature-settings: "cv11", "ss01";
   -webkit-font-smoothing: antialiased;
-  transition: background 0.6s ease;
 }
 
-/* aurora washes — recolor with the domain accent, sit under everything */
+/* ── aurora backdrop — 3 distinct hues, BOTH domains, bright enough to feed
+   the glass blur (V2 §3.1). Domain shifts emphasis, never collapses hues. */
 body::before {
   content: "";
   position: fixed;
@@ -81,42 +103,57 @@ body::before {
   pointer-events: none;
   background:
     radial-gradient(
-      52rem 32rem at 12% -8%,
-      color-mix(in srgb, var(--accent) 9%, transparent),
-      transparent 65%
-    ),
-    radial-gradient(
-      48rem 30rem at 105% 12%,
-      color-mix(in srgb, var(--accent-2) 7%, transparent),
+      50rem 34rem at 8% -6%,
+      color-mix(in srgb, var(--hue-cyan) 22%, transparent),
       transparent 62%
     ),
     radial-gradient(
-      60rem 40rem at 50% 118%,
-      color-mix(in srgb, var(--accent) 5%, transparent),
+      54rem 36rem at 104% 8%,
+      color-mix(in srgb, var(--hue-violet) 20%, transparent),
       transparent 60%
+    ),
+    radial-gradient(
+      62rem 44rem at 55% 116%,
+      color-mix(in srgb, var(--hue-magenta) 14%, transparent),
+      transparent 58%
     );
-  transition: background 0.6s ease;
+}
+:root[data-domain="procurement"] body::before {
+  background:
+    radial-gradient(
+      50rem 34rem at 8% -6%,
+      color-mix(in srgb, var(--hue-violet) 22%, transparent),
+      transparent 62%
+    ),
+    radial-gradient(
+      54rem 36rem at 104% 8%,
+      color-mix(in srgb, var(--hue-magenta) 18%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(
+      62rem 44rem at 55% 116%,
+      color-mix(in srgb, var(--hue-cyan) 14%, transparent),
+      transparent 58%
+    );
 }
 
-/* film grain — a data-URI turbulence tile at whisper opacity, above content */
+/* film grain above content (kept from V1) */
 body::after {
   content: "";
   position: fixed;
   inset: 0;
   z-index: 60;
   pointer-events: none;
-  opacity: 0.035;
+  opacity: 0.032;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-/* tabular numbers everywhere data appears (§5.2) */
 .mono,
 .tnum {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
 }
 
-/* display face for headings; gradient-clipped variant for hero text */
 .display {
   font-family: var(--font-display);
   letter-spacing: -0.02em;
@@ -128,24 +165,17 @@ body::after {
   color: transparent;
 }
 
-/* ── glass panel primitive ─────────────────────────────────────────────
-   Translucent fill + backdrop blur + 1px gradient border (mask trick) +
-   a faint inner top-light. Use .glass-strong for hero surfaces. */
+/* ── glass panels (V2 recipe: alpha-GRADIENT fill over the bright aurora,
+   one blurred layer per stack, neon edge reserved for interactive glass) */
 .glass {
   position: relative;
-  background:
-    linear-gradient(
-      165deg,
-      color-mix(in srgb, var(--accent) 5%, transparent),
-      transparent 42%
-    ),
-    var(--glass-fill);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  background: linear-gradient(160deg, var(--glass-fill-hi), var(--glass-fill-lo));
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.5);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.5);
   border-radius: var(--radius);
   box-shadow:
-    inset 0 1px 0 color-mix(in srgb, #ffffff 7%, transparent),
-    0 8px 28px -12px rgb(0 0 0 / 0.55);
+    inset 0 1px 0 rgb(255 255 255 / 0.09),
+    0 10px 34px -14px rgb(0 0 0 / 0.6);
 }
 .glass::before {
   content: "";
@@ -156,10 +186,10 @@ body::after {
   padding: 1px;
   background: linear-gradient(
     165deg,
-    color-mix(in srgb, var(--accent) 38%, transparent),
-    color-mix(in srgb, #ffffff 9%, transparent) 32%,
-    color-mix(in srgb, #ffffff 4%, transparent) 60%,
-    color-mix(in srgb, var(--accent-2) 26%, transparent)
+    color-mix(in srgb, var(--accent) 55%, transparent),
+    rgb(255 255 255 / 0.14) 30%,
+    rgb(255 255 255 / 0.05) 55%,
+    color-mix(in srgb, var(--accent-2) 45%, transparent)
   );
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
@@ -176,22 +206,85 @@ body::after {
   z-index: 1;
 }
 .glass-strong {
-  background:
-    linear-gradient(
-      165deg,
-      color-mix(in srgb, var(--accent) 8%, transparent),
-      transparent 46%
-    ),
-    var(--glass-fill-strong);
+  background: linear-gradient(
+    160deg,
+    rgb(52 60 96 / 0.44),
+    rgb(18 21 38 / 0.26)
+  );
 }
-.glass-glow {
+/* neon edge for interactive glass — pass a hue via --panel-hue */
+.glass-neon {
+  --panel-hue: var(--accent);
   box-shadow:
-    inset 0 1px 0 color-mix(in srgb, #ffffff 7%, transparent),
-    0 0 34px -6px color-mix(in srgb, var(--accent) 28%, transparent),
-    0 8px 28px -12px rgb(0 0 0 / 0.55);
+    inset 0 1px 0 rgb(255 255 255 / 0.09),
+    inset 0 0 0 1px color-mix(in srgb, var(--panel-hue) 28%, transparent),
+    0 0 26px -6px color-mix(in srgb, var(--panel-hue) 45%, transparent),
+    0 10px 34px -14px rgb(0 0 0 / 0.6);
 }
 
-/* slow, subdued risk pulse — coral is reserved for flagged entities (§5.2) */
+/* ── hover language (V2 §3.3) — transform/box-shadow/background only */
+.hover-lift {
+  transition:
+    transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.18s ease;
+  will-change: transform;
+}
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.09),
+    0 0 30px -6px color-mix(in srgb, var(--panel-hue, var(--accent)) 55%, transparent),
+    0 14px 38px -14px rgb(0 0 0 / 0.65);
+}
+.hover-row {
+  transition:
+    background-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+.hover-row:hover {
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+.chip-bloom {
+  transition: box-shadow 0.18s ease, transform 0.18s ease;
+}
+.chip-bloom:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 14px -2px currentColor;
+}
+/* button sheen sweep */
+.btn-sheen {
+  position: relative;
+  overflow: hidden;
+  transition: color 0.15s ease, box-shadow 0.18s ease, transform 0.12s ease;
+}
+.btn-sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 30%,
+    rgb(255 255 255 / 0.14) 50%,
+    transparent 70%
+  );
+  transform: translateX(-110%);
+  transition: transform 0.45s ease;
+  pointer-events: none;
+}
+.btn-sheen:hover::after {
+  transform: translateX(110%);
+}
+.btn-sheen:hover {
+  box-shadow: 0 0 18px -4px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+.btn-sheen:active {
+  transform: scale(0.97);
+}
+
+/* slow, subdued risk pulse — coral reserved for flagged entities (§5.2) */
 @keyframes risk-pulse {
   0%,
   100% {
@@ -206,7 +299,7 @@ body::after {
   animation: risk-pulse 2.6s ease-in-out infinite;
 }
 
-/* radar-sweep loading ring (animation communicates state, §5.2) */
+/* radar-sweep loading ring */
 @keyframes radar-spin {
   to {
     transform: rotate(360deg);
@@ -246,15 +339,12 @@ body::after {
   transform: translate(-50%, -50%);
 }
 
-/* budget slider (range) — accent-filled track, glowing thumb */
+/* budget slider — accent-filled track, glowing thumb */
 input[type="range"].budget {
   appearance: none;
   -webkit-appearance: none;
   height: 4px;
   border-radius: 9999px;
-  background:
-    linear-gradient(var(--accent-grad)) 0 / var(--fill, 50%) 100% no-repeat,
-    var(--bg-3);
   background-image: var(--accent-grad);
   background-size: var(--fill, 50%) 100%;
   background-repeat: no-repeat;
@@ -271,6 +361,10 @@ input[type="range"].budget::-webkit-slider-thumb {
   border: 2px solid var(--accent);
   box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 55%, transparent);
   cursor: pointer;
+  transition: transform 0.12s ease;
+}
+input[type="range"].budget::-webkit-slider-thumb:hover {
+  transform: scale(1.25);
 }
 input[type="range"].budget::-moz-range-thumb {
   width: 12px;
@@ -302,8 +396,14 @@ input[type="range"].budget::-moz-range-thumb {
   .radar::before {
     animation: none;
   }
-  body,
-  body::before {
+  .hover-lift,
+  .hover-row,
+  .chip-bloom,
+  .btn-sheen,
+  .btn-sheen::after {
     transition: none;
+  }
+  .btn-sheen::after {
+    display: none;
   }
 }

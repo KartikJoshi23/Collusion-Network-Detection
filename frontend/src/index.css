@@ -2,7 +2,7 @@
 @import "./styles/tokens.css";
 
 /* Map design tokens into Tailwind v4's theme so utilities like bg-bg-1,
-   text-text-1, border-hairline, text-risk-high resolve. */
+   text-text-1, border-hairline, text-risk-high, text-hue-amber resolve. */
 @theme {
   --color-bg-0: var(--bg-0);
   --color-bg-1: var(--bg-1);
@@ -17,6 +17,11 @@
   --color-benign: var(--benign);
   --color-accent: var(--accent);
   --color-accent-2: var(--accent-2);
+  --color-hue-cyan: var(--hue-cyan);
+  --color-hue-violet: var(--hue-violet);
+  --color-hue-magenta: var(--hue-magenta);
+  --color-hue-amber: var(--hue-amber);
+  --color-hue-teal: var(--hue-teal);
   --font-mono: var(--font-mono);
   --font-display: var(--font-display);
 }

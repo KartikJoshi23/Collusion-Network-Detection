@@ -13,6 +13,7 @@ interface Node {
   vx: number;
   vy: number;
   r: number;
+  hue: number; // index into the multi-hue inventory (V2 §3.1)
 }
 
 interface Pulse {
@@ -27,12 +28,18 @@ const MAX_NODES = 80;
 const MAX_PULSES = 4;
 const PULSE_EVERY_MS = 1400;
 
-function accentColor(): string {
-  return (
-    getComputedStyle(document.documentElement)
-      .getPropertyValue("--accent")
-      .trim() || "#2dd4bf"
-  );
+// V2: the backdrop is multi-hue in both domains; the dominant accent leads
+// but cyan/violet/magenta are all present (single-accent was the V1 failure).
+function hueInventory(): string[] {
+  const css = getComputedStyle(document.documentElement);
+  const v = (name: string, fb: string) => css.getPropertyValue(name).trim() || fb;
+  return [
+    v("--accent", "#22d3ee"),
+    v("--accent", "#22d3ee"), // dominant hue weighted double
+    v("--hue-cyan", "#22d3ee"),
+    v("--hue-violet", "#a78bfa"),
+    v("--hue-magenta", "#e879f9"),
+  ];
 }
 
 export function NetworkBackground() {
@@ -49,7 +56,7 @@ export function NetworkBackground() {
     let raf = 0;
     let last = performance.now();
     let sinceSpawn = 0;
-    let accent = accentColor();
+    let hues = hueInventory();
     const coral = "#ff5a5f";
     const nodes: Node[] = [];
     const pulses: Pulse[] = [];
@@ -76,6 +83,7 @@ export function NetworkBackground() {
           vx: (Math.random() - 0.5) * 14, // px/s — a slow drift
           vy: (Math.random() - 0.5) * 14,
           r: 1 + Math.random() * 1.8,
+          hue: Math.floor(Math.random() * 5),
         });
       }
     };
@@ -97,10 +105,11 @@ export function NetworkBackground() {
       ctx.clearRect(0, 0, w, h);
       const edges = links();
 
-      // edges — hairline strokes fading with distance
+      // edges — hairline strokes fading with distance, tinted by their
+      // source node's hue so the mesh reads multi-color
       for (const [i, j, d] of edges) {
-        const alpha = 0.16 * (1 - d / LINK_DIST);
-        ctx.strokeStyle = accent;
+        const alpha = 0.2 * (1 - d / LINK_DIST);
+        ctx.strokeStyle = hues[nodes[i].hue];
         ctx.globalAlpha = alpha;
         ctx.lineWidth = 1;
         ctx.beginPath();
@@ -111,8 +120,8 @@ export function NetworkBackground() {
 
       // nodes
       for (const n of nodes) {
-        ctx.globalAlpha = 0.4;
-        ctx.fillStyle = accent;
+        ctx.globalAlpha = 0.5;
+        ctx.fillStyle = hues[n.hue];
         ctx.beginPath();
         ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
         ctx.fill();
@@ -200,9 +209,9 @@ export function NetworkBackground() {
       else applyMode();
     };
 
-    // domain toggle flips data-domain on <html>; re-read the accent token
+    // domain toggle flips data-domain on <html>; re-read the hue inventory
     const observer = new MutationObserver(() => {
-      accent = accentColor();
+      hues = hueInventory();
       if (reduced.matches) draw(0);
     });
     observer.observe(document.documentElement, {
@@ -230,7 +239,7 @@ export function NetworkBackground() {
       ref={canvasRef}
       aria-hidden
       className="pointer-events-none fixed inset-0 -z-10"
-      style={{ opacity: 0.55 }}
+      style={{ opacity: 0.7 }}
     />
   );
 }
