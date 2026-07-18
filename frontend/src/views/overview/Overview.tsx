@@ -1,9 +1,14 @@
+import { motion } from "motion/react";
 import { useAlerts, useDatasets } from "../../api/hooks";
+import { CountUp } from "../../components/ui/CountUp";
 import { RiskChip } from "../../components/ui/Chips";
+import { Glass } from "../../components/ui/Glass";
+import { MotifGlyph } from "../../components/ui/MotifGlyph";
 import { Empty, Loading } from "../../components/ui/States";
+import { MOTIF_LABEL, isMotifId } from "../../lib/motifs";
 import { useConsole } from "../../state/console";
 
-// Command deck (§5.3 view 1): a KPI band for the active dataset + the top
+// Command deck (§5.3 view 1): hero + KPI band with count-up numerals + the top
 // flagged alerts, as the demo-day landing surface.
 export function Overview() {
   const dataset = useConsole((s) => s.dataset);
@@ -19,22 +24,37 @@ export function Overview() {
   const nDatasets =
     datasets.data?.datasets.filter((d) => d.domain === domain).length ?? 0;
   const top = data?.alerts.slice(0, 8) ?? [];
+  const flagged = data?.alerts.filter((a) => a.risk_score >= 0.66).length ?? 0;
 
   return (
-    <div className="min-h-0 flex-1 overflow-auto p-4">
-      <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Kpi label="Domain" value={domain} />
-        <Kpi label="Dataset" value={dataset} mono />
-        <Kpi label="Alerts in queue" value={String(data?.k_effective ?? "…")} mono />
-        <Kpi label={`${domain} datasets`} value={String(nDatasets)} mono />
+    <div className="h-full min-h-0 overflow-auto p-2">
+      <div className="mb-4 px-2 pt-3">
+        <div className="text-xs uppercase tracking-[0.2em] text-text-2">
+          {domain} domain · integrity screening
+        </div>
+        <h1 className="display mt-1 text-3xl font-semibold leading-tight">
+          Network <span className="text-grad">surveillance</span> deck
+        </h1>
+        <p className="mt-1 max-w-xl text-sm text-text-1">
+          Ranked collusion-pattern alerts over the{" "}
+          <span className="mono text-text-0">{dataset}</span> ledger — calibrated
+          screening scores, never verdicts.
+        </p>
       </div>
 
-      <div className="rounded-lg border border-hairline bg-bg-1">
-        <div className="flex items-center border-b border-hairline px-3 py-2">
+      <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Kpi label="Alerts in queue" value={data?.k_effective} loading={isLoading} />
+        <Kpi label="High-band alerts" value={isLoading ? undefined : flagged} coral />
+        <Kpi label="Budget k" value={budget} />
+        <Kpi label={`${domain} datasets`} value={nDatasets} />
+      </div>
+
+      <Glass strong className="overflow-hidden">
+        <div className="flex items-center border-b border-hairline/60 px-4 py-2.5">
           <h3 className="text-sm font-medium">Top flagged communities</h3>
           <button
             onClick={() => setView("queue")}
-            className="ml-auto text-xs text-text-2 hover:text-accent"
+            className="ml-auto text-xs text-text-2 transition-colors hover:text-accent"
           >
             open full queue →
           </button>
@@ -45,28 +65,45 @@ export function Overview() {
           <Empty title="No alerts published" />
         ) : (
           <ul>
-            {top.map((a) => (
-              <li
+            {top.map((a, i) => (
+              <motion.li
                 key={a.alert_id}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.05 + i * 0.045, duration: 0.3 }}
                 onClick={() => {
                   selectAlert(a.alert_id);
                   setView("explorer");
                 }}
-                className="flex cursor-pointer items-center gap-3 border-b border-hairline/50 px-3 py-2 hover:bg-bg-2"
+                className="group flex cursor-pointer items-center gap-3 border-b border-hairline/40 px-4 py-2 transition-colors hover:bg-bg-2/60"
               >
                 <span className="mono w-6 text-xs text-text-2">{a.rank}</span>
                 <RiskChip score={a.risk_score} />
                 <span className="mono text-xs text-text-1">
                   {a.n_members} members
                 </span>
-                <span className="mono ml-auto text-xs text-text-2">
-                  {a.motif_type ?? "—"}
+                <span className="ml-auto inline-flex items-center gap-1.5 text-xs text-text-2">
+                  {a.motif_type && (
+                    <MotifGlyph
+                      motif={a.motif_type}
+                      size={13}
+                      className="text-accent"
+                    />
+                  )}
+                  {a.motif_type
+                    ? isMotifId(a.motif_type)
+                      ? MOTIF_LABEL[a.motif_type]
+                      : a.motif_type
+                    : "—"}
                 </span>
-              </li>
+                <span className="text-xs text-text-2 opacity-0 transition-opacity group-hover:opacity-100">
+                  explore →
+                </span>
+              </motion.li>
             ))}
           </ul>
         )}
-      </div>
+      </Glass>
     </div>
   );
 }
@@ -74,18 +111,23 @@ export function Overview() {
 function Kpi({
   label,
   value,
-  mono,
+  loading,
+  coral,
 }: {
   label: string;
-  value: string;
-  mono?: boolean;
+  value: number | undefined;
+  loading?: boolean;
+  coral?: boolean;
 }) {
   return (
-    <div className="rounded-lg border border-hairline bg-bg-1 p-3">
+    <Glass className="p-3.5">
       <div className="text-xs text-text-2">{label}</div>
-      <div className={`mt-1 text-lg text-text-0 ${mono ? "mono" : ""}`}>
-        {value}
+      <div
+        className="mono mt-1 text-2xl"
+        style={{ color: coral && (value ?? 0) > 0 ? "var(--risk-high)" : "var(--text-0)" }}
+      >
+        {loading || value === undefined ? "…" : <CountUp value={value} />}
       </div>
-    </div>
+    </Glass>
   );
 }

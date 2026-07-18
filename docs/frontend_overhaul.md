@@ -1,10 +1,13 @@
 # Frontend Overhaul — Collaborator Brief
 
-**Status: REQUIRED, not started. Owner: collaborator laptop (from 2026-07-18).**
-The frontend is *functionally* complete (all five views wired to the live API, builds
-green, demo works) but its **visual design was rejected by the stakeholder** and must be
-completely overhauled before it can be presented. This document is the handoff brief so
-you can pick up without re-deriving anything.
+**Status: DELIVERED [laptop-C, 2026-07-18] — awaiting stakeholder re-review.**
+Everything in §3 ("to BUILD") shipped; the hard constraints in §4 were held (caveat on
+every screen, build/CI green, API untouched, docker image builds). See PROGRESS.md
+(Completed 2026-07-18 + Decision log) for what was built and how it was verified, and
+`frontend/README.md` for the resulting layout. The §5.3-optional flourishes (GSAP
+scrubber, Cosmograph hero, visx charts) were deliberately deferred — queued in
+PROGRESS.md "In-flight" if the stakeholder wants more. The brief below is kept verbatim
+as the record of the ask.
 
 ---
 

@@ -1,43 +1,53 @@
 // Risk and motif chips (§5.3): motif vocabulary mirrors backend MotifType.
 import { RISK_VAR, riskBand } from "../../lib/format";
+import { MOTIF_LABEL, isMotifId } from "../../lib/motifs";
+import { MotifGlyph } from "./MotifGlyph";
 
 export function RiskChip({ score }: { score: number }) {
   const band = riskBand(score);
   const color = RISK_VAR[band];
   return (
     <span
-      className="mono inline-flex items-center gap-1.5 rounded px-1.5 py-0.5 text-xs"
+      className={`mono inline-flex items-center gap-1.5 rounded-md px-1.5 py-0.5 text-xs ${
+        band === "high" ? "risk-pulse" : ""
+      }`}
       style={{
         color,
-        background: `color-mix(in srgb, ${color} 14%, transparent)`,
+        background: `color-mix(in srgb, ${color} 13%, transparent)`,
+        boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${color} 30%, transparent)`,
       }}
     >
       <span
-        className="inline-block h-1.5 w-1.5 rounded-full"
-        style={{ background: color }}
-      />
+        className="relative inline-block h-8 w-1 overflow-hidden rounded-full"
+        style={{
+          height: 10,
+          width: 3,
+          background: `color-mix(in srgb, ${color} 22%, transparent)`,
+        }}
+      >
+        <span
+          className="absolute inset-x-0 bottom-0 rounded-full"
+          style={{ height: `${Math.round(score * 100)}%`, background: color }}
+        />
+      </span>
       {score.toFixed(3)}
     </span>
   );
 }
 
-const MOTIF_LABEL: Record<string, string> = {
-  cycle: "cycle",
-  fan_in: "fan-in",
-  fan_out: "fan-out",
-  common_control: "common control",
-  pass_through: "pass-through",
-  rotation: "rotation",
-  cover_bid: "cover bid",
-  partition: "partition",
-  clique: "clique",
-};
-
 export function MotifChip({ motif }: { motif: string | null }) {
   if (!motif) return <span className="text-xs text-text-2">—</span>;
   return (
-    <span className="rounded border border-hairline bg-bg-2 px-1.5 py-0.5 text-xs text-text-1">
-      {MOTIF_LABEL[motif] ?? motif}
+    <span
+      className="inline-flex items-center gap-1.5 rounded-md px-1.5 py-0.5 text-xs"
+      style={{
+        color: "var(--text-1)",
+        background: "var(--glass-fill)",
+        boxShadow: "inset 0 0 0 1px var(--hairline)",
+      }}
+    >
+      <MotifGlyph motif={motif} size={13} className="text-accent" />
+      {isMotifId(motif) ? MOTIF_LABEL[motif] : motif}
     </span>
   );
 }
