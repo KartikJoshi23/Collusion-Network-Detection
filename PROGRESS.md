@@ -97,6 +97,16 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-18 · **§7 STEP 26a (v1) — line-graph flow channel built + B-LG measured: honest
+  negative, NOT adopted as default.** `features/line_graph.py` computes the line-graph view's
+  local statistics per node via exact L(G) degree identities (2-walk throughput, pass ratio,
+  pooled upstream/downstream fans — no L(G) materialization; full Elliptic++ in 0.12s), with
+  the structural template's as-of discipline; registered as trainer family `line`; 9
+  hand-computed geometry/leakage tests; suite 257/257. *Run (seed 0, protocol identical to the
+  published raw-only arm):* B-LG (raw+line concat) val 0.9401 → **test AUC-PR 0.4986 / P@100
+  0.92** vs raw-only **0.5492 / 0.96** and raw+structural (B-CF control) 0.3781 / 0.80. Verdict
+  in the Decision log; default config stays raw-only; the learned LineMVGNN-style encoder over
+  a materialized L(G) is the recorded follow-up · 203582e · [master]
 - 2026-07-18 · **Percent→k budget resolution in `run_eval`** (deferred-small-item from M1):
   `budgets:` entries may now be `"N%"` strings, resolved per level against the ranked list
   being cut (alert-queue length / confirmed-node count) as `max(1, round(n·N/100))`; ints pass
@@ -199,9 +209,11 @@ still public 2026-07-15 — anonymous clone succeeded).
   master (2026-07-18, see Completed); awaiting stakeholder review #3.** Nothing half-written.
   Per the stakeholder's 2026-07-18 instruction (Decision log), further UI iteration is
   deferred to the end — Phase-2 development proceeds now.
-- **Phase 2 in progress [master]:** step 27 (PGExplainer) DONE; step 26 arms not started —
-  see Next action 3 for the machine-matched menu (line-graph aux view is the CPU-feasible
-  default; PNA/GIN+EU parity wants GPU + `NeighborLoader`; actor-graph data already on disk).
+- **Phase 2 in progress [master]:** step 27 (PGExplainer) DONE; step 26a v1 (line-graph
+  channel) DONE — measured negative, see Decision log. Remaining step 26: (b) PNA/GIN+EU
+  AMLworld parity (wants GPU + `NeighborLoader`), (c) Elliptic++ actor-graph hetero experiment
+  (data on disk), learned line-encoder on AMLworld (per the B-LG verdict). Then Week-11
+  Copilot (MC — user creates the NVIDIA NIM key first).
 - ~~The overhaul was verified against a synthetic serving store on laptop-C~~ **Resolved
   2026-07-18 [master]:** the overhauled UI is verified against REAL artifacts on BOTH laptop-C
   and master; master walked all five views live in both domains and verified the compose path.
@@ -224,16 +236,14 @@ still public 2026-07-15 — anonymous clone succeeded).
    (measured-precision readout), play the explorer's temporal scrubber, export a Model Lab
    chart. *(Phase-2 work no longer waits on this — stakeholder decision 2026-07-18, Decision
    log; further UI iteration is deferred to the end.)*
-3. **Phase 2, next slice — §7 step 26 (pick by machine):** (a) **line-graph auxiliary view**
-   (LineMVGNN-style edge→node duality; §4.4 table): CPU-feasible on Elliptic++ — build the
-   line-graph transform in `training/graph_build.py` style, an aux-encoder whose embeddings
-   concatenate into the main model, ablation config B-LG, §9.1 tests (transform correctness on
-   toy graphs, leakage: transform runs per split graph), run vs the published GATv2 — either
-   result is reportable; (b) **PNA + GIN+EU reference configs on AMLworld HI-Small** (Multi-GNN
-   parity check): needs GPU (Colab/Kaggle) or a very patient CPU — master has the AMLworld raw
-   data + IR store; wire `NeighborLoader` minibatching first (In-flight note); (c) **Elliptic++
-   actor-graph heterogeneous experiment** (the 9-CSV actor tables are already downloaded).
-   Start with (a) if on CPU. PGExplainer (step 27) is DONE — see Completed.
+3. **Phase 2, next slice — §7 step 26 remainder:** ~~(a) line-graph aux view v1~~ **DONE,
+   measured negative (2026-07-18, Decision log)**. Remaining: (b) **PNA + GIN+EU reference
+   configs on AMLworld HI-Small** (Multi-GNN parity check): needs GPU (Colab/Kaggle) or a very
+   patient CPU — master has the AMLworld raw data + IR store; wire `NeighborLoader`
+   minibatching first (In-flight note); (c) **Elliptic++ actor-graph heterogeneous experiment**
+   (the 9-CSV actor tables are already downloaded — adapter extension + R-GCN/hetero arm);
+   (d) learned line-encoder over materialized L(G) on AMLworld per the B-LG verdict (amounts
+   give L(G) real edge features). On a CPU-only session, (c) is the feasible arm.
 4. **Week 11 — Copilot (MC)** after (or in parallel with) step 26: port per §7 27a–c; user
    action first: create the NVIDIA NIM key at build.nvidia.com → `.env` `NVIDIA_API_KEY`
    (2026-07-17 decision).
@@ -251,6 +261,16 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Decision log
 <!-- - YYYY-MM-DD · decision · rationale · plan section affected -->
+- 2026-07-18 · **[master] B-LG ABLATION VERDICT: line-graph channel NOT adopted as default —
+  second data point that ADDED INPUT CHANNELS hurt GATv2 test generalization under the t43
+  shift.** Seed-0, identical protocol: raw-only 0.5492 → raw+line 0.4986 (−0.05) → raw+structural
+  0.3781 (−0.17). The line channel is the mildest degradation measured, and val barely moves
+  (0.9497 vs 0.9401) — reinforcing the B-CF conclusion that val-based selection is unreliable
+  under temporal shift and that Elliptic++'s raw features already carry the useful signal for
+  this model class. B-LG v1 stays in-tree as an ablation arm (§4.4 honest reporting); the
+  learned line-encoder follow-up should be attempted on AMLworld (amount-bearing edges give
+  L(G) real edge features, unlike Elliptic's bare tx graph) rather than re-tuned here ·
+  §4.4, §7 step 26a, R5.
 - 2026-07-18 · **[master, stakeholder-directed] PHASE 2 UN-GATED before UI acceptance.** The
   stakeholder instructed: proceed with the remaining development from where the collaborator
   stopped — "UI can be modified or enhanced at the end as well, as remaining parts are very
