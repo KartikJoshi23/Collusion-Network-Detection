@@ -17,6 +17,7 @@ interface ConsoleState {
   view: ViewId;
   setDomain: (d: Domain) => void;
   setDataset: (d: string | undefined) => void;
+  hydrateFromAlert: (domain: Domain, dataset: string) => void;
   setBudget: (k: number) => void;
   selectAlert: (id: string | undefined) => void;
   setView: (v: ViewId) => void;
@@ -52,6 +53,9 @@ export const useConsole = create<ConsoleState>((set) => ({
       dataset,
       selectedAlertId: s.dataset === undefined ? s.selectedAlertId : undefined,
     })),
+  // One-shot deep-link hydration: adopt the linked alert's own dataset and
+  // domain (lib/deeplink.ts) WITHOUT clearing the selection — setDomain would.
+  hydrateFromAlert: (domain, dataset) => set({ domain, dataset }),
   setBudget: (budget) => set({ budget }),
   selectAlert: (selectedAlertId) => set({ selectedAlertId }),
   setView: (view) => set({ view }),
