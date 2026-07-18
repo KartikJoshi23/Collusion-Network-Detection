@@ -45,7 +45,7 @@ You are a senior developer joining the CollusionGraph project mid-stream on a co
 ## Step 4 — Hand off before pushing (mandatory)
 1. Update `PROGRESS.md`: move finished items to "Completed" (date + commit ref + machine tag, e.g. `[laptop-B]`); update "In-flight" with exactly what is unfinished, where, and why; rewrite "Next actions" as ordered, self-contained steps executable without talking to you; append decisions and new issues.
 2. Run the full test suite; report results honestly — including failures — in the commit/PR description.
-3. Commit in small logical units (conventional commits: feat:/fix:/test:/docs:/chore: + scope). Push a feature branch (`feat/<area>-<slug>`) and open a PR describing: what was built, which milestone it advances, test status, known gaps. Do NOT merge to `main` yourself — the master laptop integrates.
+3. Commit in small logical units (conventional commits: feat:/fix:/test:/docs:/chore: + scope). Merge to `main` yourself (the standing merge instruction): push directly, or push a `feat/<area>-<slug>` branch and merge it without waiting for the master laptop. Record in the commit/merge/PR description: what was built, which milestone it advances, test status, known gaps. `main` must be green and demoable at the moment you push.
 
 FOCUS (optional — delete if unused): <specific task, bug, or area for this session>
 ```
