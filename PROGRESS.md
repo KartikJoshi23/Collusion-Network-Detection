@@ -315,22 +315,24 @@ still public 2026-07-15 — anonymous clone succeeded).
    GPU (Colab/Kaggle) or a very patient CPU — master has the AMLworld raw data + IR store; wire
    `NeighborLoader` minibatching first (In-flight note); (d) learned line-encoder over
    materialized L(G) on AMLworld per the B-LG verdict (amounts give L(G) real edge features).
-4. **Week 11 — Copilot (MC), remaining slices** (27a core is LIVE on master — see Completed):
-   (a) **27b dock**: port the seven frontend components into the Copilot dock (§5.3 view 7)
-   with the SSE CRLF parser fix (`reference/genai-chatbot/` FIX_FRONTEND.md api.ts is the
-   source), restyle onto tokens, context-seed from the open alert (`context_alert_id` is
-   already accepted by POST `/api/v1/copilot/chat`), add the SSE streaming endpoint;
-   (b) **RAG slice**: curate `data/corpus/` (FATF indicators, OECD checklist, methodology
-   docs — license-checked), port retrieval/ (BM25 + embedded dense store, NO Qdrant) and the
-   grounding gate (RED_FLAG_LEXICON is already in `copilot/guard.py`);
-   (c) **27c goldens**: 20–30 investigator questions, ≥90% grounded, zero guilt-language
-   violations, manual CI job — gate for MC;
-   (d) optional depth: LangGraph orchestration (clarification/readback/cross-validation) —
-   §4.6 cut order puts it last. Key setup for a NEW machine: one `nvapi-…` key from
-   build.nvidia.com/settings/api-keys → repo-root `.env` line `NVIDIA_API_KEY=` (models
-   default to the pinned ids in `backend/copilot/config.py`; `max_tokens` ≥ 2k stands —
-   Nemotron reasons before tool calls). Kaggle key still only needed for AMLworld on a
-   machine without the data.
+4. **[collaborator] Week 11 — Copilot 27b DOCK (the one big MC piece left).** Backend is DONE
+   and live (27a core, corpus+grounding, 18/18 goldens — see Completed 2026-07-19): POST
+   `/api/v1/copilot/chat` takes `{question, context_alert_id?}` and returns `{answer,
+   confidence, numbers_grounded, corpus_grounded, guard_rewrites, evidence[], trace[],
+   caveat, ai_generated}`. Build §5.3 view 7: (i) collapsible right-hand dock on every view
+   (message bubbles, agent-trace timeline from `trace`, confidence badge, evidence panel from
+   `evidence`, AI-generated label + caveat on every response — copy the payload fields, don't
+   re-derive); (ii) context-seeding — dock opened from an alert passes that alert's id as
+   `context_alert_id`; (iii) add an SSE streaming variant of /chat in `backend/copilot/api.py`
+   and use the archive's FIXED `api.ts` CRLF parser (`reference/genai-chatbot/` +
+   FIX_FRONTEND.md) in the client; (iv) restyle onto the V2 tokens (this is also the natural
+   moment for the end-stage UI polish the stakeholder deferred). PREREQ on that machine: real
+   serving artifacts (action 5 recipe) + the `nvapi-` key in `.env` (`NVIDIA_API_KEY=`; models
+   default in `backend/copilot/config.py`; keep `max_tokens` ≥ 2k). Verify: `poe serve` +
+   dock walk + `poe copilot-goldens` still `gate_passed: true` (space runs ~1 min, 40 RPM).
+   Smaller follow-ups after: grow goldens 18→20–30; wire serving artifacts into the CI
+   goldens job; optional LangGraph depth (cut order: last). **[user]** add `NVIDIA_API_KEY`
+   as a GitHub Actions secret when convenient.
 5. ~~Produce REAL serving artifacts~~ **DONE on laptop-C AND master (2026-07-18, see
    Completed)** — both machines are demo-ready end-to-end. For any OTHER machine the recipe
    is unchanged: `poe data` → `collusiongraph ingest` (both datasets) → `train` the four configs
