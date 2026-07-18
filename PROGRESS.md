@@ -21,7 +21,11 @@
 > **Integrated & re-verified on master 2026-07-18** (see Completed): master is demo-ready
 > end-to-end on REAL artifacts (dev path :5173/:8000 AND `docker compose up` :8080), suite now
 > 237/237 + frontend 8/8, and the procurement deep-link bug found during the walk is fixed.
-> **⛔ Awaiting stakeholder re-review of the new UI before Phase-2 development (§7).**
+> **⛔ RE-REVIEW VERDICT (2026-07-18, master): REJECTED AGAIN — "still horrible… single color
+> dominant… massive overhaul needed". OVERHAUL V2 is now the top next action**, per the
+> rewritten research-grounded brief in [`docs/frontend_overhaul.md`](docs/frontend_overhaul.md)
+> (diagnosis: monochrome single-accent token usage, imperceptible glass, no hover language,
+> §5.3 flagship features deferred). Phase-2 ML work stays gated behind UI acceptance (§7).
 
 **M5 COMPLETE — MVP exit criterion met [master, 2026-07-18].** Clone → `poe demo` (+ `npm run dev`)
 or `docker compose up` → dashboard → ranked alert → highlighted subgraph → explanation, both
@@ -143,10 +147,11 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## In-flight
 <!-- exactly what is unfinished, where, why, and which machine/branch has it -->
-- **Frontend overhaul: DONE and merged (see Completed). Nothing half-written.** Deliberately NOT
-  built (optional §5.3 flourishes, not in the brief's must-list): GSAP temporal scrubber +
-  DrawSVG motif schematics, Cosmograph full-ledger hero, visx chart build-out in Model Lab
-  (§5.3 view 6 About page too) — all Phase-2 polish candidates if the stakeholder wants more.
+- **Frontend overhaul V1: merged, then REJECTED at re-review (2026-07-18) — OVERHAUL V2 is
+  Next action 1.** Nothing half-written in the tree. The formerly-"optional" §5.3 flourishes
+  (GSAP temporal scrubber + DrawSVG motif schematics, Cosmograph full-ledger hero, visx Model
+  Lab charts, About page) are now REQUIRED scope in the V2 brief (`docs/frontend_overhaul.md`),
+  alongside the multi-hue token rebuild, visible-glass recipe, and hover pass.
 - ~~The overhaul was verified against a synthetic serving store on laptop-C~~ **Resolved
   2026-07-18 [master]:** the overhauled UI is verified against REAL artifacts on BOTH laptop-C
   and master; master walked all five views live in both domains and verified the compose path.
@@ -159,14 +164,22 @@ still public 2026-07-15 — anonymous clone succeeded).
 - AMLworld raw data is absent on laptop-B (Kaggle credentials are per-machine; script reports `blocked` as designed). Financial pack is untested at AMLworld scale (5M edges) — see Next action 5.
 
 ## Next actions (ordered, self-contained)
-1. **[user/stakeholder] Re-review the overhauled UI.** Master is demo-ready RIGHT NOW:
-   `poe demo` + `npm run dev` in `frontend/` (or `docker compose up` → :8080 — images already
-   built with today's fix), then walk Overview → Alert Queue → Graph Explorer → Case Detail →
-   Model Lab in both domains. laptop-C is equally ready. The verbatim rejection this answers is
-   in the Decision log (2026-07-18); the delivered scope is in Completed. If more flash is
-   wanted, the queued flourishes are in In-flight (GSAP scrubber, Cosmograph hero, visx charts,
-   About page).
-2. ~~Produce REAL serving artifacts~~ **DONE on laptop-C AND master (2026-07-18, see
+1. **[collaborator] FRONTEND OVERHAUL V2** — the V1 overhaul was **rejected at stakeholder
+   re-review** (verbatim in the Decision log, 2026-07-18 second entry). Execute
+   [`docs/frontend_overhaul.md`](docs/frontend_overhaul.md) **(V2)** top to bottom — it is
+   self-contained: root-cause diagnosis (monochrome single-accent tokens, imperceptible
+   glass, no hover language, §5.3 flagships deferred), researched design direction
+   (simultaneous multi-hue OKLCH token system, visible-glass recipe, hover inventory, GSAP
+   DrawSVG/ScrollTrigger/scrubber showpieces), the six §5.3 features to build, hard
+   constraints (caveat, read-only API, CI green, offline fonts, reduced-motion, perf), a
+   land-green ordering, and sources. Baseline `main@7c0cdce` is green and demo-ready on
+   real artifacts (master + laptop-C); verify each slice live (in-tool browser panes freeze
+   rAF — use deep links + DOM reads). Merge to `main` yourself per the standing policy;
+   each slice must land green and demoable.
+2. **[user/stakeholder] Review the V2 UI when action 1 lands** — `poe demo` + `npm run dev`
+   (or `docker compose up` → :8080), walk all views in both domains. Phase-2 ML work stays
+   gated on this acceptance (§7 stop point).
+3. ~~Produce REAL serving artifacts~~ **DONE on laptop-C AND master (2026-07-18, see
    Completed)** — both machines are demo-ready end-to-end. For any OTHER machine the recipe
    is unchanged: `poe data` → `collusiongraph ingest` (both datasets) → `train` the four configs
    (gatv2_focal, gatv2_focal_multi, ensemble, cross_domain_probe_proc2fin +
@@ -174,13 +187,30 @@ still public 2026-07-15 — anonymous clone succeeded).
    `poe demo-artifacts` again (second pass wires `explanations/` into serving.json). The bare
    `uv run collusiongraph …` spelling now works on a fresh `uv sync` (console script added
    2026-07-18).
-3. **[user]** Rotate/revoke the OpenAI API key exposed in `Gen-AI Chatbot/.../.env` AND embedded in the original `FIX_FRONTEND.md` (two exposures) at platform.openai.com.
-4. **[user]** Make the GitHub repo private (plan requires a private repo): repo Settings → General → Danger Zone → Change visibility, or `gh repo edit KartikJoshi23/Collusion-Network-Detection --visibility private` after `gh auth login`. Also consider rotating the Kaggle token that was shared in a chat session.
-5. Deferred small items: HeteroExplanation for R-GCN (R12 finding — mask-based explainer is GATv2-only); AMLworld injection-recovery calibration + feature packs + baselines + `NeighborLoader` training on a machine with Kaggle credentials; wire the datasets' **precomputed screens** through as B4 inputs (Mendeley `lot_bidscount`/`relative_value`, García screen columns in `raw_attrs`); automatic percent→k budget resolution in `run_eval`; Mendeley R-GCN follow-up (firm+tender joint supervision, García co-bid enrichment) before concluding graph signal is absent; degree-preserving null-model z-scores for the structural floor (Phase 2).
+4. **[user]** Rotate/revoke the OpenAI API key exposed in `Gen-AI Chatbot/.../.env` AND embedded in the original `FIX_FRONTEND.md` (two exposures) at platform.openai.com.
+5. **[user]** Make the GitHub repo private (plan requires a private repo): repo Settings → General → Danger Zone → Change visibility, or `gh repo edit KartikJoshi23/Collusion-Network-Detection --visibility private` after `gh auth login`. Also consider rotating the Kaggle token that was shared in a chat session.
+6. Deferred small items: HeteroExplanation for R-GCN (R12 finding — mask-based explainer is GATv2-only); AMLworld injection-recovery calibration + feature packs + baselines + `NeighborLoader` training on a machine with Kaggle credentials; wire the datasets' **precomputed screens** through as B4 inputs (Mendeley `lot_bidscount`/`relative_value`, García screen columns in `raw_attrs`); automatic percent→k budget resolution in `run_eval`; Mendeley R-GCN follow-up (firm+tender joint supervision, García co-bid enrichment) before concluding graph signal is absent; degree-preserving null-model z-scores for the structural floor (Phase 2).
 
 ## Decision log
 <!-- - YYYY-MM-DD · decision · rationale · plan section affected -->
-- 2026-07-18 · **[master] Reproducibility data point refining the laptop-C note below**: master's
+- 2026-07-18 · **[master] SECOND UI REJECTION at the M5 stakeholder re-review → OVERHAUL V2
+  directed.** Verbatim: *"Still the UI is horrible, it should be something really impressive.
+  It should be dark themed, I can hardly see anyother color, it a single color dominant at this
+  stage, I am very disappointed with it. It should have glassmorphism effects, hover effects,
+  amazing animations, use GSAP if needed, and so on, but still a massive overhaul is needed.
+  This current stage is not at all presentable."* Root causes diagnosed in code (not re-argued):
+  the whole console keys off ONE `--accent` pair of adjacent hues, glass fills are 4–7% alpha
+  over a same-hue dim backdrop (imperceptible), hover states barely exist, and the §5.3
+  flagship features (Cosmograph hero, queue sparklines/red-flag badges, GSAP scrubber, DrawSVG
+  schematics, visx Model Lab, About page) were deferred as "optional" — they are the
+  impressiveness and are now REQUIRED. `docs/frontend_overhaul.md` rewritten as the V2 brief
+  (research-grounded: multi-hue OKLCH system, visible-glass recipe, hover inventory, GSAP
+  showpieces; sources cited in the brief §7). Also directed this session: an honest
+  remaining-work audit — Phase-1/M0–M5 ML scope is ON plan (§7 Weeks 1–8 all delivered +
+  verified); remaining roadmap is Phase 2 Weeks 9–17 (MC, M6, M7, M8: model depth,
+  Copilot, transfer science/multi-seed rigor, practitioner study + ablations, paper); the
+  only off-plan consumption is UI rework, now on its third pass — while the frontend is
+  actually BELOW the plan's own §5.3 spec, which V2 closes · §5.2/§5.3, §7, R11.: master's
   seed-0 runs are **byte-identical to laptop-C's** on every number including the
   nondeterministic-path ones (raw GATv2 0.5492 / P@100 0.96; bundles 15 motif+FATF,
   fidelity_insane 38/50) while laptop-B remains the divergent machine (0.5318; 16; 41/50) —
@@ -188,6 +218,7 @@ still public 2026-07-15 — anonymous clone succeeded).
   nondeterminism is not unique per machine: two of three machines agree exactly; the ±0.02
   variance claim stands but is driven by hardware/thread topology classes, not per-run noise.
   Multi-seed protocol (R5) still subsumes this for publication · §4.5, §9.3, R5.
+- 2026-07-18 · **[laptop-C] Cross-machine reproducibility measured, worth citing in the paper's
   reproducibility note**: with identical seeds/configs/lock, every deterministic-path number
   (LOCO, frozen probe, GATv2-multi, isotonic+Leiden queues) byte-reproduces across machines, but
   raw-GATv2 training does NOT (0.5492 laptop-C vs 0.5318 laptop-B) — torch CPU scatter reductions
