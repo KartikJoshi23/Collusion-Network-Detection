@@ -55,6 +55,13 @@ def create_app(index_path: str | Path | None = None) -> FastAPI:
         version="0.1.0",
     )
 
+    # Investigator Copilot (§4.6, Week 11): read-only conversational layer.
+    # The router itself imports the LLM stack lazily, so serving works — and
+    # stays torch-free — on machines with no key configured.
+    from copilot.api import router as copilot_router
+
+    app.include_router(copilot_router, prefix="/api/v1/copilot", tags=["copilot"])
+
     def entry_or_404(dataset: str) -> ServingEntry:
         entry = index.get(dataset)
         if entry is None:

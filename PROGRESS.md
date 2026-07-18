@@ -97,6 +97,23 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-18 · **§7 STEP 27a (core slice) → INVESTIGATOR COPILOT SPINE LIVE.** `backend/copilot/`
+  ported from `reference/genai-chatbot/` per §4.6 dispositions: bounded tool-calling loop (the
+  archive's sql_agent shape), SQL tools retargeted at an in-memory DuckDB `alerts` view over
+  serving.json (SELECT-only allowlist + multi-statement rejection — stricter than the archive,
+  which leaned on a read-only file connection), NEW alert_tools (get_alert/list_alerts/
+  get_explanation/get_metrics), ported numeric-sanity gate, NEW guilt-language guard (§1.5 in
+  code: deterministic rewrites + caveat appended exactly once) with RED_FLAG_LEXICON replacing
+  POLICY_LEXICON, env-driven NIM client (pinned models as code defaults; blank .env lines mean
+  defaults per the hygiene test). Mounted at `/api/v1/copilot` (JSON `/chat` + `/health`; app
+  stays torch-free and key-less-startable). 21 new tests (allowlist/injection, guard rewrites +
+  caveat idempotence, numeric gate, tools on a tmp serving fixture, scripted-mock agent loop,
+  budget exhaustion) — **suite 288/288**. **Live-verified with the real key on real artifacts:**
+  queue-counts question → schema discovery → correct grounded 254/223 + max risks; dossier
+  summary for the top elliptic alert → fan-in motif + FATF-STRUCT-01 + PGExplainer evidence,
+  zero guilt language, gates passed. Deviations recorded: LangGraph orchestration (clarification/
+  readback/cross-validation/arbiter), RAG agent + `data/corpus/`, SSE streaming, and goldens
+  (27c) are the NEXT slices per the §4.6 cut order · [master]
 - 2026-07-18 · **Step-26c integration verified on master + Week-11 key prep (user-directed).**
   Pulled laptop-C's actor-graph stack (17b40fa..8cf2c2c) fast-forward; suite **267/267** green
   here. Copilot LLM models researched and pinned (see Decision log): `COPILOT_MODEL` +
@@ -258,17 +275,22 @@ still public 2026-07-15 — anonymous clone succeeded).
    GPU (Colab/Kaggle) or a very patient CPU — master has the AMLworld raw data + IR store; wire
    `NeighborLoader` minibatching first (In-flight note); (d) learned line-encoder over
    materialized L(G) on AMLworld per the B-LG verdict (amounts give L(G) real edge features).
-4. **Week 11 — Copilot (MC)** after (or in parallel with) step 26: port per §7 27a–c.
-   **The key is IN PLACE and VERIFIED on master (2026-07-18)** — chat + tool-calling smoke
-   passed on the pinned models `nvidia/nemotron-3-super-120b-a12b` (main) and
-   `nvidia/nemotron-3-nano-30b-a3b` (validators); the port reads
-   `COPILOT_MODEL`/`COPILOT_VALIDATOR_MODEL`/`NVIDIA_API_KEY` from env, never hardcodes, and
-   must budget `max_tokens` ≳ 2k on agent turns (Nemotron reasons before tool calls). If the
-   Copilot runs on a DIFFERENT machine: one `nvapi-…` key from
-   build.nvidia.com/settings/api-keys (account-scoped, covers all catalog models) → repo-root
-   `.env`, line `NVIDIA_API_KEY=` (copy `.env.example` first; `.env` is gitignored). Kaggle
-   key: NOT needed for the Copilot; only for AMLworld work on a machine without the data
-   (master already has it).
+4. **Week 11 — Copilot (MC), remaining slices** (27a core is LIVE on master — see Completed):
+   (a) **27b dock**: port the seven frontend components into the Copilot dock (§5.3 view 7)
+   with the SSE CRLF parser fix (`reference/genai-chatbot/` FIX_FRONTEND.md api.ts is the
+   source), restyle onto tokens, context-seed from the open alert (`context_alert_id` is
+   already accepted by POST `/api/v1/copilot/chat`), add the SSE streaming endpoint;
+   (b) **RAG slice**: curate `data/corpus/` (FATF indicators, OECD checklist, methodology
+   docs — license-checked), port retrieval/ (BM25 + embedded dense store, NO Qdrant) and the
+   grounding gate (RED_FLAG_LEXICON is already in `copilot/guard.py`);
+   (c) **27c goldens**: 20–30 investigator questions, ≥90% grounded, zero guilt-language
+   violations, manual CI job — gate for MC;
+   (d) optional depth: LangGraph orchestration (clarification/readback/cross-validation) —
+   §4.6 cut order puts it last. Key setup for a NEW machine: one `nvapi-…` key from
+   build.nvidia.com/settings/api-keys → repo-root `.env` line `NVIDIA_API_KEY=` (models
+   default to the pinned ids in `backend/copilot/config.py`; `max_tokens` ≥ 2k stands —
+   Nemotron reasons before tool calls). Kaggle key still only needed for AMLworld on a
+   machine without the data.
 5. ~~Produce REAL serving artifacts~~ **DONE on laptop-C AND master (2026-07-18, see
    Completed)** — both machines are demo-ready end-to-end. For any OTHER machine the recipe
    is unchanged: `poe data` → `collusiongraph ingest` (both datasets) → `train` the four configs
