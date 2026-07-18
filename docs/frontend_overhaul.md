@@ -1,13 +1,17 @@
 # Frontend Overhaul — Collaborator Brief (V2)
 
-**Status: OVERHAUL V2 REQUIRED — the V1 overhaul was REJECTED at stakeholder re-review
-(2026-07-18, master).** V1 (laptop-C, merge `8a2fee7`) shipped its full scope and all hard
-constraints held, but the result still reads as a flat single-color dark dashboard. This
-brief supersedes V1's §3 build list. The V1 record is kept in §8 for history.
+**Status: V2 DELIVERED [laptop-C, 2026-07-18] — awaiting stakeholder review #3.**
+All six §3 workstreams below shipped (multi-hue tokens with the ≥3-families-at-rest rule
+verified live, visible glass over a bright 3-stop aurora, the full §3.3 hover inventory,
+GSAP DrawSVG schematics + temporal scrubber + ScrollTrigger About story, the §3.5 flagship
+features, dossier redesign). Constraints in §4 held: backend 237/237, frontend build +
+vitest 17/17, caveat on every screen, read-only API untouched, offline fonts,
+reduced-motion collapse. Detail in PROGRESS.md (Completed, 2026-07-18 V2 entry). The brief
+below is kept verbatim as the record of the ask.
 
-Baseline for this work: `main` at `7c0cdce` — functionally complete, green
-(backend 237/237, frontend vitest 8/8, build + docker verified), REAL serving artifacts
-walked live on master and laptop-C. You are restyling a working product, not fixing one.
+*(Historical status: V2 was REQUIRED after the V1 overhaul was rejected at stakeholder
+re-review 2026-07-18 — V1 shipped its full scope but read as a flat single-color dark
+dashboard. V1's record is in §8.)*
 
 ---
 

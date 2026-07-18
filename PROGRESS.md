@@ -26,6 +26,15 @@
 > rewritten research-grounded brief in [`docs/frontend_overhaul.md`](docs/frontend_overhaul.md)
 > (diagnosis: monochrome single-accent token usage, imperceptible glass, no hover language,
 > §5.3 flagship features deferred). Phase-2 ML work stays gated behind UI acceptance (§7).
+>
+> ✅ **OVERHAUL V2 DELIVERED [laptop-C, 2026-07-18] — every item in the V2 brief's §3 built**
+> (see Completed): simultaneous 5-hue token system (≥3 hue families at rest verified live on
+> every screen), visible glass + bright 3-stop aurora, full hover language, GSAP showpieces
+> (DrawSVG dossier schematics, temporal scrubber, ScrollTrigger About story), and the §5.3
+> flagship features (alert constellation hero, queue badges/sparklines/measured-precision
+> readout, real Model Lab charts with SVG/PNG export). Backend 237/237, frontend build +
+> vitest 17/17, walked live on real artifacts in both domains. **Awaiting stakeholder review
+> #3.**
 
 **M5 COMPLETE — MVP exit criterion met [master, 2026-07-18].** Clone → `poe demo` (+ `npm run dev`)
 or `docker compose up` → dashboard → ranked alert → highlighted subgraph → explanation, both
@@ -79,6 +88,7 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-18 · **FRONTEND OVERHAUL V2 (second-rejection response — docs/frontend_overhaul.md V2 §3, all six workstreams).** *(1) Multi-hue token system:* five simultaneous hue families (cyan/violet/magenta/amber + reserved coral, teal benign) with the domain toggle shifting DOMINANCE only; chart tier validated with the dataviz six-checks against #0a0e17 (`lib/palette.ts`, pinned by `palette.test.ts` incl. the coral-exclusivity rule); **≥3 hue families at rest verified live** (Overview KPI band renders 4 distinct families). *(2) Visible glass:* 3-stop multi-hue aurora in BOTH domains bright enough to feed the blur, 22–38% alpha-gradient fills + `saturate(1.5)`, neon-edge interactive glass (`glass-neon`, per-panel `--panel-hue`), multi-hue drifting canvas. *(3) Hover language:* lift+glow cards, row accent-edge sweep, chip bloom + tooltips, button sheen sweep, cursor-following spotlight on the hero — transform/opacity/background only. *(4) GSAP showpieces (gsap + @gsap/react installed — all plugins free):* DrawSVG motif schematics drawing themselves in the dossier (9 scenes), temporal playback scrubber replaying REAL edge timestamps over Sigma (play/pause + scrub, amount-scaled widths where amounts exist per D1), ScrollTrigger About/Methodology story (§5.3 view 6 — NEW view, lazy-loaded 20 kB chunk) with the motif table draw-on. *(5) Flagship features:* alert-constellation hero (real ranked alerts, size=members, color=risk band, golden-angle layout labeled schematic), queue rows with red-flag badges (lazy bundle lookups, 404-tolerant), hover-drawn temporal sparklines from real windowed-subgraph timestamps (`lib/sparkline.ts`, tested — never synthesized), hover-revealed actions, measured-precision readout (nearest PUBLISHED budget, never interpolated; queue metrics now ride serving.json via `build_demo_artifacts.py`); Model Lab rebuilt: per-time-step AUC-PR bars (the step-43 crater figure) + precision@k lines with live budget marker + queue precision, hand-rolled SVG per the dataviz mark specs (visx deferred — plan §5.1 allows D3-direct/hand-rolled), SVG/PNG export on every chart (paper figures). *(6) Dossier redesign:* typed evidence cards with per-source labels, indicator-cited red-flag cards, fidelity tiles with the failed-sanity warning surfaced, technical appendix keeps the full payload inspectable. Reduced-motion collapses everything (Motion config + CSS + GSAP guards). **Verified:** backend 237/237, frontend build green (main 183 kB gzip + 20 kB About chunk) + vitest 17/17 (5 new pure-logic tests), live walk of all six views on REAL artifacts in both domains (constellation/charts/schematic/scrubber/badges/readout all confirmed rendering real data) · [laptop-C]
 - 2026-07-18 · **INTEGRATION + MASTER DEMO-READY (Next action 2 executed on the master machine).**
   *Integration:* pulled 56ea4fc..f31a200 fast-forward; `feat/frontend-overhaul` confirmed fully
   contained in main (0 ahead) — verdict MERGE (already effected by laptop-C's 8a2fee7), remote
@@ -164,21 +174,15 @@ still public 2026-07-15 — anonymous clone succeeded).
 - AMLworld raw data is absent on laptop-B (Kaggle credentials are per-machine; script reports `blocked` as designed). Financial pack is untested at AMLworld scale (5M edges) — see Next action 5.
 
 ## Next actions (ordered, self-contained)
-1. **[collaborator] FRONTEND OVERHAUL V2** — the V1 overhaul was **rejected at stakeholder
-   re-review** (verbatim in the Decision log, 2026-07-18 second entry). Execute
-   [`docs/frontend_overhaul.md`](docs/frontend_overhaul.md) **(V2)** top to bottom — it is
-   self-contained: root-cause diagnosis (monochrome single-accent tokens, imperceptible
-   glass, no hover language, §5.3 flagships deferred), researched design direction
-   (simultaneous multi-hue OKLCH token system, visible-glass recipe, hover inventory, GSAP
-   DrawSVG/ScrollTrigger/scrubber showpieces), the six §5.3 features to build, hard
-   constraints (caveat, read-only API, CI green, offline fonts, reduced-motion, perf), a
-   land-green ordering, and sources. Baseline `main@7c0cdce` is green and demo-ready on
-   real artifacts (master + laptop-C); verify each slice live (in-tool browser panes freeze
-   rAF — use deep links + DOM reads). Merge to `main` yourself per the standing policy;
-   each slice must land green and demoable.
-2. **[user/stakeholder] Review the V2 UI when action 1 lands** — `poe demo` + `npm run dev`
-   (or `docker compose up` → :8080), walk all views in both domains. Phase-2 ML work stays
-   gated on this acceptance (§7 stop point).
+1. ~~FRONTEND OVERHAUL V2~~ **DONE on laptop-C (2026-07-18, see Completed)** — all six V2
+   workstreams shipped and verified live on real artifacts in both domains; constraints held
+   (caveat everywhere, read-only API, build+vitest+backend green, offline fonts,
+   reduced-motion, one blurred layer per stack).
+2. **[user/stakeholder] REVIEW #3 — the V2 UI** — `poe demo` + `npm run dev` (or
+   `docker compose up` → :8080), walk all SIX views (About is new — the demo-day opener) in
+   both domains; hover the queue rows (sparklines + actions), drag the budget slider
+   (measured-precision readout), play the explorer's temporal scrubber, export a Model Lab
+   chart. Phase-2 ML work stays gated on this acceptance (§7 stop point).
 3. ~~Produce REAL serving artifacts~~ **DONE on laptop-C AND master (2026-07-18, see
    Completed)** — both machines are demo-ready end-to-end. For any OTHER machine the recipe
    is unchanged: `poe data` → `collusiongraph ingest` (both datasets) → `train` the four configs

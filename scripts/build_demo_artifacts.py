@@ -74,6 +74,9 @@ def main() -> int:
         print(f"{spec['dataset']}: {summary['n_alerts']} alerts")
 
         expl = REPO / "eval_outputs" / spec["dataset"] / "explanations"
+        # the queue's own metrics ride along: the alert-level precision@budget
+        # block feeds the dashboard's measured precision readout (§5.3 view 2)
+        metrics = [*spec["metrics"], f"{spec['output_dir']}/metrics.json"]
         serving[spec["dataset"]] = {
             "domain": spec["domain"],
             "store_root": "data/interim",
@@ -81,7 +84,7 @@ def main() -> int:
             "explanations": (
                 f"eval_outputs/{spec['dataset']}/explanations" if expl.is_dir() else None
             ),
-            "metrics": [m for m in spec["metrics"] if (REPO / m).is_file()],
+            "metrics": [m for m in metrics if (REPO / m).is_file()],
         }
 
     if not serving:
