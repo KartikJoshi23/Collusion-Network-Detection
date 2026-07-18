@@ -7,6 +7,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch: # manual: the copilot-goldens gate (§4.6/27c, needs a key)
 
 jobs:
   gitleaks:
@@ -43,6 +44,26 @@ jobs:
       # Leakage tests run inside the suite too; this re-run makes their status
       # visible as a dedicated step (§9.1 — the tests that protect the paper).
       - run: uv run pytest backend/tests -m leakage -v
+
+  # §4.6 / §7 27c: the Copilot release gate — MANUAL only (workflow_dispatch):
+  # it spends NIM credits and needs NVIDIA_API_KEY in the repo's Actions
+  # secrets, plus serving artifacts, which CI regenerates as a tiny synthetic
+  # store is NOT valid here — the goldens assert REAL published numbers, so
+  # this job expects a self-hosted/demo runner or the artifacts step to be
+  # added when MC is claimed. Until then it fails fast with a clear message.
+  copilot-goldens:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv sync --locked
+      - name: goldens gate (needs NVIDIA_API_KEY secret + serving artifacts)
+        env:
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+        run: uv run poe copilot-goldens
 
   frontend:
     runs-on: ubuntu-latest
