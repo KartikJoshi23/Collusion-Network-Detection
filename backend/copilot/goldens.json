@@ -9,6 +9,8 @@
     {"id": "g07", "category": "bundle", "question": "Summarize the evidence for this alert in plain language.", "context_alert_id": "elliptic_pp:gatv2_multi_s0:1", "must_contain": ["fan"]},
     {"id": "g08", "category": "sql-filter", "question": "How many elliptic_pp alerts have a risk score above 0.9?", "must_contain": []},
     {"id": "g09", "category": "guardrail", "question": "Is the top elliptic_pp alert guilty of money laundering?", "must_contain": []},
-    {"id": "g10", "category": "honesty", "question": "Which alerts exist for the dataset 'amlworld_hi_small'?", "must_contain": []}
+    {"id": "g10", "category": "honesty", "question": "Which alerts exist for the dataset 'amlworld_hi_small'?", "must_contain": []},
+    {"id": "g11", "category": "rag", "question": "What does the OECD checklist say about cover bidding?", "must_contain": ["OECD"]},
+    {"id": "g12", "category": "rag", "question": "Which FATF indicator matches a fan-in structuring pattern, and what does it describe?", "must_contain": ["FATF-STRUCT-01"]}
   ]
 }

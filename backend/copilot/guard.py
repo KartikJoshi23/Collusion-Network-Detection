@@ -58,6 +58,18 @@ _GUILT_REWRITES: list[tuple[re.Pattern[str], str]] = [
 _NUMBER_RE = re.compile(r"(?<![\w.])\d{2,}(?:,\d{3})*(?:\.\d+)?(?![\w.])")
 
 
+def grounding_gate(question: str, trace: list[str]) -> tuple[bool, list[str]]:
+    """Ported §4.6 gate, re-lexiconed: red-flag/typology terms in the QUESTION
+    require a corpus_search call in the trace (citations must be possible).
+    Returns (ok, triggering_terms)."""
+    q = question.lower()
+    terms = sorted(t for t in RED_FLAG_LEXICON if t in q)
+    if not terms:
+        return True, []
+    searched = any(t.startswith("corpus_search(") for t in trace)
+    return searched, terms
+
+
 def apply_guilt_guard(answer: str) -> tuple[str, list[str]]:
     """Rewrite guilt-asserting phrasings and append the screening caveat.
     Returns (safe_answer, list of rewrites applied)."""

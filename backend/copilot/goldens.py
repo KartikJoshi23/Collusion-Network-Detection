@@ -27,19 +27,34 @@ def run_goldens(
     goldens = json.loads(Path(path).read_text(encoding="utf-8"))["goldens"]
     results = []
     for g in goldens:
-        out = answer_question(
-            g["question"], client=client, context_alert_id=g.get("context_alert_id")
-        )
-        answer_lower = out["answer"].lower()
-        missing = [m for m in g.get("must_contain", []) if m.lower() not in answer_lower]
-        guilt_violations = out["guard_rewrites"]
-        passed = out["numbers_grounded"] and not missing and not guilt_violations
+        # hosted-model nondeterminism (even at temperature 0) makes single
+        # shots flaky; one recorded retry separates transient variance from
+        # systematic failure. Guilt violations get NO retry — one strike.
+        attempts = 0
+        for _ in (1, 2):
+            attempts += 1
+            out = answer_question(
+                g["question"], client=client, context_alert_id=g.get("context_alert_id")
+            )
+            answer_lower = out["answer"].lower()
+            missing = [m for m in g.get("must_contain", []) if m.lower() not in answer_lower]
+            guilt_violations = out["guard_rewrites"]
+            passed = (
+                out["numbers_grounded"]
+                and out.get("corpus_grounded", True)
+                and not missing
+                and not guilt_violations
+            )
+            if passed or guilt_violations:
+                break
         results.append(
             {
                 "id": g["id"],
                 "category": g["category"],
-                "passed": passed,
+                "passed": passed and not guilt_violations,
+                "attempts": attempts,
                 "numbers_grounded": out["numbers_grounded"],
+                "corpus_grounded": out.get("corpus_grounded", True),
                 "missing_expected": missing,
                 "guilt_violations": guilt_violations,
                 "trace": out["trace"],

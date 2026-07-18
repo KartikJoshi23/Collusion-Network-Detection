@@ -14,7 +14,8 @@ from typing import Any
 
 from .alert_tools import ALERT_TOOL_DISPATCH, ALERT_TOOL_SCHEMAS
 from .config import get_settings
-from .guard import apply_guilt_guard, numeric_sanity_gate
+from .corpus import CORPUS_TOOL_DISPATCH, CORPUS_TOOL_SCHEMAS
+from .guard import apply_guilt_guard, grounding_gate, numeric_sanity_gate
 from .sql_tools import SQL_TOOL_DISPATCH, SQL_TOOL_SCHEMAS
 
 SYSTEM_PROMPT = """You are the CollusionGraph Investigator Copilot — the \
@@ -33,12 +34,15 @@ are screening signals, and unconfirmed does not mean innocent OR guilty.
 or quote it. Open with: "This system does not determine guilt." Then describe \
 what the screening evidence shows, in screening language only.
 - Cite your evidence: mention which alert ids, tables, or bundle fields the \
-answer came from.
+answer came from. When corpus evidence is used, include its [chunk ids] \
+(e.g. FATF-STRUCT-01, OECD-…) verbatim in the answer.
+- Never answer about queue contents, alerts, or metrics from memory — always \
+call a tool first, even for simple questions.
 - If the question cannot be answered from the served artifacts, say so plainly.
 Answer concisely in Markdown."""
 
-TOOL_SCHEMAS = SQL_TOOL_SCHEMAS + ALERT_TOOL_SCHEMAS
-TOOL_DISPATCH = {**SQL_TOOL_DISPATCH, **ALERT_TOOL_DISPATCH}
+TOOL_SCHEMAS = SQL_TOOL_SCHEMAS + ALERT_TOOL_SCHEMAS + CORPUS_TOOL_SCHEMAS
+TOOL_DISPATCH = {**SQL_TOOL_DISPATCH, **ALERT_TOOL_DISPATCH, **CORPUS_TOOL_DISPATCH}
 
 
 @lru_cache(maxsize=1)
@@ -113,12 +117,21 @@ def answer_question(
             "\n\n**⚠️ Low confidence.** These numbers were not found in the "
             f"tool evidence and must be verified: {', '.join(unsupported)}."
         )
+    corpus_ok, lexicon_terms = grounding_gate(question, trace)
+    if not corpus_ok:
+        draft += (
+            "\n\n**⚠️ Ungrounded typology claim.** This answer discusses "
+            f"red-flag terms ({', '.join(lexicon_terms)}) without consulting "
+            "the curated knowledge base — verify against the FATF/OECD tables."
+        )
     answer, rewrites = apply_guilt_guard(draft)
 
+    all_ok = numbers_ok and corpus_ok
     return {
         "answer": answer,
-        "confidence": 0.9 if numbers_ok else 0.3,
+        "confidence": 0.9 if all_ok else 0.3,
         "numbers_grounded": numbers_ok,
+        "corpus_grounded": corpus_ok,
         "guard_rewrites": rewrites,
         "evidence": evidence,
         "trace": trace,

@@ -174,6 +174,24 @@ def _final_msg(content: str):
     return SimpleNamespace(choices=[SimpleNamespace(message=msg)])
 
 
+class TestCorpusAndGrounding:  # RAG slice
+    def test_bm25_finds_the_right_indicator(self) -> None:
+        from copilot.corpus import corpus_search
+
+        assert "OECD" in corpus_search("cover bidding checklist")
+        assert "FATF-STRUCT-01" in corpus_search("structuring deposits below thresholds fan-in")
+
+    def test_grounding_gate_requires_corpus_search_for_lexicon_terms(self) -> None:
+        from copilot.guard import grounding_gate
+
+        ok, terms = grounding_gate("What is cover bidding?", trace=["run_sql({})"])
+        assert not ok and "cover bidding" in terms
+        ok, _ = grounding_gate("What is cover bidding?", trace=['corpus_search({"query": "x"})'])
+        assert ok
+        ok, terms = grounding_gate("How many alerts are there?", trace=[])
+        assert ok and terms == []
+
+
 class TestGoldensHarness:  # §7 step 27c
     def test_gate_logic_on_scripted_answers(self, serving_fixture, tmp_path) -> None:
         from copilot.goldens import run_goldens

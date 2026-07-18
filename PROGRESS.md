@@ -97,6 +97,18 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-19 · **RAG SLICE LIVE + GATE RE-CLEARED AT 12/12 (grounded 1.0, zero guilt
+  violations).** `copilot/corpus.py`: corpus from the project's OWN curated indicator tables
+  (`explain.redflags` FATF/OECD paraphrases — license-safe by construction, citable chunk ids)
+  + `docs/red_flag_mappings.md` sections; in-process BM25 (no Qdrant per §4.6, dense leg joins
+  if the corpus outgrows it); `corpus_search` tool; **grounding gate ported and re-lexiconed**
+  (RED_FLAG_LEXICON term in the question ⇒ corpus_search required, else confidence drops and
+  the answer is flagged). 2 RAG goldens added (OECD cover-bid, FATF fan-in — chunk ids must be
+  cited verbatim; system prompt extended accordingly). Goldens harness: one recorded retry per
+  golden (hosted-MoE nondeterminism at temp 0 makes single shots flaky; guilt violations get
+  NO retry — one strike) + `attempts`/`corpus_grounded` in the report. Suite **291/291**;
+  live: `gate_passed: true`. NIM free-tier note: repeated 12-golden runs can hit the 40 RPM
+  cap — space runs ~1 min apart · [master]
 - 2026-07-19 · **GOLDENS GATE CLEARED — 10/10, grounded_rate 1.0, zero guilt violations.**
   The g09 premise-echo failure was fixed by prompt hardening alone (system-prompt rule: a
   guilt-presupposing question is never quoted or denied in its own words — open with "This
