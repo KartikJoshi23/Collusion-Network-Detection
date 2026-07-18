@@ -97,6 +97,7 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-18 · **§7 STEP 26c — ELLIPTIC++ ACTOR-GRAPH EXPERIMENT (Phase-2 P2.1), v1 run complete.** *Build:* `elliptic_pp_actor_to_ir` (822,942 wallet nodes with FIRST-APPEARANCE 56-feature vectors — knowable at first_seen by construction; 2,868,964 undated AddrAddr `pays` edges kept faithful; full-knowledge roll-up labels for evaluation + a per-step `label_history` pack), the general **`history_as_of` train-label policy** (the Mendeley-F1 fix generalized: wallets span steps, so roll-up labels leak future activity into training targets; AMLworld can reuse the same pack mechanism), CLI ingest entry, R-GCN config under the SAME 34/35 protocol as the tx graph. **Trainer fix the actor graph exposed:** the train graph was built with `restrict_as_of`, which EXCLUDES undated edges (feature-layer rule) — an all-undated-edge dataset trained on an edgeless graph (loud RGCNConv crash). `train_graph_restrict` now applies the documented splitter policy (undated edges kept only when BOTH endpoints are train members), pinned by test. 8 new tests (late-illicit as-of flip, §9.1b truncation negative control, endpoint gating); suite 266/266. *Run (seed 0, R-GCN 2 relations, val 0.5087, best epoch 13):* test window ≥35, 92,451 confirmed wallets, prevalence 0.0529 — **AUC-PR 0.2473 (~4.7× prevalence), P@50 0.96 / P@100 0.98 / P@200 0.98**. *Reading (the §4.5 granularity note, arXiv:2604.23494, now measured in-house):* the actor-level view ranks GLOBALLY worse than tx-level GATv2 (0.2473 vs 0.5492 AUC-PR) but its QUEUE HEAD is more precise (P@100 0.98 vs 0.96; P@200 0.98 vs 0.935) — transaction-level and actor-level queues materially disagree, and the actor head is the stronger screening surface at tight budgets. Per-step is volatile (spikes at 37/40, near-prevalence elsewhere) — same shift instability as the tx graph. v1 caveats in the Decision log · 17b40fa + run · [laptop-C]
 - 2026-07-18 · **fix(explain): learned evidence-source label names the ACTUAL explainer** —
   `build_bundle` hardcoded `gnn_explainer(…)`, so the PGExplainer-regenerated bundles claimed
   the wrong algorithm (§4.4 evidence-source truthfulness). The label now follows the
@@ -243,13 +244,13 @@ still public 2026-07-15 — anonymous clone succeeded).
    chart. *(Phase-2 work no longer waits on this — stakeholder decision 2026-07-18, Decision
    log; further UI iteration is deferred to the end.)*
 3. **Phase 2, next slice — §7 step 26 remainder:** ~~(a) line-graph aux view v1~~ **DONE,
-   measured negative (2026-07-18, Decision log)**. Remaining: (b) **PNA + GIN+EU reference
-   configs on AMLworld HI-Small** (Multi-GNN parity check): needs GPU (Colab/Kaggle) or a very
-   patient CPU — master has the AMLworld raw data + IR store; wire `NeighborLoader`
-   minibatching first (In-flight note); (c) **Elliptic++ actor-graph heterogeneous experiment**
-   (the 9-CSV actor tables are already downloaded — adapter extension + R-GCN/hetero arm);
-   (d) learned line-encoder over materialized L(G) on AMLworld per the B-LG verdict (amounts
-   give L(G) real edge features). On a CPU-only session, (c) is the feasible arm.
+   measured negative (2026-07-18, Decision log)**. ~~(c) Elliptic++ actor-graph experiment~~
+   **DONE v1 (2026-07-18 [laptop-C], see Completed — actor head beats tx head at tight budgets;
+   follow-ups: actor alert queue + roll-up, HeteroData tx↔wallet arm, multi-seed)**. Remaining:
+   (b) **PNA + GIN+EU reference configs on AMLworld HI-Small** (Multi-GNN parity check): needs
+   GPU (Colab/Kaggle) or a very patient CPU — master has the AMLworld raw data + IR store; wire
+   `NeighborLoader` minibatching first (In-flight note); (d) learned line-encoder over
+   materialized L(G) on AMLworld per the B-LG verdict (amounts give L(G) real edge features).
 4. **Week 11 — Copilot (MC)** after (or in parallel with) step 26: port per §7 27a–c; user
    action first: create the NVIDIA NIM key at build.nvidia.com → `.env` `NVIDIA_API_KEY`
    (2026-07-17 decision).
@@ -267,6 +268,19 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Decision log
 <!-- - YYYY-MM-DD · decision · rationale · plan section affected -->
+- 2026-07-18 · **[laptop-C] ACTOR-GRAPH v1 SCOPE + first verdict (§7 step 26c).** v1 is the
+  wallet-level flow view ONLY: AddrAddr `pays` edges (undated in the raw data — kept faithful;
+  the trainer now applies the splitter's endpoint-membership gate for undated train edges), node
+  features = the wallet's FIRST-appearance row (as-of-safe by construction; richer as-of feature
+  aggregation is follow-up), the tx–wallet bipartite tables (AddrTx/TxAddr) deferred to a true
+  HeteroData arm (mixed 183/56-wide feature spaces). Train labels via the new `history_as_of`
+  policy — the stored roll-up would have leaked future activity (F1 pattern). **First verdict:
+  actor-level screening is REAL but different in shape** — global AUC-PR well below tx-level
+  (0.2473 vs 0.5492) yet queue-head precision ABOVE it (P@100 0.98 vs 0.96, P@200 0.98 vs
+  0.935): the granularity-disagreement result (arXiv:2604.23494) reproduced in-house, and an
+  argument for serving BOTH queue levels (§4.5 already requires reporting both). Follow-ups
+  queued: actor alert queue + community roll-up, HeteroData tx↔wallet arm, multi-seed
+  confirmation · §4.5, §10.2, P2.1.
 - 2026-07-18 · **[master] B-LG ABLATION VERDICT: line-graph channel NOT adopted as default —
   second data point that ADDED INPUT CHANNELS hurt GATv2 test generalization under the t43
   shift.** Seed-0, identical protocol: raw-only 0.5492 → raw+line 0.4986 (−0.05) → raw+structural
