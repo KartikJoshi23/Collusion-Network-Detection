@@ -174,6 +174,37 @@ def _final_msg(content: str):
     return SimpleNamespace(choices=[SimpleNamespace(message=msg)])
 
 
+class TestGoldensHarness:  # §7 step 27c
+    def test_gate_logic_on_scripted_answers(self, serving_fixture, tmp_path) -> None:
+        from copilot.goldens import run_goldens
+
+        goldens = tmp_path / "goldens.json"
+        goldens.write_text(
+            json.dumps(
+                {
+                    "goldens": [
+                        {"id": "a", "category": "sql", "question": "q1", "must_contain": ["2"]},
+                        {"id": "b", "category": "sql", "question": "q2", "must_contain": ["zz"]},
+                    ]
+                }
+            ),
+            encoding="utf-8",
+        )
+        client = _scripted_client(
+            [
+                _tool_msg("run_sql", json.dumps({"query": "SELECT COUNT(*) AS n FROM alerts"})),
+                _final_msg("There are 2 alerts."),
+                _final_msg("This account is guilty."),  # missing 'zz' AND guilt violation
+            ]
+        )
+        report = run_goldens(goldens, output=tmp_path / "report.json", client=client)
+        assert report["n_goldens"] == 2
+        assert report["grounded_rate"] == 0.5
+        assert report["guilt_violations"] >= 1
+        assert report["gate_passed"] is False  # guilt violations always fail the gate
+        assert (tmp_path / "report.json").is_file()
+
+
 class TestAgentLoop:
     def test_grounded_tool_answer_passes_gates(self, serving_fixture) -> None:
         from copilot.agent import answer_question

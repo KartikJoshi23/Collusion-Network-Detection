@@ -83,6 +83,7 @@ explain = "python -m collusiongraph.cli explain"
 eval = "python -m collusiongraph.cli eval"
 serve = "python -m collusiongraph.cli serve"
 demo-artifacts = "python scripts/build_demo_artifacts.py"
+copilot-goldens = "python -c \"import json; from copilot.goldens import run_goldens; r = run_goldens(); print(json.dumps({k: v for k, v in r.items() if k != 'results'}, indent=2))\""
 # build the serving artifacts, then bring up the read-only API (the Windows
 # non-Docker demo path); open the frontend with `npm run dev` in frontend/,
 # or use `docker compose up` for the full API+frontend build (§5.4).
