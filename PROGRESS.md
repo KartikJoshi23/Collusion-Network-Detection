@@ -18,6 +18,9 @@
 > Mono / Space Grotesk), designed radar/error/empty states. Hard constraints held: ethics caveat
 > on every screen (footer + dossier), `npm run build` + vitest green, backend 235/235 green,
 > docker frontend image builds, API contract untouched (read-only, zero endpoint changes).
+> **Integrated & re-verified on master 2026-07-18** (see Completed): master is demo-ready
+> end-to-end on REAL artifacts (dev path :5173/:8000 AND `docker compose up` :8080), suite now
+> 237/237 + frontend 8/8, and the procurement deep-link bug found during the walk is fixed.
 > **⛔ Awaiting stakeholder re-review of the new UI before Phase-2 development (§7).**
 
 **M5 COMPLETE — MVP exit criterion met [master, 2026-07-18].** Clone → `poe demo` (+ `npm run dev`)
@@ -72,6 +75,40 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-18 · **INTEGRATION + MASTER DEMO-READY (Next action 2 executed on the master machine).**
+  *Integration:* pulled 56ea4fc..f31a200 fast-forward; `feat/frontend-overhaul` confirmed fully
+  contained in main (0 ahead) — verdict MERGE (already effected by laptop-C's 8a2fee7), remote
+  branch deleted; contract spot-checks passed (caveat in the app-shell footer on every screen,
+  zero API-contract changes in the merged diff, no secrets, MotifGlyph↔MotifType pinned by test);
+  main verified green here: backend 236/236 → **237/237** with the new test, frontend build +
+  vitest, ruff/mypy/black. *Master serving artifacts (full recipe from committed configs):*
+  gatv2_focal test AUC-PR **0.5492 / P@100 0.96 — byte-identical to laptop-C** (laptop-B's
+  published 0.5318 is the divergent machine; see Decision log), ensemble_calibrated **0.5246**
+  (laptop-C 0.5242), elliptic explanations **50/50 (15 motif+FATF, fidelity_insane 38/50 —
+  exactly laptop-C's numbers)**, mendeley **20/20 (0 motifs in top-20, as published)**, queues
+  byte-reproduce (254 / 223), `serving.json` wired with `explanations` for BOTH datasets.
+  *Verified live on master:* five views walked on the real API in both domains (dossier shows a
+  real fan-in bundle with FATF-STRUCT-01 + attention + honest fidelity_sane=false; explorer
+  101-node windowed subgraph; accent recolor #22d3ee→#a78bfa) AND the compose path (`docker
+  compose up`: nginx :8080 → containerized api, artifact mounts live, images api 815 MB /
+  frontend 75 MB) · [master]
+- 2026-07-18 · **fix(frontend): cross-dataset deep links** — `/?view=case&alert=<mendeley…>`
+  404'd the bundle: the initial dataset auto-select ran under the default `financial` domain, so
+  a procurement alert was fetched under `elliptic_pp`. New `lib/deeplink.ts` resolves the
+  alert-id's dataset prefix against `/datasets` and a `hydrateFromAlert` store action adopts its
+  dataset+domain without clearing the selection; vitest 8/8 (deep-link table pinned). Found by
+  walking the real demo path on master — the demo script's procurement deep links now work.
+  Docker frontend image rebuilt with the fix · [master]
+- 2026-07-18 · **fix(cli): `collusiongraph` console script + legacy-console help** — the CLI the
+  docs/ledger reference as `uv run collusiongraph …` was never installed as an entry point
+  (`[project.scripts]` added; `poe` tasks unchanged), and `--help` crashed with
+  UnicodeEncodeError on cp1252 Windows consoles (the §/→ typography): stdout/stderr now degrade
+  via `reconfigure(errors="replace")`; regression test runs `--help` under forced cp1252 —
+  suite 237/237 · [master]
+- 2026-07-18 · docs: collaborator handoff workflow (PROMPT A step 4.3) reconciled to the
+  standing direct-merge policy — the user's uncommitted edit on master carried contradictory
+  fragments of the old PR-only flow; wording made coherent (merge to `main` yourself; branch
+  naming + description requirements kept) · [master]
 - 2026-07-18 · **REAL SERVING ARTIFACTS ON LAPTOP-C (Next action 2 executed) + demo verified on real data.** Full pipeline from the committed configs: ingest (elliptic_pp 203,769/234,355; mendeley_eu 14,555/24,251 — ledger counts matched exactly) → GATv2 raw + multi + calibrated ensemble → cross-domain probe (source run = the mendeley demo scorer) + LOCO transfer → `poe demo-artifacts` (elliptic 254 alerts / mendeley 223 — identical to published) → 50/50 elliptic GNNExplainer bundles + 20/20 mendeley matcher bundles → `serving.json` complete with `explanations` wired for BOTH datasets. **Overhauled UI walked live against the real API**: Overview KPI deck, 101-node windowed subgraph in the Explorer, real bundle in Case Detail (fidelity + attention + evidence + caveat), both queues at budget 50, LOCO metrics in Model Lab. **Reproducibility record (seed 0, cross-machine):** LOCO 0.8025 / probe 0.1501 / GATv2-multi 0.3781 / queue P@50 0.32 / mendeley P@4 0.50 all **byte-reproduce** laptop-B's published numbers; raw GATv2 diverges (test AUC-PR **0.5492 vs 0.5318**, P@100 0.96 vs 0.95 — torch CPU scatter reductions are not bitwise deterministic across machines, early-stop trajectory shifts) and the calibrated ensemble follows its supervised member (**0.5242 vs 0.5103**); bundles: 15 motif+FATF (vs 16), fidelity_insane 38/50 (vs 41/50) — same R12 conclusion. Artifacts are per-machine and gitignored; only this record travels · [laptop-C]
 - 2026-07-18 · **CLI transfer dispatch wired** — `collusiongraph train -c` now routes LOCO-transfer (`test_group`) and cross-domain-probe (`source`+`target`) configs to the Week-7 runners (they were library-API-only; the CLI silently mis-dispatched them to the GNN trainer). 2 new F22 dispatch tests; suite 236/236 · 0393600 · [laptop-C]
 - 2026-07-18 · **FRONTEND VISUAL OVERHAUL (stakeholder-directed, docs/frontend_overhaul.md).** Everything in the brief's "to BUILD" list shipped: `components/bg/NetworkBackground.tsx` (full-viewport canvas — drifting nodes, proximity edges, coral flagged pulses travelling along edges; node count area-capped ≤80, pauses on hidden tab, static single frame under `prefers-reduced-motion`, recolors live on domain flip via MutationObserver on `data-domain`); Motion pass (`AnimatePresence` view transitions in ViewRouter, `layoutId` sliding pills on nav + domain toggle, KPI `CountUp` via imperative `animate()`, alert-queue row stagger delay-capped at 15 rows, dossier card stagger, `MotionConfig reducedMotion="user"`); `components/ui/Glass.tsx` + tokens.css glass system (translucent fill, backdrop-blur 14px, 1px gradient border via mask-composite, inner top-light); palette upgrade (aurora radial washes + SVG-turbulence film grain on `body::before/::after`, per-domain accent ramps cyan→teal / violet→magenta, gradient-clipped display headings); `components/ui/MotifGlyph.tsx` — nine schematic SVG glyphs mirroring backend `MotifType` exactly, **pinned by `lib/motifs.test.ts`**; self-hosted `@fontsource-variable` Inter + JetBrains Mono + Space Grotesk (imported in main.tsx — zero network font requests, offline-demo safe); designed states (radar-sweep loading, warning-glyph error, dashed-network empty); all five views restyled on the untouched API/state wiring; deep-link initial state `/?view=…&alert=…` for the demo script. **Verified live [laptop-C]:** `npm run build` (tsc+vite) green, vitest 6/6, backend 235/235, `docker compose build frontend` OK, and a full browser walk of all five views in BOTH domains against `collusiongraph serve` (fonts confirmed loaded, glass/backdrop confirmed computed, Sigma subgraph rendered, accent recolor confirmed #22d3ee→#a78bfa, caveat present on every screen) — served from a **synthetic schema-conformant store** (see Decision log). Bundle 144 kB gzip JS (was 100; Motion added) + ~29 kB CSS + fonts as separate woff2 · merge 8a2fee7 (6b38e6f/a0d8a7c/43b459a/dbd7ce4; direct merge under the standing merge instruction — gh CLI absent on laptop-C, no PR record) · [laptop-C]
@@ -110,9 +147,10 @@ still public 2026-07-15 — anonymous clone succeeded).
   built (optional §5.3 flourishes, not in the brief's must-list): GSAP temporal scrubber +
   DrawSVG motif schematics, Cosmograph full-ledger hero, visx chart build-out in Model Lab
   (§5.3 view 6 About page too) — all Phase-2 polish candidates if the stakeholder wants more.
-- The overhaul was verified against a **synthetic serving store** on laptop-C (real score runs
-  don't exist on this machine — see Decision log). Before the stakeholder demo, produce REAL
-  serving artifacts on the demo machine (Next action 2) and re-walk the five views once.
+- ~~The overhaul was verified against a synthetic serving store on laptop-C~~ **Resolved
+  2026-07-18 [master]:** the overhauled UI is verified against REAL artifacts on BOTH laptop-C
+  and master; master walked all five views live in both domains and verified the compose path.
+  Either machine can host the stakeholder demo as-is.
 - Nothing else mid-implementation. Weeks 3–6 stacks + the audit fix pass are merged to main; feature branches deleted.
 - Post-audit follow-ups queued in Next actions: explicit test-time-adaptation ablation (the F3 finding), PGExplainer for the 41/50 fidelity-insane explanations, HeteroExplanation (R12), AMLworld activation.
 - Stratified (minority-enriched) neighbor sampling and `NeighborLoader` minibatching are deferred to the AMLworld run (full-batch is faster at Elliptic++ scale on CPU); the imbalance ablation shipped is focal-vs-weighted-CE.
@@ -121,26 +159,35 @@ still public 2026-07-15 — anonymous clone succeeded).
 - AMLworld raw data is absent on laptop-B (Kaggle credentials are per-machine; script reports `blocked` as designed). Financial pack is untested at AMLworld scale (5M edges) — see Next action 5.
 
 ## Next actions (ordered, self-contained)
-1. **[user/stakeholder] Re-review the overhauled UI.** Fastest look on any machine:
-   `uv sync && npm install` (frontend/), then `poe demo` + `npm run dev` (or `docker compose up`)
-   and walk Overview → Alert Queue → Graph Explorer → Case Detail → Model Lab in both domains.
-   The verbatim rejection this answers is in the Decision log (2026-07-18); the delivered scope
-   is in Completed. If more flash is wanted, the queued flourishes are in In-flight (GSAP
-   scrubber, Cosmograph hero, visx charts, About page).
-2. ~~Produce REAL serving artifacts~~ **DONE on laptop-C (2026-07-18, see Completed)** — laptop-C
-   is demo-ready end-to-end (`collusiongraph serve` + `npm run dev`, or `docker compose up`).
-   If the stakeholder demo runs on a DIFFERENT machine, repeat there: `poe data` → `collusiongraph
-   ingest` (both datasets) → `train` the four configs (gatv2_focal, gatv2_focal_multi, ensemble,
-   cross_domain_probe_proc2fin + transfer_loco_mendeley — all CLI-runnable since 0393600) →
-   `poe demo-artifacts` → `explain` both datasets → `poe demo-artifacts` again (second pass wires
-   the now-existing `explanations/` dirs into serving.json).
+1. **[user/stakeholder] Re-review the overhauled UI.** Master is demo-ready RIGHT NOW:
+   `poe demo` + `npm run dev` in `frontend/` (or `docker compose up` → :8080 — images already
+   built with today's fix), then walk Overview → Alert Queue → Graph Explorer → Case Detail →
+   Model Lab in both domains. laptop-C is equally ready. The verbatim rejection this answers is
+   in the Decision log (2026-07-18); the delivered scope is in Completed. If more flash is
+   wanted, the queued flourishes are in In-flight (GSAP scrubber, Cosmograph hero, visx charts,
+   About page).
+2. ~~Produce REAL serving artifacts~~ **DONE on laptop-C AND master (2026-07-18, see
+   Completed)** — both machines are demo-ready end-to-end. For any OTHER machine the recipe
+   is unchanged: `poe data` → `collusiongraph ingest` (both datasets) → `train` the four configs
+   (gatv2_focal, gatv2_focal_multi, ensemble, cross_domain_probe_proc2fin +
+   transfer_loco_mendeley) → `poe demo-artifacts` → `explain` both datasets →
+   `poe demo-artifacts` again (second pass wires `explanations/` into serving.json). The bare
+   `uv run collusiongraph …` spelling now works on a fresh `uv sync` (console script added
+   2026-07-18).
 3. **[user]** Rotate/revoke the OpenAI API key exposed in `Gen-AI Chatbot/.../.env` AND embedded in the original `FIX_FRONTEND.md` (two exposures) at platform.openai.com.
 4. **[user]** Make the GitHub repo private (plan requires a private repo): repo Settings → General → Danger Zone → Change visibility, or `gh repo edit KartikJoshi23/Collusion-Network-Detection --visibility private` after `gh auth login`. Also consider rotating the Kaggle token that was shared in a chat session.
 5. Deferred small items: HeteroExplanation for R-GCN (R12 finding — mask-based explainer is GATv2-only); AMLworld injection-recovery calibration + feature packs + baselines + `NeighborLoader` training on a machine with Kaggle credentials; wire the datasets' **precomputed screens** through as B4 inputs (Mendeley `lot_bidscount`/`relative_value`, García screen columns in `raw_attrs`); automatic percent→k budget resolution in `run_eval`; Mendeley R-GCN follow-up (firm+tender joint supervision, García co-bid enrichment) before concluding graph signal is absent; degree-preserving null-model z-scores for the structural floor (Phase 2).
 
 ## Decision log
 <!-- - YYYY-MM-DD · decision · rationale · plan section affected -->
-- 2026-07-18 · **[laptop-C] Cross-machine reproducibility measured, worth citing in the paper's
+- 2026-07-18 · **[master] Reproducibility data point refining the laptop-C note below**: master's
+  seed-0 runs are **byte-identical to laptop-C's** on every number including the
+  nondeterministic-path ones (raw GATv2 0.5492 / P@100 0.96; bundles 15 motif+FATF,
+  fidelity_insane 38/50) while laptop-B remains the divergent machine (0.5318; 16; 41/50) —
+  ensemble differs only in the 4th decimal (0.5246 vs laptop-C 0.5242). So torch-CPU scatter
+  nondeterminism is not unique per machine: two of three machines agree exactly; the ±0.02
+  variance claim stands but is driven by hardware/thread topology classes, not per-run noise.
+  Multi-seed protocol (R5) still subsumes this for publication · §4.5, §9.3, R5.
   reproducibility note**: with identical seeds/configs/lock, every deterministic-path number
   (LOCO, frozen probe, GATv2-multi, isotonic+Leiden queues) byte-reproduces across machines, but
   raw-GATv2 training does NOT (0.5492 laptop-C vs 0.5318 laptop-B) — torch CPU scatter reductions
