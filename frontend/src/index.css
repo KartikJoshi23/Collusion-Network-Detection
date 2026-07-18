@@ -16,5 +16,7 @@
   --color-risk-med: var(--risk-med);
   --color-benign: var(--benign);
   --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
   --font-mono: var(--font-mono);
+  --font-display: var(--font-display);
 }
