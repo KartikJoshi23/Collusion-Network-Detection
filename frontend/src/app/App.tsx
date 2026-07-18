@@ -12,6 +12,7 @@ const NAV: { id: ViewId; label: string }[] = [
   { id: "explorer", label: "Graph Explorer" },
   { id: "case", label: "Case Detail" },
   { id: "lab", label: "Model Lab" },
+  { id: "about", label: "About" },
 ];
 
 // The console mark: three linked nodes, one flagged — the project in 18px.

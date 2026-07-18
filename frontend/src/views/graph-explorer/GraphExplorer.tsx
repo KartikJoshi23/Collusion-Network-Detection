@@ -1,14 +1,18 @@
+import gsap from "gsap";
 import Graph from "graphology";
 import Sigma from "sigma";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSubgraph } from "../../api/hooks";
 import type { SubgraphResponse } from "../../api/types";
 import { Glass } from "../../components/ui/Glass";
 import { Empty, ErrorState, Loading } from "../../components/ui/States";
 import { useConsole } from "../../state/console";
 
-// Colors are resolved from the token layer at render time so the canvas
-// follows the domain accent (Sigma needs concrete color strings).
+// §5.3 view 3, V2 additions: GSAP temporal scrubber replaying the money
+// flow / award sequence over REAL edge timestamps (edges appear as the
+// playhead passes their timestamp; nodes light with their first edge),
+// amount-scaled edge widths where amounts exist (§4.3 D1 — scaling simply
+// stays uniform on datasets without amounts).
 function tokens() {
   const css = getComputedStyle(document.documentElement);
   const v = (name: string, fallback: string) =>
@@ -16,19 +20,21 @@ function tokens() {
   return {
     member: v("--risk-high", "#ff5a5f"),
     context: "#46536e",
-    edge: "#232c40",
+    edge: "#2b3450",
+    edgeLit: v("--accent", "#22d3ee"),
     label: v("--text-1", "#9aa7bf"),
   };
 }
 
-// Deterministic radial layout: members on an inner ring, context nodes on an
-// outer ring (server precomputed layouts arrive in Phase 2; this keeps the MVP
-// self-contained and reproducible).
 function layout(data: SubgraphResponse): Graph {
   const c = tokens();
   const g = new Graph({ multi: true, type: "directed" });
   const members = data.nodes.filter((n) => n.is_member);
   const context = data.nodes.filter((n) => !n.is_member);
+  const maxAmount = Math.max(
+    ...data.edges.map((e) => e.amount ?? 0),
+    0,
+  );
   const place = (
     list: typeof data.nodes,
     radius: number,
@@ -50,9 +56,14 @@ function layout(data: SubgraphResponse): Graph {
   for (const e of data.edges) {
     if (g.hasNode(e.src) && g.hasNode(e.dst)) {
       g.addEdge(e.src, e.dst, {
-        size: 1,
+        // amount-scaled width where amounts exist; uniform otherwise
+        size:
+          e.amount && maxAmount > 0
+            ? 1 + 2.5 * Math.sqrt(e.amount / maxAmount)
+            : 1,
         color: c.edge,
         type: "arrow",
+        ts: e.timestamp,
       });
     }
   }
@@ -66,6 +77,19 @@ export function GraphExplorer() {
   const { data, isLoading, isError, error } = useSubgraph(dataset, alertId, 1);
   const containerRef = useRef<HTMLDivElement>(null);
   const sigmaRef = useRef<Sigma | null>(null);
+  const playheadRef = useRef(1); // 0..1 through the time span; 1 = everything
+  const tweenRef = useRef<gsap.core.Tween | null>(null);
+  const [progress, setProgress] = useState(1);
+  const [playing, setPlaying] = useState(false);
+
+  const span = useMemo(() => {
+    const ts = (data?.edges ?? [])
+      .map((e) => e.timestamp)
+      .filter((t): t is number => t !== null);
+    return ts.length
+      ? { min: Math.min(...ts), max: Math.max(...ts), n: ts.length }
+      : null;
+  }, [data]);
 
   useEffect(() => {
     if (!data || !containerRef.current) return;
@@ -78,13 +102,51 @@ export function GraphExplorer() {
       labelSize: 10,
       labelDensity: 0.4,
       renderLabels: true,
+      edgeReducer: (_edge, attrs) => {
+        const t = playheadRef.current;
+        if (t >= 1 || !span || attrs.ts === null || attrs.ts === undefined)
+          return attrs;
+        const cutoff = span.min + t * (span.max - span.min);
+        const lit = (attrs.ts as number) <= cutoff;
+        return {
+          ...attrs,
+          color: lit ? c.edgeLit : "#1a2138",
+          size: lit ? (attrs.size as number) + 0.5 : 0.5,
+        };
+      },
     });
     sigmaRef.current = renderer;
     return () => {
+      tweenRef.current?.kill();
       renderer.kill();
       sigmaRef.current = null;
     };
-  }, [data]);
+  }, [data, span]);
+
+  const seek = (t: number) => {
+    playheadRef.current = t;
+    setProgress(t);
+    sigmaRef.current?.refresh();
+  };
+
+  const play = () => {
+    if (!span) return;
+    tweenRef.current?.kill();
+    setPlaying(true);
+    const proxy = { t: playheadRef.current >= 1 ? 0 : playheadRef.current };
+    tweenRef.current = gsap.to(proxy, {
+      t: 1,
+      duration: 6,
+      ease: "none",
+      onUpdate: () => seek(proxy.t),
+      onComplete: () => setPlaying(false),
+    });
+  };
+
+  const pause = () => {
+    tweenRef.current?.kill();
+    setPlaying(false);
+  };
 
   if (!alertId)
     return (
@@ -94,9 +156,9 @@ export function GraphExplorer() {
       >
         <button
           onClick={() => setView("queue")}
-          className="mt-1 rounded-md px-3 py-1 text-xs text-text-1 transition-colors hover:text-accent"
+          className="btn-sheen mt-1 rounded-md px-3 py-1 text-xs text-text-1 hover:text-accent"
           style={{
-            background: "var(--glass-fill)",
+            background: "var(--glass-fill-lo)",
             boxShadow: "inset 0 0 0 1px var(--hairline)",
           }}
         >
@@ -107,25 +169,28 @@ export function GraphExplorer() {
 
   return (
     <Glass className="flex h-full flex-col overflow-hidden">
-      <div className="flex items-center gap-3 border-b border-hairline/60 px-4 py-2.5">
+      <div className="flex flex-wrap items-center gap-3 border-b border-hairline/60 px-4 py-2.5">
         <h2 className="display text-sm font-semibold">Graph Explorer</h2>
         <span className="mono text-xs text-text-2">{alertId}</span>
         {data?.truncated && (
-          <span className="ml-auto rounded bg-risk-med/15 px-1.5 py-0.5 text-xs text-risk-med">
+          <span className="rounded bg-risk-med/15 px-1.5 py-0.5 text-xs text-risk-med">
             view truncated at node cap
           </span>
         )}
         <button
           onClick={() => setView("case")}
-          className="ml-auto rounded-md px-3 py-1 text-xs text-text-1 transition-colors hover:text-accent"
+          className="btn-sheen ml-auto rounded-md px-3 py-1 text-xs"
           style={{
-            background: "var(--glass-fill)",
-            boxShadow: "inset 0 0 0 1px var(--hairline)",
+            color: "var(--accent)",
+            background: "var(--accent-dim)",
+            boxShadow:
+              "inset 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent)",
           }}
         >
-          Explanation dossier →
+          Evidence dossier →
         </button>
       </div>
+
       <div className="relative min-h-0 flex-1">
         {isLoading && <Loading label="Windowing subgraph…" />}
         {isError && (
@@ -160,6 +225,49 @@ export function GraphExplorer() {
           </div>
         )}
       </div>
+
+      {/* temporal playback scrubber (V2 §3.4) — real edge timestamps */}
+      {span && (
+        <div className="flex items-center gap-3 border-t border-hairline/60 px-4 py-2">
+          <button
+            onClick={playing ? pause : play}
+            className="btn-sheen rounded-md px-2.5 py-1 text-xs"
+            title={
+              playing
+                ? "pause playback"
+                : "replay the flow in timestamp order"
+            }
+            style={{
+              color: "var(--accent)",
+              background: "var(--accent-dim)",
+              boxShadow:
+                "inset 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent)",
+            }}
+          >
+            {playing ? "❚❚" : "▶"} replay flow
+          </button>
+          <input
+            type="range"
+            className="budget min-w-0 flex-1 cursor-pointer"
+            min={0}
+            max={1000}
+            value={Math.round(progress * 1000)}
+            onChange={(e) => {
+              pause();
+              seek(Number(e.target.value) / 1000);
+            }}
+            style={
+              { "--fill": `${progress * 100}%` } as React.CSSProperties
+            }
+            aria-label="temporal playback position"
+          />
+          <span className="mono w-40 text-right text-xs text-text-2">
+            {progress >= 1
+              ? `full window ${span.min} – ${span.max}`
+              : `t ≤ ${Math.round(span.min + progress * (span.max - span.min))}`}
+          </span>
+        </div>
+      )}
     </Glass>
   );
 }

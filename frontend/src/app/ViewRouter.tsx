@@ -1,10 +1,18 @@
 import { AnimatePresence, motion } from "motion/react";
+import { lazy, Suspense } from "react";
+import { Loading } from "../components/ui/States";
 import { useConsole } from "../state/console";
 import { AlertQueue } from "../views/alert-queue/AlertQueue";
 import { CaseDetail } from "../views/case-detail/CaseDetail";
 import { GraphExplorer } from "../views/graph-explorer/GraphExplorer";
 import { ModelLab } from "../views/model-lab/ModelLab";
 import { Overview } from "../views/overview/Overview";
+
+// The About story is ScrollTrigger-heavy and rarely the first view — split it
+// out of the main chunk.
+const About = lazy(() =>
+  import("../views/about/About").then((m) => ({ default: m.About })),
+);
 
 function content(view: string) {
   switch (view) {
@@ -16,6 +24,12 @@ function content(view: string) {
       return <GraphExplorer />;
     case "case":
       return <CaseDetail />;
+    case "about":
+      return (
+        <Suspense fallback={<Loading label="Loading methodology…" />}>
+          <About />
+        </Suspense>
+      );
     default:
       return <ModelLab />;
   }

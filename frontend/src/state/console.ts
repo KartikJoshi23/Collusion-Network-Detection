@@ -7,7 +7,8 @@ export type ViewId =
   | "queue"
   | "explorer"
   | "case"
-  | "lab";
+  | "lab"
+  | "about";
 
 interface ConsoleState {
   domain: Domain;
@@ -23,7 +24,7 @@ interface ConsoleState {
   setView: (v: ViewId) => void;
 }
 
-const VIEW_IDS: ViewId[] = ["overview", "queue", "explorer", "case", "lab"];
+const VIEW_IDS: ViewId[] = ["overview", "queue", "explorer", "case", "lab", "about"];
 
 // Deep-link support (demo script §5.4): /?view=explorer&alert=<id> opens the
 // console directly on a view / alert.

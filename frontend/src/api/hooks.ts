@@ -29,6 +29,7 @@ export function useSubgraph(
   dataset: string | undefined,
   alertId: string | undefined,
   hops = 1,
+  enabled = true,
 ) {
   return useQuery({
     queryKey: ["subgraph", dataset, alertId, hops],
@@ -37,13 +38,14 @@ export function useSubgraph(
         `/datasets/${enc(dataset!)}/subgraph/${enc(alertId!)}`,
         { hops },
       ),
-    enabled: !!dataset && !!alertId,
+    enabled: enabled && !!dataset && !!alertId,
   });
 }
 
 export function useExplanation(
   dataset: string | undefined,
   alertId: string | undefined,
+  enabled = true,
 ) {
   return useQuery({
     queryKey: ["explanation", dataset, alertId],
@@ -51,7 +53,7 @@ export function useExplanation(
       apiGet<ExplanationResponse>(
         `/datasets/${enc(dataset!)}/explanations/${enc(alertId!)}`,
       ),
-    enabled: !!dataset && !!alertId,
+    enabled: enabled && !!dataset && !!alertId,
     retry: false, // a missing bundle is a normal 404, not a transient error
   });
 }
