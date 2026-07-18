@@ -97,6 +97,12 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-18 · **Step-26c integration verified on master + Week-11 key prep (user-directed).**
+  Pulled laptop-C's actor-graph stack (17b40fa..8cf2c2c) fast-forward; suite **267/267** green
+  here. Copilot LLM models researched and pinned (see Decision log): `COPILOT_MODEL` +
+  `COPILOT_VALIDATOR_MODEL` documented in `.env.example` with the one-key-covers-all-models
+  fact, free-tier limits, and the endpoint; ledger Next action 4 rewritten so any machine can
+  do the key step without a conversation · [master]
 - 2026-07-18 · **STEP 26c FOLLOW-UPS — actor alert queue + multi-seed confirmation.** *Queue (protocol defaults, NO test-driven tuning):* Leiden on the 292,102-wallet / 966,352-edge test subgraph → 2,670 communities → **2,514 alerts** (156 mega-communities excluded at the §4.5 cap); alert-level P@50 **0.08** / P@100 0.06 — **the community roll-up COLLAPSES the actor signal** (node-level P@100 0.98): the precise wallets sit inside the oversized communities the cap excludes, so at actor granularity the NODE list is the triage surface while the community alert unit belongs to the tx level. Both queues now ship in `serving.json`/the console (financial domain lists `elliptic_pp` + `elliptic_pp_actor`), verified live. Resolution sensitivity deliberately NOT explored against test metrics (the val-selection trap, twice burned) — a val-period community-tuning protocol is the follow-up. *Multi-seed (seeds 0/1/2, identical config):* AUC-PR 0.2473 / 0.3286 / 0.4033 → **0.326 ± 0.078** — the global ranking is strongly seed-sensitive (temporal-shift instability again), **but the queue head is seed-STABLE: P@100 0.98 / 1.00 / 1.00** — the operational claim (actor head precise at tight budgets) survives multi-seed; the single-seed global AUC-PR number should not be headlined. All seeds remain below tx-level 0.5492. *Plumbing:* `load_label_history` extracted as the single history_as_of source for trainer AND queue calibration (the queue path would have crashed on actor data; tested). Suite 267/267 · 7102377 · [laptop-C]
 - 2026-07-18 · **§7 STEP 26c — ELLIPTIC++ ACTOR-GRAPH EXPERIMENT (Phase-2 P2.1), v1 run complete.** *Build:* `elliptic_pp_actor_to_ir` (822,942 wallet nodes with FIRST-APPEARANCE 56-feature vectors — knowable at first_seen by construction; 2,868,964 undated AddrAddr `pays` edges kept faithful; full-knowledge roll-up labels for evaluation + a per-step `label_history` pack), the general **`history_as_of` train-label policy** (the Mendeley-F1 fix generalized: wallets span steps, so roll-up labels leak future activity into training targets; AMLworld can reuse the same pack mechanism), CLI ingest entry, R-GCN config under the SAME 34/35 protocol as the tx graph. **Trainer fix the actor graph exposed:** the train graph was built with `restrict_as_of`, which EXCLUDES undated edges (feature-layer rule) — an all-undated-edge dataset trained on an edgeless graph (loud RGCNConv crash). `train_graph_restrict` now applies the documented splitter policy (undated edges kept only when BOTH endpoints are train members), pinned by test. 8 new tests (late-illicit as-of flip, §9.1b truncation negative control, endpoint gating); suite 266/266. *Run (seed 0, R-GCN 2 relations, val 0.5087, best epoch 13):* test window ≥35, 92,451 confirmed wallets, prevalence 0.0529 — **AUC-PR 0.2473 (~4.7× prevalence), P@50 0.96 / P@100 0.98 / P@200 0.98**. *Reading (the §4.5 granularity note, arXiv:2604.23494, now measured in-house):* the actor-level view ranks GLOBALLY worse than tx-level GATv2 (0.2473 vs 0.5492 AUC-PR) but its QUEUE HEAD is more precise (P@100 0.98 vs 0.96; P@200 0.98 vs 0.935) — transaction-level and actor-level queues materially disagree, and the actor head is the stronger screening surface at tight budgets. Per-step is volatile (spikes at 37/40, near-prevalence elsewhere) — same shift instability as the tx graph. v1 caveats in the Decision log · 17b40fa + run · [laptop-C]
 - 2026-07-18 · **fix(explain): learned evidence-source label names the ACTUAL explainer** —
@@ -252,9 +258,15 @@ still public 2026-07-15 — anonymous clone succeeded).
    GPU (Colab/Kaggle) or a very patient CPU — master has the AMLworld raw data + IR store; wire
    `NeighborLoader` minibatching first (In-flight note); (d) learned line-encoder over
    materialized L(G) on AMLworld per the B-LG verdict (amounts give L(G) real edge features).
-4. **Week 11 — Copilot (MC)** after (or in parallel with) step 26: port per §7 27a–c; user
-   action first: create the NVIDIA NIM key at build.nvidia.com → `.env` `NVIDIA_API_KEY`
-   (2026-07-17 decision).
+4. **Week 11 — Copilot (MC)** after (or in parallel with) step 26: port per §7 27a–c. Models
+   are PINNED (2026-07-18 Decision log): main `nvidia/nemotron-3-super-120b`, validators
+   `qwen/qwen3-32b` — the port reads `COPILOT_MODEL`/`COPILOT_VALIDATOR_MODEL` from env,
+   never hardcodes. **User action first (per machine running the Copilot):** create ONE
+   `nvapi-…` key at build.nvidia.com/settings/api-keys (account-scoped — works for every
+   catalog model; no per-model keys exist) and put it in the repo-root `.env` on the line
+   `NVIDIA_API_KEY=` (copy `.env.example` if `.env` is absent; `.env` is gitignored — the
+   key never reaches GitHub). Kaggle key: NOT needed for the Copilot; only for AMLworld
+   work on a machine without the data (master already has it).
 5. ~~Produce REAL serving artifacts~~ **DONE on laptop-C AND master (2026-07-18, see
    Completed)** — both machines are demo-ready end-to-end. For any OTHER machine the recipe
    is unchanged: `poe data` → `collusiongraph ingest` (both datasets) → `train` the four configs
@@ -269,6 +281,19 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Decision log
 <!-- - YYYY-MM-DD · decision · rationale · plan section affected -->
+- 2026-07-18 · **[master, user-directed] Week-11 Copilot LLM models pinned (refines the
+  2026-07-17 NVIDIA NIM adoption).** Researched against the mid-2026 build.nvidia.com catalog:
+  ONE `nvapi-…` key is ACCOUNT-scoped and covers every catalog model (the per-model pages are
+  just examples); free tier = 1,000 credits (5,000 on request), 40 req/min, and credits bill
+  per REQUEST regardless of model size — so selection is quality/latency, not cost. **Main
+  agent: `nvidia/nemotron-3-super-120b`** (recommended for structured output + OpenAI-style
+  tool calling on NVIDIA's own endpoint — the SQL agent and grounding gates live on reliable
+  tool calls; `zhipuai/glm-5.1` is the recorded alternate). **Validators:
+  `qwen/qwen3-32b`** (guilt-language guard + groundedness checks run per response — small/fast
+  wins under the 40 RPM cap). Both set as `COPILOT_MODEL` / `COPILOT_VALIDATOR_MODEL` in
+  `.env.example`; the 27a port must read them from env, never hardcode. Kaggle key NOT needed
+  for this work (master already holds AMLworld raw+IR; the key matters only if AMLworld work
+  moves to a machine without the data) · §4.6, R16.
 - 2026-07-18 · **[laptop-C] ACTOR-GRAPH v1 SCOPE + first verdict (§7 step 26c).** v1 is the
   wallet-level flow view ONLY: AddrAddr `pays` edges (undated in the raw data — kept faithful;
   the trainer now applies the splitter's endpoint-membership gate for undated train edges), node
