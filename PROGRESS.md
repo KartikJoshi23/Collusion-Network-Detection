@@ -97,6 +97,11 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-19 · **Goldens CI job added** (manual `workflow_dispatch`, `NVIDIA_API_KEY` from
+  Actions secrets — user must add that secret to run it in CI): documented constraint inline —
+  the goldens assert REAL published numbers, so the CI runner needs serving artifacts wired
+  when MC is claimed; until then the local `poe copilot-goldens` (passing 12/12) is the gate
+  of record · aa0f8ab · [master]
 - 2026-07-19 · **RAG SLICE LIVE + GATE RE-CLEARED AT 12/12 (grounded 1.0, zero guilt
   violations).** `copilot/corpus.py`: corpus from the project's OWN curated indicator tables
   (`explain.redflags` FATF/OECD paraphrases — license-safe by construction, citable chunk ids)
