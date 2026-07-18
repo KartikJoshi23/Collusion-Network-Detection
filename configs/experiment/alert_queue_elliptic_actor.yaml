@@ -1,0 +1,23 @@
+# §7 step 26c follow-up — the ACTOR-level alert queue (§4.5 requires
+# reporting both queue granularities; the 2026-07-18 actor verdict showed the
+# actor head is the stronger screening surface at tight budgets). Same
+# operational framing as every queue: test-window communities, calibration on
+# the validation pool under the as-of label policy.
+dataset: elliptic_pp_actor
+domain: financial
+store_root: data/interim
+scores_dir: eval_outputs/elliptic_pp_actor/gnn_rgcn_focal
+output_dir: eval_outputs/elliptic_pp_actor/alert_queue
+model_run_id: rgcn_actor_s0
+seed: 0
+
+split:
+  train_end: 34
+  test_start: 35
+
+train_label_policy: history_as_of
+
+resolution: 1.0
+min_community_size: 2
+top_p: 0.25
+budgets: [50, 100, 200]

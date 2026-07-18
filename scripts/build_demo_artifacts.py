@@ -44,6 +44,19 @@ DEMOS = [
         "train_label_policy": "mendeley_as_of",
         "metrics": ["eval_outputs/mendeley_eu/transfer_loco_country_5/metrics.json"],
     },
+    # actor-level queue (§7 step 26c): §4.5 reports BOTH queue granularities —
+    # the wallet head out-precises the tx head at tight budgets
+    {
+        "dataset": "elliptic_pp_actor",
+        "domain": "financial",
+        "scores_dir": "eval_outputs/elliptic_pp_actor/gnn_rgcn_focal",
+        "output_dir": "eval_outputs/elliptic_pp_actor/alert_queue",
+        "model_run_id": "rgcn_actor_s0",
+        "split": {"test_start": 35, "train_end": 34},
+        "budgets": [50, 100, 200],
+        "train_label_policy": "history_as_of",
+        "metrics": ["eval_outputs/elliptic_pp_actor/gnn_rgcn_focal/metrics.json"],
+    },
 ]
 
 

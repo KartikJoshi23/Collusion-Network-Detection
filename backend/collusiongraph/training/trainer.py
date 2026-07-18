@@ -35,7 +35,7 @@ from collusiongraph.schema import GraphStore
 
 from .baseline_run import raw_feature_frame
 from .graph_build import build_graph, confirmed_mask_for
-from .labels import resolve_train_labels
+from .labels import load_label_history, resolve_train_labels
 from .losses import make_loss
 
 _TIME = "time_first_seen"
@@ -146,9 +146,7 @@ def train_gnn(config: dict[str, Any] | str | Path) -> dict[str, Any]:
     # training targets: what a supervisor could have known at train_end (F1);
     # history_as_of policies read the adapter's per-step observation pack
     label_policy = cfg.get("train_label_policy", "static")
-    history = (
-        store.read_features(dataset, "label_history") if label_policy == "history_as_of" else None
-    )
+    history = load_label_history(store, dataset, label_policy)
     train_labels = resolve_train_labels(label_policy, labels, t_edges, train_end, history)
     # normalization stats are FIT on the train graph and FROZEN for inference
     # (F3): the model trains and scores under one normalization, not two

@@ -21,9 +21,17 @@ from __future__ import annotations
 import polars as pl
 
 from collusiongraph.adapters.procurement import mendeley_firm_labels_as_of
-from collusiongraph.schema import Label
+from collusiongraph.schema import GraphStore, Label
 
 POLICIES = ("static", "mendeley_as_of", "history_as_of")
+
+
+def load_label_history(store: GraphStore, dataset: str, policy: str) -> pl.DataFrame | None:
+    """The dataset's ``label_history`` pack when ``policy`` needs it — the one
+    place every training-side consumer (trainer, queue calibration) gets it."""
+    if policy != "history_as_of":
+        return None
+    return store.read_features(dataset, "label_history")
 
 
 def history_labels_as_of(history: pl.DataFrame, as_of: int) -> pl.DataFrame:

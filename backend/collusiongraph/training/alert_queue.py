@@ -22,7 +22,7 @@ from collusiongraph.eval import DEFAULT_MAX_MEMBERS, load_config, run_eval
 from collusiongraph.models.rollup import community_scores, isotonic_calibrator, leiden_communities
 from collusiongraph.schema import GraphStore, Label
 
-from .labels import resolve_train_labels
+from .labels import load_label_history, resolve_train_labels
 
 _TIME = "time_first_seen"
 
@@ -50,11 +50,14 @@ def build_alert_queue(config: dict[str, Any] | str | Path) -> dict[str, Any]:
     else:
         # calibrate on the validation pool (never test), apply to test scores;
         # calibration targets obey the same as-of policy as training (F1)
+        label_policy = cfg.get("train_label_policy", "static")
+        train_end = cfg["split"].get("train_end", test_start - 1)
         train_labels = resolve_train_labels(
-            cfg.get("train_label_policy", "static"),
+            label_policy,
             labels,
             edges,
-            cfg["split"].get("train_end", test_start - 1),
+            train_end,
+            load_label_history(store, dataset, label_policy),
         )
         val_scores = pl.read_parquet(run_dir / "scores_val.parquet").join(
             train_labels.filter(

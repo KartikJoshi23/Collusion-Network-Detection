@@ -98,6 +98,13 @@ class TestHistoryAsOfPolicy:
         with pytest.raises(ValueError, match="label_history"):
             resolve_train_labels("history_as_of", stored, edges, 34, None)
 
+    def test_load_label_history_loads_only_when_needed(self, store) -> None:
+        from collusiongraph.training.labels import load_label_history
+
+        assert load_label_history(store, "actor_toy", "static") is None
+        hist = load_label_history(store, "actor_toy", "history_as_of")
+        assert hist is not None and hist.height > 0
+
 
 class TestUndatedTrainGraph:
     """train_graph_restrict: the splitter's undated-edge policy at the trainer
