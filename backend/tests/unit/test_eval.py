@@ -245,6 +245,32 @@ class TestAlertQueueMetrics:
         assert cov["@3"] == pytest.approx(2 / 3)
 
 
+class TestResolveBudgets:
+    def test_mendeley_manual_resolution_reproduced(self) -> None:
+        """The M1 hand-resolved budgets (ledger 2026-07-15): top 1/5/10% of the
+        363-firm Mendeley test queue = 4/18/36 — the rule must reproduce them."""
+        from collusiongraph.eval import resolve_budgets
+
+        assert resolve_budgets(["1%", "5%", "10%"], 363) == [4, 18, 36]
+
+    def test_ints_pass_through_and_tiny_percents_clamp_to_one(self) -> None:
+        from collusiongraph.eval import resolve_budgets
+
+        assert resolve_budgets([50, 100], 363) == [50, 100]
+        assert resolve_budgets(["1%"], 10) == [1]  # round(0.1) clamps to 1
+        assert resolve_budgets([25, "50%"], 10) == [25, 5]
+
+    def test_malformed_budgets_rejected(self) -> None:
+        from collusiongraph.eval import resolve_budgets
+
+        with pytest.raises(ValueError, match="N%"):
+            resolve_budgets(["fifty"], 100)
+        with pytest.raises(ValueError, match="percent"):
+            resolve_budgets(["0%"], 100)
+        with pytest.raises(ValueError, match="percent"):
+            resolve_budgets(["150%"], 100)
+
+
 class TestRunEval:
     def _store_with_fixture(self, tmp_path) -> GraphStore:
         store = GraphStore(tmp_path / "interim")
@@ -296,6 +322,29 @@ class TestRunEval:
         # node level: positives at score-ranks 1 and 2 -> AP = 1.0
         assert metrics["node_level"]["auc_pr"] == pytest.approx(1.0)
         assert metrics["node_level"]["prevalence_baseline"] == pytest.approx(0.5)
+
+    def test_percent_budgets_resolve_per_level(self, tmp_path) -> None:
+        """§4.5 top-% budgets: "50%" cuts half of EACH ranked list — 2-alert
+        queue → @1, 4 confirmed nodes → @2 — and the resolution is recorded."""
+        store = self._store_with_fixture(tmp_path)
+        scores = pl.DataFrame(
+            {"node_id": ["bad1", "bad2", "ok1", "ok2"], "score": [0.9, 0.8, 0.7, 0.1]}
+        )
+        scores_path = tmp_path / "scores.parquet"
+        scores.write_parquet(scores_path)
+        metrics = run_eval(
+            {
+                "dataset": "toy",
+                "store_root": str(store.root),
+                "budgets": ["50%"],
+                "node_scores": str(scores_path),
+                "output_dir": str(tmp_path / "out"),
+            }
+        )
+        assert metrics["alert_level"]["queue"]["@1"]["precision"] == 1.0
+        assert metrics["alert_level"]["resolved_budgets"] == {"50%": 1}
+        assert metrics["node_level"]["precision@2"] == 1.0
+        assert metrics["node_level"]["resolved_budgets"] == {"50%": 2}
 
     def test_cli_eval_runs_a_config_file(self, tmp_path, capsys) -> None:
         store = self._store_with_fixture(tmp_path)

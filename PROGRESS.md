@@ -97,6 +97,12 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-18 · **Percent→k budget resolution in `run_eval`** (deferred-small-item from M1):
+  `budgets:` entries may now be `"N%"` strings, resolved per level against the ranked list
+  being cut (alert-queue length / confirmed-node count) as `max(1, round(n·N/100))`; ints pass
+  through; the resolution is recorded as `resolved_budgets` in metrics.json. The rule
+  reproduces Mendeley's hand-resolved 4/18/36 = top 1/5/10% of 363 exactly (pinned by test);
+  committed configs stay explicit ints — no numbers change. 4 new tests; suite 248/248 · [master]
 - 2026-07-18 · **§7 STEP 27 → PGExplainer ADOPTED for Elliptic++ bundles (first Phase-2 slice).**
   *Built:* `explain/pgexplainer_runner.py` (amortized PGExplainer, same ego windows / top-k
   thresholding / `NodeExplanation` output as the GNNExplainer runner — drop-in; targets are the
@@ -241,7 +247,7 @@ still public 2026-07-15 — anonymous clone succeeded).
    2026-07-18).
 6. **[user]** Rotate/revoke the OpenAI API key exposed in `Gen-AI Chatbot/.../.env` AND embedded in the original `FIX_FRONTEND.md` (two exposures) at platform.openai.com.
 7. **[user]** Make the GitHub repo private (plan requires a private repo): repo Settings → General → Danger Zone → Change visibility, or `gh repo edit KartikJoshi23/Collusion-Network-Detection --visibility private` after `gh auth login`. Also consider rotating the Kaggle token that was shared in a chat session.
-8. Deferred small items: HeteroExplanation for R-GCN (R12 finding — mask-based explainer is GATv2-only); AMLworld injection-recovery calibration + feature packs + baselines + `NeighborLoader` training on a machine with Kaggle credentials; wire the datasets' **precomputed screens** through as B4 inputs (Mendeley `lot_bidscount`/`relative_value`, García screen columns in `raw_attrs`); automatic percent→k budget resolution in `run_eval`; Mendeley R-GCN follow-up (firm+tender joint supervision, García co-bid enrichment) before concluding graph signal is absent; degree-preserving null-model z-scores for the structural floor (Phase 2).
+8. Deferred small items: HeteroExplanation for R-GCN (R12 finding — mask-based explainer is GATv2-only); AMLworld injection-recovery calibration + feature packs + baselines + `NeighborLoader` training on a machine with Kaggle credentials; wire the datasets' **precomputed screens** through as B4 inputs (Mendeley `lot_bidscount`/`relative_value`, García screen columns in `raw_attrs`); ~~automatic percent→k budget resolution in `run_eval`~~ (DONE 2026-07-18, see Completed); Mendeley R-GCN follow-up (firm+tender joint supervision, García co-bid enrichment) before concluding graph signal is absent; degree-preserving null-model z-scores for the structural floor (Phase 2).
 
 ## Decision log
 <!-- - YYYY-MM-DD · decision · rationale · plan section affected -->

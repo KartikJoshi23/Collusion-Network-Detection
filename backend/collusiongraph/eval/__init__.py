@@ -22,7 +22,7 @@ from .metrics import (
     precision_at_k,
     recall_at_k,
 )
-from .report import DEFAULT_BUDGETS, load_config, run_eval
+from .report import DEFAULT_BUDGETS, load_config, resolve_budgets, run_eval
 
 __all__ = [
     "DEFAULT_BUDGETS",
@@ -40,5 +40,6 @@ __all__ = [
     "nms_dedup",
     "precision_at_k",
     "recall_at_k",
+    "resolve_budgets",
     "run_eval",
 ]

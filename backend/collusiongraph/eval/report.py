@@ -40,6 +40,29 @@ from .metrics import (
 DEFAULT_BUDGETS = [50, 100, 200]
 
 
+def resolve_budgets(budgets: list[int | str], n: int) -> list[int]:
+    """§4.5 percent budgets: an ``"N%"`` entry resolves against the ranked
+    list being cut (alert-queue length at alert level, confirmed-node count at
+    node level) as ``max(1, round(n·N/100))``; int entries pass through
+    unchanged. Historical note: Mendeley's committed 4/18/36 budgets were
+    hand-resolved as top 1/5/10% of its 363-node test queue before this
+    existed — they stay explicit ints in the configs; this rule reproduces
+    them (pinned by test)."""
+    out: list[int] = []
+    for budget in budgets:
+        if isinstance(budget, str):
+            text = budget.strip()
+            if not text.endswith("%"):
+                raise ValueError(f"budget {budget!r}: only 'N%' strings are supported")
+            pct = float(text[:-1])
+            if not 0.0 < pct <= 100.0:
+                raise ValueError(f"budget {budget!r}: percent must be in (0, 100]")
+            out.append(max(1, round(n * pct / 100.0)))
+        else:
+            out.append(int(budget))
+    return out
+
+
 def load_config(config: dict[str, Any] | str | Path) -> dict[str, Any]:
     if isinstance(config, (str, Path)):
         return yaml.safe_load(Path(config).read_text(encoding="utf-8"))
@@ -50,7 +73,7 @@ def run_eval(config: dict[str, Any] | str | Path) -> dict[str, Any]:
     cfg = load_config(config)
     store = GraphStore(cfg.get("store_root", "data/interim"))
     dataset: str = cfg["dataset"]
-    budgets: list[int] = cfg.get("budgets", DEFAULT_BUDGETS)
+    raw_budgets: list[int | str] = cfg.get("budgets", DEFAULT_BUDGETS)
     # optional override, e.g. labels restricted to the test window so coverage
     # denominators match the queue's operational scope
     labels = pl.read_parquet(cfg["labels"]) if "labels" in cfg else store.read(dataset, "labels")
@@ -87,24 +110,34 @@ def run_eval(config: dict[str, Any] | str | Path) -> dict[str, Any]:
             min_fraction=hit_cfg.get("min_fraction"),
         )
         metrics["dedup"] = dedup.report
+        budgets = resolve_budgets(raw_budgets, queue.height)
         metrics["alert_level"] = {
             "queue": alert_queue_metrics(queue, budgets),
             "illicit_coverage": illicit_coverage_at_budget(queue, labels, budgets),
         }
+        if budgets != raw_budgets:
+            metrics["alert_level"]["resolved_budgets"] = dict(
+                zip(map(str, raw_budgets), budgets, strict=True)
+            )
 
     if "node_scores" in cfg:
         scores = pl.read_parquet(cfg["node_scores"])
         y, s = confirmed_node_vectors(scores, labels)
+        node_budgets = resolve_budgets(raw_budgets, len(s))
         # budgets larger than the confirmed queue truncate honestly (k_effective
         # reported) — mirroring the alert-level policy, never silently dropped
         metrics["node_level"] = {
             **auc_pr(y, s),
             "n_confirmed": len(y),
-            **{f"precision@{k}": precision_at_k(y, s, k) for k in budgets},
-            **{f"recall@{k}": recall_at_k(y, s, k) for k in budgets},
-            **{f"fpr@{k}": fpr_at_k(y, s, k) for k in budgets},
-            **{f"k_effective@{k}": len(s) for k in budgets if k > len(s)},
+            **{f"precision@{k}": precision_at_k(y, s, k) for k in node_budgets},
+            **{f"recall@{k}": recall_at_k(y, s, k) for k in node_budgets},
+            **{f"fpr@{k}": fpr_at_k(y, s, k) for k in node_budgets},
+            **{f"k_effective@{k}": len(s) for k in node_budgets if k > len(s)},
         }
+        if node_budgets != raw_budgets:
+            metrics["node_level"]["resolved_budgets"] = dict(
+                zip(map(str, raw_budgets), node_budgets, strict=True)
+            )
         if cfg.get("per_time_step", False):
             metrics["node_level"]["per_time_step"] = _per_time_step(scores, labels, store, dataset)
 
