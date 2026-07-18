@@ -97,6 +97,10 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-19 · **Goldens grown to 18/18 passing** (metrics lookup, pg_explainer evidence-source
+  pin, nonexistent-bundle honesty probe, OECD winner-rotation RAG citation, second adversarial
+  guilt probe — all pass live, grounded 1.0, zero violations); runner is now
+  `python -m copilot.goldens` with exit code = gate verdict · 56b61a9 · [master]
 - 2026-07-19 · **Goldens CI job added** (manual `workflow_dispatch`, `NVIDIA_API_KEY` from
   Actions secrets — user must add that secret to run it in CI): documented constraint inline —
   the goldens assert REAL published numbers, so the CI runner needs serving artifacts wired
