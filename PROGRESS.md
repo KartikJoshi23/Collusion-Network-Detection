@@ -258,15 +258,17 @@ still public 2026-07-15 — anonymous clone succeeded).
    GPU (Colab/Kaggle) or a very patient CPU — master has the AMLworld raw data + IR store; wire
    `NeighborLoader` minibatching first (In-flight note); (d) learned line-encoder over
    materialized L(G) on AMLworld per the B-LG verdict (amounts give L(G) real edge features).
-4. **Week 11 — Copilot (MC)** after (or in parallel with) step 26: port per §7 27a–c. Models
-   are PINNED (2026-07-18 Decision log): main `nvidia/nemotron-3-super-120b`, validators
-   `qwen/qwen3-32b` — the port reads `COPILOT_MODEL`/`COPILOT_VALIDATOR_MODEL` from env,
-   never hardcodes. **User action first (per machine running the Copilot):** create ONE
-   `nvapi-…` key at build.nvidia.com/settings/api-keys (account-scoped — works for every
-   catalog model; no per-model keys exist) and put it in the repo-root `.env` on the line
-   `NVIDIA_API_KEY=` (copy `.env.example` if `.env` is absent; `.env` is gitignored — the
-   key never reaches GitHub). Kaggle key: NOT needed for the Copilot; only for AMLworld
-   work on a machine without the data (master already has it).
+4. **Week 11 — Copilot (MC)** after (or in parallel with) step 26: port per §7 27a–c.
+   **The key is IN PLACE and VERIFIED on master (2026-07-18)** — chat + tool-calling smoke
+   passed on the pinned models `nvidia/nemotron-3-super-120b-a12b` (main) and
+   `nvidia/nemotron-3-nano-30b-a3b` (validators); the port reads
+   `COPILOT_MODEL`/`COPILOT_VALIDATOR_MODEL`/`NVIDIA_API_KEY` from env, never hardcodes, and
+   must budget `max_tokens` ≳ 2k on agent turns (Nemotron reasons before tool calls). If the
+   Copilot runs on a DIFFERENT machine: one `nvapi-…` key from
+   build.nvidia.com/settings/api-keys (account-scoped, covers all catalog models) → repo-root
+   `.env`, line `NVIDIA_API_KEY=` (copy `.env.example` first; `.env` is gitignored). Kaggle
+   key: NOT needed for the Copilot; only for AMLworld work on a machine without the data
+   (master already has it).
 5. ~~Produce REAL serving artifacts~~ **DONE on laptop-C AND master (2026-07-18, see
    Completed)** — both machines are demo-ready end-to-end. For any OTHER machine the recipe
    is unchanged: `poe data` → `collusiongraph ingest` (both datasets) → `train` the four configs
@@ -286,14 +288,19 @@ still public 2026-07-15 — anonymous clone succeeded).
   ONE `nvapi-…` key is ACCOUNT-scoped and covers every catalog model (the per-model pages are
   just examples); free tier = 1,000 credits (5,000 on request), 40 req/min, and credits bill
   per REQUEST regardless of model size — so selection is quality/latency, not cost. **Main
-  agent: `nvidia/nemotron-3-super-120b`** (recommended for structured output + OpenAI-style
-  tool calling on NVIDIA's own endpoint — the SQL agent and grounding gates live on reliable
-  tool calls; `zhipuai/glm-5.1` is the recorded alternate). **Validators:
-  `qwen/qwen3-32b`** (guilt-language guard + groundedness checks run per response — small/fast
-  wins under the 40 RPM cap). Both set as `COPILOT_MODEL` / `COPILOT_VALIDATOR_MODEL` in
-  `.env.example`; the 27a port must read them from env, never hardcode. Kaggle key NOT needed
-  for this work (master already holds AMLworld raw+IR; the key matters only if AMLworld work
-  moves to a machine without the data) · §4.6, R16.
+  agent: `nvidia/nemotron-3-super-120b-a12b`** (structured output + OpenAI-style tool calling
+  on NVIDIA's own endpoint — the SQL agent and grounding gates live on reliable tool calls;
+  `z-ai/glm-5.2` is the catalog's recorded alternate). **Validators:
+  `nvidia/nemotron-3-nano-30b-a3b`** (3B-active-param MoE sibling — per-response validators
+  need latency under the 40 RPM cap; the researched `qwen/qwen3-32b` does NOT exist in the
+  live catalog). Ids verified against the key's live `/v1/models` (119 models). **Key
+  VERIFIED live on master 2026-07-18**: chat ✓ on both models; tool-calling ✓ on the main
+  model (emitted a sensible schema-discovery `run_sql` call). Port-relevant finding:
+  Nemotron-3 reasons before tool calls — agent turns need `max_tokens` ≳ 2k or the call is
+  truncated at `finish_reason=length`. Both ids set as `COPILOT_MODEL` /
+  `COPILOT_VALIDATOR_MODEL` in `.env.example`; the 27a port must read them from env, never
+  hardcode. Kaggle key NOT needed for this work (master already holds AMLworld raw+IR; the
+  key matters only if AMLworld work moves to a machine without the data) · §4.6, R16.
 - 2026-07-18 · **[laptop-C] ACTOR-GRAPH v1 SCOPE + first verdict (§7 step 26c).** v1 is the
   wallet-level flow view ONLY: AddrAddr `pays` edges (undated in the raw data — kept faithful;
   the trainer now applies the splitter's endpoint-membership gate for undated train edges), node
