@@ -291,6 +291,28 @@ class TestBundles:
         assert "amount_total" not in bundle.evidence
         assert bundle.evidence["time_window"] == [10, 20]
 
+    def test_learned_evidence_source_names_the_actual_explainer(self) -> None:
+        """§4.4 truthfulness: the learned label must say which algorithm
+        produced the minimal subgraph — pg_explainer bundles must not claim
+        gnn_explainer (regression for the PGExplainer adoption)."""
+        from collusiongraph.explain import NodeExplanation
+
+        alert, nodes, edges = fan_in_alert_fixture()
+        explanation = NodeExplanation("a", ["a", "b"], [("a", "b")], 0.9, 0.1)
+        default = build_bundle(alert, "financial", "toy", edges, nodes, explanation, 1)
+        assert default.evidence_sources["learned"][0].startswith("gnn_explainer(")
+        pg = build_bundle(
+            alert,
+            "financial",
+            "toy",
+            edges,
+            nodes,
+            explanation,
+            1,
+            explainer_name="pg_explainer",
+        )
+        assert pg.evidence_sources["learned"][0].startswith("pg_explainer(")
+
     def test_run_explanations_writes_validated_bundles(self, tmp_path) -> None:
         alert, nodes, edges = fan_in_alert_fixture()
         store = GraphStore(tmp_path / "interim")

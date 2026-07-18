@@ -87,8 +87,13 @@ def build_bundle(
     budget_position: int,
     attention: dict[str, float] | None = None,
     matcher_params: dict[str, float] | None = None,
+    explainer_name: str = "gnn_explainer",
 ) -> ExplanationBundle:
-    """Assemble one alert's bundle from matcher + (optional) explainer output."""
+    """Assemble one alert's bundle from matcher + (optional) explainer output.
+
+    ``explainer_name`` labels the learned evidence source (§4.4: the bundle
+    says which algorithm produced the minimal subgraph — "gnn_explainer" or
+    "pg_explainer"); callers must pass the one actually used."""
     matches = match_motifs(member_edges, domain, **(matcher_params or {}))
     top_match = max(matches, key=lambda m: len(m.member_node_ids), default=None)
     red_flags = map_red_flags(matches, domain)
@@ -120,7 +125,7 @@ def build_bundle(
             "fidelity_minus": explanation.fidelity_minus,
         }
         fidelity_sane = explanation.fidelity_plus >= explanation.fidelity_minus
-        learned = [f"gnn_explainer(top member {explanation.node_id})"]
+        learned = [f"{explainer_name}(top member {explanation.node_id})"]
         if attention is not None:
             learned.append("gatv2_attention(top member incoming messages)")
     else:
@@ -176,6 +181,11 @@ def run_explanations(config: dict[str, Any] | str | Path) -> dict[str, Any]:
         )
 
     matcher_params = cfg.get("matcher", {})
+    # §4.4 evidence-source truthfulness: the learned label names the algorithm
+    # that actually ran (the supervised_model.explainer switch)
+    explainer_name = {"gnnexplainer": "gnn_explainer", "pgexplainer": "pg_explainer"}[
+        cfg.get("supervised_model", {}).get("explainer", "gnnexplainer")
+    ]
     out_dir.mkdir(parents=True, exist_ok=True)
     written = []
     for position, alert in enumerate(alerts.iter_rows(named=True), start=1):
@@ -195,6 +205,7 @@ def run_explanations(config: dict[str, Any] | str | Path) -> dict[str, Any]:
             budget_position=position,
             attention=attention.get(top_member) if top_member else None,
             matcher_params=matcher_params,
+            explainer_name=explainer_name,
         )
         path = out_dir / f"{bundle.alert_id.replace(':', '_')}.json"
         path.write_text(bundle.model_dump_json(indent=2) + "\n", encoding="utf-8")

@@ -97,6 +97,12 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-18 · **fix(explain): learned evidence-source label names the ACTUAL explainer** —
+  `build_bundle` hardcoded `gnn_explainer(…)`, so the PGExplainer-regenerated bundles claimed
+  the wrong algorithm (§4.4 evidence-source truthfulness). The label now follows the
+  `supervised_model.explainer` switch (`pg_explainer(…)`); elliptic bundles regenerated
+  (identical 50/50, 1 insane — content unchanged, label corrected); regression test pins both
+  labels. Suite 258/258 · [master]
 - 2026-07-18 · **§7 STEP 26a (v1) — line-graph flow channel built + B-LG measured: honest
   negative, NOT adopted as default.** `features/line_graph.py` computes the line-graph view's
   local statistics per node via exact L(G) degree identities (2-walk throughput, pass ratio,
