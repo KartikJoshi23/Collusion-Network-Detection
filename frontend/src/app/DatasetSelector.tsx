@@ -29,7 +29,11 @@ export function DatasetSelector() {
     <select
       value={dataset ?? ""}
       onChange={(e) => setDataset(e.target.value)}
-      className="mono rounded-md border border-hairline bg-bg-1 px-2 py-1 text-xs text-text-0 outline-none focus:border-accent"
+      className="mono rounded-md px-2 py-1 text-xs text-text-0 outline-none focus:border-accent"
+      style={{
+        background: "var(--glass-fill)",
+        border: "1px solid var(--hairline)",
+      }}
     >
       {inDomain.map((d) => (
         <option key={d.dataset} value={d.dataset}>
