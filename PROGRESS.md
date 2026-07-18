@@ -9,25 +9,24 @@
 
 ## Current milestone
 
-> ⚠️ **FRONTEND OVERHAUL REQUIRED — stakeholder rejected the UI (2026-07-18). This is the
-> collaborator's next task; see [`docs/frontend_overhaul.md`](docs/frontend_overhaul.md) for the
-> full brief (verbatim feedback + what's reusable + what to build + hard constraints).**
-> The frontend is *functionally* complete (all five views wired to the live API, `npm run build`
-> green, demo works) but its **visual design was rejected** and must be completely overhauled:
-> live animated backgrounds, Framer Motion (the `motion` dep is installed but unused), glass/depth,
-> an impressive project-themed color scheme (collusion-network / graph-intelligence). **Do NOT
-> weaken the ethics caveat, break the build/CI, or change the read-only API contract.** No
-> half-written overhaul code is in the tree — the baseline at `a7ed4db` is clean, green, and
-> functionally whole; build the visual layer on top of it.
+> ✅ **FRONTEND OVERHAUL DELIVERED [laptop-C, 2026-07-18]** per
+> [`docs/frontend_overhaul.md`](docs/frontend_overhaul.md): animated network-canvas backdrop with
+> coral flagged pulses, Motion throughout (view transitions, nav/domain sliding pills, KPI
+> count-up, queue stagger, subdued risk pulse), glass/gradient-border panels over aurora washes +
+> film grain, per-domain accent ramps (financial cyan→teal ⇄ procurement violet→magenta), motif
+> SVG glyphs for all nine backend motif families, self-hosted variable fonts (Inter / JetBrains
+> Mono / Space Grotesk), designed radar/error/empty states. Hard constraints held: ethics caveat
+> on every screen (footer + dossier), `npm run build` + vitest green, backend 235/235 green,
+> docker frontend image builds, API contract untouched (read-only, zero endpoint changes).
+> **⛔ Awaiting stakeholder re-review of the new UI before Phase-2 development (§7).**
 
 **M5 COMPLETE — MVP exit criterion met [master, 2026-07-18].** Clone → `poe demo` (+ `npm run dev`)
 or `docker compose up` → dashboard → ranked alert → highlighted subgraph → explanation, both
 domains. All five §5.3 views live and verified against the read-only API; 235 backend tests +
-frontend build/test green. **Phase 1 MVP (M0–M5) done** *(functionally; the UI visual design is
-rejected and pending overhaul — see banner above)*. ⛔ Plan stop-point: MVP review with the
-stakeholder before Phase-2 development (§7). Next when resumed: **frontend overhaul (top priority,
-collaborator)**, then Phase 2 — Weeks 9–10 model depth (line-graph/PNA/PGExplainer), Week 11
-Copilot (MC). Detail of prior milestones below.
+frontend build/test green. **Phase 1 MVP (M0–M5) done** *(the rejected UI visual design was
+overhauled 2026-07-18 — see banner above)*. ⛔ Plan stop-point: MVP review with the
+stakeholder before Phase-2 development (§7). Next when resumed: Phase 2 — Weeks 9–10 model depth
+(line-graph/PNA/PGExplainer), Week 11 Copilot (MC). Detail of prior milestones below.
 
 **M4 COMPLETE** (§7 definition: "Every top-k alert on both domains carries a validated explanation
 bundle" — Elliptic++ 50/50 bundles with GNNExplainer minimal subgraphs + fidelity, 24 with matched
@@ -73,6 +72,8 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-18 · **FRONTEND VISUAL OVERHAUL (stakeholder-directed, docs/frontend_overhaul.md).** Everything in the brief's "to BUILD" list shipped: `components/bg/NetworkBackground.tsx` (full-viewport canvas — drifting nodes, proximity edges, coral flagged pulses travelling along edges; node count area-capped ≤80, pauses on hidden tab, static single frame under `prefers-reduced-motion`, recolors live on domain flip via MutationObserver on `data-domain`); Motion pass (`AnimatePresence` view transitions in ViewRouter, `layoutId` sliding pills on nav + domain toggle, KPI `CountUp` via imperative `animate()`, alert-queue row stagger delay-capped at 15 rows, dossier card stagger, `MotionConfig reducedMotion="user"`); `components/ui/Glass.tsx` + tokens.css glass system (translucent fill, backdrop-blur 14px, 1px gradient border via mask-composite, inner top-light); palette upgrade (aurora radial washes + SVG-turbulence film grain on `body::before/::after`, per-domain accent ramps cyan→teal / violet→magenta, gradient-clipped display headings); `components/ui/MotifGlyph.tsx` — nine schematic SVG glyphs mirroring backend `MotifType` exactly, **pinned by `lib/motifs.test.ts`**; self-hosted `@fontsource-variable` Inter + JetBrains Mono + Space Grotesk (imported in main.tsx — zero network font requests, offline-demo safe); designed states (radar-sweep loading, warning-glyph error, dashed-network empty); all five views restyled on the untouched API/state wiring; deep-link initial state `/?view=…&alert=…` for the demo script. **Verified live [laptop-C]:** `npm run build` (tsc+vite) green, vitest 6/6, backend 235/235, `docker compose build frontend` OK, and a full browser walk of all five views in BOTH domains against `collusiongraph serve` (fonts confirmed loaded, glass/backdrop confirmed computed, Sigma subgraph rendered, accent recolor confirmed #22d3ee→#a78bfa, caveat present on every screen) — served from a **synthetic schema-conformant store** (see Decision log). Bundle 144 kB gzip JS (was 100; Motion added) + ~29 kB CSS + fonts as separate woff2 · [laptop-C]
+- 2026-07-18 · laptop-C environment bootstrapped from a bare folder: init+fetch+checkout of origin/main (56ea4fc), uv sync (Py 3.11), npm install (192 pkgs, 0 vulns), `.env` from example (keys blank — none needed), datasets 4/5 downloaded+verified via `poe data` (amlworld `blocked` as designed — no Kaggle token on this machine); cold-clone baseline verified green BEFORE changes: backend 235/235, frontend build+test green · [laptop-C]
 - 2026-07-18 · **WEEK 8 (§7 steps 23–25) → MILESTONE M5 (MVP exit criterion).** React+TS+Vite console (`frontend/`): Tailwind v4 design tokens (§5.2 dark "intelligence console", per-domain teal/violet recolor), TanStack Query + Zustand, all **five views** — Overview command deck, Alert Queue (budget slider), Graph Explorer (Sigma.js WebGL ego-network, members in coral, server-windowed subgraph), Case Detail dossier (JSON export), Model Lab (metrics + per-step step-43 breakdown) — plus domain toggle, dataset selector, designed loading/error/empty states, ethics footer on every screen. **Verified live end-to-end** (API + Vite): drove Overview → click alert → Graph Explorer (101-node windowed subgraph) → Model Lab, both domains, **zero console errors**. Demo path: `poe demo` (build artifacts + serve API) + `npm run dev`, or `docker compose up` (api + nginx frontend); `scripts/build_demo_artifacts.py` regenerates the two queues + `serving.json`; `docs/demo_script.md` is the 90-second walk. CI builds+tests the frontend. Slices A/B/C pushed · [master]
 - 2026-07-17 · **§7 steps 20–21 RUNS → WEEK 7 COMPLETE.** *LOCO transfer (Mendeley, test=country_5, val=country_7, R-GCN on per-country z-scored structural channel):* test AUC-PR **0.8025 vs 0.667 prevalence**, P@10 0.90 / P@25 0.80 / R@50 0.825 (60 confirmed test firms — small pool, noted). *Cross-domain probes (frozen SAGE structural encoder → logistic probe):* **fin→proc NEGATIVE** — AUC-PR 0.284 < 0.358 prevalence; probe scores collapse to a near-single tie block (flat tie-aware P@k = 1/36), consistent with the weak structural-only source (elliptic source val 0.304). **proc→fin weakly POSITIVE** — AUC-PR 0.1502 vs 0.065 prevalence (~2.3×), P@200 0.41; far below within-domain models (GATv2 0.53 / XGB 0.81). RQ4 headline so far: transfer is asymmetric and source-strength-dependent — honest partial/negative result per §4.4; multi-seed + fine-tuning curves are the Phase-2 follow-up · runs under `eval_outputs/{mendeley_eu/transfer_loco_country_5, cross_domain/*}` · [master]
 - 2026-07-17 · **§7 step 22 — FastAPI artifact serving + containers**: `backend/api/` (serving index, 7 read-only endpoints, server-side ego-window subgraphs that never ship `raw_features`, caveat on every response — 9 tests incl. the torch-free-import pin), `collusiongraph serve` CLI, `docker/Dockerfile.api` + root `docker-compose.yml` + `.dockerignore`; verified live in a container against real mounted artifacts · 870049e · [master]
@@ -103,12 +104,13 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## In-flight
 <!-- exactly what is unfinished, where, why, and which machine/branch has it -->
-- **Frontend visual overhaul: NOT STARTED, owned by the collaborator next.** The current UI is
-  functionally complete but visually rejected (see Current-milestone banner + Next action 1 +
-  `docs/frontend_overhaul.md`). **No half-written overhaul code is in the tree** — a partial
-  `index.html` font fragment started on master was reverted so the collaborator inherits a clean,
-  green (`npm run build` OK, ~100 kB gzip JS), CI-verified baseline at `a7ed4db`. `motion` is
-  installed but imported nowhere; there is no animated-background component yet.
+- **Frontend overhaul: DONE and merged (see Completed). Nothing half-written.** Deliberately NOT
+  built (optional §5.3 flourishes, not in the brief's must-list): GSAP temporal scrubber +
+  DrawSVG motif schematics, Cosmograph full-ledger hero, visx chart build-out in Model Lab
+  (§5.3 view 6 About page too) — all Phase-2 polish candidates if the stakeholder wants more.
+- The overhaul was verified against a **synthetic serving store** on laptop-C (real score runs
+  don't exist on this machine — see Decision log). Before the stakeholder demo, produce REAL
+  serving artifacts on the demo machine (Next action 2) and re-walk the five views once.
 - Nothing else mid-implementation. Weeks 3–6 stacks + the audit fix pass are merged to main; feature branches deleted.
 - Post-audit follow-ups queued in Next actions: explicit test-time-adaptation ablation (the F3 finding), PGExplainer for the 41/50 fidelity-insane explanations, HeteroExplanation (R12), AMLworld activation.
 - Stratified (minority-enriched) neighbor sampling and `NeighborLoader` minibatching are deferred to the AMLworld run (full-batch is faster at Elliptic++ scale on CPU); the imbalance ablation shipped is focal-vs-weighted-CE.
@@ -117,30 +119,44 @@ still public 2026-07-15 — anonymous clone succeeded).
 - AMLworld raw data is absent on laptop-B (Kaggle credentials are per-machine; script reports `blocked` as designed). Financial pack is untested at AMLworld scale (5M edges) — see Next action 5.
 
 ## Next actions (ordered, self-contained)
-1. **[collaborator — TOP PRIORITY] FRONTEND OVERHAUL.** The stakeholder rejected the current UI
-   (verbatim feedback in the Decision log + [`docs/frontend_overhaul.md`](docs/frontend_overhaul.md)).
-   Deliver a modernised, presentable UI: **live animated background(s)** (a themed network-graph
-   canvas — component does not exist yet, e.g. `src/components/bg/NetworkBackground.tsx`),
-   **Framer Motion** (the `motion` dep is installed but used NOWHERE — add view transitions in
-   `src/app/ViewRouter.tsx`, nav indicator in `App.tsx`, KPI count-up, queue stagger),
-   **glass/depth panels**, an **impressive project-themed color scheme** (extend
-   `src/styles/tokens.css`), motif glyphs, and self-hosted fonts (Inter/JetBrains Mono are
-   referenced but never loaded — prefer `@fontsource` over a Google Fonts `<link>` for offline
-   demo safety). Reuse the existing API layer, state, and all five wired views — only the
-   presentation changes. HARD CONSTRAINTS: keep the ethics caveat on every screen, keep
-   `npm run build` + CI green, keep the API read-only, keep `docker compose up` working. Full
-   file-by-file guidance in `docs/frontend_overhaul.md`.
-2. Before any demo: produce serving artifacts on the demo machine — run `collusiongraph score` /
-   `explain` for elliptic_pp + mendeley_eu (configs exist), then point `eval_outputs/serving.json`
-   at the produced `alerts.parquet` + `explanations/` dirs (note: `serving.json` currently lists
-   `"explanations": null` for both — set these once bundles are generated so the Case Detail view
-   has data).
+1. **[user/stakeholder] Re-review the overhauled UI.** Fastest look on any machine:
+   `uv sync && npm install` (frontend/), then `poe demo` + `npm run dev` (or `docker compose up`)
+   and walk Overview → Alert Queue → Graph Explorer → Case Detail → Model Lab in both domains.
+   The verbatim rejection this answers is in the Decision log (2026-07-18); the delivered scope
+   is in Completed. If more flash is wanted, the queued flourishes are in In-flight (GSAP
+   scrubber, Cosmograph hero, visx charts, About page).
+2. Before any demo: produce REAL serving artifacts on the demo machine — run `collusiongraph
+   score` / `explain` for elliptic_pp + mendeley_eu (configs exist), then point
+   `eval_outputs/serving.json` at the produced `alerts.parquet` + `explanations/` dirs (note:
+   `serving.json` currently lists `"explanations": null` for both — set these once bundles are
+   generated so the Case Detail view has data). The overhaul was verified against a synthetic
+   store on laptop-C; the demo must run on real queues.
 3. **[user]** Rotate/revoke the OpenAI API key exposed in `Gen-AI Chatbot/.../.env` AND embedded in the original `FIX_FRONTEND.md` (two exposures) at platform.openai.com.
-6. **[user]** Make the GitHub repo private (plan requires a private repo): repo Settings → General → Danger Zone → Change visibility, or `gh repo edit KartikJoshi23/Collusion-Network-Detection --visibility private` after `gh auth login`. Also consider rotating the Kaggle token that was shared in a chat session.
-7. Deferred small items: HeteroExplanation for R-GCN (R12 finding — mask-based explainer is GATv2-only); AMLworld injection-recovery calibration + feature packs + baselines + `NeighborLoader` training on a machine with Kaggle credentials; wire the datasets' **precomputed screens** through as B4 inputs (Mendeley `lot_bidscount`/`relative_value`, García screen columns in `raw_attrs`); automatic percent→k budget resolution in `run_eval`; Mendeley R-GCN follow-up (firm+tender joint supervision, García co-bid enrichment) before concluding graph signal is absent; degree-preserving null-model z-scores for the structural floor (Phase 2).
+4. **[user]** Make the GitHub repo private (plan requires a private repo): repo Settings → General → Danger Zone → Change visibility, or `gh repo edit KartikJoshi23/Collusion-Network-Detection --visibility private` after `gh auth login`. Also consider rotating the Kaggle token that was shared in a chat session.
+5. Deferred small items: HeteroExplanation for R-GCN (R12 finding — mask-based explainer is GATv2-only); AMLworld injection-recovery calibration + feature packs + baselines + `NeighborLoader` training on a machine with Kaggle credentials; wire the datasets' **precomputed screens** through as B4 inputs (Mendeley `lot_bidscount`/`relative_value`, García screen columns in `raw_attrs`); automatic percent→k budget resolution in `run_eval`; Mendeley R-GCN follow-up (firm+tender joint supervision, García co-bid enrichment) before concluding graph signal is absent; degree-preserving null-model z-scores for the structural floor (Phase 2).
 
 ## Decision log
 <!-- - YYYY-MM-DD · decision · rationale · plan section affected -->
+- 2026-07-18 · **[laptop-C] Overhaul verification used a SYNTHETIC serving store** (scratchpad-only
+  script fabricating two schema-conformant datasets `synthetic_financial`/`synthetic_procurement`
+  via the real `GraphStore`/`Alert`/`conform` classes — 40 alerts each, all nine motifs, bundles,
+  metrics — served by the real `collusiongraph serve`): laptop-C has no trained score runs and the
+  frontend task needed a live API today, not a multi-hour pipeline. Every number in those
+  screenshots is fake by construction and labeled `synthetic_`; **no synthetic artifact is in
+  git**, and the real-artifact demo remains gated on Next action 2 · §9.2.
+- 2026-07-18 · **[laptop-C] Deep-link initial state added to the console store** (`/?view=…&alert=…`,
+  validated against the ViewId union; the initial dataset auto-select no longer clears a
+  deep-linked alert selection — switching datasets still does): needed so the demo script can open
+  a view directly, and used by this session's live verification. Also: `@fontsource-variable`
+  packages over a Google-Fonts link (offline demo, per the brief); `.claude/launch.json` committed
+  (dev-preview config; `settings.local.json` stays ignored) · §5.4, §5.1.
+- 2026-07-18 · **[laptop-C] Motion policy**: `MotionConfig reducedMotion="user"` app-wide + CSS
+  `@media (prefers-reduced-motion: reduce)` kills the canvas loop (single static frame), risk
+  pulse, and radar sweep — §5.2's "animation communicates state, never decorates idly" enforced at
+  both layers. Stagger delays are index-capped so long queues don't serialize their entrance.
+  Known verification caveat: the in-tool browser pane runs tabs hidden (rAF frozen), so view
+  transitions were verified via deep links + Motion's `skipAnimations` test hook rather than
+  animated end-to-end; on a visible tab this is ordinary Motion behavior · §5.2, §9.2.
 - 2026-07-18 · **[master → collaborator handoff] FRONTEND OVERHAUL directed by stakeholder.** Verbatim
   feedback: *"The UI looks completely pathetic, it is a complete piece of useless frontend, the
   frontend should be very modernised with modern tech used, this is just a thing which I cannot
