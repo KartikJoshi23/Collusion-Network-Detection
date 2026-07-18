@@ -7,7 +7,8 @@ pretends to work.
 
 * ``ingest --dataset X [--raw-dir D]`` — adapter → IR store (§7 steps 5–6)
 * ``train -c cfg.yaml``   — dispatches on config shape: GNN training,
-  baselines sweep, ensemble run, or injection-recovery (§7 steps 10–16)
+  baselines sweep, ensemble run, injection-recovery, LOCO transfer, or
+  cross-domain probe (§7 steps 10–16, 20–21)
 * ``score -c cfg.yaml``   — alert-queue build (§7 step 13)
 * ``explain -c cfg.yaml`` — explanation bundles (§7 steps 17–19)
 * ``eval -c cfg.yaml``    — the §4.5 harness on precomputed scores/alerts
@@ -44,6 +45,10 @@ def select_train_runner(cfg: dict[str, Any]) -> str:
         return "injection_recovery"
     if "supervised_scores_dir" in cfg and "model" not in cfg:
         return "ensemble"
+    if "test_group" in cfg:
+        return "loco_transfer"
+    if "source" in cfg and "target" in cfg:
+        return "cross_domain_probe"
     return "gnn"
 
 
@@ -67,12 +72,18 @@ def _cmd_train(args: argparse.Namespace) -> int:
         run_injection_recovery,
         train_gnn,
     )
+    from collusiongraph.training.transfer_run import (
+        run_cross_domain_probe,
+        run_loco_transfer,
+    )
 
     runners = {
         "baselines": run_baselines,
         "injection_recovery": run_injection_recovery,
         "ensemble": run_ensemble,
         "gnn": train_gnn,
+        "loco_transfer": run_loco_transfer,
+        "cross_domain_probe": run_cross_domain_probe,
     }
     cfg = load_config(args.config)
     kind = select_train_runner(cfg)

@@ -240,6 +240,17 @@ class TestCliDispatch:  # F22
         assert select_train_runner({"supervised_scores_dir": "x"}) == "ensemble"
         assert select_train_runner({"model": {"name": "gatv2"}}) == "gnn"
 
+    def test_transfer_config_shapes_route_correctly(self) -> None:
+        # LOCO configs carry a top-level model too — test_group must win
+        assert (
+            select_train_runner({"test_group": "country_5", "model": {"name": "rgcn"}})
+            == "loco_transfer"
+        )
+        assert (
+            select_train_runner({"source": {"dataset": "mendeley_eu"}, "target": {}})
+            == "cross_domain_probe"
+        )
+
 
 class TestWandbPath:  # F21
     def test_metrics_flattened_and_logged(self, monkeypatch, tmp_path) -> None:
