@@ -35,6 +35,15 @@
 > readout, real Model Lab charts with SVG/PNG export). Backend 237/237, frontend build +
 > vitest 17/17, walked live on real artifacts in both domains. **Awaiting stakeholder review
 > #3.**
+>
+> 🚀 **PHASE 2 OPENED [master, 2026-07-18] on the stakeholder's instruction** (Decision log:
+> UI iteration deferred to the end; "remaining parts are very important"). V2 merge verified
+> green on master (backend 237/237, frontend 17/17 + build). **First Phase-2 slice landed —
+> §7 step 27:** PGExplainer + three-arm fidelity ablation; **verdict: PGExplainer adopted**
+> for Elliptic++ bundles (PyG sanity 49/50 vs GNNExplainer 12/50, hard-fidelity necessity
+> +0.034 vs ~0, 2.4× faster amortized) — regenerated bundles drop **fidelity_insane 38/50 →
+> 1/50**. Suite 244/244. Next §7 items: step 26 (line-graph view, PNA/GIN+EU on AMLworld,
+> actor-graph hetero), Week 11 Copilot (MC).
 
 **M5 COMPLETE — MVP exit criterion met [master, 2026-07-18].** Clone → `poe demo` (+ `npm run dev`)
 or `docker compose up` → dashboard → ranked alert → highlighted subgraph → explanation, both
@@ -88,6 +97,29 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-18 · **§7 STEP 27 → PGExplainer ADOPTED for Elliptic++ bundles (first Phase-2 slice).**
+  *Built:* `explain/pgexplainer_runner.py` (amortized PGExplainer, same ego windows / top-k
+  thresholding / `NodeExplanation` output as the GNNExplainer runner — drop-in; targets are the
+  model's OWN hard predictions, so phenomenon-mode fidelity coincides with model-mode, no labels
+  touched; GATv2-only R12 guard; seeded) + `explain/explainer_ablation.py` (three arms on the
+  SAME top-50 queue members, scored with a UNIFORM hard-mask fidelity — probability deltas under
+  hard edge removal/keep — plus PyG binary fidelity for the mask arms; config-driven, CLI `arms:`
+  shape) + `supervised_model.explainer` switch in the bundle writer (loading refactored into
+  shared `load_supervised_for_explaining`/`top_members_of`). 7 new tests (invariants,
+  determinism, R12 rejections, hard-fidelity boundary identities, attention self-loop exclusion,
+  end-to-end integration); **suite 244/244**, ruff/mypy/black green. *Measured (seed 0, real
+  artifacts):* GNNExplainer 122.9s, hard-fid+ −0.0004, PyG-sane 12/50; **PGExplainer 51.3s,
+  hard-fid+ +0.0335, hard-fid− −0.0232 (necessary AND more-than-sufficient), PyG-sane 49/50**;
+  attention-only 2.9s, ~0 both ways. *Adopted:* `explanations_elliptic_pp.yaml` flipped to
+  `explainer: pgexplainer`; regenerated 50/50 bundles — **fidelity_insane 38/50 → 1/50**, motif
+  and red-flag counts unchanged (matcher independent); serving.json refreshed. Report at
+  `eval_outputs/elliptic_pp/explainer_ablation/explainer_ablation.json` · [master]
+- 2026-07-18 · **OVERHAUL V2 INTEGRATION VERIFIED ON MASTER**: pulled 9f8f794..c9cbce8
+  fast-forward (three laptop-C commits — tokens, flagship views, ledger); npm install (gsap +
+  @gsap/react, 0 vulns); backend 237/237, frontend vitest 17/17 + tsc + build green on this
+  machine; `serving.json` regenerated for the queue-metrics ride-along (the measured-precision
+  readout's data path) — both queues byte-identical (254/223). Only frontend + demo-artifacts
+  script changed: API contract untouched, caveat everywhere, no secrets · [master]
 - 2026-07-18 · **FRONTEND OVERHAUL V2 (second-rejection response — docs/frontend_overhaul.md V2 §3, all six workstreams).** *(1) Multi-hue token system:* five simultaneous hue families (cyan/violet/magenta/amber + reserved coral, teal benign) with the domain toggle shifting DOMINANCE only; chart tier validated with the dataviz six-checks against #0a0e17 (`lib/palette.ts`, pinned by `palette.test.ts` incl. the coral-exclusivity rule); **≥3 hue families at rest verified live** (Overview KPI band renders 4 distinct families). *(2) Visible glass:* 3-stop multi-hue aurora in BOTH domains bright enough to feed the blur, 22–38% alpha-gradient fills + `saturate(1.5)`, neon-edge interactive glass (`glass-neon`, per-panel `--panel-hue`), multi-hue drifting canvas. *(3) Hover language:* lift+glow cards, row accent-edge sweep, chip bloom + tooltips, button sheen sweep, cursor-following spotlight on the hero — transform/opacity/background only. *(4) GSAP showpieces (gsap + @gsap/react installed — all plugins free):* DrawSVG motif schematics drawing themselves in the dossier (9 scenes), temporal playback scrubber replaying REAL edge timestamps over Sigma (play/pause + scrub, amount-scaled widths where amounts exist per D1), ScrollTrigger About/Methodology story (§5.3 view 6 — NEW view, lazy-loaded 20 kB chunk) with the motif table draw-on. *(5) Flagship features:* alert-constellation hero (real ranked alerts, size=members, color=risk band, golden-angle layout labeled schematic), queue rows with red-flag badges (lazy bundle lookups, 404-tolerant), hover-drawn temporal sparklines from real windowed-subgraph timestamps (`lib/sparkline.ts`, tested — never synthesized), hover-revealed actions, measured-precision readout (nearest PUBLISHED budget, never interpolated; queue metrics now ride serving.json via `build_demo_artifacts.py`); Model Lab rebuilt: per-time-step AUC-PR bars (the step-43 crater figure) + precision@k lines with live budget marker + queue precision, hand-rolled SVG per the dataviz mark specs (visx deferred — plan §5.1 allows D3-direct/hand-rolled), SVG/PNG export on every chart (paper figures). *(6) Dossier redesign:* typed evidence cards with per-source labels, indicator-cited red-flag cards, fidelity tiles with the failed-sanity warning surfaced, technical appendix keeps the full payload inspectable. Reduced-motion collapses everything (Motion config + CSS + GSAP guards). **Verified:** backend 237/237, frontend build green (main 183 kB gzip + 20 kB About chunk) + vitest 17/17 (5 new pure-logic tests), live walk of all six views on REAL artifacts in both domains (constellation/charts/schematic/scrubber/badges/readout all confirmed rendering real data) · [laptop-C]
 - 2026-07-18 · **INTEGRATION + MASTER DEMO-READY (Next action 2 executed on the master machine).**
   *Integration:* pulled 56ea4fc..f31a200 fast-forward; `feat/frontend-overhaul` confirmed fully
@@ -157,11 +189,13 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## In-flight
 <!-- exactly what is unfinished, where, why, and which machine/branch has it -->
-- **Frontend overhaul V1: merged, then REJECTED at re-review (2026-07-18) — OVERHAUL V2 is
-  Next action 1.** Nothing half-written in the tree. The formerly-"optional" §5.3 flourishes
-  (GSAP temporal scrubber + DrawSVG motif schematics, Cosmograph full-ledger hero, visx Model
-  Lab charts, About page) are now REQUIRED scope in the V2 brief (`docs/frontend_overhaul.md`),
-  alongside the multi-hue token rebuild, visible-glass recipe, and hover pass.
+- ~~Frontend overhaul V1 rejected → V2 required~~ **V2 DELIVERED [laptop-C] and verified on
+  master (2026-07-18, see Completed); awaiting stakeholder review #3.** Nothing half-written.
+  Per the stakeholder's 2026-07-18 instruction (Decision log), further UI iteration is
+  deferred to the end — Phase-2 development proceeds now.
+- **Phase 2 in progress [master]:** step 27 (PGExplainer) DONE; step 26 arms not started —
+  see Next action 3 for the machine-matched menu (line-graph aux view is the CPU-feasible
+  default; PNA/GIN+EU parity wants GPU + `NeighborLoader`; actor-graph data already on disk).
 - ~~The overhaul was verified against a synthetic serving store on laptop-C~~ **Resolved
   2026-07-18 [master]:** the overhauled UI is verified against REAL artifacts on BOTH laptop-C
   and master; master walked all five views live in both domains and verified the compose path.
@@ -182,8 +216,22 @@ still public 2026-07-15 — anonymous clone succeeded).
    `docker compose up` → :8080), walk all SIX views (About is new — the demo-day opener) in
    both domains; hover the queue rows (sparklines + actions), drag the budget slider
    (measured-precision readout), play the explorer's temporal scrubber, export a Model Lab
-   chart. Phase-2 ML work stays gated on this acceptance (§7 stop point).
-3. ~~Produce REAL serving artifacts~~ **DONE on laptop-C AND master (2026-07-18, see
+   chart. *(Phase-2 work no longer waits on this — stakeholder decision 2026-07-18, Decision
+   log; further UI iteration is deferred to the end.)*
+3. **Phase 2, next slice — §7 step 26 (pick by machine):** (a) **line-graph auxiliary view**
+   (LineMVGNN-style edge→node duality; §4.4 table): CPU-feasible on Elliptic++ — build the
+   line-graph transform in `training/graph_build.py` style, an aux-encoder whose embeddings
+   concatenate into the main model, ablation config B-LG, §9.1 tests (transform correctness on
+   toy graphs, leakage: transform runs per split graph), run vs the published GATv2 — either
+   result is reportable; (b) **PNA + GIN+EU reference configs on AMLworld HI-Small** (Multi-GNN
+   parity check): needs GPU (Colab/Kaggle) or a very patient CPU — master has the AMLworld raw
+   data + IR store; wire `NeighborLoader` minibatching first (In-flight note); (c) **Elliptic++
+   actor-graph heterogeneous experiment** (the 9-CSV actor tables are already downloaded).
+   Start with (a) if on CPU. PGExplainer (step 27) is DONE — see Completed.
+4. **Week 11 — Copilot (MC)** after (or in parallel with) step 26: port per §7 27a–c; user
+   action first: create the NVIDIA NIM key at build.nvidia.com → `.env` `NVIDIA_API_KEY`
+   (2026-07-17 decision).
+5. ~~Produce REAL serving artifacts~~ **DONE on laptop-C AND master (2026-07-18, see
    Completed)** — both machines are demo-ready end-to-end. For any OTHER machine the recipe
    is unchanged: `poe data` → `collusiongraph ingest` (both datasets) → `train` the four configs
    (gatv2_focal, gatv2_focal_multi, ensemble, cross_domain_probe_proc2fin +
@@ -191,13 +239,30 @@ still public 2026-07-15 — anonymous clone succeeded).
    `poe demo-artifacts` again (second pass wires `explanations/` into serving.json). The bare
    `uv run collusiongraph …` spelling now works on a fresh `uv sync` (console script added
    2026-07-18).
-4. **[user]** Rotate/revoke the OpenAI API key exposed in `Gen-AI Chatbot/.../.env` AND embedded in the original `FIX_FRONTEND.md` (two exposures) at platform.openai.com.
-5. **[user]** Make the GitHub repo private (plan requires a private repo): repo Settings → General → Danger Zone → Change visibility, or `gh repo edit KartikJoshi23/Collusion-Network-Detection --visibility private` after `gh auth login`. Also consider rotating the Kaggle token that was shared in a chat session.
-6. Deferred small items: HeteroExplanation for R-GCN (R12 finding — mask-based explainer is GATv2-only); AMLworld injection-recovery calibration + feature packs + baselines + `NeighborLoader` training on a machine with Kaggle credentials; wire the datasets' **precomputed screens** through as B4 inputs (Mendeley `lot_bidscount`/`relative_value`, García screen columns in `raw_attrs`); automatic percent→k budget resolution in `run_eval`; Mendeley R-GCN follow-up (firm+tender joint supervision, García co-bid enrichment) before concluding graph signal is absent; degree-preserving null-model z-scores for the structural floor (Phase 2).
+6. **[user]** Rotate/revoke the OpenAI API key exposed in `Gen-AI Chatbot/.../.env` AND embedded in the original `FIX_FRONTEND.md` (two exposures) at platform.openai.com.
+7. **[user]** Make the GitHub repo private (plan requires a private repo): repo Settings → General → Danger Zone → Change visibility, or `gh repo edit KartikJoshi23/Collusion-Network-Detection --visibility private` after `gh auth login`. Also consider rotating the Kaggle token that was shared in a chat session.
+8. Deferred small items: HeteroExplanation for R-GCN (R12 finding — mask-based explainer is GATv2-only); AMLworld injection-recovery calibration + feature packs + baselines + `NeighborLoader` training on a machine with Kaggle credentials; wire the datasets' **precomputed screens** through as B4 inputs (Mendeley `lot_bidscount`/`relative_value`, García screen columns in `raw_attrs`); automatic percent→k budget resolution in `run_eval`; Mendeley R-GCN follow-up (firm+tender joint supervision, García co-bid enrichment) before concluding graph signal is absent; degree-preserving null-model z-scores for the structural floor (Phase 2).
 
 ## Decision log
 <!-- - YYYY-MM-DD · decision · rationale · plan section affected -->
-- 2026-07-18 · **[master] SECOND UI REJECTION at the M5 stakeholder re-review → OVERHAUL V2
+- 2026-07-18 · **[master, stakeholder-directed] PHASE 2 UN-GATED before UI acceptance.** The
+  stakeholder instructed: proceed with the remaining development from where the collaborator
+  stopped — "UI can be modified or enhanced at the end as well, as remaining parts are very
+  important." This supersedes the §7 ⛔ stop-point's strict reading: Phase-2 ML/product work
+  proceeds now; the V2 UI awaits review #3 in parallel and further UI iteration is deferred to
+  the end. Recorded because it re-orders the §7 gate, not because anyone disputed it · §7.
+- 2026-07-18 · **[master] §7 STEP 27 ABLATION VERDICT: PGExplainer adopted for Elliptic++
+  bundles; GNNExplainer demoted to alternative.** Grounds (seed 0, top-50 queue members, uniform
+  hard-mask fidelity + PyG binary fidelity): PGExplainer's top-20 edges are the only arm whose
+  removal measurably breaks the prediction (hard-fid+ +0.0335 vs ≈0 for GNNExplainer and
+  attention-only) and whose subgraph alone reproduces it (hard-fid− −0.0232); PyG sanity 49/50
+  vs 12/50; 2.4× faster and amortized (train once, explain any alert in one forward — the
+  queue-scale property §7 step 27 wanted). Honest caveats: absolute probability deltas are small
+  (the model is saturated-confident on these egos), and the amortized MLP is trained on the
+  explained instances' own ego windows with the model's OWN predictions as targets (no labels,
+  no leakage; standard PGExplainer deployment). GNNExplainer's collapse mirrors the audit-era
+  finding (38/50 insane) — now measured against alternatives instead of tolerated. Config flip +
+  regenerated bundles in Completed · §4.4, §7 step 27, R12 lineage.
   directed.** Verbatim: *"Still the UI is horrible, it should be something really impressive.
   It should be dark themed, I can hardly see anyother color, it a single color dominant at this
   stage, I am very disappointed with it. It should have glassmorphism effects, hover effects,

@@ -18,7 +18,14 @@ supervised_model:
   num_layers: 2
   heads: 4
   dropout: 0.3
+  # §7 step 27 ablation verdict (ledger 2026-07-18): PGExplainer's edges are
+  # measurably necessary+sufficient (PyG sanity 49/50 vs GNNExplainer 12/50,
+  # 2.4x faster amortized). "gnnexplainer" remains the per-node alternative.
+  explainer: pgexplainer
 
 num_hops: 2
-explainer_epochs: 100
+explainer_epochs: 100 # used by the gnnexplainer alternative
 top_edges: 20
+pg:
+  train_epochs: 30
+  lr: 0.003
