@@ -74,3 +74,9 @@ def run_goldens(
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     return report
+
+
+if __name__ == "__main__":
+    report = run_goldens()
+    print(json.dumps({k: v for k, v in report.items() if k != "results"}, indent=2))
+    raise SystemExit(0 if report["gate_passed"] else 1)
