@@ -40,6 +40,7 @@ export function CaseDetail() {
   const dataset = useConsole((s) => s.dataset);
   const alertId = useConsole((s) => s.selectedAlertId);
   const setView = useConsole((s) => s.setView);
+  const askCopilotAbout = useConsole((s) => s.askCopilotAbout);
   const { data, isLoading, isError, error } = useExplanation(dataset, alertId);
 
   if (!alertId)
@@ -102,6 +103,19 @@ export function CaseDetail() {
           </span>
         )}
         <div className="ml-auto flex items-center gap-2">
+          <button
+            onClick={() => askCopilotAbout(alertId)}
+            title="open the Copilot seeded with this alert (§5.3 view 7)"
+            className="btn-sheen rounded-md px-3 py-1 text-xs"
+            style={{
+              color: "var(--hue-magenta)",
+              background: "color-mix(in srgb, var(--hue-magenta) 14%, transparent)",
+              boxShadow:
+                "inset 0 0 0 1px color-mix(in srgb, var(--hue-magenta) 35%, transparent)",
+            }}
+          >
+            ◈ Ask Copilot
+          </button>
           <button
             onClick={() => setView("explorer")}
             className="btn-sheen rounded-md px-3 py-1 text-xs text-text-1"

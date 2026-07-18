@@ -1,6 +1,7 @@
 import { MotionConfig, motion } from "motion/react";
 import { SCREENING_CAVEAT } from "../api/types";
 import { NetworkBackground } from "../components/bg/NetworkBackground";
+import { CopilotDock } from "../components/copilot/CopilotDock";
 import { useConsole, type ViewId } from "../state/console";
 import { DatasetSelector } from "./DatasetSelector";
 import { DomainToggle } from "./DomainToggle";
@@ -36,6 +37,8 @@ function Mark() {
 export function App() {
   const view = useConsole((s) => s.view);
   const setView = useConsole((s) => s.setView);
+  const copilotOpen = useConsole((s) => s.copilotOpen);
+  const toggleCopilot = useConsole((s) => s.toggleCopilot);
 
   return (
     <MotionConfig reducedMotion="user">
@@ -92,12 +95,31 @@ export function App() {
           <div className="ml-auto flex items-center gap-3">
             <DatasetSelector />
             <DomainToggle />
+            <button
+              onClick={toggleCopilot}
+              title="Investigator Copilot — tool-grounded Q&A over the served queues"
+              className="btn-sheen rounded-md px-2.5 py-1 text-xs font-medium"
+              style={{
+                color: copilotOpen ? "var(--hue-magenta)" : "var(--text-1)",
+                background: copilotOpen
+                  ? "color-mix(in srgb, var(--hue-magenta) 14%, transparent)"
+                  : "var(--glass-fill-lo)",
+                boxShadow: copilotOpen
+                  ? "inset 0 0 0 1px color-mix(in srgb, var(--hue-magenta) 35%, transparent)"
+                  : "inset 0 0 0 1px var(--hairline)",
+              }}
+            >
+              ◈ Copilot
+            </button>
           </div>
         </header>
 
-        <main className="z-0 min-h-0 flex-1 overflow-hidden p-2">
-          <ViewRouter />
-        </main>
+        <div className="z-0 flex min-h-0 flex-1 overflow-hidden">
+          <main className="min-h-0 min-w-0 flex-1 overflow-hidden p-2">
+            <ViewRouter />
+          </main>
+          <CopilotDock />
+        </div>
 
         <footer className="z-10 flex items-center justify-center gap-2 px-4 pb-2 pt-0.5 text-center text-xs text-text-2">
           <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden>

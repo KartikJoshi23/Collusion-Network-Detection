@@ -97,6 +97,7 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-19 · **§7 STEP 27b — COPILOT DOCK (§5.3 view 7) + SSE streaming.** *Backend:* the agent loop refactored into `answer_question_events` (yields `("trace", step)` live per tool call, then `("final", payload)`; `answer_question` wraps it — existing contract byte-identical, tests untouched); `POST /api/v1/copilot/chat/stream` emits CRLF-framed SSE (`trace` events as tools fire → one `final` event carrying the exact /chat payload incl. `ai_generated` + caveat); missing key = clean eager 503 (matching /chat); mid-stream failures surface as an `error` event. 2 new tests (CRLF framing asserted; 503). Latent mypy error in `sql_tools.list_tables` fixed in passing (fetchone Optional — copilot isn't in CI's mypy target). *Frontend:* `components/copilot/CopilotDock.tsx` — collapsible right-hand glass dock (magenta neon, V2 tokens) on EVERY view: message bubbles, **live agent-trace timeline** streaming as tools fire, confidence badge + numbers/typology-grounding + guard-rewrite badges (all copied from payload fields, never re-derived), collapsible evidence panel (tool + args + result per call), **AI-generated label + screening caveat under every response**, honest not-configured banner when `/health.configured=false`; header toggle; **context-seeding** — "Ask Copilot" on the Case Detail header and a ◈ hover action on queue rows open the dock seeded with that alert's id (chip + adapted placeholder). SSE client is the archive's FIXED parser ported (CRLF→LF normalisation, multi-line data, comment lines, tail flush — `api/copilot.ts`, pure helpers + 5 tests). Payload discovery: `guard_rewrites` is a LIST (typed + rendered as its length). **Verified:** backend 293/293, frontend build + vitest 22/22, and a live dock walk against the REAL serving app with a scripted fake LLM client (no key on this machine; response text self-labels as faked, tool evidence was genuine store output — 2,991 alerts across the 3 served datasets): open/close, full turn (bubble → live trace → final card with badges/evidence/label/caveat), alert seeding from Case Detail. **NOT verified here (needs the nvapi- key): live-LLM answers + `poe copilot-goldens` gate — run on a keyed machine per Next action 4.** · [laptop-C]
 - 2026-07-19 · **Goldens grown to 18/18 passing** (metrics lookup, pg_explainer evidence-source
   pin, nonexistent-bundle honesty probe, OECD winner-rotation RAG citation, second adversarial
   guilt probe — all pass live, grounded 1.0, zero violations); runner is now
@@ -315,7 +316,13 @@ still public 2026-07-15 — anonymous clone succeeded).
    GPU (Colab/Kaggle) or a very patient CPU — master has the AMLworld raw data + IR store; wire
    `NeighborLoader` minibatching first (In-flight note); (d) learned line-encoder over
    materialized L(G) on AMLworld per the B-LG verdict (amounts give L(G) real edge features).
-4. **[collaborator] Week 11 — Copilot 27b DOCK (the one big MC piece left).** Backend is DONE
+4. ~~[collaborator] Copilot 27b DOCK~~ **DONE on laptop-C (2026-07-19, see Completed) —
+   dock + SSE live-verified with a faked LLM client (no key on that machine).** Remaining
+   before MC closes: **verify live-LLM + `poe copilot-goldens` (`gate_passed: true`) on a
+   machine with the `nvapi-` key in `.env`** — the dock itself needs no changes for that;
+   then the smaller follow-ups: grow goldens 18→20–30; wire serving artifacts into the CI
+   goldens job; optional LangGraph depth (cut order: last). **[user]** add `NVIDIA_API_KEY`
+   as a GitHub Actions secret when convenient. *(original brief follows)* Backend is DONE
    and live (27a core, corpus+grounding, 18/18 goldens — see Completed 2026-07-19): POST
    `/api/v1/copilot/chat` takes `{question, context_alert_id?}` and returns `{answer,
    confidence, numbers_grounded, corpus_grounded, guard_rewrites, evidence[], trace[],

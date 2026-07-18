@@ -108,6 +108,7 @@ function Row({
 }) {
   const selectAlert = useConsole((s) => s.selectAlert);
   const setView = useConsole((s) => s.setView);
+  const askCopilotAbout = useConsole((s) => s.askCopilotAbout);
   const [hovered, setHovered] = useState(false);
 
   // lazy, cached; 404 (no bundle for this alert) is a normal outcome
@@ -184,6 +185,21 @@ function Row({
             }}
           >
             dossier
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              selectAlert(a.alert_id);
+              askCopilotAbout(a.alert_id);
+            }}
+            title="ask the Copilot about this alert"
+            className="btn-sheen rounded px-2 py-0.5 text-xs"
+            style={{
+              color: UI_HUES.magenta,
+              background: "color-mix(in srgb, var(--hue-magenta) 14%, transparent)",
+            }}
+          >
+            ◈
           </button>
         </span>
       </td>

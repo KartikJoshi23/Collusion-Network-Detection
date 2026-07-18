@@ -16,12 +16,16 @@ interface ConsoleState {
   budget: number;
   selectedAlertId: string | undefined;
   view: ViewId;
+  copilotOpen: boolean;
+  copilotSeed: string | undefined; // alert id the dock is contextualised with
   setDomain: (d: Domain) => void;
   setDataset: (d: string | undefined) => void;
   hydrateFromAlert: (domain: Domain, dataset: string) => void;
   setBudget: (k: number) => void;
   selectAlert: (id: string | undefined) => void;
   setView: (v: ViewId) => void;
+  toggleCopilot: () => void;
+  askCopilotAbout: (alertId: string) => void;
 }
 
 const VIEW_IDS: ViewId[] = ["overview", "queue", "explorer", "case", "lab", "about"];
@@ -45,6 +49,8 @@ export const useConsole = create<ConsoleState>((set) => ({
   budget: 50,
   selectedAlertId: initial.alert,
   view: initial.view,
+  copilotOpen: false,
+  copilotSeed: undefined,
   setDomain: (domain) =>
     set({ domain, dataset: undefined, selectedAlertId: undefined }),
   // Switching datasets clears the selection; the INITIAL auto-select (dataset
@@ -60,6 +66,10 @@ export const useConsole = create<ConsoleState>((set) => ({
   setBudget: (budget) => set({ budget }),
   selectAlert: (selectedAlertId) => set({ selectedAlertId }),
   setView: (view) => set({ view }),
+  toggleCopilot: () => set((s) => ({ copilotOpen: !s.copilotOpen })),
+  // §5.3 view 7 context-seeding: opened from an alert, the dock carries that
+  // alert's id so "explain this" resolves without retyping
+  askCopilotAbout: (alertId) => set({ copilotOpen: true, copilotSeed: alertId }),
 }));
 
 // Keep the document's data-domain in sync so the token layer recolors (§5.2).
