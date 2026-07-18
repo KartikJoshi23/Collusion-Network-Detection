@@ -26,6 +26,7 @@ from collusiongraph.features import (
     apply_zscore,
     financial_features,
     fit_zscore,
+    line_graph_features,
     restrict_as_of,
     structural_features,
 )
@@ -49,7 +50,9 @@ def _one_family(
         return structural_features(nodes, edges, as_of=as_of)
     if kind == "financial":
         return financial_features(nodes, edges, as_of=as_of)
-    raise ValueError(f"unknown feature kind {kind!r} (expected raw/structural/financial)")
+    if kind == "line":  # §7 step 26a — line-graph flow channel (arm B-LG)
+        return line_graph_features(nodes, edges, as_of=as_of)
+    raise ValueError(f"unknown feature kind {kind!r} (expected raw/structural/financial/line)")
 
 
 def _feature_frame(

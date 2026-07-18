@@ -6,6 +6,7 @@ for entity-disjoint (LOCO/LOMO) evaluation where time is not the split axis.
 """
 
 from .financial import financial_features, sinusoidal_time_encoding
+from .line_graph import line_graph_features
 from .screens import award_screens, bid_screens, co_bid_stats
 from .structural import (
     apply_zscore,
@@ -24,6 +25,7 @@ __all__ = [
     "co_bid_stats",
     "financial_features",
     "fit_zscore",
+    "line_graph_features",
     "restrict_as_of",
     "sinusoidal_time_encoding",
     "structural_features",

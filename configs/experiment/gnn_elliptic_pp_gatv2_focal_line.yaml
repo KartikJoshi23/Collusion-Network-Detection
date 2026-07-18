@@ -1,0 +1,36 @@
+# §7 step 26a — ablation arm B-LG v1: raw + line-graph flow channel
+# (features/line_graph.py), plain concatenation. Identical protocol to the
+# published raw-only arm (gnn_elliptic_pp_gatv2_focal.yaml) and the B-CF
+# control (…_multi.yaml) — the added family is the only delta, so the three
+# runs compare directly. Either result is reportable (§4.4 honest reporting;
+# the B-CF precedent says added channels can hurt under the t43 shift).
+dataset: elliptic_pp
+store_root: data/interim
+output_dir: eval_outputs/elliptic_pp/gnn_gatv2_focal_line
+seed: 0
+features: [raw, line]
+
+split:
+  loss_end: 29
+  train_end: 34
+  test_start: 35
+
+model:
+  name: gatv2
+  fusion: concat
+  hidden_dim: 64
+  num_layers: 2
+  heads: 4
+  dropout: 0.3
+
+loss:
+  name: focal
+  gamma: 2.0
+
+lr: 0.005
+weight_decay: 0.0005
+epochs: 200
+patience: 20
+budgets: [50, 100, 200]
+
+per_time_step: true
