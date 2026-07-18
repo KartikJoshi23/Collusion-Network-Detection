@@ -175,6 +175,81 @@ class TestExplainerRunner:
         assert out == {}
 
 
+class TestPGExplainerRunner:  # §7 step 27
+    def test_explanation_invariants_and_determinism(self) -> None:
+        from collusiongraph.explain import explain_nodes_pg
+
+        torch.manual_seed(0)
+        data = tiny_graph_data()
+        model = make_model("gatv2", in_dim=4, hidden_dim=8, num_layers=2, heads=2, dropout=0.0)
+        out = explain_nodes_pg(model, data, ["n5"], train_epochs=5, top_edges=5)
+        exp = out["n5"]
+        assert set(exp.subgraph_node_ids) <= set(data.node_ids)
+        assert exp.subgraph_node_ids and exp.subgraph_edges
+        assert all(s in data.node_ids and d in data.node_ids for s, d in exp.subgraph_edges)
+        assert isinstance(exp.fidelity_plus, float) and isinstance(exp.fidelity_minus, float)
+        # amortized MLP is seeded: same seed → identical kept edges
+        out2 = explain_nodes_pg(model, data, ["n5"], train_epochs=5, top_edges=5)
+        assert out2["n5"].subgraph_edges == exp.subgraph_edges
+
+    @pytest.mark.parametrize("name", ["graphsage", "rgcn"])
+    def test_sliced_edge_models_are_rejected(self, name: str) -> None:
+        from collusiongraph.explain import explain_nodes_pg
+
+        data = tiny_graph_data()
+        model = make_model(name, in_dim=4, num_relations=2, hidden_dim=8, dropout=0.0)
+        with pytest.raises(TypeError, match="GATv2 only"):
+            explain_nodes_pg(model, data, ["n5"])
+
+    def test_missing_nodes_are_skipped(self) -> None:
+        from collusiongraph.explain import explain_nodes_pg
+
+        torch.manual_seed(0)
+        data = tiny_graph_data()
+        model = make_model("gatv2", in_dim=4, hidden_dim=8, heads=2, dropout=0.0)
+        assert explain_nodes_pg(model, data, ["ghost"], train_epochs=2) == {}
+
+
+class TestExplainerAblation:  # §7 step 27
+    def test_hard_fidelity_boundary_identities(self) -> None:
+        """kept = ALL edges ⇒ fid− = 0 (subgraph ≡ full graph), and
+        fid+(all kept) = fid−(none kept) (both compare against the edgeless
+        graph) — pins the mask orientation."""
+        from collusiongraph.explain import hard_fidelity
+        from collusiongraph.explain.explainer_runner import _ego
+
+        torch.manual_seed(0)
+        data = tiny_graph_data()
+        model = make_model("gatv2", in_dim=4, hidden_dim=8, num_layers=2, heads=2, dropout=0.0)
+        sub, target_idx = _ego(data, 5, 2)
+        n_edges = sub.edge_index.shape[1]
+        all_kept = torch.ones(n_edges, dtype=torch.bool)
+        none_kept = torch.zeros(n_edges, dtype=torch.bool)
+        fp_all, fm_all = hard_fidelity(model, sub, target_idx, all_kept)
+        fp_none, fm_none = hard_fidelity(model, sub, target_idx, none_kept)
+        assert abs(fm_all) < 1e-6
+        assert abs(fp_none) < 1e-6
+        assert abs(fp_all - fm_none) < 1e-6
+
+    def test_attention_topk_pairs_rank_real_edges(self) -> None:
+        from collusiongraph.explain.explainer_ablation import attention_topk_pairs
+        from collusiongraph.explain.explainer_runner import _ego
+
+        torch.manual_seed(0)
+        data = tiny_graph_data()
+        model = make_model("gatv2", in_dim=4, hidden_dim=8, num_layers=2, heads=2, dropout=0.0)
+        sub, _ = _ego(data, 5, 2)
+        pairs = attention_topk_pairs(model, sub, top_edges=3)
+        assert len(pairs) == 3
+        real = {
+            (sub.node_ids[int(s)], sub.node_ids[int(d)]) for s, d in sub.edge_index.t().tolist()
+        }
+        assert set(pairs) <= real  # self-loop attention entries never leak in
+
+    # end-to-end coverage (train → queue → three-arm ablation report) lives in
+    # tests/integration/test_gnn_pipeline.py::test_explainer_ablation_end_to_end
+
+
 def fan_in_alert_fixture():
     rng = np.random.default_rng(0)
     nodes_f, edges_f, members = FIN["fan_in"]("t", rng, 10, 20)

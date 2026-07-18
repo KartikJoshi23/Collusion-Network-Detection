@@ -225,24 +225,23 @@ def run_explanations(config: dict[str, Any] | str | Path) -> dict[str, Any]:
     return summary
 
 
-def _explain_top_members(
+def load_supervised_for_explaining(
     cfg: dict[str, Any],
     store: GraphStore,
     nodes: pl.DataFrame,
     edges: pl.DataFrame,
-    alerts: pl.DataFrame,
-) -> tuple[dict[str, Any], dict[str, dict[str, float]], dict[str, str]]:
-    """GNNExplainer over each alert's highest-scored member (§4.4: k ≤ 200
-    bounds the per-alert optimization budget). Returns (explanations by node,
-    attention summaries by node, top member by alert id)."""
+) -> tuple[torch.nn.Module, Any]:
+    """Checkpointed supervised model + inference graph, under the SAME frozen
+    normalization the checkpoint was trained and scored with (audit F3) —
+    never re-fit on the explained graph. Shared by the bundle writer and the
+    §7-step-27 explainer ablation so both explain the identical model/graph."""
     model_cfg = dict(cfg["supervised_model"])
     checkpoint = model_cfg.pop("checkpoint")
     name = model_cfg.pop("name")
     model_cfg.pop("features", None)  # feature kind comes from the checkpoint's stats
+    model_cfg.pop("explainer", None)  # runner choice, not a model kwarg
     n_raw = store.read_meta(cfg["dataset"]).get("n_features", 0)
 
-    # the model is explained under the SAME frozen normalization it was
-    # trained and scored with (audit F3) — never re-fit on the explained graph
     from collusiongraph.features import apply_zscore, structural_features
     from collusiongraph.training.ensemble_run import load_feature_stats
 
@@ -257,8 +256,11 @@ def _explain_top_members(
     )
     model.load_state_dict(torch.load(checkpoint, weights_only=True))
     model.eval()
+    return model, data
 
-    scores = pl.read_parquet(cfg["member_scores"])
+
+def top_members_of(alerts: pl.DataFrame, scores: pl.DataFrame) -> dict[str, str]:
+    """Each alert's highest-scored member — the node the bundle explains."""
     top_member_of: dict[str, str] = {}
     for alert in alerts.iter_rows(named=True):
         member_scores = scores.filter(
@@ -268,16 +270,52 @@ def _explain_top_members(
             top_member_of[alert["alert_id"]] = member_scores.sort("score", descending=True)[
                 "node_id"
             ][0]
+    return top_member_of
+
+
+def _explain_top_members(
+    cfg: dict[str, Any],
+    store: GraphStore,
+    nodes: pl.DataFrame,
+    edges: pl.DataFrame,
+    alerts: pl.DataFrame,
+) -> tuple[dict[str, Any], dict[str, dict[str, float]], dict[str, str]]:
+    """Mask-based explainer over each alert's highest-scored member (§4.4:
+    k ≤ 200 bounds the per-alert budget). `supervised_model.explainer` picks
+    the runner: "gnnexplainer" (default, per-node optimization) or
+    "pgexplainer" (amortized, §7 step 27). Returns (explanations by node,
+    attention summaries by node, top member by alert id)."""
+    model, data = load_supervised_for_explaining(cfg, store, nodes, edges)
+    top_member_of = top_members_of(alerts, pl.read_parquet(cfg["member_scores"]))
     targets = sorted(set(top_member_of.values()))
-    explanations = explain_nodes(
-        model,
-        data,
-        targets,
-        num_hops=cfg.get("num_hops", 2),
-        epochs=cfg.get("explainer_epochs", 100),
-        top_edges=cfg.get("top_edges", 20),
-        seed=cfg.get("seed", 0),
-    )
+
+    explainer_kind = cfg["supervised_model"].get("explainer", "gnnexplainer")
+    if explainer_kind == "pgexplainer":
+        from collusiongraph.explain.pgexplainer_runner import explain_nodes_pg
+
+        pg_cfg = cfg.get("pg", {})
+        explanations: dict[str, Any] = explain_nodes_pg(
+            model,
+            data,
+            targets,
+            num_hops=cfg.get("num_hops", 2),
+            train_epochs=pg_cfg.get("train_epochs", 30),
+            lr=pg_cfg.get("lr", 0.003),
+            top_edges=cfg.get("top_edges", 20),
+            seed=cfg.get("seed", 0),
+        )
+    elif explainer_kind == "gnnexplainer":
+        explanations = explain_nodes(
+            model,
+            data,
+            targets,
+            num_hops=cfg.get("num_hops", 2),
+            epochs=cfg.get("explainer_epochs", 100),
+            top_edges=cfg.get("top_edges", 20),
+            seed=cfg.get("seed", 0),
+        )
+    else:
+        raise ValueError(f"unknown supervised_model.explainer: {explainer_kind!r}")
     from collusiongraph.models.gnn import GATv2
 
     attention = attention_summaries(model, data, targets) if isinstance(model, GATv2) else {}

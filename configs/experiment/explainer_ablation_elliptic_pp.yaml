@@ -1,0 +1,30 @@
+# §7 step 27 (Phase 2) — explainer fidelity ablation on the SAME top-50
+# ensemble-queue alert members the published bundles explain: GNNExplainer
+# (per-node optimization) vs PGExplainer (amortized) vs attention-only,
+# scored with the uniform hard-mask fidelity (see explain/explainer_ablation.py).
+# Motivation: fidelity_sane is false on 38/50 published GNNExplainer bundles.
+dataset: elliptic_pp
+domain: financial
+store_root: data/interim
+alerts: eval_outputs/elliptic_pp/alert_queue_ensemble/alerts.parquet
+member_scores: eval_outputs/elliptic_pp/ensemble/scores_ensemble_calibrated.parquet
+output_dir: eval_outputs/elliptic_pp/explainer_ablation
+top_k: 50
+seed: 0
+
+supervised_model:
+  name: gatv2
+  checkpoint: eval_outputs/elliptic_pp/gnn_gatv2_focal/model.pt
+  features: raw
+  hidden_dim: 64
+  num_layers: 2
+  heads: 4
+  dropout: 0.3
+
+arms: [gnn_explainer, pg_explainer, attention]
+num_hops: 2
+explainer_epochs: 100 # GNNExplainer per-node budget (matches the bundle run)
+top_edges: 20
+pg:
+  train_epochs: 30
+  lr: 0.003

@@ -102,9 +102,16 @@ def _cmd_score(args: argparse.Namespace) -> int:
 
 
 def _cmd_explain(args: argparse.Namespace) -> int:
+    from collusiongraph.eval import load_config
     from collusiongraph.explain import run_explanations
+    from collusiongraph.explain.explainer_ablation import run_explainer_ablation
 
-    summary = run_explanations(args.config)
+    cfg = load_config(args.config)
+    if "arms" in cfg:  # §7 step 27: explainer fidelity ablation config shape
+        report = run_explainer_ablation(cfg)
+        print(json.dumps({k: v for k, v in report.items() if k != "per_node"}, indent=2))
+        return 0
+    summary = run_explanations(cfg)
     print(json.dumps({k: v for k, v in summary.items() if k != "bundles"}, indent=2))
     return 0
 

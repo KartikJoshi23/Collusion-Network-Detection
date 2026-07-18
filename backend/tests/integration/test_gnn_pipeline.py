@@ -133,6 +133,90 @@ def test_train_score_queue_eval_end_to_end(tmp_path) -> None:
     assert ((alerts["risk_score"] >= 0.0) & (alerts["risk_score"] <= 1.0)).all()
 
 
+def test_explainer_ablation_end_to_end(tmp_path) -> None:
+    """§7 step 27 wiring: train a tiny GATv2 → queue → three-arm explainer
+    ablation over the queue's top members; asserts report structure and the
+    uniform hard-fidelity bounds, not explainer quality."""
+    store = synthetic_financial_store(tmp_path)
+    out_dir = tmp_path / "run"
+    train_gnn(
+        {
+            "dataset": "toyfin",
+            "store_root": str(store.root),
+            "output_dir": str(out_dir),
+            "seed": 0,
+            "features": "raw",
+            "split": {"loss_end": 2, "train_end": 3, "test_start": 5},
+            "model": {
+                "name": "gatv2",
+                "hidden_dim": 8,
+                "num_layers": 2,
+                "heads": 2,
+                "dropout": 0.0,
+            },
+            "loss": {"name": "focal", "gamma": 2.0},
+            "epochs": 30,
+            "patience": 10,
+            "lr": 0.05,
+            "budgets": [4],
+        }
+    )
+    build_alert_queue(
+        {
+            "dataset": "toyfin",
+            "domain": "financial",
+            "store_root": str(store.root),
+            "scores_dir": str(out_dir),
+            "output_dir": str(out_dir / "alerts"),
+            "split": {"test_start": 5},
+            "seed": 0,
+            "budgets": [2],
+            "model_run_id": "it0",
+        }
+    )
+
+    from collusiongraph.explain import run_explainer_ablation
+
+    report = run_explainer_ablation(
+        {
+            "dataset": "toyfin",
+            "domain": "financial",
+            "store_root": str(store.root),
+            "alerts": str(out_dir / "alerts" / "alerts.parquet"),
+            "member_scores": str(out_dir / "scores_test.parquet"),
+            "output_dir": str(out_dir / "ablation"),
+            "top_k": 2,
+            "seed": 0,
+            "supervised_model": {
+                "name": "gatv2",
+                "checkpoint": str(out_dir / "model.pt"),
+                "hidden_dim": 8,
+                "num_layers": 2,
+                "heads": 2,
+                "dropout": 0.0,
+            },
+            "arms": ["gnn_explainer", "pg_explainer", "attention"],
+            "explainer_epochs": 10,
+            "top_edges": 4,
+            "pg": {"train_epochs": 5, "lr": 0.003},
+        }
+    )
+    assert (out_dir / "ablation" / "explainer_ablation.json").is_file()
+    for arm in ("gnn_explainer", "pg_explainer", "attention"):
+        summary = report["arms"][arm]
+        assert summary["n_nodes"] >= 1
+        assert 0.0 <= summary["hard_sane_rate"] <= 1.0
+        # hard fidelities are probability deltas
+        assert -1.0 <= summary["hard_fidelity_plus_mean"] <= 1.0
+        assert -1.0 <= summary["hard_fidelity_minus_mean"] <= 1.0
+    # PyG per-node fidelity rides along for the mask-based arms only
+    assert "pyg_sane_rate" in report["arms"]["gnn_explainer"]
+    assert "pyg_sane_rate" in report["arms"]["pg_explainer"]
+    assert "pyg_sane_rate" not in report["arms"]["attention"]
+    for row in report["per_node"]:
+        assert row["n_kept_edges"] <= 4
+
+
 def test_training_is_blind_to_test_period_edges(tmp_path) -> None:
     """§9.1 leakage, end to end: adding test-period edges must not change the
     trained model's validation trajectory or its scores on train-period nodes."""
