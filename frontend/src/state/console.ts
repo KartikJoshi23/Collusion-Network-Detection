@@ -22,15 +22,36 @@ interface ConsoleState {
   setView: (v: ViewId) => void;
 }
 
+const VIEW_IDS: ViewId[] = ["overview", "queue", "explorer", "case", "lab"];
+
+// Deep-link support (demo script §5.4): /?view=explorer&alert=<id> opens the
+// console directly on a view / alert.
+function initialFromUrl(): { view: ViewId; alert: string | undefined } {
+  const params = new URLSearchParams(window.location.search);
+  const view = params.get("view") as ViewId | null;
+  return {
+    view: view && VIEW_IDS.includes(view) ? view : "overview",
+    alert: params.get("alert") ?? undefined,
+  };
+}
+
+const initial = initialFromUrl();
+
 export const useConsole = create<ConsoleState>((set) => ({
   domain: "financial",
   dataset: undefined,
   budget: 50,
-  selectedAlertId: undefined,
-  view: "overview",
+  selectedAlertId: initial.alert,
+  view: initial.view,
   setDomain: (domain) =>
     set({ domain, dataset: undefined, selectedAlertId: undefined }),
-  setDataset: (dataset) => set({ dataset, selectedAlertId: undefined }),
+  // Switching datasets clears the selection; the INITIAL auto-select (dataset
+  // undefined → first) must not, or deep-linked alerts would be wiped.
+  setDataset: (dataset) =>
+    set((s) => ({
+      dataset,
+      selectedAlertId: s.dataset === undefined ? s.selectedAlertId : undefined,
+    })),
   setBudget: (budget) => set({ budget }),
   selectAlert: (selectedAlertId) => set({ selectedAlertId }),
   setView: (view) => set({ view }),

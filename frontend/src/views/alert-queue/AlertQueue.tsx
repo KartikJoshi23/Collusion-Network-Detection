@@ -1,7 +1,9 @@
+import { motion } from "motion/react";
 import { useAlerts } from "../../api/hooks";
 import type { AlertRow } from "../../api/types";
 import { BudgetSlider } from "../../components/ui/BudgetSlider";
 import { MotifChip, RiskChip } from "../../components/ui/Chips";
+import { Glass } from "../../components/ui/Glass";
 import { Empty, ErrorState, Loading } from "../../components/ui/States";
 import { fmtTimeWindow, shortId } from "../../lib/format";
 import { useConsole } from "../../state/console";
@@ -22,15 +24,14 @@ export function AlertQueue() {
   };
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex items-center gap-4 border-b border-hairline bg-bg-1 px-4 py-2">
-        <h2 className="text-sm font-medium">Alert Queue</h2>
+    <Glass className="flex h-full flex-col overflow-hidden">
+      <div className="flex items-center gap-4 border-b border-hairline/60 px-4 py-2.5">
+        <h2 className="display text-sm font-semibold">Alert Queue</h2>
         <BudgetSlider />
         {data && (
           <span className="mono ml-auto text-xs text-text-2">
-            showing{" "}
-            <span className="text-text-0">{data.k_effective}</span> of top{" "}
-            {budget}
+            showing <span className="text-accent">{data.k_effective}</span> of
+            top {budget}
           </span>
         )}
       </div>
@@ -52,7 +53,14 @@ export function AlertQueue() {
           />
         ) : (
           <table className="w-full border-collapse text-sm">
-            <thead className="sticky top-0 bg-bg-1 text-left text-xs text-text-2">
+            <thead
+              className="sticky top-0 z-10 text-left text-xs text-text-2"
+              style={{
+                background:
+                  "color-mix(in srgb, var(--bg-1) 88%, var(--accent))",
+                backdropFilter: "blur(10px)",
+              }}
+            >
               <tr className="border-b border-hairline">
                 <th className="px-4 py-2 font-medium">#</th>
                 <th className="px-4 py-2 font-medium">Risk</th>
@@ -63,14 +71,27 @@ export function AlertQueue() {
               </tr>
             </thead>
             <tbody>
-              {data.alerts.map((a) => {
+              {data.alerts.map((a, i) => {
                 const active = a.alert_id === selected;
                 return (
-                  <tr
+                  <motion.tr
                     key={a.alert_id}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{
+                      delay: Math.min(i, 14) * 0.022,
+                      duration: 0.25,
+                    }}
                     onClick={() => openAlert(a)}
-                    className="cursor-pointer border-b border-hairline/50 transition-colors hover:bg-bg-2"
-                    style={active ? { background: "var(--accent-dim)" } : undefined}
+                    className="cursor-pointer border-b border-hairline/40 transition-colors hover:bg-bg-2/60"
+                    style={
+                      active
+                        ? {
+                            background: "var(--accent-dim)",
+                            boxShadow: "inset 2px 0 0 var(--accent)",
+                          }
+                        : undefined
+                    }
                   >
                     <td className="mono px-4 py-1.5 text-text-2">{a.rank}</td>
                     <td className="px-4 py-1.5">
@@ -88,13 +109,13 @@ export function AlertQueue() {
                     <td className="mono px-4 py-1.5 text-text-2">
                       {shortId(a.alert_id, 22)}
                     </td>
-                  </tr>
+                  </motion.tr>
                 );
               })}
             </tbody>
           </table>
         )}
       </div>
-    </div>
+    </Glass>
   );
 }

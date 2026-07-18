@@ -1,4 +1,6 @@
+import { motion } from "motion/react";
 import { useMetrics } from "../../api/hooks";
+import { Glass } from "../../components/ui/Glass";
 import { Empty, ErrorState, Loading } from "../../components/ui/States";
 import { useConsole } from "../../state/console";
 
@@ -22,17 +24,23 @@ export function ModelLab() {
   if (!data) return null;
 
   return (
-    <div className="min-h-0 flex-1 overflow-auto p-4">
-      <h2 className="mb-3 text-sm font-medium">Model Lab</h2>
+    <div className="h-full min-h-0 overflow-auto p-2">
+      <h2 className="display mb-3 px-2 pt-2 text-lg font-semibold">
+        Model <span className="text-grad">Lab</span>
+      </h2>
       <div className="grid gap-4">
-        {data.runs.map((run) => (
-          <div
+        {data.runs.map((run, i) => (
+          <motion.div
             key={run.source}
-            className="rounded-lg border border-hairline bg-bg-1 p-3"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.06, duration: 0.3 }}
           >
-            <div className="mono mb-2 text-xs text-text-2">{run.source}</div>
-            <MetricsTree node={run.metrics} />
-          </div>
+            <Glass className="p-3.5">
+              <div className="mono mb-2.5 text-xs text-text-2">{run.source}</div>
+              <MetricsTree node={run.metrics} />
+            </Glass>
+          </motion.div>
         ))}
       </div>
     </div>
@@ -58,12 +66,16 @@ function MetricsTree({ node }: { node: Record<string, unknown> }) {
           {scalars.map(([k, v]) => (
             <div
               key={k}
-              className="min-w-24 rounded-md border border-hairline bg-bg-2 px-2.5 py-1.5"
+              className="min-w-24 rounded-md px-2.5 py-1.5"
+              style={{
+                background: "var(--bg-2)",
+                boxShadow: "inset 0 0 0 1px var(--hairline)",
+              }}
             >
               <div className="text-[10px] uppercase tracking-wide text-text-2">
                 {k}
               </div>
-              <div className="mono text-sm text-text-0">
+              <div className="mono text-sm" style={{ color: "var(--accent)" }}>
                 {typeof v === "number" ? v.toFixed(4) : v}
               </div>
             </div>
@@ -71,8 +83,17 @@ function MetricsTree({ node }: { node: Record<string, unknown> }) {
         </div>
       )}
       {nested.map(([k, v]) => (
-        <details key={k} className="rounded-md border border-hairline bg-bg-2 p-2">
-          <summary className="cursor-pointer text-xs text-text-1">{k}</summary>
+        <details
+          key={k}
+          className="rounded-md p-2"
+          style={{
+            background: "var(--bg-2)",
+            boxShadow: "inset 0 0 0 1px var(--hairline)",
+          }}
+        >
+          <summary className="cursor-pointer text-xs text-text-1 transition-colors hover:text-accent">
+            {k}
+          </summary>
           <div className="mt-2">
             <MetricsTree node={v} />
           </div>
