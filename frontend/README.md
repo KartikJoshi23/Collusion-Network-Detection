@@ -3,6 +3,13 @@
 React + TypeScript + Vite investigator console (§5). Dark-only "intelligence
 console" design language; consumes the read-only artifact API (`backend/api`).
 
+> ⚠️ **VISUAL OVERHAUL REQUIRED (2026-07-18).** The stakeholder rejected the current look.
+> This code is functionally complete and builds green, but the presentation must be redesigned
+> — live animated background, Framer Motion (`motion` is installed but unused), glass/depth,
+> impressive project-themed palette. **Read [`../docs/frontend_overhaul.md`](../docs/frontend_overhaul.md)
+> before touching this — it lists what to reuse, what to build, and the hard constraints
+> (ethics caveat, green CI, read-only API, working demo).**
+
 ## Develop
 
 ```bash

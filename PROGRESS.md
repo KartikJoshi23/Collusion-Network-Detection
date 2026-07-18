@@ -8,13 +8,26 @@
 > metrics deflate rule/screen P@k; queue metrics shift accordingly.
 
 ## Current milestone
+
+> ⚠️ **FRONTEND OVERHAUL REQUIRED — stakeholder rejected the UI (2026-07-18). This is the
+> collaborator's next task; see [`docs/frontend_overhaul.md`](docs/frontend_overhaul.md) for the
+> full brief (verbatim feedback + what's reusable + what to build + hard constraints).**
+> The frontend is *functionally* complete (all five views wired to the live API, `npm run build`
+> green, demo works) but its **visual design was rejected** and must be completely overhauled:
+> live animated backgrounds, Framer Motion (the `motion` dep is installed but unused), glass/depth,
+> an impressive project-themed color scheme (collusion-network / graph-intelligence). **Do NOT
+> weaken the ethics caveat, break the build/CI, or change the read-only API contract.** No
+> half-written overhaul code is in the tree — the baseline at `a7ed4db` is clean, green, and
+> functionally whole; build the visual layer on top of it.
+
 **M5 COMPLETE — MVP exit criterion met [master, 2026-07-18].** Clone → `poe demo` (+ `npm run dev`)
 or `docker compose up` → dashboard → ranked alert → highlighted subgraph → explanation, both
 domains. All five §5.3 views live and verified against the read-only API; 235 backend tests +
-frontend build/test green. **Phase 1 MVP (M0–M5) done.** ⛔ Plan stop-point: MVP review with the
-stakeholder before Phase-2 development (§7). Next when resumed: Phase 2 — Weeks 9–10 model depth
-(line-graph/PNA/PGExplainer) then Week 11 Copilot (MC), or whatever the stakeholder review directs.
-Detail of prior milestones below.
+frontend build/test green. **Phase 1 MVP (M0–M5) done** *(functionally; the UI visual design is
+rejected and pending overhaul — see banner above)*. ⛔ Plan stop-point: MVP review with the
+stakeholder before Phase-2 development (§7). Next when resumed: **frontend overhaul (top priority,
+collaborator)**, then Phase 2 — Weeks 9–10 model depth (line-graph/PNA/PGExplainer), Week 11
+Copilot (MC). Detail of prior milestones below.
 
 **M4 COMPLETE** (§7 definition: "Every top-k alert on both domains carries a validated explanation
 bundle" — Elliptic++ 50/50 bundles with GNNExplainer minimal subgraphs + fidelity, 24 with matched
@@ -90,7 +103,13 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## In-flight
 <!-- exactly what is unfinished, where, why, and which machine/branch has it -->
-- Nothing mid-implementation. Weeks 3–6 stacks + the audit fix pass are merged to main; feature branches deleted.
+- **Frontend visual overhaul: NOT STARTED, owned by the collaborator next.** The current UI is
+  functionally complete but visually rejected (see Current-milestone banner + Next action 1 +
+  `docs/frontend_overhaul.md`). **No half-written overhaul code is in the tree** — a partial
+  `index.html` font fragment started on master was reverted so the collaborator inherits a clean,
+  green (`npm run build` OK, ~100 kB gzip JS), CI-verified baseline at `a7ed4db`. `motion` is
+  installed but imported nowhere; there is no animated-background component yet.
+- Nothing else mid-implementation. Weeks 3–6 stacks + the audit fix pass are merged to main; feature branches deleted.
 - Post-audit follow-ups queued in Next actions: explicit test-time-adaptation ablation (the F3 finding), PGExplainer for the 41/50 fidelity-insane explanations, HeteroExplanation (R12), AMLworld activation.
 - Stratified (minority-enriched) neighbor sampling and `NeighborLoader` minibatching are deferred to the AMLworld run (full-batch is faster at Elliptic++ scale on CPU); the imbalance ablation shipped is focal-vs-weighted-CE.
 - Procurement top-% budgets were resolved manually for Mendeley (4/18/36 = top 1/5/10% of the 363-firm test queue, in the experiment config); automatic percent→k resolution inside `run_eval` remains a nice-to-have.
@@ -98,16 +117,42 @@ still public 2026-07-15 — anonymous clone succeeded).
 - AMLworld raw data is absent on laptop-B (Kaggle credentials are per-machine; script reports `blocked` as designed). Financial pack is untested at AMLworld scale (5M edges) — see Next action 5.
 
 ## Next actions (ordered, self-contained)
-1. Week 8 (§7 step 23): frontend scaffold — Vite/TS/Tailwind v4 + design tokens per §5.2 in `frontend/`; layout shell, domain toggle, dataset selector, loading/error/empty states; wire to the live API (`collusiongraph serve`, endpoints in `backend/api/app.py`; generate the TS client from `/openapi.json`).
-2. Week 8 (§7 step 24): Alert Queue (virtualized, budget slider) → Graph Explorer (Sigma.js ego-networks via `/subgraph/{alert_id}`) → Case Detail dossier (`/explanations/{alert_id}`) → Model Lab charts with SVG/PNG export.
-3. Week 8 (§7 step 25): polish + demo script + `poe demo` + finish the compose file's frontend service (nginx serving the build, proxying /api) → **M5 exit criterion**: clone → one command → dashboard → alert → explained subgraph, both domains.
-4. Before M5 demo: produce serving artifacts on the demo machine (alert queues for elliptic_pp + mendeley_eu exist as configs; run `collusiongraph score`/`explain`, then point `eval_outputs/serving.json` at them).
-5. **[user]** Rotate/revoke the OpenAI API key exposed in `Gen-AI Chatbot/.../.env` AND embedded in the original `FIX_FRONTEND.md` (two exposures) at platform.openai.com.
+1. **[collaborator — TOP PRIORITY] FRONTEND OVERHAUL.** The stakeholder rejected the current UI
+   (verbatim feedback in the Decision log + [`docs/frontend_overhaul.md`](docs/frontend_overhaul.md)).
+   Deliver a modernised, presentable UI: **live animated background(s)** (a themed network-graph
+   canvas — component does not exist yet, e.g. `src/components/bg/NetworkBackground.tsx`),
+   **Framer Motion** (the `motion` dep is installed but used NOWHERE — add view transitions in
+   `src/app/ViewRouter.tsx`, nav indicator in `App.tsx`, KPI count-up, queue stagger),
+   **glass/depth panels**, an **impressive project-themed color scheme** (extend
+   `src/styles/tokens.css`), motif glyphs, and self-hosted fonts (Inter/JetBrains Mono are
+   referenced but never loaded — prefer `@fontsource` over a Google Fonts `<link>` for offline
+   demo safety). Reuse the existing API layer, state, and all five wired views — only the
+   presentation changes. HARD CONSTRAINTS: keep the ethics caveat on every screen, keep
+   `npm run build` + CI green, keep the API read-only, keep `docker compose up` working. Full
+   file-by-file guidance in `docs/frontend_overhaul.md`.
+2. Before any demo: produce serving artifacts on the demo machine — run `collusiongraph score` /
+   `explain` for elliptic_pp + mendeley_eu (configs exist), then point `eval_outputs/serving.json`
+   at the produced `alerts.parquet` + `explanations/` dirs (note: `serving.json` currently lists
+   `"explanations": null` for both — set these once bundles are generated so the Case Detail view
+   has data).
+3. **[user]** Rotate/revoke the OpenAI API key exposed in `Gen-AI Chatbot/.../.env` AND embedded in the original `FIX_FRONTEND.md` (two exposures) at platform.openai.com.
 6. **[user]** Make the GitHub repo private (plan requires a private repo): repo Settings → General → Danger Zone → Change visibility, or `gh repo edit KartikJoshi23/Collusion-Network-Detection --visibility private` after `gh auth login`. Also consider rotating the Kaggle token that was shared in a chat session.
 7. Deferred small items: HeteroExplanation for R-GCN (R12 finding — mask-based explainer is GATv2-only); AMLworld injection-recovery calibration + feature packs + baselines + `NeighborLoader` training on a machine with Kaggle credentials; wire the datasets' **precomputed screens** through as B4 inputs (Mendeley `lot_bidscount`/`relative_value`, García screen columns in `raw_attrs`); automatic percent→k budget resolution in `run_eval`; Mendeley R-GCN follow-up (firm+tender joint supervision, García co-bid enrichment) before concluding graph signal is absent; degree-preserving null-model z-scores for the structural floor (Phase 2).
 
 ## Decision log
 <!-- - YYYY-MM-DD · decision · rationale · plan section affected -->
+- 2026-07-18 · **[master → collaborator handoff] FRONTEND OVERHAUL directed by stakeholder.** Verbatim
+  feedback: *"The UI looks completely pathetic, it is a complete piece of useless frontend, the
+  frontend should be very modernised with modern tech used, this is just a thing which I cannot
+  present at all, I didn't liked it all. It needs to have live animated backgrounds, framer,
+  objects, impressive color scheme, make UI related to the theme and topic of the project as well,
+  it needs a complete overhaul, this is completely useless."* Action: the functionally-complete but
+  visually-rejected frontend (Weeks 8A–8C, `b4abe37`/`7a54f28`/`a7ed4db`) is handed to the
+  collaborator for a full visual redesign per `docs/frontend_overhaul.md` (required tech: animated
+  network-graph background, Framer Motion, glassmorphism, themed neon palette). Constraints held:
+  ethics caveat on every screen, CI/build green, read-only API contract, working demo. A partial
+  `index.html` overhaul fragment started on master was **reverted** to keep the handoff baseline
+  clean — no half-code in the tree · §5.2/§5.3, R11.
 - 2026-07-17 · **[master] AUDIT of this session's own commits (0c7ca6c..7cebc6b), 3 fixes.** (1) **Security — path traversal in `/explanations/{alert_id}`**: an unvalidated alert_id mapped to a filename; a backslash-encoded id (`..%5Csecret`) escaped the bundles dir and leaked an arbitrary JSON file on Windows (proven, then fixed). Fix: charset allowlist + resolved-path containment, regression test with 4 payloads. (2) **Robustness — cross-domain probe** silently loaded non-SAGE / fusion-encoder source weights into a plain `GraphSAGE` via leftover kwargs; now raises if the source encoder isn't GraphSAGE and strips fusion kwargs. (3) **Deployment doc** corrected to t3.micro per stakeholder guidance (was t4g.small), with the 1 GB-RAM/swap caveat. Context-fusion column-order (span-slice vs z-scored frame) audited and confirmed correct · security, §4.4, docs/deployment.md.
 - 2026-07-17 · **[master] B-CF ABLATION VERDICT: gated context-fusion NOT adopted as default.** Seed-0, identical protocol on Elliptic++ (train≤34/test≥35): raw-only GATv2 (published) val 0.9508 / test AUC-PR 0.5318 / P@100 0.95; concat raw+structural val 0.9206 / test 0.3781 / P@100 0.80; **gated val 0.9483 / test 0.3242 / P@100 0.21**. The pre-registered "beats concat on val" rule technically fired — and is hereby recorded as a FLAWED selector: gated's val gain is validation overfitting (higher val, materially worse test under the t43 shift, R5). Two findings worth reporting: (a) adding the structural family to GATv2 input *hurts* test generalization on Elliptic++ regardless of fusion (shift-sensitive channel); (b) model selection on val AUC-PR is unreliable under temporal shift — multi-seed + shift-aware selection belongs in Phase 2. Default stays `fusion: concat`, published config stays raw-only; the encoder remains in-tree as ablation arm B-CF (negative result, honest per §4.4) · §4.4, A13, R5.
 - 2026-07-17 · **[master] Docker verified on Docker Desktop**: `docker/Dockerfile.api` builds at **815 MB** (torch-free, pinned by `test_serving_never_imports_torch`; vs ~3.5 GB with torch), container serves `/api/v1/domains` + `/datasets` from read-only artifact mounts with the caveat attached; smoke container removed after test. Compose blueprint at repo root (frontend joins Week 8, copilot Week 11) · docs/deployment.md, A14.
