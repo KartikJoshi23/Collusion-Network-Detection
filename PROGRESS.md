@@ -106,6 +106,21 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-20 · **§7 STEP 29 (iv) — LABEL-NOISE CURVE MEASURED, and it is the sharpest
+  val-pathology evidence yet: TEST AUC-PR RISES with train-label noise while val
+  collapses.** (4 rates × 3 seeds, GATv2-focal, protocol otherwise byte-identical —
+  the rate-0 anchor byte-matches campaign seeds 0–2:) clean 0.4827 ± 0.0616 (val 0.942)
+  → 5% flipped 0.5548 ± 0.1217 (val 0.767) → 10% 0.5852 ± 0.0428 (val 0.684) → **20%
+  0.5978 ± 0.0248 (val 0.569)** — with a fifth of train labels corrupted, the model
+  BEATS the clean multi-seed headline (0.598 vs 0.473) and its seed variance TIGHTENS.
+  Honest reading (recorded as a DIAGNOSTIC, not a training recommendation): supervision
+  noise regularizes against the t43 shift — clean-label training overfits the pre-shift
+  regime, and this is now the FOURTH independent measurement of that pathology (B-CF,
+  B-LG, multi-seed val-blindness, this curve). Paper implication: the temporal-shift
+  robustness story is stronger than the raw headline numbers; shift-aware selection (R5)
+  is the principled fix. Artifact:
+  `eval_outputs/elliptic_pp/label_noise_curve/noise_curve.json` (serves in the Model Lab
+  rigor section after the next artifact build) · [master]
 - 2026-07-20 · **DASHBOARD INTEGRATION — the Phase-2 rigor artifacts now SERVE and RENDER
   (§5.3 view 5 extension).** *Backend:* `ServingEntry` gains a `rigor:` block (name →
   JSON path); new read-only `GET /datasets/{ds}/rigor` (absent files omitted, never
@@ -486,18 +501,14 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## In-flight
 <!-- exactly what is unfinished, where, why, and which machine/branch has it -->
-- ~~5-seed GATv2 headline campaign~~ **DONE — 0.4729 ± 0.0525.** ~~Ensemble multi-seed
-  run~~ **DONE — ensemble_calibrated 0.4434 ± 0.0501, rank collapse seed-invariant (see
-  Completed).** STILL RUNNING on master: the label-noise curve —
-  `collusiongraph train -c configs/experiment/label_noise_elliptic_pp.yaml`
-  (12 grid points × ~18 min; started ~20:50, ETA ≈ 00:35; RESUMABLE — re-run the same
-  command to continue if interrupted). Record `noise_curve.json` in this ledger when it
-  lands.
-- **QUEUED behind the noise curve (step-32 ablation runs, ~17 min each, master):**
+- ~~5-seed GATv2 campaign~~ ~~ensemble multi-seed~~ ~~label-noise curve~~ **ALL DONE
+  (see Completed — step 29 is fully measured).** STILL RUNNING on master: the two
+  step-32 ablation arms (sequential, ~35 min total) —
   `collusiongraph train -c configs/experiment/gnn_elliptic_pp_gatv2_focal_unidir.yaml`
-  and `collusiongraph train -c configs/experiment/gnn_elliptic_pp_gatv2_wce.yaml` —
-  record both against the seed-0 focal baseline 0.5492 (single-seed ablation-table
-  convention per M2; the multi-seed caveat from the campaign entry applies).
+  then `...gnn_elliptic_pp_gatv2_wce.yaml`. Record both against the seed-0 focal
+  baseline 0.5492 (single-seed ablation-table convention per M2; multi-seed caveat
+  applies), then re-run `poe demo-artifacts` so the noise curve + any new artifacts
+  join the served rigor block.
 - ~~Frontend overhaul V1 rejected → V2 required~~ **V2 DELIVERED [laptop-C] and verified on
   master (2026-07-18, see Completed); awaiting stakeholder review #3.** Nothing half-written.
   Per the stakeholder's 2026-07-18 instruction (Decision log), further UI iteration is
