@@ -1,0 +1,35 @@
+# §7 step 29 — multi-seed (≥5) rerun of the Mendeley R-GCN headline
+# (published seed-0 test AUC-PR 0.2731 vs prevalence 0.358 — the honest
+# negative). Protocol byte-identical to gnn_mendeley_rgcn.yaml; the seed_0
+# rerun doubles as a same-machine reproduction check. Resumable.
+dataset: mendeley_eu
+store_root: data/interim
+output_dir: eval_outputs/mendeley_eu/gnn_rgcn_focal_multiseed
+multiseed: true
+seeds: [0, 1, 2, 3, 4]
+features: structural
+node_type: firm
+
+split:
+  loss_end: 2010
+  train_end: 2013
+  test_start: 2014
+
+model:
+  name: rgcn
+  hidden_dim: 64
+  num_layers: 2
+  dropout: 0.3
+
+loss:
+  name: focal
+  gamma: 2.0
+
+lr: 0.01
+weight_decay: 0.0005
+epochs: 300
+patience: 30
+budgets: [4, 18, 36] # top 1/5/10% of the 363-firm test queue (M1 convention)
+
+# audit F1: training/calibration targets use award-derived labels AT train_end
+train_label_policy: mendeley_as_of

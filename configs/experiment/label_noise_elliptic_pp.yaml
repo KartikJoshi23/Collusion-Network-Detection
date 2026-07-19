@@ -1,0 +1,36 @@
+# §7 step 29 (iv) — label-noise robustness curve on the Elliptic++ headline
+# (GATv2-focal raw, protocol byte-identical to the published run). Flips a
+# seeded fraction of confirmed TRAIN-period labels (loss AND val pools live
+# with the noise — modeling noisy ground truth); test evaluation reads the
+# stored labels untouched (pinned by test). Rate 0.0 is the clean anchor.
+# COST: each grid point is a full GATv2 train (~20-40 min CPU) — 12 points
+# ≈ 4-8 h; the runner is RESUMABLE (re-run the same command to continue).
+dataset: elliptic_pp
+store_root: data/interim
+output_dir: eval_outputs/elliptic_pp/label_noise_curve
+label_noise_curve: true
+rates: [0.0, 0.05, 0.1, 0.2]
+seeds: [0, 1, 2]
+features: raw
+
+split:
+  loss_end: 29
+  train_end: 34
+  test_start: 35
+
+model:
+  name: gatv2
+  hidden_dim: 64
+  num_layers: 2
+  heads: 4
+  dropout: 0.3
+
+loss:
+  name: focal
+  gamma: 2.0
+
+lr: 0.005
+weight_decay: 0.0005
+epochs: 200
+patience: 20
+budgets: [50, 100, 200]

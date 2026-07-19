@@ -23,14 +23,14 @@ from .ensemble_run import run_ensemble, run_injection_recovery
 
 __all__ += ["run_ensemble", "run_injection_recovery"]
 
-from .labels import resolve_train_labels  # noqa: E402
+from .labels import apply_label_noise, resolve_train_labels  # noqa: E402
 
-__all__ += ["resolve_train_labels"]
+__all__ += ["apply_label_noise", "resolve_train_labels"]
 
 from .transfer_run import run_cross_domain_probe, run_loco_matrix, run_loco_transfer  # noqa: E402
 
 __all__ += ["run_cross_domain_probe", "run_loco_matrix", "run_loco_transfer"]
 
-from .multiseed import run_multiseed  # noqa: E402
+from .multiseed import run_label_noise, run_multiseed  # noqa: E402
 
-__all__ += ["run_multiseed"]
+__all__ += ["run_label_noise", "run_multiseed"]

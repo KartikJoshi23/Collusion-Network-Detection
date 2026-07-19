@@ -106,6 +106,24 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-19 · **§7 STEP 29 (iv) MACHINERY + Mendeley multi-seed MEASURED.** *(a) Mendeley
+  R-GCN 5-seed campaign (via `run_multiseed`, ~2 min/seed):* **0.2808 ± 0.0087 vs
+  prevalence 0.358** — seed_0 reproduces the published 0.2731 exactly, and the honest
+  negative is SEED-STABLE (every seed 0.273–0.291, all below prevalence, while val holds
+  0.943–0.952): the era-shift failure is structural, not seed luck. Config
+  `gnn_mendeley_rgcn_multiseed.yaml`, artifact
+  `eval_outputs/mendeley_eu/gnn_rgcn_focal_multiseed/multiseed.json`. *(b) Label-noise
+  robustness machinery (§7 step 29's last item):* `apply_label_noise` in
+  `training/labels.py` (seeded illicit↔licit flips of CONFIRMED rows only), wired into
+  `train_gnn` via `label_noise: {rate, seed}` AFTER train-label resolution — so it
+  composes with every `train_label_policy`, corrupts loss AND val pools (noisy-ground-
+  truth protocol), and cannot touch evaluation (the inference path reads stored labels;
+  **leakage pin: prevalence_baseline and n_confirmed are asserted identical between a
+  clean and a 40%-noised run**); `run_label_noise` curve runner (rates × seeds, resumable
+  with a grid-point guard, `noise_curve.json` aggregation); CLI dispatches
+  `label_noise_curve: true`; config `label_noise_elliptic_pp.yaml` (4 rates × 3 seeds).
+  9 new tests — **suite 326/326**. Real curve QUEUED (each point is a full GATv2 train;
+  see Next actions) · [master]
 - 2026-07-19 · **§7 STEP 29 (iii) — protocol-sensitivity sweeps, MEASURED on both
   published queues.** `eval/sensitivity.py` — config-driven grid (`sweep:` NMS
   `jaccard_thresholds` × hit-rule `min_fractions`) re-running the §4.5 alert pipeline on
@@ -435,11 +453,16 @@ still public 2026-07-15 — anonymous clone succeeded).
    GATv2 campaign is in flight (see In-flight — finish/aggregate it first)**; ~~(ii)
    bootstrap CIs + paired significance~~ **DONE — `eval/significance.py`, two headline
    comparisons measured (see Completed)**; ~~(iii) sensitivity curves~~ **DONE — both
-   published queues measured NMS-invariant and hit-rule-robust (see Completed)**.
-   Remaining step 29: multi-seed the calibrated ensemble (wrap `run_ensemble` the way
-   `run_multiseed` wraps `train_gnn` — members must re-run per seed) and the Mendeley
-   R-GCN; (iv) label-noise robustness on Elliptic++ (flip a fraction of train labels at
-   seeds, measure test degradation). Then step 28 remainder: cross-domain
+   published queues measured NMS-invariant and hit-rule-robust (see Completed)**;
+   ~~Mendeley R-GCN multi-seed~~ **DONE — 0.2808 ± 0.0087, negative is seed-stable (see
+   Completed)**; ~~(iv) label-noise machinery~~ **BUILT + tested; the real Elliptic curve
+   is QUEUED: run `uv run collusiongraph train -c
+   configs/experiment/label_noise_elliptic_pp.yaml` when the CPU is free (12 grid points
+   × ~20–40 min each; RESUMABLE — re-run the same command to continue; record the curve
+   in the ledger)**. Remaining step 29: multi-seed the calibrated ensemble (wrap
+   `run_ensemble` the way `run_multiseed` wraps `train_gnn`; the supervised member can
+   reuse the 5-seed campaign's `seed_*/` score dirs — only the unsupervised members and
+   calibration need per-seed reruns). Then step 28 remainder: cross-domain
    fine-tuning label-efficiency curves (CPU-feasible — extend `run_cross_domain_probe`
    with a fine-tune-k arm). Still GPU-gated (Colab/Kaggle): (b) **PNA + GIN+EU on AMLworld
    HI-Small** (Multi-GNN parity; wire `NeighborLoader` minibatching there — it needs

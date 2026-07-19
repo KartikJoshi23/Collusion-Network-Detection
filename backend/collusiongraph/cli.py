@@ -48,6 +48,8 @@ def select_train_runner(cfg: dict[str, Any]) -> str:
         return "ensemble"
     if cfg.get("multiseed"):
         return "multiseed"
+    if cfg.get("label_noise_curve"):
+        return "label_noise_curve"
     if cfg.get("loco_matrix"):
         return "loco_matrix"
     if "test_group" in cfg:
@@ -77,7 +79,7 @@ def _cmd_train(args: argparse.Namespace) -> int:
         run_injection_recovery,
         train_gnn,
     )
-    from collusiongraph.training.multiseed import run_multiseed
+    from collusiongraph.training.multiseed import run_label_noise, run_multiseed
     from collusiongraph.training.transfer_run import (
         run_cross_domain_probe,
         run_loco_matrix,
@@ -92,6 +94,7 @@ def _cmd_train(args: argparse.Namespace) -> int:
         "loco_transfer": run_loco_transfer,
         "loco_matrix": run_loco_matrix,
         "multiseed": run_multiseed,
+        "label_noise_curve": run_label_noise,
         "cross_domain_probe": run_cross_domain_probe,
     }
     cfg = load_config(args.config)

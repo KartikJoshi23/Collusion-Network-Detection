@@ -35,7 +35,7 @@ from collusiongraph.schema import GraphStore
 
 from .baseline_run import raw_feature_frame
 from .graph_build import build_graph, confirmed_mask_for
-from .labels import load_label_history, resolve_train_labels
+from .labels import apply_label_noise, load_label_history, resolve_train_labels
 from .losses import make_loss
 
 _TIME = "time_first_seen"
@@ -148,6 +148,14 @@ def train_gnn(config: dict[str, Any] | str | Path) -> dict[str, Any]:
     label_policy = cfg.get("train_label_policy", "static")
     history = load_label_history(store, dataset, label_policy)
     train_labels = resolve_train_labels(label_policy, labels, t_edges, train_end, history)
+    # §7 step 29 (iv): optional supervision-noise injection — TRAIN labels only
+    # (loss AND val pools live with the noise; evaluation reads stored labels)
+    noise_cfg = cfg.get("label_noise")
+    n_flipped = 0
+    if noise_cfg is not None:
+        train_labels, n_flipped = apply_label_noise(
+            train_labels, float(noise_cfg["rate"]), int(noise_cfg.get("seed", seed))
+        )
     # normalization stats are FIT on the train graph and FROZEN for inference
     # (F3): the model trains and scores under one normalization, not two
     train_raw, fusion_spans = _feature_frame(feature_kind, t_nodes, t_edges, train_end, n_raw)
@@ -260,6 +268,17 @@ def train_gnn(config: dict[str, Any] | str | Path) -> dict[str, Any]:
         "features": feature_kind,
         "loss": cfg.get("loss", {}),
         "seed": seed,
+        **(
+            {
+                "label_noise": {
+                    "rate": float(noise_cfg["rate"]),
+                    "seed": int(noise_cfg.get("seed", seed)),
+                    "n_flipped": n_flipped,
+                }
+            }
+            if noise_cfg is not None
+            else {}
+        ),
         "epochs_run": epoch + 1,
         "best_epoch": best_epoch,
         "best_val_auc_pr": best_val,

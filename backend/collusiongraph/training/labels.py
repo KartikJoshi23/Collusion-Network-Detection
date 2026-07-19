@@ -18,6 +18,7 @@ truth is assessed after the fact; training targets must not be.
 
 from __future__ import annotations
 
+import numpy as np
 import polars as pl
 
 from collusiongraph.adapters.procurement import mendeley_firm_labels_as_of
@@ -70,3 +71,37 @@ def resolve_train_labels(
             raise ValueError("history_as_of requires the dataset's label_history feature pack")
         return history_labels_as_of(history, as_of)
     raise ValueError(f"unknown train_label_policy {policy!r} (expected one of {POLICIES})")
+
+
+def apply_label_noise(labels: pl.DataFrame, rate: float, seed: int) -> tuple[pl.DataFrame, int]:
+    """§7 step 29 (iv): flip a seeded fraction of CONFIRMED label rows
+    (illicit ↔ licit) to measure supervision-noise robustness.
+
+    Callers pass the RESOLVED TRAIN labels only — the trainer's inference/
+    evaluation path reads the stored labels independently, so the test
+    protocol is untouched by construction. Unknown labels are never flipped
+    (they carry no supervision to corrupt). ``rate=0`` is an exact no-op.
+    """
+    if not 0.0 <= rate < 1.0:
+        raise ValueError(f"label-noise rate must be in [0, 1) (got {rate})")
+    if rate == 0.0:
+        return labels, 0
+    confirmed = labels["label"].is_in([Label.ILLICIT.value, Label.LICIT.value]).to_numpy()
+    confirmed_idx = np.flatnonzero(confirmed)
+    n_flip = round(rate * confirmed_idx.size)
+    if n_flip == 0:
+        return labels, 0
+    rng = np.random.default_rng(seed)
+    chosen = rng.choice(confirmed_idx, size=n_flip, replace=False)
+    flip_mask = np.zeros(labels.height, dtype=bool)
+    flip_mask[chosen] = True
+    flip = pl.Series(flip_mask)
+    flipped = labels.with_columns(
+        pl.when(flip & (pl.col("label") == Label.ILLICIT.value))
+        .then(pl.lit(Label.LICIT.value))
+        .when(flip & (pl.col("label") == Label.LICIT.value))
+        .then(pl.lit(Label.ILLICIT.value))
+        .otherwise(pl.col("label"))
+        .alias("label")
+    )
+    return flipped, int(n_flip)
