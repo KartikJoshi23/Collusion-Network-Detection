@@ -1,0 +1,18 @@
+# §7 step 29 (iii) — protocol-sensitivity sweep over the STORED Elliptic++
+# ensemble alert queue (no retraining; the published setting — jaccard 0.5,
+# min_fraction null — is one grid point). Labels are the test-window
+# restriction the queue was published against (§4.5 scope match).
+# Regenerate inputs first if absent: the alert_queue_elliptic_pp_ensemble
+# run writes both parquets.
+dataset: elliptic_pp
+store_root: data/interim
+alerts: eval_outputs/elliptic_pp/alert_queue_ensemble/alerts.parquet
+labels: eval_outputs/elliptic_pp/alert_queue_ensemble/labels_test_window.parquet
+output_dir: eval_outputs/elliptic_pp/sensitivity
+budgets: [50, 100, 200]
+
+sweep:
+  jaccard_thresholds: [0.3, 0.4, 0.5, 0.6, 0.7]
+  # null = the published ≥1-confirmed-member rule; the fractions are the
+  # §4.5 Phase-2 stricter hit rules
+  min_fractions: [null, 0.1, 0.25]

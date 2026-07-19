@@ -126,9 +126,16 @@ def _cmd_explain(args: argparse.Namespace) -> int:
 
 
 def _cmd_eval(args: argparse.Namespace) -> int:
-    from collusiongraph.eval import run_eval
+    from collusiongraph.eval import load_config, run_eval, run_sensitivity
 
-    metrics = run_eval(args.config)
+    cfg = load_config(args.config)
+    if "sweep" in cfg:  # §7 step 29 (iii): protocol-sensitivity grid
+        report = run_sensitivity(cfg)
+        out_dir = cfg.get("output_dir", f"eval_outputs/{report['dataset']}/sensitivity")
+        print(f"sensitivity written to {out_dir}/sensitivity.json")
+        print(json.dumps(report["grid"], indent=2))
+        return 0
+    metrics = run_eval(cfg)
     out_dir = metrics["config"].get("output_dir", f"eval_outputs/{metrics['dataset']}")
     print(f"metrics written to {out_dir}/metrics.json")
     print(json.dumps(metrics.get("alert_level", {}).get("queue", {}), indent=2))

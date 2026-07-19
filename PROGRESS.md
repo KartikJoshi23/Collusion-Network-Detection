@@ -106,6 +106,22 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-19 · **§7 STEP 29 (iii) — protocol-sensitivity sweeps, MEASURED on both
+  published queues.** `eval/sensitivity.py` — config-driven grid (`sweep:` NMS
+  `jaccard_thresholds` × hit-rule `min_fractions`) re-running the §4.5 alert pipeline on
+  the STORED alerts/labels artifacts (nothing retrains; the published setting is an
+  ordinary grid point — verified equal to the stored `metrics.json` on both datasets);
+  `collusiongraph eval` dispatches on `sweep:`; configs for both domains; 4 new tests
+  (grid mechanics, strict-greater NMS boundary, fractional-rule direction-of-effect,
+  percent-budget resolution per grid point) — **suite 317/317**. *Measured (5 thresholds ×
+  3 fractions):* **both queues are NMS-invariant** — Elliptic++ 254 kept and Mendeley 223
+  kept with ZERO suppressions at every threshold 0.3–0.7 (Leiden partitions are disjoint;
+  the F11 artifact-level cap already did the work — dedup is defense-in-depth that never
+  fires). **Hit-rule robustness:** Elliptic++ 27→25 hits under a 25% illicit-share rule
+  (P@50 0.32→0.28 — 25 of 27 hit alerts carry ≥25% confirmed-illicit share);
+  Mendeley 86→82 hits with the queue HEAD untouched (P@4 0.50, P@18 0.33 at every grid
+  point — the lost hits rank below budget 36). Headline P@k claims are protocol-robust ·
+  [master]
 - 2026-07-19 · **§7 STEP 29 (first slice) — multi-seed machinery + bootstrap significance,
   with the first two headline comparisons SIGNIFICANCE-TESTED.** *(a) Multi-seed runner:*
   `training/multiseed.py` — `run_multiseed` wraps `train_gnn` (v1 scope) over a `seeds:`
@@ -418,13 +434,12 @@ still public 2026-07-15 — anonymous clone succeeded).
    2026-07-19 [master]: ~~(i) multi-seed machinery~~ **runner DONE, resumable; the 5-seed
    GATv2 campaign is in flight (see In-flight — finish/aggregate it first)**; ~~(ii)
    bootstrap CIs + paired significance~~ **DONE — `eval/significance.py`, two headline
-   comparisons measured (see Completed)**. Remaining step 29: multi-seed the calibrated
-   ensemble (wrap `run_ensemble` the way `run_multiseed` wraps `train_gnn` — members must
-   re-run per seed) and the Mendeley R-GCN; (iii) sensitivity curves — budgets (the "N%"
-   resolution already landed), hit-rule `min_fraction` (param exists in `alert_unit.py`),
-   NMS Jaccard threshold: a small config-driven sweep runner over the STORED queue +
-   scores, no retraining; (iv) label-noise robustness on Elliptic++ (flip a fraction of
-   train labels at seeds, measure test degradation). Then step 28 remainder: cross-domain
+   comparisons measured (see Completed)**; ~~(iii) sensitivity curves~~ **DONE — both
+   published queues measured NMS-invariant and hit-rule-robust (see Completed)**.
+   Remaining step 29: multi-seed the calibrated ensemble (wrap `run_ensemble` the way
+   `run_multiseed` wraps `train_gnn` — members must re-run per seed) and the Mendeley
+   R-GCN; (iv) label-noise robustness on Elliptic++ (flip a fraction of train labels at
+   seeds, measure test degradation). Then step 28 remainder: cross-domain
    fine-tuning label-efficiency curves (CPU-feasible — extend `run_cross_domain_probe`
    with a fine-tune-k arm). Still GPU-gated (Colab/Kaggle): (b) **PNA + GIN+EU on AMLworld
    HI-Small** (Multi-GNN parity; wire `NeighborLoader` minibatching there — it needs
