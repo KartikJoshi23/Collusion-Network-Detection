@@ -322,6 +322,64 @@ class TestCrossDomainProbe:
         scores = pl.read_parquet(tmp_path / "probe" / "scores_test.parquet")
         assert ((scores["score"] >= 0.0) & (scores["score"] <= 1.0)).all()
 
+    def test_label_efficiency_curve_end_to_end(self, tmp_path) -> None:
+        from collusiongraph.training.transfer_run import run_label_efficiency
+
+        store = financial_store(tmp_path)
+        record = run_label_efficiency(
+            {
+                "label_efficiency": True,
+                "store_root": str(store.root),
+                "output_dir": str(tmp_path / "le"),
+                "seed": 0,
+                "k_grid": [4, 6],
+                "n_draws": 2,
+                "source": {
+                    "dataset": "toysrc",
+                    "store_root": str(store.root),
+                    "output_dir": str(tmp_path / "src_run"),
+                    "seed": 0,
+                    "features": "structural",
+                    "split": {"loss_end": 2, "train_end": 3, "test_start": 5},
+                    "model": {"name": "graphsage", "hidden_dim": 8, "dropout": 0.0},
+                    "epochs": 5,
+                    "patience": 5,
+                    "budgets": [4],
+                },
+                "target": {"dataset": "toysrc", "split": {"train_end": 3, "test_start": 5}},
+            }
+        )
+        assert record["kind"] == "label_efficiency"
+        completed = [p for p in record["curve"] if p["status"] == "completed"]
+        assert completed, "at least one k point must complete"
+        for p in completed:
+            # BOTH arms measured on every completed point — the comparator is
+            # paired, never dropped when it wins (§4.4 honesty)
+            assert 0.0 <= p["source_probe_auc_pr_mean"] <= 1.0
+            assert 0.0 <= p["raw_probe_auc_pr_mean"] <= 1.0
+            assert p["n_draws"] >= 1
+        ref = record["full_label_reference"]
+        assert 0.0 <= ref["source_probe_auc_pr"] <= 1.0
+        assert (tmp_path / "le" / "label_efficiency.json").is_file()
+
+    def test_stratified_subsample_holds_both_classes(self) -> None:
+        import numpy as np
+        from collusiongraph.training.transfer_run import _stratified_subsample
+
+        y = np.array([1] * 3 + [0] * 97)
+        rng = np.random.default_rng(0)
+        for k in (2, 5, 50):
+            sub = _stratified_subsample(y, k, rng)
+            assert len(sub) == k
+            assert y[sub].min() == 0 and y[sub].max() == 1  # both classes present
+        assert len(_stratified_subsample(y, 1000, rng)) == 100  # clamps to pool
+        with pytest.raises(ValueError, match="k >= 2"):
+            _stratified_subsample(y, 1, rng)
+        # determinism under an identical generator state
+        a = _stratified_subsample(y, 10, np.random.default_rng(7))
+        b = _stratified_subsample(y, 10, np.random.default_rng(7))
+        assert (a == b).all()
+
     def test_probe_rejects_non_structural_source(self, tmp_path) -> None:
         store = financial_store(tmp_path)
         with pytest.raises(ValueError, match="structural channel"):

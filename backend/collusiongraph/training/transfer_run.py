@@ -438,6 +438,144 @@ def _source_encoder_kwargs(source_record: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _stratified_subsample(y: np.ndarray, k: int, rng: np.random.Generator) -> np.ndarray:
+    """k positions from a confirmed-label pool, at least one per class (a probe
+    fit needs both), class-proportional otherwise. k >= pool size returns the
+    whole pool; k < 2 cannot hold both classes and raises."""
+    if k >= len(y):
+        return np.arange(len(y), dtype=np.int64)
+    if k < 2:
+        raise ValueError(f"k={k} cannot hold both classes (need k >= 2)")
+    pos = np.flatnonzero(y == 1)
+    neg = np.flatnonzero(y == 0)
+    n_pos = int(np.clip(round(k * len(pos) / len(y)), 1, k - 1))
+    picked = np.concatenate(
+        [
+            rng.choice(pos, size=min(n_pos, len(pos)), replace=False),
+            rng.choice(neg, size=min(k - n_pos, len(neg)), replace=False),
+        ]
+    )
+    return np.sort(picked)
+
+
+def run_label_efficiency(config: dict[str, Any] | str | Path) -> dict[str, Any]:
+    """§7 step 28 remainder: the cross-domain LABEL-EFFICIENCY curve — how much
+    target supervision the transferred encoder needs before it pays off.
+
+    At each k in ``k_grid``: fit the frozen-source-encoder probe on a
+    stratified subsample of k labeled target-train nodes, and — on the SAME
+    subsample — a paired no-transfer comparator (a probe on the target's own
+    structural features). Both score the full target test pool (AP + its
+    prevalence). ``n_draws`` subsample draws per k give mean ± std. The
+    encoder and embeddings are computed once; nothing is tuned toward a
+    desired curve (§4.4 honest reporting — the comparator can and may win)."""
+    cfg = load_config(config)
+    seed: int = cfg.get("seed", 0)
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+
+    source_cfg = dict(cfg["source"])
+    target_cfg = dict(cfg["target"])
+    out_dir = Path(cfg["output_dir"])
+    store = GraphStore(cfg.get("store_root", "data/interim"))
+    k_grid = sorted({int(k) for k in cfg.get("k_grid", [10, 25, 50, 100, 250])})
+    n_draws = int(cfg.get("n_draws", 5))
+    if any(k < 2 for k in k_grid):
+        raise ValueError("k_grid values must be >= 2 (a probe fit needs both classes)")
+
+    if source_cfg.get("features", "structural") != "structural":
+        raise ValueError("the cross-domain probe operates on the shared structural channel only")
+    source_record = train_gnn(source_cfg)
+    checkpoint = Path(source_cfg["output_dir"]) / "model.pt"
+
+    dataset: str = target_cfg["dataset"]
+    prefix = f"{target_cfg['node_type']}:" if target_cfg.get("node_type") else ""
+    train_data, infer_data, times, train_end, test_start = _target_graphs(target_cfg, store)
+
+    encoder = GraphSAGE(in_dim=train_data.x.shape[1], **_source_encoder_kwargs(source_record))
+    encoder.load_state_dict(torch.load(checkpoint, weights_only=True))
+    encoder.eval()
+    with torch.no_grad():
+        emb_train = encoder.embed(
+            train_data.x, train_data.edge_index, train_data.edge_direction
+        ).numpy()
+        emb_infer = encoder.embed(
+            infer_data.x, infer_data.edge_index, infer_data.edge_direction
+        ).numpy()
+
+    idx_tr = _pool_indices(train_data, times, prefix, lo=0, hi=train_end)
+    idx_te = _pool_indices(infer_data, times, prefix, lo=test_start, hi=None)
+    y_tr = train_data.y.numpy()[idx_tr]
+    y_te = infer_data.y.numpy()[idx_te]
+    if y_tr.min() == y_tr.max() or y_te.min() == y_te.max():
+        raise ValueError("probe pools lack both classes — check target split")
+    # the paired comparator uses the target's own structural features
+    raw_tr = train_data.x.numpy()[idx_tr]
+    raw_te = infer_data.x.numpy()[idx_te]
+    enc_tr, enc_te = emb_train[idx_tr], emb_infer[idx_te]
+    prevalence = float(y_te.mean())
+
+    def _fit_ap(x_fit: np.ndarray, y_fit: np.ndarray, x_eval: np.ndarray) -> float:
+        probe = LogisticRegression(max_iter=2000, class_weight="balanced", random_state=seed)
+        probe.fit(x_fit, y_fit)
+        return float(average_precision_score(y_te, probe.predict_proba(x_eval)[:, 1]))
+
+    curve: list[dict[str, Any]] = []
+    for k in k_grid:
+        enc_aps: list[float] = []
+        raw_aps: list[float] = []
+        for draw in range(n_draws):
+            rng = np.random.default_rng(seed * 10_000 + k * 100 + draw)
+            try:
+                sub = _stratified_subsample(y_tr, k, rng)
+            except ValueError:
+                break
+            if y_tr[sub].min() == y_tr[sub].max():  # degenerate pool at tiny k
+                continue
+            enc_aps.append(_fit_ap(enc_tr[sub], y_tr[sub], enc_te))
+            raw_aps.append(_fit_ap(raw_tr[sub], y_tr[sub], raw_te))
+        if not enc_aps:
+            curve.append({"k": k, "status": "skipped", "reason": "no viable subsample"})
+            continue
+        curve.append(
+            {
+                "k": min(k, len(y_tr)),
+                "status": "completed",
+                "n_draws": len(enc_aps),
+                "source_probe_auc_pr_mean": float(np.mean(enc_aps)),
+                "source_probe_auc_pr_std": (
+                    float(np.std(enc_aps, ddof=1)) if len(enc_aps) > 1 else 0.0
+                ),
+                "raw_probe_auc_pr_mean": float(np.mean(raw_aps)),
+                "raw_probe_auc_pr_std": (
+                    float(np.std(raw_aps, ddof=1)) if len(raw_aps) > 1 else 0.0
+                ),
+                "transfer_gain_mean": float(np.mean(enc_aps) - np.mean(raw_aps)),
+            }
+        )
+
+    record = {
+        "kind": "label_efficiency",
+        "direction": f"{source_cfg['dataset']} -> {dataset}",
+        "seed": seed,
+        "n_draws": n_draws,
+        "n_pool_train": len(y_tr),
+        "n_pool_test": len(y_te),
+        "prevalence_baseline": prevalence,
+        "source_val_auc_pr": source_record["best_val_auc_pr"],
+        "full_label_reference": {
+            "source_probe_auc_pr": _fit_ap(enc_tr, y_tr, enc_te),
+            "raw_probe_auc_pr": _fit_ap(raw_tr, y_tr, raw_te),
+        },
+        "curve": curve,
+    }
+    out_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / "label_efficiency.json").write_text(
+        json.dumps(record, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
+    return record
+
+
 def run_cross_domain_probe(config: dict[str, Any] | str | Path) -> dict[str, Any]:
     """§7 step 21: frozen source encoder → target embeddings → linear probe."""
     cfg = load_config(config)

@@ -56,6 +56,8 @@ def select_train_runner(cfg: dict[str, Any]) -> str:
         return "loco_matrix"
     if "test_group" in cfg:
         return "loco_transfer"
+    if cfg.get("label_efficiency"):
+        return "label_efficiency"
     if "source" in cfg and "target" in cfg:
         return "cross_domain_probe"
     return "gnn"
@@ -88,6 +90,7 @@ def _cmd_train(args: argparse.Namespace) -> int:
     )
     from collusiongraph.training.transfer_run import (
         run_cross_domain_probe,
+        run_label_efficiency,
         run_loco_matrix,
         run_loco_transfer,
     )
@@ -102,6 +105,7 @@ def _cmd_train(args: argparse.Namespace) -> int:
         "multiseed": run_multiseed,
         "ensemble_multiseed": run_ensemble_multiseed,
         "label_noise_curve": run_label_noise,
+        "label_efficiency": run_label_efficiency,
         "cross_domain_probe": run_cross_domain_probe,
     }
     cfg = load_config(args.config)
