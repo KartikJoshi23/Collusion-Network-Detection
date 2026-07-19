@@ -31,6 +31,6 @@ from .transfer_run import run_cross_domain_probe, run_loco_matrix, run_loco_tran
 
 __all__ += ["run_cross_domain_probe", "run_loco_matrix", "run_loco_transfer"]
 
-from .multiseed import run_label_noise, run_multiseed  # noqa: E402
+from .multiseed import run_ensemble_multiseed, run_label_noise, run_multiseed  # noqa: E402
 
-__all__ += ["run_label_noise", "run_multiseed"]
+__all__ += ["run_ensemble_multiseed", "run_label_noise", "run_multiseed"]

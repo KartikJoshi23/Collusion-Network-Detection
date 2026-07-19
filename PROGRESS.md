@@ -106,6 +106,14 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-19 · **§7 STEP 29 — ensemble multi-seed wrapper.** `run_ensemble_multiseed` in
+  `training/multiseed.py`: per seed, `run_ensemble` re-runs with that seed (unsupervised
+  members refit, calibration re-fits) while the supervised member REUSES the GATv2
+  campaign's `seed_<s>/` scores (`supervised_scores_root` — no retraining); resumable via
+  `ensemble_report.json`; per-member mean±std aggregation (fusions included) to
+  `ensemble_multiseed.json`; clear error when the campaign's seed dirs are missing. CLI
+  dispatches `ensemble_multiseed: true`; config `ensemble_elliptic_pp_multiseed.yaml`;
+  3 new tests — **suite 329/329**. Real run queued behind the 5-seed campaign · [master]
 - 2026-07-19 · **§7 STEP 29 (iv) MACHINERY + Mendeley multi-seed MEASURED.** *(a) Mendeley
   R-GCN 5-seed campaign (via `run_multiseed`, ~2 min/seed):* **0.2808 ± 0.0087 vs
   prevalence 0.358** — seed_0 reproduces the published 0.2731 exactly, and the honest

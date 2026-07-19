@@ -106,6 +106,91 @@ class TestOrchestration:
         assert select_train_runner({"model": {}}) == "gnn"
 
 
+class TestEnsembleMultiseed:
+    def _script_ensemble(self, monkeypatch, calls: list[int]) -> None:
+        from collusiongraph.training import multiseed as ms
+
+        def fake_ensemble(cfg: dict) -> dict:
+            seed = cfg["seed"]
+            calls.append(seed)
+            report = {
+                "dataset": cfg["dataset"],
+                "seed": seed,
+                "members": {
+                    "supervised": {"auc_pr": 0.5 + 0.1 * seed},
+                    "ensemble_calibrated": {"auc_pr": 0.52 + 0.1 * seed},
+                },
+            }
+            out = Path(cfg["output_dir"])
+            out.mkdir(parents=True, exist_ok=True)
+            (out / "ensemble_report.json").write_text(json.dumps(report), encoding="utf-8")
+            # the wrapper must have routed the campaign's per-seed scores
+            assert cfg["supervised_scores_dir"].endswith(f"seed_{seed}")
+            return report
+
+        monkeypatch.setattr(ms, "run_ensemble", fake_ensemble, raising=False)
+        import collusiongraph.training.ensemble_run as er
+
+        monkeypatch.setattr(er, "run_ensemble", fake_ensemble)
+
+    def _campaign_root(self, tmp_path, seeds) -> Path:
+        root = tmp_path / "campaign"
+        for s in seeds:
+            d = root / f"seed_{s}"
+            d.mkdir(parents=True)
+            (d / "scores_test.parquet").write_bytes(b"")
+        return root
+
+    def test_grid_resume_and_aggregation(self, tmp_path, monkeypatch) -> None:
+        from collusiongraph.training import run_ensemble_multiseed
+
+        calls: list[int] = []
+        self._script_ensemble(monkeypatch, calls)
+        cfg = {
+            "dataset": "toyfin",
+            "ensemble_multiseed": True,
+            "seeds": [0, 1],
+            "supervised_scores_root": str(self._campaign_root(tmp_path, [0, 1])),
+            "output_dir": str(tmp_path / "ens"),
+            "split": {"loss_end": 2, "train_end": 3, "test_start": 5},
+            "budgets": [4],
+        }
+        summary = run_ensemble_multiseed(cfg)
+        assert calls == [0, 1]
+        cal = summary["members"]["ensemble_calibrated"]
+        assert cal["auc_pr_mean"] == pytest.approx(np.mean([0.52, 0.62]))
+        assert (tmp_path / "ens" / "ensemble_multiseed.json").is_file()
+        # resume: nothing re-runs
+        run_ensemble_multiseed(cfg)
+        assert calls == [0, 1]
+
+    def test_missing_supervised_seed_dir_is_a_clear_error(self, tmp_path, monkeypatch) -> None:
+        from collusiongraph.training import run_ensemble_multiseed
+
+        calls: list[int] = []
+        self._script_ensemble(monkeypatch, calls)
+        with pytest.raises(ValueError, match="run the GNN multi-seed campaign first"):
+            run_ensemble_multiseed(
+                {
+                    "dataset": "toyfin",
+                    "ensemble_multiseed": True,
+                    "seeds": [7],
+                    "supervised_scores_root": str(self._campaign_root(tmp_path, [0])),
+                    "output_dir": str(tmp_path / "ens"),
+                    "budgets": [4],
+                }
+            )
+        assert calls == []
+
+    def test_cli_dispatch(self) -> None:
+        from collusiongraph.cli import select_train_runner
+
+        cfg = {"ensemble_multiseed": True, "supervised_scores_root": "x"}
+        assert select_train_runner(cfg) == "ensemble_multiseed"
+        # a plain ensemble config keeps its route
+        assert select_train_runner({"supervised_scores_dir": "x"}) == "ensemble"
+
+
 def tiny_store(tmp_path) -> GraphStore:
     """Minimal separable two-era account graph (pattern from the §9.2
     integration fixture, shrunk for a seconds-fast real double-train)."""

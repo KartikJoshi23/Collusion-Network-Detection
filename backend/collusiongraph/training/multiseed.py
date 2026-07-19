@@ -101,6 +101,91 @@ def run_multiseed(config: dict[str, Any] | str | Path) -> dict[str, Any]:
     return report
 
 
+def run_ensemble_multiseed(config: dict[str, Any] | str | Path) -> dict[str, Any]:
+    """§7 step 29: multi-seed rerun of the M3 ensemble. Per seed,
+    ``run_ensemble`` runs with ``seed=s`` (driving the unsupervised member
+    refits) and ``supervised_scores_dir=<supervised_scores_root>/seed_<s>`` —
+    the supervised member REUSES the GATv2 multi-seed campaign's per-seed
+    scores instead of retraining. Resumable: ``ensemble_report.json`` is
+    ``run_ensemble``'s last artifact, so it is the completion marker.
+    Aggregates mean ± std AUC-PR per member (fusions included) into
+    ``ensemble_multiseed.json``."""
+    from .ensemble_run import run_ensemble
+
+    cfg = load_config(config)
+    if not cfg.get("ensemble_multiseed"):
+        raise ValueError("run_ensemble_multiseed expects a config with ensemble_multiseed: true")
+    seeds = [int(s) for s in cfg["seeds"]]
+    if len(set(seeds)) != len(seeds):
+        raise ValueError("duplicate entries in seeds")
+    out_root = Path(cfg["output_dir"])
+    supervised_root = Path(cfg["supervised_scores_root"])
+    base = {
+        k: v
+        for k, v in cfg.items()
+        if k
+        not in (
+            "ensemble_multiseed",
+            "seeds",
+            "seed",
+            "output_dir",
+            "supervised_scores_root",
+            "supervised_scores_dir",
+        )
+    }
+
+    reports: list[dict[str, Any]] = []
+    for seed in seeds:
+        supervised_dir = supervised_root / f"seed_{seed}"
+        if not (supervised_dir / "scores_test.parquet").is_file():
+            raise ValueError(
+                f"supervised member scores missing for seed {seed}: {supervised_dir} — "
+                "run the GNN multi-seed campaign first"
+            )
+        seed_dir = out_root / f"seed_{seed}"
+        marker = seed_dir / "ensemble_report.json"
+        if marker.is_file():
+            report = json.loads(marker.read_text(encoding="utf-8"))
+            if report.get("seed") != seed:
+                raise ValueError(
+                    f"refusing to resume {seed_dir}: existing report is from "
+                    f"seed {report.get('seed')}"
+                )
+            reports.append(report)
+            continue
+        reports.append(
+            run_ensemble(
+                {
+                    **base,
+                    "seed": seed,
+                    "output_dir": str(seed_dir),
+                    "supervised_scores_dir": str(supervised_dir),
+                }
+            )
+        )
+
+    member_names = sorted(reports[0]["members"])
+    aggregate: dict[str, Any] = {}
+    for name in member_names:
+        values = [r["members"][name]["auc_pr"] for r in reports]
+        aggregate[name] = {
+            "auc_pr_per_seed": values,
+            "auc_pr_mean": float(np.mean(values)),
+            "auc_pr_std": float(np.std(values, ddof=1)) if len(values) > 1 else 0.0,
+        }
+    summary = {
+        "kind": "ensemble_multiseed",
+        "dataset": cfg["dataset"],
+        "seeds": seeds,
+        "members": aggregate,
+    }
+    out_root.mkdir(parents=True, exist_ok=True)
+    (out_root / "ensemble_multiseed.json").write_text(
+        json.dumps(summary, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
+    return summary
+
+
 def run_label_noise(config: dict[str, Any] | str | Path) -> dict[str, Any]:
     """§7 step 29 (iv): label-noise robustness curve — ``rates:`` × ``seeds:``,
     each point an ordinary ``train_gnn`` run with ``label_noise`` injected
