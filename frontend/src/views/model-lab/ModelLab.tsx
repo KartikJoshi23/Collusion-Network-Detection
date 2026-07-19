@@ -11,6 +11,7 @@ import {
 } from "../../lib/metricsExtract";
 import { CHART_SERIES, UI_HUES } from "../../lib/palette";
 import { useConsole } from "../../state/console";
+import { RigorSection } from "./RigorSection";
 
 // The figure factory (§5.3 view 5). V2: published runs render as REAL charts
 // (per-time-step AUC-PR bars — the temporal-shift figure; measured
@@ -47,6 +48,7 @@ export function ModelLab() {
       </div>
 
       <div className="grid gap-4">
+        <RigorSection dataset={dataset} />
         {data.runs.map((run, i) => {
           const m = run.metrics as Record<string, Record<string, unknown>>;
           const steps = parsePerTimeStep(m.node_level);

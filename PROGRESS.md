@@ -106,6 +106,27 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-20 · **DASHBOARD INTEGRATION — the Phase-2 rigor artifacts now SERVE and RENDER
+  (§5.3 view 5 extension).** *Backend:* `ServingEntry` gains a `rigor:` block (name →
+  JSON path); new read-only `GET /datasets/{ds}/rigor` (absent files omitted, never
+  faked); `build_demo_artifacts.py` collects per-dataset rigor artifacts exists-checked
+  at build time (multi-seed aggregates, LOCO/LOMO matrices — García's rides with the
+  procurement dataset — sensitivity, label-noise curve, label-efficiency curves attached
+  to their TARGET dataset, significance); the two paired-significance comparisons are now
+  PERSISTED (`eval_outputs/elliptic_pp/significance/significance.json` — they previously
+  lived only in this ledger). *Frontend:* `lib/rigorExtract.ts` (defensive parsers, 9
+  tests) + `RigorSection` in the Model Lab — multi-seed mean±std tiles with per-seed
+  values, transfer-matrix tables with lift coloring (amber for <1× — coral stays
+  flagged-exclusive per §5.2), significance rows, label-noise + label-efficiency charts
+  (gains render as text: the shared chart domain is [0,1]), protocol-sensitivity
+  statement; absent artifacts don't render, so thin machines stay honest. **Verified
+  live on real artifacts in BOTH domains** (financial: GATv2 0.4729±0.0525 tiles +
+  ensemble members + both significance rows; procurement: R-GCN tile + full 7-country
+  LOCO and 4-market García LOMO tables + label-efficiency curve), zero console errors;
+  backend **334/334**, frontend vitest **31/31** + build. Also: `.mcp.json` scaffolds the
+  21st.dev Magic MCP for future UI work (**[user]** create a key at 21st.dev and set
+  `TWENTYFIRST_API_KEY` in the environment — the server activates in new sessions) ·
+  [master]
 - 2026-07-19 · **§7 STEP 32 OPENED (Week 14) — component-ablation machinery + first
   measured row.** *(a) −bidirectional edges:* `build_graph(bidirectional=False)`
   materializes only the original src→dst direction (all-zero direction flags, forward

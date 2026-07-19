@@ -59,6 +59,33 @@ DEMOS = [
     },
 ]
 
+# Phase-2 rigor artifacts (§7 steps 28–29, 32) per dataset: name → path.
+# Exists-checked at build time — a machine that has not produced an artifact
+# simply serves without it. García's LOMO matrix rides with the procurement
+# dataset (García itself has no served queue); the label-efficiency curves
+# attach to their TARGET dataset.
+RIGOR = {
+    "elliptic_pp": {
+        "multiseed_gatv2": "eval_outputs/elliptic_pp/gnn_gatv2_focal_multiseed/multiseed.json",
+        "multiseed_ensemble": "eval_outputs/elliptic_pp/ensemble_multiseed/ensemble_multiseed.json",
+        "sensitivity": "eval_outputs/elliptic_pp/sensitivity/sensitivity.json",
+        "label_noise": "eval_outputs/elliptic_pp/label_noise_curve/noise_curve.json",
+        "significance": "eval_outputs/elliptic_pp/significance/significance.json",
+        "label_efficiency": (
+            "eval_outputs/cross_domain/label_efficiency_proc2fin/label_efficiency.json"
+        ),
+    },
+    "mendeley_eu": {
+        "multiseed_rgcn": "eval_outputs/mendeley_eu/gnn_rgcn_focal_multiseed/multiseed.json",
+        "loco_matrix": "eval_outputs/mendeley_eu/transfer_loco_matrix/matrix.json",
+        "lomo_matrix_garcia": "eval_outputs/garcia_rodriguez/transfer_lomo_matrix/matrix.json",
+        "sensitivity": "eval_outputs/mendeley_eu/sensitivity/sensitivity.json",
+        "label_efficiency": (
+            "eval_outputs/cross_domain/label_efficiency_fin2proc/label_efficiency.json"
+        ),
+    },
+}
+
 
 def main() -> int:
     serving: dict[str, dict] = {}
@@ -90,6 +117,11 @@ def main() -> int:
         # the queue's own metrics ride along: the alert-level precision@budget
         # block feeds the dashboard's measured precision readout (§5.3 view 2)
         metrics = [*spec["metrics"], f"{spec['output_dir']}/metrics.json"]
+        rigor = {
+            name: path
+            for name, path in RIGOR.get(spec["dataset"], {}).items()
+            if (REPO / path).is_file()
+        }
         serving[spec["dataset"]] = {
             "domain": spec["domain"],
             "store_root": "data/interim",
@@ -98,6 +130,7 @@ def main() -> int:
                 f"eval_outputs/{spec['dataset']}/explanations" if expl.is_dir() else None
             ),
             "metrics": [m for m in metrics if (REPO / m).is_file()],
+            "rigor": rigor,
         }
 
     if not serving:

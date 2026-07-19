@@ -67,6 +67,11 @@ def client(tmp_path) -> TestClient:
     )
     metrics_path = tmp_path / "metrics.json"
     metrics_path.write_text(json.dumps({"node_level": {"auc_pr": 0.5}}), encoding="utf-8")
+    rigor_path = tmp_path / "multiseed.json"
+    rigor_path.write_text(
+        json.dumps({"kind": "multiseed_gnn", "aggregate": {"auc_pr_mean": 0.47}}),
+        encoding="utf-8",
+    )
 
     index = write_serving_index(
         tmp_path / "serving.json",
@@ -77,6 +82,10 @@ def client(tmp_path) -> TestClient:
                 "alerts": str(alerts_path),
                 "explanations": str(bundles),
                 "metrics": [str(metrics_path), str(tmp_path / "absent.json")],
+                "rigor": {
+                    "multiseed_gatv2": str(rigor_path),
+                    "absent_artifact": str(tmp_path / "nope.json"),
+                },
             }
         },
     )
@@ -143,6 +152,16 @@ class TestEndpoints:
     def test_metrics(self, client) -> None:
         body = client.get("/api/v1/datasets/toyapi/metrics").json()
         assert body["runs"][0]["metrics"]["node_level"]["auc_pr"] == 0.5
+
+    def test_rigor(self, client) -> None:  # §7 steps 28–29 artifacts in the console
+        r = client.get("/api/v1/datasets/toyapi/rigor")
+        assert r.status_code == 200
+        body = r.json()
+        # present artifacts load; absent ones are silently omitted, never faked
+        assert body["artifacts"]["multiseed_gatv2"]["payload"]["aggregate"]["auc_pr_mean"] == 0.47
+        assert "absent_artifact" not in body["artifacts"]
+        assert body["caveat"] == SCREENING_CAVEAT
+        assert client.get("/api/v1/datasets/nope/rigor").status_code == 404
 
     def test_every_response_carries_the_caveat(self, client) -> None:
         for path in (

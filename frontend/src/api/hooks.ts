@@ -6,6 +6,7 @@ import type {
   DatasetsResponse,
   ExplanationResponse,
   MetricsResponse,
+  RigorResponse,
   SubgraphResponse,
 } from "./types";
 
@@ -64,5 +65,14 @@ export function useMetrics(dataset: string | undefined) {
     queryFn: () => apiGet<MetricsResponse>(`/datasets/${enc(dataset!)}/metrics`),
     enabled: !!dataset,
     retry: false,
+  });
+}
+
+export function useRigor(dataset: string | undefined) {
+  return useQuery({
+    queryKey: ["rigor", dataset],
+    queryFn: () => apiGet<RigorResponse>(`/datasets/${enc(dataset!)}/rigor`),
+    enabled: !!dataset,
+    retry: false, // absence of rigor artifacts is a normal 404 on thin machines
   });
 }

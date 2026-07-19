@@ -81,5 +81,20 @@ export interface MetricsResponse {
   caveat: string;
 }
 
+// Phase-2 rigor artifacts (§7 steps 28–29, 32): payload shapes are the
+// artifact JSONs themselves (multiseed.json, matrix.json, sensitivity.json,
+// noise_curve.json, label_efficiency.json, significance.json) — rendered
+// defensively, never re-derived.
+export interface RigorArtifact {
+  source: string;
+  payload: Record<string, unknown>;
+}
+
+export interface RigorResponse {
+  dataset: string;
+  artifacts: Record<string, RigorArtifact>;
+  caveat: string;
+}
+
 export const SCREENING_CAVEAT =
   "screening signal only — no determination of guilt";

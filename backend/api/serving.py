@@ -22,6 +22,10 @@ class ServingEntry:
     alerts: str | None = None
     explanations: str | None = None
     metrics: list[str] = field(default_factory=list)
+    # Phase-2 rigor artifacts (§7 steps 28–29, 32): name → JSON path
+    # (multi-seed aggregates, transfer matrices, sensitivity sweeps,
+    # label-noise / label-efficiency curves, significance tests)
+    rigor: dict[str, str] = field(default_factory=dict)
 
     def store_dir(self) -> Path:
         return Path(self.store_root) / self.dataset

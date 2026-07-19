@@ -198,4 +198,22 @@ def create_app(index_path: str | Path | None = None) -> FastAPI:
             raise HTTPException(404, f"no metrics published for {dataset!r}")
         return {"dataset": dataset, "runs": out, "caveat": SCREENING_CAVEAT}
 
+    @app.get("/api/v1/datasets/{dataset}/rigor")
+    def rigor(dataset: str) -> dict:
+        """Phase-2 rigor artifacts (§7 steps 28–29, 32): multi-seed aggregates,
+        transfer matrices, sensitivity sweeps, robustness curves, significance
+        tests — whatever this machine's serving index published."""
+        entry = entry_or_404(dataset)
+        out = {}
+        for name, source in sorted(entry.rigor.items()):
+            path = Path(source)
+            if path.is_file():
+                out[name] = {
+                    "source": source,
+                    "payload": json.loads(path.read_text(encoding="utf-8")),
+                }
+        if not out:
+            raise HTTPException(404, f"no rigor artifacts published for {dataset!r}")
+        return {"dataset": dataset, "artifacts": out, "caveat": SCREENING_CAVEAT}
+
     return app
