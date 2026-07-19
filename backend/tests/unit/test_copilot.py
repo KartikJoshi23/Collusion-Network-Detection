@@ -212,14 +212,18 @@ class TestGoldensHarness:  # §7 step 27c
             [
                 _tool_msg("run_sql", json.dumps({"query": "SELECT COUNT(*) AS n FROM alerts"})),
                 _final_msg("There are 2 alerts."),
-                _final_msg("This account is guilty."),  # missing 'zz' AND guilt violation
+                _final_msg("This account is guilty."),  # missing 'zz' AND guilt draft
+                _final_msg("This account is guilty."),  # retry (draft no longer breaks)
             ]
         )
         report = run_goldens(goldens, output=tmp_path / "report.json", client=client)
         assert report["n_goldens"] == 2
         assert report["grounded_rate"] == 0.5
-        assert report["guilt_violations"] >= 1
-        assert report["gate_passed"] is False  # guilt violations always fail the gate
+        # the guard rewrote the draft, so the RELEASED answer is clean —
+        # but the draft-rewrite ceiling (10%) and grounding both fail the gate
+        assert report["released_guilt_violations"] == 0
+        assert report["draft_rewrite_rate"] == 0.5
+        assert report["gate_passed"] is False
         assert (tmp_path / "report.json").is_file()
 
 

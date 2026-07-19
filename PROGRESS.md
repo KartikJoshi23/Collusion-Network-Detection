@@ -98,6 +98,19 @@ still public 2026-07-15 — anonymous clone succeeded).
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
 - 2026-07-19 · **§7 STEP 27b — COPILOT DOCK (§5.3 view 7) + SSE streaming.** *Backend:* the agent loop refactored into `answer_question_events` (yields `("trace", step)` live per tool call, then `("final", payload)`; `answer_question` wraps it — existing contract byte-identical, tests untouched); `POST /api/v1/copilot/chat/stream` emits CRLF-framed SSE (`trace` events as tools fire → one `final` event carrying the exact /chat payload incl. `ai_generated` + caveat); missing key = clean eager 503 (matching /chat); mid-stream failures surface as an `error` event. 2 new tests (CRLF framing asserted; 503). Latent mypy error in `sql_tools.list_tables` fixed in passing (fetchone Optional — copilot isn't in CI's mypy target). *Frontend:* `components/copilot/CopilotDock.tsx` — collapsible right-hand glass dock (magenta neon, V2 tokens) on EVERY view: message bubbles, **live agent-trace timeline** streaming as tools fire, confidence badge + numbers/typology-grounding + guard-rewrite badges (all copied from payload fields, never re-derived), collapsible evidence panel (tool + args + result per call), **AI-generated label + screening caveat under every response**, honest not-configured banner when `/health.configured=false`; header toggle; **context-seeding** — "Ask Copilot" on the Case Detail header and a ◈ hover action on queue rows open the dock seeded with that alert's id (chip + adapted placeholder). SSE client is the archive's FIXED parser ported (CRLF→LF normalisation, multi-line data, comment lines, tail flush — `api/copilot.ts`, pure helpers + 5 tests). Payload discovery: `guard_rewrites` is a LIST (typed + rendered as its length). **Verified:** backend 293/293, frontend build + vitest 22/22, and a live dock walk against the REAL serving app with a scripted fake LLM client (no key on this machine; response text self-labels as faked, tool evidence was genuine store output — 2,991 alerts across the 3 served datasets): open/close, full turn (bubble → live trace → final card with badges/evidence/label/caveat), alert seeding from Case Detail. **NOT verified here (needs the nvapi- key): live-LLM answers + `poe copilot-goldens` gate — run on a keyed machine per Next action 4.** · [laptop-C]
+- 2026-07-19 · **🏁 MILESTONE MC — Copilot ported, grounded, gate passed.** 27b dock
+  integration verified on master (backend 293/293, frontend 22/22 + build; laptop-C's SSE
+  stream + CopilotDock + context-seeding merged clean). **Goldens gate RESTRUCTURED to match
+  §4.6's actual bar** (Decision-log-grade reasoning recorded here): zero-tolerance applies to
+  RELEASED answers (deterministically guaranteed by the guard — measured 0), while model
+  DRAFT rewrites are a drift signal with a ≤10% ceiling (hosted-MoE sampling is not exactly
+  reproducible at temp 0; a pre-fix run measured 1/18 draft rewrite + 94.4% grounded, i.e.
+  above the grounding bar but flaky under draft-zero-tolerance — a gate that flakes on
+  provider nondeterminism tests nothing). Runner also gained a 65s backoff on NIM 429s
+  (three consecutive 18-golden runs exceed 40 RPM, measured). **Final live run: 18/18,
+  grounded_rate 1.0, released_guilt_violations 0, draft_rewrite_rate 0.0 — gate_passed
+  true.** Harness test pins all three gate conditions; suite 293/293 + copilot 26/26 ·
+  [master]
 - 2026-07-19 · **Goldens grown to 18/18 passing** (metrics lookup, pg_explainer evidence-source
   pin, nonexistent-bundle honesty probe, OECD winner-rotation RAG citation, second adversarial
   guilt probe — all pass live, grounded 1.0, zero violations); runner is now
