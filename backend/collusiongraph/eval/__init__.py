@@ -23,6 +23,7 @@ from .metrics import (
     recall_at_k,
 )
 from .report import DEFAULT_BUDGETS, load_config, resolve_budgets, run_eval
+from .significance import bootstrap_auc_pr_ci, compare_score_files, paired_bootstrap_auc_pr
 
 __all__ = [
     "DEFAULT_BUDGETS",
@@ -32,12 +33,15 @@ __all__ = [
     "alert_queue_metrics",
     "apply_hit_rule",
     "auc_pr",
+    "bootstrap_auc_pr_ci",
+    "compare_score_files",
     "confirmed_node_vectors",
     "fpr_at_k",
     "illicit_coverage_at_budget",
     "jaccard",
     "load_config",
     "nms_dedup",
+    "paired_bootstrap_auc_pr",
     "precision_at_k",
     "recall_at_k",
     "resolve_budgets",
