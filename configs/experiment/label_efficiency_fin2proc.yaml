@@ -1,0 +1,44 @@
+# §7 step 28 remainder — cross-domain LABEL-EFFICIENCY curve, direction
+# financial -> procurement (the NEGATIVE probe direction: published frozen
+# probe 0.2843 < prevalence 0.358): at each k labeled target firms, the
+# frozen-source-encoder probe vs the paired no-transfer comparator (probe on
+# the target's own structural features). RQ4 counterpart to the proc2fin
+# curve — measures whether the negative-transfer verdict holds at every
+# label budget. Target train pool = 638 labeled firms (k_grid stays below).
+label_efficiency: true
+store_root: data/interim
+output_dir: eval_outputs/cross_domain/label_efficiency_fin2proc
+seed: 0
+k_grid: [10, 25, 50, 100, 250, 500]
+n_draws: 5
+
+source:
+  dataset: elliptic_pp
+  store_root: data/interim
+  output_dir: eval_outputs/elliptic_pp/gnn_sage_structural_src
+  seed: 0
+  features: structural
+  split:
+    loss_end: 29
+    train_end: 34
+    test_start: 35
+  model:
+    name: graphsage
+    hidden_dim: 64
+    num_layers: 2
+    dropout: 0.3
+  loss:
+    name: focal
+    gamma: 2.0
+  lr: 0.005
+  weight_decay: 0.0005
+  epochs: 200
+  patience: 20
+  budgets: [50, 100, 200]
+
+target:
+  dataset: mendeley_eu
+  node_type: firm
+  split:
+    train_end: 2013
+    test_start: 2014
