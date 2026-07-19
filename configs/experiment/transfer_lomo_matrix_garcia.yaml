@@ -1,0 +1,35 @@
+# §7 step 28 — the FULL LOMO matrix on García (every identified market takes
+# one turn as the held-out market) under §7 step 29's multi-seed protocol —
+# the FIRST García graph-model numbers in the project. Same runner + val
+# policy as the Mendeley LOCO matrix (Decision log 2026-07-19): val = the
+# smallest other market with >= min_val_per_class confirmed firms per class.
+# Firm labels exist only on the 4 identified markets (America/Brazil/Italy/
+# Japan — §4.3 D3); the Swiss markets carry no firm nodes, so they never
+# enter as test folds but their structure rides along in training graphs.
+# Entity-disjoint LOMO is the as_of=None regime (§9.1b) — García's undated
+# bid data stays usable here by design.
+dataset: garcia_rodriguez
+store_root: data/interim
+output_dir: eval_outputs/garcia_rodriguez/transfer_lomo_matrix
+loco_matrix: true
+seeds: [0, 1, 2, 3, 4]
+node_type: firm
+min_val_per_class: 3
+
+model:
+  name: rgcn
+  hidden_dim: 64
+  num_layers: 2
+  dropout: 0.3
+
+loss:
+  name: focal
+  gamma: 2.0
+
+lr: 0.01
+weight_decay: 0.0005
+epochs: 300
+patience: 30
+# per-market firm queues: America 120 … Japan 1665 confirmed; k_effective
+# reported when smaller (§4.5)
+budgets: [10, 25, 50]
