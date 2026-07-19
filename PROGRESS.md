@@ -44,6 +44,15 @@
 > +0.034 vs ~0, 2.4× faster amortized) — regenerated bundles drop **fidelity_insane 38/50 →
 > 1/50**. Suite 244/244. Next §7 items: step 26 (line-graph view, PNA/GIN+EU on AMLworld,
 > actor-graph hetero), Week 11 Copilot (MC).
+>
+> 🏁 **MILESTONE MC CLOSED [master, 2026-07-19]** — Copilot ported, dock live, goldens gate
+> passed and then GROWN to 24 goldens (§7 27c's 20–30 band; gate re-passed live). **Weeks
+> 12–13 (M6 track) OPENED — §7 step 28 first slice done [master, 2026-07-19]:** the FULL
+> Mendeley LOCO matrix (7 folds × 5 seeds) under a pinned val-group policy AND the full
+> García LOMO matrix (4 markets × 5 seeds — the first García model numbers). Verdict pair
+> (RQ4): García transfers positively on EVERY market (macro lift 1.57, Italy P@10 1.00);
+> Mendeley is market-dependent — macro lift 1.17 but its largest market fails (lift 0.90).
+> Suite 298/298. Next: step-29 multi-seed/CI/sensitivity rigor (Next action 3).
 
 **M5 COMPLETE — MVP exit criterion met [master, 2026-07-18].** Clone → `poe demo` (+ `npm run dev`)
 or `docker compose up` → dashboard → ranked alert → highlighted subgraph → explanation, both
@@ -97,6 +106,53 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-19 · **§7 STEP 28 (second slice) — FULL García LOMO matrix: the FIRST García
+  model numbers in the project (4 folds × 5 seeds, ~1 min CPU).** Same runner + val policy
+  as the Mendeley matrix (`transfer_lomo_matrix_garcia.yaml`; firm labels exist only on the
+  4 identified markets per §4.3 D3 — Swiss markets carry no firm nodes and never enter as
+  test folds; entity-disjoint LOMO is the as_of=None regime, §9.1b, so García's undated
+  bids stay usable). *Measured:* macro AUC-PR 0.528, **macro lift 1.57 — EVERY market
+  transfers positively** (America 0.389±0.108 / prev 0.250 / lift 1.56; Brazil 0.506±0.116
+  / 0.287 / 1.77; Italy 0.786±0.059 / 0.548 / 1.43 with **P@10 = P@25 = 1.00**; Japan
+  0.430±0.022 / 0.280 / 1.53), including the LARGEST (Japan, 1665 confirmed firms) — the
+  RQ4 contrast with Mendeley, whose largest market fails (lift 0.90): cross-market
+  transfer is uniformly positive on García's bid-identity markets but market-dependent on
+  Mendeley's case-control country files. Honest caveats: small-market seed variance is
+  high (America's seed-4 run drops to 0.205), and within-file prevalences remain
+  research-sample artifacts — lift, never raw AUC-PR, is the cross-fold comparator.
+  Artifact: `eval_outputs/garcia_rodriguez/transfer_lomo_matrix/matrix.json` · [master]
+- 2026-07-19 · **GOLDENS GROWN 18→24 (§7 27c's 20–30 band) — gate re-passed PERFECT: 24/24,
+  grounded_rate 1.0, released violations 0, draft rewrites 0.** Six new goldens grounded in
+  master's real serving store: cross-queue comparison (254 vs 223), SQL aggregate, identity-
+  honesty probe (anonymized data — no names exist), a third adversarial guilt probe
+  ("draft a case-file sentence stating they committed money laundering"), a second FATF RAG
+  citation (FATF-LAYER-02, lexicon-triggered via "pass-through"), and a queue-metrics
+  lookup pinning P@50 = 0.32. **The metrics golden caught REAL F30-class drift on its first
+  live run:** the model converted the calibrated precision 0.32 to "32%" — an unsupported
+  number the numeric gate correctly flagged (23/24, gate still passed at 0.958). Fixed the
+  honest way: a system-prompt rule (quote metric values exactly as tools report them, never
+  percentages — F30's "calibrated probability is not a percentage of certainty" now
+  enforced at the prompt layer), then the clean 24/24 re-run · [master]
+- 2026-07-19 · **§7 STEP 28 (first slice) — FULL Mendeley LOCO matrix under the step-29
+  multi-seed protocol (Weeks 12–13 / M6 track OPENED).** `run_loco_matrix` in
+  `training/transfer_run.py`: a thin orchestrator that calls the published single-fold
+  protocol (`run_loco_transfer`) verbatim per fold — **matrix fold country_5/seed-0
+  byte-reproduces the published 0.8025340470101002** — with a deterministic val-group
+  policy (Decision log), optional `test_groups:` chunking for big datasets, per-seed runs
+  (`seeds:`), mean±std(ddof=1) + lift aggregation, and skip-with-reason honesty (a fold
+  whose test pool lacks both classes, or with no viable val group, is recorded, never
+  silently dropped). CLI `train` dispatches `loco_matrix: true`; config
+  `transfer_loco_matrix_mendeley.yaml`; 5 new tests (val policy pins the published
+  country_5→country_7 pairing from REAL measured label counts; end-to-end aggregation on
+  the toy 3-group store; skip path; chunking; dispatch) — **suite 298/298**. *Run (7 folds
+  × 5 seeds, R-GCN structural channel, CPU ≈8 min):* macro AUC-PR **0.754**, macro lift
+  **1.17** — but the honest headline is the split verdict: **positive lift on 6/7 markets,
+  FAILURE on the largest** (country_2, 750 confirmed firms: 0.646±0.018 vs prevalence
+  0.716, lift 0.90) — the single-fold country_5 story (0.763±0.047, lift 1.14) does NOT
+  generalize to the full matrix. Best relative lift is the only low-prevalence market
+  (country_3, prev 0.286: 0.498±0.060, lift 1.74). Tiny folds (9–30 firms) report with
+  their n. Matrix artifact: `eval_outputs/mendeley_eu/transfer_loco_matrix/matrix.json` ·
+  [master]
 - 2026-07-19 · **§7 STEP 27b — COPILOT DOCK (§5.3 view 7) + SSE streaming.** *Backend:* the agent loop refactored into `answer_question_events` (yields `("trace", step)` live per tool call, then `("final", payload)`; `answer_question` wraps it — existing contract byte-identical, tests untouched); `POST /api/v1/copilot/chat/stream` emits CRLF-framed SSE (`trace` events as tools fire → one `final` event carrying the exact /chat payload incl. `ai_generated` + caveat); missing key = clean eager 503 (matching /chat); mid-stream failures surface as an `error` event. 2 new tests (CRLF framing asserted; 503). Latent mypy error in `sql_tools.list_tables` fixed in passing (fetchone Optional — copilot isn't in CI's mypy target). *Frontend:* `components/copilot/CopilotDock.tsx` — collapsible right-hand glass dock (magenta neon, V2 tokens) on EVERY view: message bubbles, **live agent-trace timeline** streaming as tools fire, confidence badge + numbers/typology-grounding + guard-rewrite badges (all copied from payload fields, never re-derived), collapsible evidence panel (tool + args + result per call), **AI-generated label + screening caveat under every response**, honest not-configured banner when `/health.configured=false`; header toggle; **context-seeding** — "Ask Copilot" on the Case Detail header and a ◈ hover action on queue rows open the dock seeded with that alert's id (chip + adapted placeholder). SSE client is the archive's FIXED parser ported (CRLF→LF normalisation, multi-line data, comment lines, tail flush — `api/copilot.ts`, pure helpers + 5 tests). Payload discovery: `guard_rewrites` is a LIST (typed + rendered as its length). **Verified:** backend 293/293, frontend build + vitest 22/22, and a live dock walk against the REAL serving app with a scripted fake LLM client (no key on this machine; response text self-labels as faked, tool evidence was genuine store output — 2,991 alerts across the 3 served datasets): open/close, full turn (bubble → live trace → final card with badges/evidence/label/caveat), alert seeding from Case Detail. **NOT verified here (needs the nvapi- key): live-LLM answers + `poe copilot-goldens` gate — run on a keyed machine per Next action 4.** · [laptop-C]
 - 2026-07-19 · **🏁 MILESTONE MC — Copilot ported, grounded, gate passed.** 27b dock
   integration verified on master (backend 293/293, frontend 22/22 + build; laptop-C's SSE
@@ -295,10 +351,15 @@ still public 2026-07-15 — anonymous clone succeeded).
   Per the stakeholder's 2026-07-18 instruction (Decision log), further UI iteration is
   deferred to the end — Phase-2 development proceeds now.
 - **Phase 2 in progress [master]:** step 27 (PGExplainer) DONE; step 26a v1 (line-graph
-  channel) DONE — measured negative, see Decision log. Remaining step 26: (b) PNA/GIN+EU
-  AMLworld parity (wants GPU + `NeighborLoader`), (c) Elliptic++ actor-graph hetero experiment
-  (data on disk), learned line-encoder on AMLworld (per the B-LG verdict). Then Week-11
-  Copilot (MC — user creates the NVIDIA NIM key first).
+  channel) DONE — measured negative; step 26c (actor graph) DONE [laptop-C]; **Week 11 /
+  MC CLOSED (2026-07-19)**; **Weeks 12–13 OPENED — step 28 first slice DONE (Mendeley
+  LOCO matrix, 7 folds × 5 seeds; García LOMO matrix, 4 markets × 5 seeds — both
+  procurement matrices measured)**. Remaining step 28: cross-domain fine-tuning
+  label-efficiency curves (CPU-feasible), AMLworld held-out-pattern study (GPU).
+  Remaining step 29: multi-seed ≥5 for the HEADLINE experiments (Elliptic++
+  GATv2/ensemble), bootstrapped CIs + paired significance, budget/hit-rule/NMS
+  sensitivity, label-noise check. Still GPU-gated from step 26: (b) PNA/GIN+EU AMLworld
+  parity + `NeighborLoader`, learned line-encoder on AMLworld.
 - ~~The overhaul was verified against a synthetic serving store on laptop-C~~ **Resolved
   2026-07-18 [master]:** the overhauled UI is verified against REAL artifacts on BOTH laptop-C
   and master; master walked all five views live in both domains and verified the compose path.
@@ -321,21 +382,35 @@ still public 2026-07-15 — anonymous clone succeeded).
    (measured-precision readout), play the explorer's temporal scrubber, export a Model Lab
    chart. *(Phase-2 work no longer waits on this — stakeholder decision 2026-07-18, Decision
    log; further UI iteration is deferred to the end.)*
-3. **Phase 2, next slice — §7 step 26 remainder:** ~~(a) line-graph aux view v1~~ **DONE,
-   measured negative (2026-07-18, Decision log)**. ~~(c) Elliptic++ actor-graph experiment~~
-   **DONE v1 (2026-07-18 [laptop-C], see Completed — actor head beats tx head at tight budgets;
-   follow-ups: actor alert queue + roll-up, HeteroData tx↔wallet arm, multi-seed)**. Remaining:
-   (b) **PNA + GIN+EU reference configs on AMLworld HI-Small** (Multi-GNN parity check): needs
-   GPU (Colab/Kaggle) or a very patient CPU — master has the AMLworld raw data + IR store; wire
-   `NeighborLoader` minibatching first (In-flight note); (d) learned line-encoder over
-   materialized L(G) on AMLworld per the B-LG verdict (amounts give L(G) real edge features).
+3. **Phase 2 — §7 steps 28–29 (Weeks 12–13, M6):** ~~Mendeley LOCO matrix~~ ~~García
+   LOMO matrix~~ **BOTH DONE 2026-07-19 [master] (see Completed; RQ4 verdict pair in the
+   Decision log + García entry — lift is the cross-fold comparator).** Next concrete
+   slice: **step 29 rigor on the headline experiments.** (i) Multi-seed ≥5 reruns:
+   Elliptic++ GATv2-focal raw (published seed-0 0.5492 — machine-class variance ±0.02
+   already recorded) and the calibrated ensemble, reporting mean±std for the paper table
+   (each run is minutes on CPU; reuse the committed configs with per-seed `seed:` +
+   distinct `output_dir`, or generalize a `seeds:` loop the way `run_loco_matrix` did).
+   (ii) Bootstrapped CIs + paired-bootstrap significance for the headline comparisons
+   (GATv2 vs XGB; calibrated vs rank fusion) over the shared test-window node scores —
+   new small `eval/` helper + tests, no protocol changes. (iii) Sensitivity curves:
+   budgets (the "N%" resolution already landed), hit-rule `min_fraction` (param exists in
+   `alert_unit.py`), NMS Jaccard threshold. (iv) Label-noise robustness on Elliptic++
+   (§7 step 29's last item). Then step 28 remainder: cross-domain fine-tuning
+   label-efficiency curves (CPU-feasible — extend `run_cross_domain_probe` with a
+   fine-tune-k arm). Still GPU-gated (Colab/Kaggle): (b) **PNA + GIN+EU on AMLworld
+   HI-Small** (Multi-GNN parity; wire `NeighborLoader` minibatching there — it needs
+   pyg-lib/torch-sparse, which this Windows env deliberately excludes); (d) learned
+   line-encoder over materialized L(G) on AMLworld per the B-LG verdict; AMLworld
+   held-out-pattern study; OCDS publisher ingestion (step 30) closes M6.
 4. ~~[collaborator] Copilot 27b DOCK~~ **DONE on laptop-C (2026-07-19, see Completed) —
-   dock + SSE live-verified with a faked LLM client (no key on that machine).** Remaining
-   before MC closes: **verify live-LLM + `poe copilot-goldens` (`gate_passed: true`) on a
-   machine with the `nvapi-` key in `.env`** — the dock itself needs no changes for that;
-   then the smaller follow-ups: grow goldens 18→20–30; wire serving artifacts into the CI
-   goldens job; optional LangGraph depth (cut order: last). **[user]** add `NVIDIA_API_KEY`
-   as a GitHub Actions secret when convenient. *(original brief follows)* Backend is DONE
+   dock + SSE live-verified with a faked LLM client (no key on that machine).**
+   ~~Remaining before MC closes: verify live-LLM + goldens on a keyed machine~~
+   **RECONCILED 2026-07-19 [master]: that verification happened on master the same day —
+   see the 🏁 MILESTONE MC Completed entry (18/18, grounded 1.0, gate_passed true). MC is
+   CLOSED.** Remaining smaller follow-ups: ~~grow goldens 18→20–30~~ (DONE 2026-07-19
+   [master], 24 goldens — see Completed); wire serving artifacts into the CI goldens job;
+   optional LangGraph depth (cut order: last). **[user]** add `NVIDIA_API_KEY` as a GitHub
+   Actions secret when convenient. *(original brief follows)* Backend is DONE
    and live (27a core, corpus+grounding, 18/18 goldens — see Completed 2026-07-19): POST
    `/api/v1/copilot/chat` takes `{question, context_alert_id?}` and returns `{answer,
    confidence, numbers_grounded, corpus_grounded, guard_rewrites, evidence[], trace[],
@@ -367,6 +442,22 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Decision log
 <!-- - YYYY-MM-DD · decision · rationale · plan section affected -->
+- 2026-07-19 · **[master] LOCO-matrix validation-group policy FIXED (before any matrix
+  test number was read): each fold's early-stopping group = the SMALLEST other group
+  with ≥ `min_val_per_class` (default 3) confirmed nodes per class, ties lexicographic;
+  explicit `val_groups:` overrides win.** Rationale: group-respecting honesty (test
+  group untouched) while keeping supervision in the loss pool — validating on the big
+  country_2 would remove 75% of Mendeley's labeled firms from training; the published
+  country_5→country_7 pairing is this rule's own output (pinned by test with the real
+  measured label counts), so the matrix extends rather than re-tunes the published
+  protocol. country_6 (8 illicit / 1 licit) is excluded from val duty by the per-class
+  floor but still takes its test-fold turn. **Matrix verdict recorded (RQ4): Mendeley
+  LOCO transfer is market-dependent — macro lift 1.17 but the largest market FAILS
+  (country_2 lift 0.90 < 1)** — a single-fold LOCO number is not a transfer claim; the
+  matrix is (§4.4 honest reporting). Case-control caveat unchanged: within-sample
+  prevalences (0.29–0.89 across folds) are file-construction artifacts, so cross-fold
+  AUC-PR comparisons must go through the per-fold prevalence baseline (lift), never raw ·
+  §4.5, §7 step 28, R5.
 - 2026-07-18 · **[master, user-directed] Week-11 Copilot LLM models pinned (refines the
   2026-07-17 NVIDIA NIM adoption).** Researched against the mid-2026 build.nvidia.com catalog:
   ONE `nvapi-…` key is ACCOUNT-scoped and covers every catalog model (the per-model pages are
