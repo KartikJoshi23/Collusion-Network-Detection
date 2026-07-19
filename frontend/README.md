@@ -37,18 +37,25 @@ npm run test         # vitest (unit: formatters, motif vocabulary)
 
 ```
 src/
-  api/        types, fetch client, TanStack Query hooks
-  state/      zustand console store (domain, dataset, budget, selection, deep links)
+  api/        types, fetch client, TanStack Query hooks, copilot SSE client
+              (the archive's CRLF-fixed parser, pure + tested)
+  state/      zustand console store (domain, dataset, budget, selection,
+              deep links, copilot open/seed)
   app/        layout shell, domain toggle, dataset selector, view router
-  components/ bg/ (animated network canvas) · ui/ (glass, glyphs, chips, states, count-up)
-  views/      overview, alert-queue, graph-explorer, case-detail, model-lab
-  lib/        formatters, motif vocabulary (mirrors backend MotifType, pinned by test)
-  styles/     tokens.css (design tokens: palette, glass, radar, risk-pulse)
+  components/ bg/ (animated network canvas) · ui/ (glass, glyphs, schematics,
+              chips, states, count-up) · charts/ (SVG figure factory + export)
+              · copilot/ (the §5.3 view-7 dock: bubbles, live trace, badges,
+              evidence, AI label + caveat)
+  views/      overview (constellation hero), alert-queue, graph-explorer
+              (temporal scrubber), case-detail (dossier), model-lab, about
+              (ScrollTrigger story)
+  lib/        formatters, motif vocabulary + palette (pinned by tests),
+              sparkline + metrics extractors (pure, tested)
+  styles/     tokens.css (V2 multi-hue system, glass, hover language)
 ```
 
 Stack: Tailwind v4 (design tokens), TanStack Query, Zustand, Sigma.js (graph),
-Motion, @fontsource variable fonts. The `copilot/` dock joins in Phase 2
-(§4.6, Week 11).
+Motion, GSAP (DrawSVG/ScrollTrigger), @fontsource variable fonts.
 
 The ethics caveat ("screening signal only — no determination of guilt")
 renders on every screen — a scope-boundary requirement (§1.5, R11), not

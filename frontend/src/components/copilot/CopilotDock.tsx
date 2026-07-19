@@ -27,6 +27,7 @@ export function CopilotDock() {
   const open = useConsole((s) => s.copilotOpen);
   const seed = useConsole((s) => s.copilotSeed);
   const toggle = useConsole((s) => s.toggleCopilot);
+  const clearSeed = useConsole((s) => s.clearCopilotSeed);
   const [health, setHealth] = useState<CopilotHealth | null>(null);
   const [turns, setTurns] = useState<Turn[]>([]);
   const [input, setInput] = useState("");
@@ -134,7 +135,15 @@ export function CopilotDock() {
               className="mono flex items-center gap-1.5 border-b border-hairline/40 px-3 py-1.5 text-[10px]"
               style={{ color: UI_HUES.amber }}
             >
-              ⌖ context: {seed}
+              <span className="min-w-0 truncate">⌖ context: {seed}</span>
+              <button
+                onClick={clearSeed}
+                title="clear the alert context (audit: stale seeds outlive dataset switches)"
+                className="ml-auto shrink-0 rounded px-1 text-text-2 hover:text-text-0"
+                aria-label="clear copilot context"
+              >
+                ✕
+              </button>
             </div>
           )}
 

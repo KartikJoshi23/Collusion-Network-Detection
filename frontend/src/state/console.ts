@@ -26,6 +26,7 @@ interface ConsoleState {
   setView: (v: ViewId) => void;
   toggleCopilot: () => void;
   askCopilotAbout: (alertId: string) => void;
+  clearCopilotSeed: () => void;
 }
 
 const VIEW_IDS: ViewId[] = ["overview", "queue", "explorer", "case", "lab", "about"];
@@ -70,6 +71,7 @@ export const useConsole = create<ConsoleState>((set) => ({
   // §5.3 view 7 context-seeding: opened from an alert, the dock carries that
   // alert's id so "explain this" resolves without retyping
   askCopilotAbout: (alertId) => set({ copilotOpen: true, copilotSeed: alertId }),
+  clearCopilotSeed: () => set({ copilotSeed: undefined }),
 }));
 
 // Keep the document's data-domain in sync so the token layer recolors (§5.2).
