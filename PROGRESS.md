@@ -106,6 +106,16 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-19 · **§7 STEP 29 — ENSEMBLE 5-SEED CAMPAIGN MEASURED: ensemble_calibrated
+  0.4434 ± 0.0501.** The calibrated fusion tracks its supervised member (0.4729 ± 0.0525)
+  within ~0.03 at EVERY seed — the §4.4 preserve-the-strong-member property holds under
+  multi-seed — while **ensemble_rank stays collapsed at every seed (0.0511 ± 0.0019)**:
+  the rank-fusion failure is seed-invariant, not a seed-0 artifact. Unsupervised members
+  are seed-insensitive (dominant 0.0410 ± 0.0003, gae 0.0386 ± 0.0001, floor
+  deterministic 0.0547) and all remain ≤ prevalence as published. Seed-0 is again the
+  best seed for both member and fusion (published 0.5246 vs mean 0.4434 — same
+  paper-table caveat as the GATv2 entry). Artifact:
+  `eval_outputs/elliptic_pp/ensemble_multiseed/ensemble_multiseed.json` · [master]
 - 2026-07-19 · **§7 STEP 29 — GATv2 HEADLINE 5-SEED CAMPAIGN MEASURED: 0.4729 ± 0.0525.
   The published seed-0 number (0.5492) is the BEST of the five seeds** (0.5492 / 0.4712 /
   0.4276 / 0.4213 / 0.4951; ~17 min/seed on master) — **the paper table must headline the
@@ -423,14 +433,13 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## In-flight
 <!-- exactly what is unfinished, where, why, and which machine/branch has it -->
-- ~~5-seed GATv2 headline campaign~~ **DONE (2026-07-19, see Completed — 0.4729 ± 0.0525;
-  the published seed-0 is the best seed).** NOW RUNNING on master (sequential, resumable —
-  re-run the same commands to continue if interrupted): (1) `collusiongraph train -c
-  configs/experiment/ensemble_elliptic_pp_multiseed.yaml` (~30–60 min: unsupervised
-  members + calibration per seed, supervised member reused from the campaign);
-  (2) `collusiongraph train -c configs/experiment/label_noise_elliptic_pp.yaml`
-  (12 grid points × ~17 min ≈ 3.5 h). Record both aggregates
-  (`ensemble_multiseed.json`, `noise_curve.json`) in this ledger when done.
+- ~~5-seed GATv2 headline campaign~~ **DONE — 0.4729 ± 0.0525.** ~~Ensemble multi-seed
+  run~~ **DONE — ensemble_calibrated 0.4434 ± 0.0501, rank collapse seed-invariant (see
+  Completed).** STILL RUNNING on master: the label-noise curve —
+  `collusiongraph train -c configs/experiment/label_noise_elliptic_pp.yaml`
+  (12 grid points × ~18 min; started ~20:50, ETA ≈ 00:30; RESUMABLE — re-run the same
+  command to continue if interrupted). Record `noise_curve.json` in this ledger when it
+  lands.
 - ~~Frontend overhaul V1 rejected → V2 required~~ **V2 DELIVERED [laptop-C] and verified on
   master (2026-07-18, see Completed); awaiting stakeholder review #3.** Nothing half-written.
   Per the stakeholder's 2026-07-18 instruction (Decision log), further UI iteration is

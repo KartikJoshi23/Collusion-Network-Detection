@@ -390,6 +390,54 @@ def _structural_frames_for_probe(
     return apply_zscore(train_feats, stats), apply_zscore(infer_feats, stats)
 
 
+def _target_graphs(
+    target_cfg: dict[str, Any], store: GraphStore
+) -> tuple[Any, Any, dict[str, int], int, int]:
+    """Target graphs under target-only normalization (F3 within the graph,
+    §4.2 rule 2 across graphs) — shared by the frozen probe and the
+    label-efficiency curve."""
+    dataset: str = target_cfg["dataset"]
+    train_end: int = target_cfg["split"]["train_end"]
+    test_start: int = target_cfg["split"].get("test_start", train_end + 1)
+    nodes = store.read(dataset, "nodes")
+    edges = store.read(dataset, "edges")
+    labels = store.read(dataset, "labels")
+    if (fence := target_cfg["split"].get("fence_after")) is not None:
+        nodes, edges = restrict_as_of(nodes, edges, fence)
+    train_feats, infer_feats = _structural_frames_for_probe(nodes, edges, train_end)
+    t_nodes, t_edges = restrict_as_of(nodes, edges, train_end)
+    train_data = build_graph(t_nodes, t_edges, labels, train_feats)
+    infer_data = build_graph(nodes, edges, labels, infer_feats)
+    times = dict(nodes.select("node_id", _TIME).iter_rows())
+    return train_data, infer_data, times, train_end, test_start
+
+
+def _pool_indices(
+    data: Any, times: dict[str, int], prefix: str, lo: int, hi: int | None
+) -> np.ndarray:
+    """Confirmed, typed, time-windowed node positions (the probe's pool rule)."""
+    keep = [
+        i
+        for i, nid in enumerate(data.node_ids)
+        if data.y[i] >= 0
+        and nid.startswith(prefix)
+        and (t := times.get(nid)) is not None
+        and t >= lo
+        and (hi is None or t <= hi)
+    ]
+    return np.array(keep, dtype=np.int64)
+
+
+def _source_encoder_kwargs(source_record: dict[str, Any]) -> dict[str, Any]:
+    if source_record["model"].get("name", "graphsage") != "graphsage":
+        raise ValueError("the frozen probe expects a GraphSAGE source encoder (embed() channel)")
+    return {
+        k: v
+        for k, v in source_record["model"].items()
+        if k not in ("name", "fusion", "fusion_spans", "fusion_dim")
+    }
+
+
 def run_cross_domain_probe(config: dict[str, Any] | str | Path) -> dict[str, Any]:
     """§7 step 21: frozen source encoder → target embeddings → linear probe."""
     cfg = load_config(config)
@@ -410,28 +458,11 @@ def run_cross_domain_probe(config: dict[str, Any] | str | Path) -> dict[str, Any
 
     # 2. Target graphs under target-only normalization.
     dataset: str = target_cfg["dataset"]
-    train_end: int = target_cfg["split"]["train_end"]
-    test_start: int = target_cfg["split"].get("test_start", train_end + 1)
     prefix = f"{target_cfg['node_type']}:" if target_cfg.get("node_type") else ""
-    nodes = store.read(dataset, "nodes")
-    edges = store.read(dataset, "edges")
-    labels = store.read(dataset, "labels")
-    if (fence := target_cfg["split"].get("fence_after")) is not None:
-        nodes, edges = restrict_as_of(nodes, edges, fence)
-    train_feats, infer_feats = _structural_frames_for_probe(nodes, edges, train_end)
-
-    t_nodes, t_edges = restrict_as_of(nodes, edges, train_end)
-    train_data = build_graph(t_nodes, t_edges, labels, train_feats)
-    infer_data = build_graph(nodes, edges, labels, infer_feats)
+    train_data, infer_data, times, train_end, test_start = _target_graphs(target_cfg, store)
 
     # 3. Frozen encoder (weights from the source run; head is ignored).
-    if source_record["model"].get("name", "graphsage") != "graphsage":
-        raise ValueError("the frozen probe expects a GraphSAGE source encoder (embed() channel)")
-    model_kwargs = {
-        k: v
-        for k, v in source_record["model"].items()
-        if k not in ("name", "fusion", "fusion_spans", "fusion_dim")
-    }
+    model_kwargs = _source_encoder_kwargs(source_record)
     encoder = GraphSAGE(in_dim=train_data.x.shape[1], **model_kwargs)
     state = torch.load(checkpoint, weights_only=True)
     encoder.load_state_dict(state)
@@ -444,23 +475,11 @@ def run_cross_domain_probe(config: dict[str, Any] | str | Path) -> dict[str, Any
     emb_train, emb_infer = _embed(train_data), _embed(infer_data)
 
     # 4. Probe: fit on target train-period confirmed nodes, score the test period.
-    times = dict(nodes.select("node_id", _TIME).iter_rows())
-
-    def _pool(data: Any, emb: np.ndarray, lo: int, hi: int | None) -> tuple:
-        keep = [
-            i
-            for i, nid in enumerate(data.node_ids)
-            if data.y[i] >= 0
-            and nid.startswith(prefix)
-            and (t := times.get(nid)) is not None
-            and t >= lo
-            and (hi is None or t <= hi)
-        ]
-        idx = np.array(keep, dtype=np.int64)
-        return emb[idx], data.y.numpy()[idx], [data.node_ids[i] for i in keep]
-
-    x_tr, y_tr, _ = _pool(train_data, emb_train, lo=0, hi=train_end)
-    x_te, y_te, ids_te = _pool(infer_data, emb_infer, lo=test_start, hi=None)
+    idx_tr = _pool_indices(train_data, times, prefix, lo=0, hi=train_end)
+    idx_te = _pool_indices(infer_data, times, prefix, lo=test_start, hi=None)
+    x_tr, y_tr = emb_train[idx_tr], train_data.y.numpy()[idx_tr]
+    x_te, y_te = emb_infer[idx_te], infer_data.y.numpy()[idx_te]
+    ids_te = [infer_data.node_ids[i] for i in idx_te]
     if y_tr.min() == y_tr.max() or y_te.min() == y_te.max():
         raise ValueError("probe pools lack both classes — check target split")
     probe = LogisticRegression(max_iter=2000, class_weight="balanced", random_state=seed)
