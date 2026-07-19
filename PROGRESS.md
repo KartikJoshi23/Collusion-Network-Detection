@@ -106,6 +106,19 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-19 · **§7 STEP 29 — GATv2 HEADLINE 5-SEED CAMPAIGN MEASURED: 0.4729 ± 0.0525.
+  The published seed-0 number (0.5492) is the BEST of the five seeds** (0.5492 / 0.4712 /
+  0.4276 / 0.4213 / 0.4951; ~17 min/seed on master) — **the paper table must headline the
+  multi-seed mean, not the seed-0 run.** Consequences recorded honestly: (a) the
+  GNN-vs-XGB gap widens under multi-seed (XGB 0.8104 is deterministic and sits ~6σ above
+  the GNN mean — the GADBench replication is stronger than the single-seed numbers
+  suggested); (b) seed variance (±0.05) dominates the previously-recorded ±0.02
+  machine-class variance; (c) val AUC-PR spans only 0.9315–0.9497 across seeds while test
+  spans 0.42–0.55 — a third, quantified demonstration that val selection is blind to the
+  t43 shift (R5); (d) queue-head P@100 is seed-unstable (0.812 ± 0.238) — unlike the
+  actor-graph queue head (seed-stable ≥0.98), the tx-graph GNN head varies materially.
+  seed_0 byte-reproduced the published run (same-machine determinism confirmed).
+  Artifact: `eval_outputs/elliptic_pp/gnn_gatv2_focal_multiseed/multiseed.json` · [master]
 - 2026-07-19 · **§7 STEP 29 — ensemble multi-seed wrapper.** `run_ensemble_multiseed` in
   `training/multiseed.py`: per seed, `run_ensemble` re-runs with that seed (unsupervised
   members refit, calibration re-fits) while the supervised member REUSES the GATv2
@@ -410,14 +423,14 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## In-flight
 <!-- exactly what is unfinished, where, why, and which machine/branch has it -->
-- **5-seed GATv2 headline campaign RUNNING on master (started 2026-07-19)** —
-  `collusiongraph train -c configs/experiment/gnn_elliptic_pp_gatv2_focal_multiseed.yaml`
-  (~37 min/seed on this CPU, ≈3 h total). The runner is RESUMABLE: if interrupted, re-run
-  the same command — completed seeds under
-  `eval_outputs/elliptic_pp/gnn_gatv2_focal_multiseed/seed_*/` are loaded, not retrained;
-  `multiseed.json` aggregates when all five finish. The seed_0 rerun doubles as a
-  same-machine reproduction check vs the published 0.5492. Record mean±std in this ledger
-  (and the paper table) when done.
+- ~~5-seed GATv2 headline campaign~~ **DONE (2026-07-19, see Completed — 0.4729 ± 0.0525;
+  the published seed-0 is the best seed).** NOW RUNNING on master (sequential, resumable —
+  re-run the same commands to continue if interrupted): (1) `collusiongraph train -c
+  configs/experiment/ensemble_elliptic_pp_multiseed.yaml` (~30–60 min: unsupervised
+  members + calibration per seed, supervised member reused from the campaign);
+  (2) `collusiongraph train -c configs/experiment/label_noise_elliptic_pp.yaml`
+  (12 grid points × ~17 min ≈ 3.5 h). Record both aggregates
+  (`ensemble_multiseed.json`, `noise_curve.json`) in this ledger when done.
 - ~~Frontend overhaul V1 rejected → V2 required~~ **V2 DELIVERED [laptop-C] and verified on
   master (2026-07-18, see Completed); awaiting stakeholder review #3.** Nothing half-written.
   Per the stakeholder's 2026-07-18 instruction (Decision log), further UI iteration is
@@ -467,10 +480,12 @@ still public 2026-07-15 — anonymous clone succeeded).
    is QUEUED: run `uv run collusiongraph train -c
    configs/experiment/label_noise_elliptic_pp.yaml` when the CPU is free (12 grid points
    × ~20–40 min each; RESUMABLE — re-run the same command to continue; record the curve
-   in the ledger)**. Remaining step 29: multi-seed the calibrated ensemble (wrap
-   `run_ensemble` the way `run_multiseed` wraps `train_gnn`; the supervised member can
-   reuse the 5-seed campaign's `seed_*/` score dirs — only the unsupervised members and
-   calibration need per-seed reruns). Then step 28 remainder: cross-domain
+   in the ledger)**; ~~GATv2 5-seed campaign~~ **DONE — 0.4729 ± 0.0525, the published
+   seed-0 is the BEST seed (see Completed; the paper table must use the multi-seed
+   mean)**; ~~ensemble multi-seed machinery~~ **BUILT; the ensemble run + label-noise
+   curve are IN FLIGHT on master (see In-flight — record both aggregates in this ledger
+   when they land)**. After those land, step 29 is CLOSED except bootstrapped CIs for any
+   NEW headline comparisons the paper adds. Then step 28 remainder: cross-domain
    fine-tuning label-efficiency curves (CPU-feasible — extend `run_cross_domain_probe`
    with a fine-tune-k arm). Still GPU-gated (Colab/Kaggle): (b) **PNA + GIN+EU on AMLworld
    HI-Small** (Multi-GNN parity; wire `NeighborLoader` minibatching there — it needs
