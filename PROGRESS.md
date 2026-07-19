@@ -106,6 +106,21 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-20 · **§7 STEP 32 — the two queued ablation arms MEASURED (seed 0, vs the
+  published focal-bidirectional 0.5492 / P@100 0.96).** **(a) −bidirectional edges:
+  0.3549 / P@100 0.21 — a large, clean drop (−0.19):** reverse edges carry real signal
+  for GATv2 on Elliptic++ (upstream context matters) — the Multi-GNN bi-directional
+  evidence (arXiv:2412.00241) replicated in-house; this is the strongest single
+  component ablation measured. **(b) −focal (weighted-CE): 0.4869 / P@100 0.79 —
+  INCONCLUSIVE at single seed:** the wce arm sits WITHIN the focal multi-seed spread
+  (0.4729 ± 0.0525), so unlike SAGE (where focal clearly won, 0.4743 vs 0.3882) the
+  GATv2 loss choice cannot be settled from seed 0 — a 5-seed wce campaign
+  (`multiseed: true` over the wce config) is the one-command follow-up if the paper
+  needs the claim. Step-32 measured rows so far: −bidir (−0.19, strong), −unsupervised
+  (−0.03 cost of adding them, from multi-seed), −focal (inconclusive on GATv2).
+  `serving.json` rebuilt — the label-noise curve now renders in the Model Lab rigor
+  section. Runs: `eval_outputs/elliptic_pp/gnn_gatv2_focal_unidir/`, `…/gnn_gatv2_wce/`
+  · [master]
 - 2026-07-20 · **§7 STEP 29 (iv) — LABEL-NOISE CURVE MEASURED, and it is the sharpest
   val-pathology evidence yet: TEST AUC-PR RISES with train-label noise while val
   collapses.** (4 rates × 3 seeds, GATv2-focal, protocol otherwise byte-identical —
@@ -501,14 +516,10 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## In-flight
 <!-- exactly what is unfinished, where, why, and which machine/branch has it -->
-- ~~5-seed GATv2 campaign~~ ~~ensemble multi-seed~~ ~~label-noise curve~~ **ALL DONE
-  (see Completed — step 29 is fully measured).** STILL RUNNING on master: the two
-  step-32 ablation arms (sequential, ~35 min total) —
-  `collusiongraph train -c configs/experiment/gnn_elliptic_pp_gatv2_focal_unidir.yaml`
-  then `...gnn_elliptic_pp_gatv2_wce.yaml`. Record both against the seed-0 focal
-  baseline 0.5492 (single-seed ablation-table convention per M2; multi-seed caveat
-  applies), then re-run `poe demo-artifacts` so the noise curve + any new artifacts
-  join the served rigor block.
+- ~~5-seed GATv2 campaign~~ ~~ensemble multi-seed~~ ~~label-noise curve~~ ~~step-32
+  ablation arms~~ **ALL DONE (see Completed — step 29 fully measured; step-32 arms
+  −bidir/−focal/−unsup measured; serving rebuilt with the noise curve). NOTHING is
+  running on master.**
 - ~~Frontend overhaul V1 rejected → V2 required~~ **V2 DELIVERED [laptop-C] and verified on
   master (2026-07-18, see Completed); awaiting stakeholder review #3.** Nothing half-written.
   Per the stakeholder's 2026-07-18 instruction (Decision log), further UI iteration is
