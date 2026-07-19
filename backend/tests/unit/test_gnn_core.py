@@ -84,6 +84,17 @@ class TestGraphBuild:
         assert data.x.shape == (4, 2)
         assert data.x[2, 0] == 0.0  # null feature -> 0.0 for message passing
 
+    def test_unidirectional_ablation_arm(self) -> None:  # §7 step 32 (−bidirectional)
+        nodes, edges, labels, features = ir_fixture()
+        data = build_graph(nodes, edges, labels, features, bidirectional=False)
+        # only the original src→dst edges, all direction 0, forward relations only
+        assert data.edge_index.shape == (2, 3)
+        assert data.edge_direction.sum() == 0
+        assert data.num_relations == 2  # pays + linked_to, no reverse ids
+        both = build_graph(nodes, edges, labels, features)
+        assert torch.equal(data.edge_index, both.edge_index[:, :3])
+        assert torch.equal(data.edge_rel, both.edge_rel[:3])
+
     def test_confirmed_mask_respects_pool_and_prefix(self) -> None:
         nodes, edges, labels, features = ir_fixture()
         data = build_graph(nodes, edges, labels, features)

@@ -106,6 +106,22 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-19 · **§7 STEP 32 OPENED (Week 14) — component-ablation machinery + first
+  measured row.** *(a) −bidirectional edges:* `build_graph(bidirectional=False)`
+  materializes only the original src→dst direction (all-zero direction flags, forward
+  relations only, `num_relations` halved); trainer flag `bidirectional: false` recorded
+  in the run record; ablation config `gnn_elliptic_pp_gatv2_focal_unidir.yaml` (B-DIR).
+  *(b) −focal loss on the HEADLINE model:* `gnn_elliptic_pp_gatv2_wce.yaml` (the SAGE
+  focal-vs-wce pair was measured in M2; this completes it on GATv2). Both runs QUEUED
+  behind the label-noise curve (see In-flight). *(c) −unsupervised arm — MEASURED from
+  the multi-seed ensemble data, no new run needed:* removing the unsupervised members
+  from the calibrated fusion leaves the supervised member alone (per-member isotonic
+  calibration is monotone → identical ranking), so the ablation reads directly:
+  supervised-only 0.4729 ± 0.0525 vs full calibrated ensemble 0.4434 ± 0.0501 — **adding
+  the sub-prevalence unsupervised members COSTS −0.030 AUC-PR under multi-seed**; their
+  §4.4 justification remains robustness/coverage (calibration is what stops them
+  destroying the fusion — the seed-invariant rank-collapse), not headline AUC-PR.
+  2 new tests — **suite 333/333** · [master]
 - 2026-07-19 · **§7 STEP 28 — label-efficiency curve, SECOND direction (fin→proc)
   MEASURED: the RQ4 pair is complete and symmetric.** Same runner/protocol as laptop-C's
   proc→fin curve (config `label_efficiency_fin2proc.yaml`; source = the Elliptic SAGE
@@ -453,9 +469,14 @@ still public 2026-07-15 — anonymous clone succeeded).
   run~~ **DONE — ensemble_calibrated 0.4434 ± 0.0501, rank collapse seed-invariant (see
   Completed).** STILL RUNNING on master: the label-noise curve —
   `collusiongraph train -c configs/experiment/label_noise_elliptic_pp.yaml`
-  (12 grid points × ~18 min; started ~20:50, ETA ≈ 00:30; RESUMABLE — re-run the same
+  (12 grid points × ~18 min; started ~20:50, ETA ≈ 00:35; RESUMABLE — re-run the same
   command to continue if interrupted). Record `noise_curve.json` in this ledger when it
   lands.
+- **QUEUED behind the noise curve (step-32 ablation runs, ~17 min each, master):**
+  `collusiongraph train -c configs/experiment/gnn_elliptic_pp_gatv2_focal_unidir.yaml`
+  and `collusiongraph train -c configs/experiment/gnn_elliptic_pp_gatv2_wce.yaml` —
+  record both against the seed-0 focal baseline 0.5492 (single-seed ablation-table
+  convention per M2; the multi-seed caveat from the campaign entry applies).
 - ~~Frontend overhaul V1 rejected → V2 required~~ **V2 DELIVERED [laptop-C] and verified on
   master (2026-07-18, see Completed); awaiting stakeholder review #3.** Nothing half-written.
   Per the stakeholder's 2026-07-18 instruction (Decision log), further UI iteration is

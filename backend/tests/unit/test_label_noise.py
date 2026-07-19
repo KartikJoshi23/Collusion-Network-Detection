@@ -94,6 +94,19 @@ class TestTrainerIntegration:
         )
         assert noisy["node_level"]["n_confirmed"] == clean["node_level"]["n_confirmed"]
 
+    def test_unidirectional_trainer_arm(self, tmp_path) -> None:  # §7 step 32 (−bidir)
+        store = tiny_store(tmp_path)
+        record = train_gnn(
+            {
+                **TRAIN_CFG,
+                "store_root": str(store.root),
+                "output_dir": str(tmp_path / "unidir"),
+                "bidirectional": False,
+            }
+        )
+        assert record["bidirectional"] is False
+        assert 0.0 <= record["node_level"]["auc_pr"] <= 1.0
+
     def test_rate_zero_matches_clean_run_exactly(self, tmp_path) -> None:
         store = tiny_store(tmp_path)
         clean = train_gnn(

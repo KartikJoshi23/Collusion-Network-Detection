@@ -25,12 +25,18 @@ def build_graph(
     edges: pl.DataFrame,
     labels: pl.DataFrame,
     feature_frame: pl.DataFrame,
+    bidirectional: bool = True,
 ) -> Data:
     """Materialize a PyG ``Data`` from IR frames + a per-node feature table.
 
     ``feature_frame`` (node_id + numeric columns) supplies ``x`` — raw dataset
     features, the structural template, or both; NaN/null become 0.0 (models,
     unlike trees, cannot route on missingness).
+
+    ``bidirectional=False`` is the §7 step-32 ablation arm (−bidirectional
+    edges): only the original src→dst direction is materialized (direction
+    flag all-zero, forward relations only) — message passing follows money/
+    awards downstream but never back up.
     """
     node_ids = nodes["node_id"].to_list()
     index = {nid: i for i, nid in enumerate(node_ids)}
@@ -50,19 +56,24 @@ def build_graph(
 
     src = np.fromiter((index[s] for s in edges["src"].to_list()), dtype=np.int64)
     dst = np.fromiter((index[d] for d in edges["dst"].to_list()), dtype=np.int64)
-    edge_index = torch.from_numpy(
-        np.stack([np.concatenate([src, dst]), np.concatenate([dst, src])])
-    )
     n_e = len(src)
-    direction = torch.cat([torch.zeros(n_e), torch.ones(n_e)]).unsqueeze(1)
 
     edge_types = sorted(edges["edge_type"].unique().to_list())
     type_of = {t: k for k, t in enumerate(edge_types)}
     fwd_rel = np.fromiter(
         (type_of[t] for t in edges["edge_type"].to_list()), dtype=np.int64, count=n_e
     )
-    # reverse relations occupy ids [n_types, 2*n_types)
-    edge_rel = torch.from_numpy(np.concatenate([fwd_rel, fwd_rel + len(edge_types)]))
+    if bidirectional:
+        edge_index = torch.from_numpy(
+            np.stack([np.concatenate([src, dst]), np.concatenate([dst, src])])
+        )
+        direction = torch.cat([torch.zeros(n_e), torch.ones(n_e)]).unsqueeze(1)
+        # reverse relations occupy ids [n_types, 2*n_types)
+        edge_rel = torch.from_numpy(np.concatenate([fwd_rel, fwd_rel + len(edge_types)]))
+    else:
+        edge_index = torch.from_numpy(np.stack([src, dst]))
+        direction = torch.zeros(n_e).unsqueeze(1)
+        edge_rel = torch.from_numpy(fwd_rel)
 
     label_map = {
         nid: (1 if lab == Label.ILLICIT.value else 0 if lab == Label.LICIT.value else -1)
@@ -73,7 +84,7 @@ def build_graph(
     data = Data(x=x, edge_index=edge_index, y=y)
     data.edge_direction = direction
     data.edge_rel = edge_rel
-    data.num_relations = 2 * len(edge_types)
+    data.num_relations = (2 if bidirectional else 1) * len(edge_types)
     data.node_ids = node_ids
     return data
 

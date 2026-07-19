@@ -1,0 +1,31 @@
+# §7 step 32 — component ablation arm (−focal loss) on the HEADLINE model:
+# GATv2 with class-weighted CE instead of focal, everything else
+# byte-identical to gnn_elliptic_pp_gatv2_focal.yaml. Completes the RQ1
+# loss ablation (the SAGE focal-vs-wce pair was measured in the M2 stack:
+# 0.4743 vs 0.3882 post-audit).
+dataset: elliptic_pp
+store_root: data/interim
+output_dir: eval_outputs/elliptic_pp/gnn_gatv2_wce
+seed: 0
+features: raw
+
+split:
+  loss_end: 29
+  train_end: 34
+  test_start: 35
+
+model:
+  name: gatv2
+  hidden_dim: 64
+  num_layers: 2
+  heads: 4
+  dropout: 0.3
+
+loss:
+  name: weighted_ce
+
+lr: 0.005
+weight_decay: 0.0005
+epochs: 200
+patience: 20
+budgets: [50, 100, 200]

@@ -160,9 +160,15 @@ def train_gnn(config: dict[str, Any] | str | Path) -> dict[str, Any]:
     # (F3): the model trains and scores under one normalization, not two
     train_raw, fusion_spans = _feature_frame(feature_kind, t_nodes, t_edges, train_end, n_raw)
     stats = fit_zscore(train_raw)
-    train_data = build_graph(t_nodes, t_edges, train_labels, apply_zscore(train_raw, stats))
+    # §7 step 32 ablation arm (−bidirectional edges); default True = published protocol
+    bidirectional = bool(cfg.get("bidirectional", True))
+    train_data = build_graph(
+        t_nodes, t_edges, train_labels, apply_zscore(train_raw, stats), bidirectional=bidirectional
+    )
     infer_raw, _ = _feature_frame(feature_kind, nodes, edges, None, n_raw)
-    infer_data = build_graph(nodes, edges, labels, apply_zscore(infer_raw, stats))
+    infer_data = build_graph(
+        nodes, edges, labels, apply_zscore(infer_raw, stats), bidirectional=bidirectional
+    )
 
     prefix = f"{cfg['node_type']}:" if cfg.get("node_type") else ""
     placed = t_nodes.filter(pl.col(_TIME).is_not_null())
@@ -268,6 +274,7 @@ def train_gnn(config: dict[str, Any] | str | Path) -> dict[str, Any]:
         "features": feature_kind,
         "loss": cfg.get("loss", {}),
         "seed": seed,
+        **({} if bidirectional else {"bidirectional": False}),
         **(
             {
                 "label_noise": {
