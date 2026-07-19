@@ -30,7 +30,7 @@ jobs:
       - run: uv sync --locked
       - run: uv run ruff check backend scripts
       - run: uv run black --check backend scripts
-      - run: uv run mypy backend/collusiongraph
+      - run: uv run mypy backend/collusiongraph backend/copilot
 
   test:
     runs-on: ubuntu-latest

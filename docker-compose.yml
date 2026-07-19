@@ -9,6 +9,10 @@ services:
     volumes:
       - ./eval_outputs:/artifacts/eval_outputs:ro
       - ./data/interim:/artifacts/data/interim:ro
+    environment:
+      # Copilot LLM key (§4.6) — set in the shell or a compose .env file;
+      # empty means /copilot/health reports configured=false, serving still up
+      - NVIDIA_API_KEY=${NVIDIA_API_KEY:-}
     expose:
       - "8000"
 

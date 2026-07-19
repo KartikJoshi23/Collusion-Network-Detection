@@ -158,18 +158,29 @@ class TestEndpoints:
             assert body.get("caveat") == SCREENING_CAVEAT, path
 
 
-def test_serving_never_imports_torch() -> None:
+def test_serving_never_imports_torch(tmp_path) -> None:
     """Deployment rule (docs/deployment.md §2): the serving path must be
-    importable without torch — the container ships without it."""
+    importable — AND buildable via create_app, which mounts the Copilot
+    router — without torch; the container ships without it. The 2026-07-19
+    audit closed the import-only hole: create_app's copilot mount reached
+    torch through two eager package __init__ chains (copilot → agent →
+    corpus → collusiongraph.explain → explainer runners), which import-only
+    pinning never exercised."""
     import subprocess
     import sys
 
+    serving = tmp_path / "serving.json"
+    serving.write_text(json.dumps({"datasets": {}}), encoding="utf-8")
     code = (
         "import sys; sys.modules['torch'] = None\n"
         "import api  # must not touch torch on import\n"
+        f"app = api.create_app({str(serving)!r})  # the copilot mount must stay lazy\n"
+        "from fastapi.testclient import TestClient\n"
+        "assert TestClient(app).get('/api/v1/copilot/health').status_code == 200\n"
         "print('ok')"
     )
     out = subprocess.run(
         [sys.executable, "-c", code], capture_output=True, text=True, cwd="backend"
     )
     assert out.returncode == 0, out.stderr
+    assert "ok" in out.stdout

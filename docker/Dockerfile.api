@@ -1,19 +1,27 @@
 # CollusionGraph serving image (docs/deployment.md §2).
 #
 # Deliberately NOT `uv sync`: the serving path never imports torch (pinned by
-# test_api.py::test_serving_never_imports_torch), so this image carries only
+# test_api.py::test_serving_never_imports_torch, which CALLS create_app — the
+# 2026-07-19 audit closed the import-only hole), so this image carries only
 # the read-only stack — ~200 MB instead of ~3 GB. The same image runs under
 # docker compose locally, on EC2, or as a Lambda container (Track B).
 FROM python:3.11-slim
 
+# openai + networkx serve the Copilot router (§4.6): openai is imported only
+# when a key is configured; networkx rides in for the red-flag tables' motif
+# types (pure Python, no compiled deps). Torch stays out — the copilot and
+# explain packages re-export lazily (PEP 562) so mounting the router never
+# drags the explainer stack in.
 RUN pip install --no-cache-dir \
     "fastapi>=0.115" "uvicorn>=0.32" "polars>=1.17" "pyarrow>=18" \
-    "duckdb>=1.1" "pydantic>=2.9" "pyyaml>=6.0"
+    "duckdb>=1.1" "pydantic>=2.9" "pyyaml>=6.0" "openai>=1.50" "networkx>=3.3"
 
-# Only the packages serving needs: the IR schema + the API app.
+# Only the packages serving needs: the IR schema + the API app + the Copilot.
 COPY backend/collusiongraph/__init__.py /app/collusiongraph/__init__.py
 COPY backend/collusiongraph/schema /app/collusiongraph/schema
+COPY backend/collusiongraph/explain /app/collusiongraph/explain
 COPY backend/api /app/api
+COPY backend/copilot /app/copilot
 
 ENV PYTHONPATH=/app \
     COLLUSIONGRAPH_SERVING=/artifacts/eval_outputs/serving.json
