@@ -46,6 +46,8 @@ def select_train_runner(cfg: dict[str, Any]) -> str:
         return "injection_recovery"
     if "supervised_scores_dir" in cfg and "model" not in cfg:
         return "ensemble"
+    if cfg.get("loco_matrix"):
+        return "loco_matrix"
     if "test_group" in cfg:
         return "loco_transfer"
     if "source" in cfg and "target" in cfg:
@@ -75,6 +77,7 @@ def _cmd_train(args: argparse.Namespace) -> int:
     )
     from collusiongraph.training.transfer_run import (
         run_cross_domain_probe,
+        run_loco_matrix,
         run_loco_transfer,
     )
 
@@ -84,6 +87,7 @@ def _cmd_train(args: argparse.Namespace) -> int:
         "ensemble": run_ensemble,
         "gnn": train_gnn,
         "loco_transfer": run_loco_transfer,
+        "loco_matrix": run_loco_matrix,
         "cross_domain_probe": run_cross_domain_probe,
     }
     cfg = load_config(args.config)

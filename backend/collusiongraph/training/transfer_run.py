@@ -189,6 +189,194 @@ def run_loco_transfer(config: dict[str, Any] | str | Path) -> dict[str, Any]:
     return record
 
 
+def _group_label_stats(
+    nodes: pl.DataFrame, labels: pl.DataFrame, prefix: str
+) -> dict[str, tuple[int, int, int]]:
+    """Confirmed-label counts per LOCO group for the typed nodes the fold
+    scores: {group: (n_labeled, n_illicit, n_licit)}. Group = the second
+    node_id segment, matching ``loco_folds``/``run_loco_transfer``."""
+    typed = nodes.filter(pl.col("node_id").str.starts_with(prefix)) if prefix else nodes
+    joined = (
+        typed.select("node_id")
+        .join(labels, on="node_id", how="inner")
+        .with_columns(pl.col("node_id").str.split(":").list.get(1).alias("_g"))
+    )
+    stats: dict[str, tuple[int, int, int]] = {}
+    for (group,), sub in joined.group_by("_g"):
+        n_illicit = int((sub["label"] == "illicit").sum())
+        n_licit = int((sub["label"] == "licit").sum())
+        stats[str(group)] = (sub.height, n_illicit, n_licit)
+    return stats
+
+
+def _pick_val_group(
+    test_group: str,
+    stats: dict[str, tuple[int, int, int]],
+    min_per_class: int,
+    overrides: dict[str, str],
+) -> str:
+    """Deterministic validation-group policy, fixed before any test number is
+    read: the SMALLEST other group with >= min_per_class confirmed nodes per
+    class (ties break lexicographically). Small val pools keep supervision in
+    the loss pool — the published country_5/country_7 pairing is this rule's
+    output — while the per-class floor excludes degenerate early-stopping
+    pools. Explicit ``val_groups`` overrides win."""
+    if test_group in overrides:
+        return overrides[test_group]
+    candidates = sorted(
+        (n_labeled, group)
+        for group, (n_labeled, n_illicit, n_licit) in stats.items()
+        if group != test_group and n_illicit >= min_per_class and n_licit >= min_per_class
+    )
+    if not candidates:
+        raise ValueError(
+            f"no viable validation group for test fold {test_group!r} "
+            f"(need >= {min_per_class} confirmed nodes per class)"
+        )
+    return candidates[0][1]
+
+
+def run_loco_matrix(config: dict[str, Any] | str | Path) -> dict[str, Any]:
+    """§7 step 28: the FULL LOCO matrix — every group takes one turn as the
+    held-out market — under §7 step 29's multi-seed protocol (``seeds:``).
+
+    Each fold is scored by the published single-fold protocol verbatim
+    (``run_loco_transfer`` is called unchanged), so a matrix fold with the
+    same seed and val group byte-reproduces the corresponding single-fold
+    run. Folds whose test pool lacks both classes, or for which no viable
+    validation group exists, are recorded as skipped with the reason —
+    never silently dropped (§4.4 honest reporting)."""
+    cfg = load_config(config)
+    dataset: str = cfg["dataset"]
+    store = GraphStore(cfg.get("store_root", "data/interim"))
+    out_root = Path(cfg.get("output_dir", f"eval_outputs/{dataset}/transfer_loco_matrix"))
+    seeds = [int(s) for s in cfg.get("seeds", [cfg.get("seed", 0)])]
+    min_per_class = int(cfg.get("min_val_per_class", 3))
+    overrides = {str(k): str(v) for k, v in (cfg.get("val_groups") or {}).items()}
+    prefix = f"{cfg['node_type']}:" if cfg.get("node_type") else ""
+
+    nodes = store.read(dataset, "nodes")
+    labels = store.read(dataset, "labels")
+    stats = _group_label_stats(nodes, labels, prefix)
+    test_groups = cfg.get("test_groups")  # optional subset (chunked big matrices)
+    if test_groups is not None:
+        if unknown := sorted(set(test_groups) - set(stats)):
+            raise ValueError(f"test_groups not in the dataset's labeled groups: {unknown}")
+        stats_to_run = {g: stats[g] for g in test_groups}
+    else:
+        stats_to_run = stats
+
+    passthrough: dict[str, Any] = {
+        key: cfg[key]
+        for key in (
+            "dataset",
+            "store_root",
+            "node_type",
+            "model",
+            "loss",
+            "lr",
+            "weight_decay",
+            "epochs",
+            "patience",
+            "budgets",
+        )
+        if key in cfg
+    }
+
+    folds: list[dict[str, Any]] = []
+    for test_group in sorted(stats_to_run):
+        n_labeled, n_illicit, n_licit = stats[test_group]
+        if n_illicit == 0 or n_licit == 0:
+            folds.append(
+                {
+                    "test_group": test_group,
+                    "status": "skipped",
+                    "reason": (
+                        f"test pool lacks both classes "
+                        f"({n_illicit} illicit / {n_licit} licit of {n_labeled})"
+                    ),
+                }
+            )
+            continue
+        try:
+            val_group = _pick_val_group(test_group, stats, min_per_class, overrides)
+        except ValueError as e:
+            folds.append({"test_group": test_group, "status": "skipped", "reason": str(e)})
+            continue
+        runs: list[dict[str, Any]] = []
+        fold_failed = False
+        for seed in seeds:
+            try:
+                record = run_loco_transfer(
+                    {
+                        **passthrough,
+                        "test_group": test_group,
+                        "val_group": val_group,
+                        "seed": seed,
+                        "output_dir": str(out_root / f"fold_{test_group}_s{seed}"),
+                    }
+                )
+            except ValueError as e:  # per-fold structural failure — record, keep the matrix
+                folds.append(
+                    {
+                        "test_group": test_group,
+                        "val_group": val_group,
+                        "status": "skipped",
+                        "reason": f"seed {seed}: {e}",
+                    }
+                )
+                fold_failed = True
+                break
+            runs.append(record)
+        if fold_failed:
+            continue
+        aucs = [r["node_level"]["auc_pr"] for r in runs]
+        prevalence = runs[0]["node_level"]["prevalence_baseline"]
+        fold_entry: dict[str, Any] = {
+            "test_group": test_group,
+            "val_group": val_group,
+            "status": "completed",
+            "n_confirmed_test": runs[0]["node_level"]["n_confirmed"],
+            "prevalence_baseline": prevalence,
+            "auc_pr_per_seed": aucs,
+            "auc_pr_mean": float(np.mean(aucs)),
+            "auc_pr_std": float(np.std(aucs, ddof=1)) if len(aucs) > 1 else 0.0,
+            "lift_mean": float(np.mean(aucs) / prevalence),
+        }
+        for key in runs[0]["node_level"]:
+            if key.startswith("precision@"):
+                fold_entry[f"{key}_mean"] = float(np.mean([r["node_level"][key] for r in runs]))
+        folds.append(fold_entry)
+
+    completed = [f for f in folds if f["status"] == "completed"]
+    matrix = {
+        "kind": "loco_matrix",
+        "dataset": dataset,
+        "seeds": seeds,
+        "min_val_per_class": min_per_class,
+        "val_policy": (
+            "smallest other group with >= min_val_per_class confirmed nodes "
+            "per class; explicit val_groups overrides win"
+        ),
+        "folds": folds,
+        "summary": {
+            "n_folds": len(folds),
+            "n_completed": len(completed),
+            "macro_auc_pr_mean": (
+                float(np.mean([f["auc_pr_mean"] for f in completed])) if completed else None
+            ),
+            "macro_lift_mean": (
+                float(np.mean([f["lift_mean"] for f in completed])) if completed else None
+            ),
+        },
+    }
+    out_root.mkdir(parents=True, exist_ok=True)
+    (out_root / "matrix.json").write_text(
+        json.dumps(matrix, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
+    return matrix
+
+
 def _structural_frames_for_probe(
     nodes: pl.DataFrame, edges: pl.DataFrame, train_end: int
 ) -> tuple[pl.DataFrame, pl.DataFrame]:

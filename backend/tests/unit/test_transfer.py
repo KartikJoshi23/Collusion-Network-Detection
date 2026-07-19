@@ -1,11 +1,14 @@
 """Transfer-probe tests (§7 steps 20–21): wiring + leakage discipline on tiny
 fixtures. Model quality on real data is the run's job, not the tests'."""
 
+import typing
+
 import numpy as np
 import polars as pl
 import pytest
 from collusiongraph.schema import GraphStore
-from collusiongraph.training import run_cross_domain_probe, run_loco_transfer
+from collusiongraph.training import run_cross_domain_probe, run_loco_matrix, run_loco_transfer
+from collusiongraph.training.transfer_run import _pick_val_group
 
 RNG = np.random.default_rng(11)
 
@@ -116,6 +119,114 @@ class TestLocoTransfer:
                     "budgets": [4],
                 }
             )
+
+
+class TestLocoMatrix:  # §7 step 28
+    # measured mendeley_eu firm label counts (n_labeled, n_illicit, n_licit),
+    # 2026-07-19 — the policy fixture that pins the published pairing
+    MENDELEY_STATS: typing.ClassVar[dict[str, tuple[int, int, int]]] = {
+        "country_1": (30, 23, 7),
+        "country_2": (750, 537, 213),
+        "country_3": (63, 18, 45),
+        "country_4": (76, 55, 21),
+        "country_5": (60, 40, 20),
+        "country_6": (9, 8, 1),
+        "country_7": (13, 9, 4),
+    }
+
+    def test_val_policy_reproduces_published_pairing(self) -> None:
+        # the published country_5 fold used country_7 as val — the policy's output
+        assert _pick_val_group("country_5", self.MENDELEY_STATS, 3, {}) == "country_7"
+        # country_6 (1 licit) is below the per-class floor — never picked for val
+        assert _pick_val_group("country_7", self.MENDELEY_STATS, 3, {}) == "country_1"
+        # explicit overrides win
+        assert (
+            _pick_val_group("country_5", self.MENDELEY_STATS, 3, {"country_5": "country_2"})
+            == "country_2"
+        )
+        with pytest.raises(ValueError, match="viable validation group"):
+            _pick_val_group("country_5", self.MENDELEY_STATS, 600, {})
+
+    def test_matrix_end_to_end_aggregation_and_outputs(self, tmp_path) -> None:
+        store = procurement_store(tmp_path)
+        matrix = run_loco_matrix(
+            {
+                "dataset": "toyproc",
+                "store_root": str(store.root),
+                "output_dir": str(tmp_path / "matrix"),
+                "loco_matrix": True,
+                "seeds": [0, 1],
+                "node_type": "firm",
+                "min_val_per_class": 2,  # toy groups carry 2 illicit / 6 licit each
+                "model": {"name": "rgcn", "hidden_dim": 8, "dropout": 0.0},
+                "epochs": 5,
+                "patience": 5,
+                "budgets": [4],
+            }
+        )
+        assert matrix["summary"]["n_folds"] == 3
+        assert matrix["summary"]["n_completed"] == 3
+        for fold in matrix["folds"]:
+            assert fold["status"] == "completed"
+            assert fold["val_group"] != fold["test_group"]
+            assert len(fold["auc_pr_per_seed"]) == 2
+            assert fold["auc_pr_mean"] == pytest.approx(float(np.mean(fold["auc_pr_per_seed"])))
+        # deterministic val picks: equal group sizes tie-break lexicographically
+        picks = {f["test_group"]: f["val_group"] for f in matrix["folds"]}
+        assert picks == {"c1": "c2", "c2": "c1", "c3": "c1"}
+        assert (tmp_path / "matrix" / "matrix.json").exists()
+        assert (tmp_path / "matrix" / "fold_c1_s0" / "run.json").exists()
+        assert (tmp_path / "matrix" / "fold_c3_s1" / "scores_test.parquet").exists()
+
+    def test_matrix_skips_unviable_folds_with_reason(self, tmp_path) -> None:
+        store = procurement_store(tmp_path)
+        matrix = run_loco_matrix(
+            {
+                "dataset": "toyproc",
+                "store_root": str(store.root),
+                "output_dir": str(tmp_path / "matrix_skip"),
+                "loco_matrix": True,
+                "node_type": "firm",
+                "min_val_per_class": 5,  # no toy group has 5 illicit — nothing viable
+                "model": {"name": "rgcn", "hidden_dim": 8, "dropout": 0.0},
+                "epochs": 2,
+                "patience": 2,
+                "budgets": [4],
+            }
+        )
+        assert matrix["summary"]["n_completed"] == 0
+        assert matrix["summary"]["macro_auc_pr_mean"] is None
+        for fold in matrix["folds"]:
+            assert fold["status"] == "skipped"
+            assert "viable validation group" in fold["reason"]
+
+    def test_test_groups_subset_limits_folds_not_val_candidates(self, tmp_path) -> None:
+        store = procurement_store(tmp_path)
+        base = {
+            "dataset": "toyproc",
+            "store_root": str(store.root),
+            "output_dir": str(tmp_path / "matrix_sub"),
+            "loco_matrix": True,
+            "node_type": "firm",
+            "min_val_per_class": 2,
+            "model": {"name": "rgcn", "hidden_dim": 8, "dropout": 0.0},
+            "epochs": 2,
+            "patience": 2,
+            "budgets": [4],
+        }
+        matrix = run_loco_matrix({**base, "test_groups": ["c2"]})
+        assert [f["test_group"] for f in matrix["folds"]] == ["c2"]
+        # val candidates come from ALL groups — chunking must not change picks
+        assert matrix["folds"][0]["val_group"] == "c1"
+        with pytest.raises(ValueError, match="not in the dataset's labeled groups"):
+            run_loco_matrix({**base, "test_groups": ["nope"]})
+
+    def test_cli_dispatch_routes_matrix_configs(self) -> None:
+        from collusiongraph.cli import select_train_runner
+
+        assert select_train_runner({"loco_matrix": True, "dataset": "d"}) == "loco_matrix"
+        # single-fold configs keep their route
+        assert select_train_runner({"test_group": "c1", "dataset": "d"}) == "loco_transfer"
 
 
 def financial_store(tmp_path) -> GraphStore:
