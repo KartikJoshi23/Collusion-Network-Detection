@@ -106,6 +106,28 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-19 · **§7 STEP 29 (first slice) — multi-seed machinery + bootstrap significance,
+  with the first two headline comparisons SIGNIFICANCE-TESTED.** *(a) Multi-seed runner:*
+  `training/multiseed.py` — `run_multiseed` wraps `train_gnn` (v1 scope) over a `seeds:`
+  list with per-seed dirs and mean±std aggregation to `multiseed.json`; **resumable by
+  design** (`run.json` is the trainer's LAST artifact, so it is a completion marker —
+  completed seeds load instead of retraining, and a protocol-mismatch guard refuses to
+  resume foreign runs); CLI dispatches `multiseed: true`; config
+  `gnn_elliptic_pp_gatv2_focal_multiseed.yaml` (5 seeds, protocol byte-identical to the
+  published headline run). *(b) Significance helper:* `eval/significance.py` — stratified
+  percentile bootstrap CI for AUC-PR (per-class resampling keeps class presence AND
+  prevalence) + PAIRED bootstrap over the same confirmed nodes (identical resample
+  indices → the delta distribution; add-one-smoothed two-sided p) +
+  `compare_score_files` (inner-join on node_id, confirmed-only per §4.5, drop counts
+  reported). 15 new tests (degenerate-CI identity, stratification guarantee, determinism,
+  identical-scorers p=1, join semantics) — **suite 313/313**. *(c) Real numbers (n=16,670
+  confirmed test nodes, 2,000 boots, seed 0):* **calibrated vs rank fusion Δ AUC-PR
+  +0.471, 95% CI [0.440, 0.499], p≈0.001** (the §4.4 calibrate-before-fusing claim now
+  carries uncertainty); **GATv2 vs B3 XGB-graph Δ −0.261, CI [−0.285, −0.235], p≈0.001**
+  (the honest GADBench gap is real, not seed luck). *(d) Baselines byte-reproduced on
+  master* (first run here: B1 0.0576 / B2 0.8076 / B3 0.8104 — exactly laptop-B's
+  published numbers; trees are cross-machine deterministic). The 5-seed GATv2 campaign is
+  IN FLIGHT (see In-flight) · [master]
 - 2026-07-19 · **§7 STEP 28 (second slice) — FULL García LOMO matrix: the FIRST García
   model numbers in the project (4 folds × 5 seeds, ~1 min CPU).** Same runner + val policy
   as the Mendeley matrix (`transfer_lomo_matrix_garcia.yaml`; firm labels exist only on the
@@ -346,6 +368,14 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## In-flight
 <!-- exactly what is unfinished, where, why, and which machine/branch has it -->
+- **5-seed GATv2 headline campaign RUNNING on master (started 2026-07-19)** —
+  `collusiongraph train -c configs/experiment/gnn_elliptic_pp_gatv2_focal_multiseed.yaml`
+  (~37 min/seed on this CPU, ≈3 h total). The runner is RESUMABLE: if interrupted, re-run
+  the same command — completed seeds under
+  `eval_outputs/elliptic_pp/gnn_gatv2_focal_multiseed/seed_*/` are loaded, not retrained;
+  `multiseed.json` aggregates when all five finish. The seed_0 rerun doubles as a
+  same-machine reproduction check vs the published 0.5492. Record mean±std in this ledger
+  (and the paper table) when done.
 - ~~Frontend overhaul V1 rejected → V2 required~~ **V2 DELIVERED [laptop-C] and verified on
   master (2026-07-18, see Completed); awaiting stakeholder review #3.** Nothing half-written.
   Per the stakeholder's 2026-07-18 instruction (Decision log), further UI iteration is
@@ -384,20 +414,19 @@ still public 2026-07-15 — anonymous clone succeeded).
    log; further UI iteration is deferred to the end.)*
 3. **Phase 2 — §7 steps 28–29 (Weeks 12–13, M6):** ~~Mendeley LOCO matrix~~ ~~García
    LOMO matrix~~ **BOTH DONE 2026-07-19 [master] (see Completed; RQ4 verdict pair in the
-   Decision log + García entry — lift is the cross-fold comparator).** Next concrete
-   slice: **step 29 rigor on the headline experiments.** (i) Multi-seed ≥5 reruns:
-   Elliptic++ GATv2-focal raw (published seed-0 0.5492 — machine-class variance ±0.02
-   already recorded) and the calibrated ensemble, reporting mean±std for the paper table
-   (each run is minutes on CPU; reuse the committed configs with per-seed `seed:` +
-   distinct `output_dir`, or generalize a `seeds:` loop the way `run_loco_matrix` did).
-   (ii) Bootstrapped CIs + paired-bootstrap significance for the headline comparisons
-   (GATv2 vs XGB; calibrated vs rank fusion) over the shared test-window node scores —
-   new small `eval/` helper + tests, no protocol changes. (iii) Sensitivity curves:
-   budgets (the "N%" resolution already landed), hit-rule `min_fraction` (param exists in
-   `alert_unit.py`), NMS Jaccard threshold. (iv) Label-noise robustness on Elliptic++
-   (§7 step 29's last item). Then step 28 remainder: cross-domain fine-tuning
-   label-efficiency curves (CPU-feasible — extend `run_cross_domain_probe` with a
-   fine-tune-k arm). Still GPU-gated (Colab/Kaggle): (b) **PNA + GIN+EU on AMLworld
+   Decision log + García entry — lift is the cross-fold comparator).** Step-29 progress
+   2026-07-19 [master]: ~~(i) multi-seed machinery~~ **runner DONE, resumable; the 5-seed
+   GATv2 campaign is in flight (see In-flight — finish/aggregate it first)**; ~~(ii)
+   bootstrap CIs + paired significance~~ **DONE — `eval/significance.py`, two headline
+   comparisons measured (see Completed)**. Remaining step 29: multi-seed the calibrated
+   ensemble (wrap `run_ensemble` the way `run_multiseed` wraps `train_gnn` — members must
+   re-run per seed) and the Mendeley R-GCN; (iii) sensitivity curves — budgets (the "N%"
+   resolution already landed), hit-rule `min_fraction` (param exists in `alert_unit.py`),
+   NMS Jaccard threshold: a small config-driven sweep runner over the STORED queue +
+   scores, no retraining; (iv) label-noise robustness on Elliptic++ (flip a fraction of
+   train labels at seeds, measure test degradation). Then step 28 remainder: cross-domain
+   fine-tuning label-efficiency curves (CPU-feasible — extend `run_cross_domain_probe`
+   with a fine-tune-k arm). Still GPU-gated (Colab/Kaggle): (b) **PNA + GIN+EU on AMLworld
    HI-Small** (Multi-GNN parity; wire `NeighborLoader` minibatching there — it needs
    pyg-lib/torch-sparse, which this Windows env deliberately excludes); (d) learned
    line-encoder over materialized L(G) on AMLworld per the B-LG verdict; AMLworld
@@ -437,7 +466,10 @@ still public 2026-07-15 — anonymous clone succeeded).
    `uv run collusiongraph …` spelling now works on a fresh `uv sync` (console script added
    2026-07-18).
 6. **[user]** Rotate/revoke the OpenAI API key exposed in `Gen-AI Chatbot/.../.env` AND embedded in the original `FIX_FRONTEND.md` (two exposures) at platform.openai.com.
-7. **[user]** Make the GitHub repo private (plan requires a private repo): repo Settings → General → Danger Zone → Change visibility, or `gh repo edit KartikJoshi23/Collusion-Network-Detection --visibility private` after `gh auth login`. Also consider rotating the Kaggle token that was shared in a chat session.
+7. ~~[user] Make the GitHub repo private~~ **DONE — verified private 2026-07-19 (see Known
+   issues).** Still open from this item: consider rotating the Kaggle token that was
+   shared in a chat session. (OpenAI key rotation stays open as action 6 — user confirmed
+   2026-07-19 it will happen later.)
 8. Deferred small items: HeteroExplanation for R-GCN (R12 finding — mask-based explainer is GATv2-only); AMLworld injection-recovery calibration + feature packs + baselines + `NeighborLoader` training on a machine with Kaggle credentials; wire the datasets' **precomputed screens** through as B4 inputs (Mendeley `lot_bidscount`/`relative_value`, García screen columns in `raw_attrs`); ~~automatic percent→k budget resolution in `run_eval`~~ (DONE 2026-07-18, see Completed); Mendeley R-GCN follow-up (firm+tender joint supervision, García co-bid enrichment) before concluding graph signal is absent; degree-preserving null-model z-scores for the structural floor (Phase 2).
 
 ## Decision log
@@ -639,7 +671,10 @@ still public 2026-07-15 — anonymous clone succeeded).
 ## Known issues
 <!-- - description · discovered when · severity -->
 - **Live OpenAI key exposed in TWO places** in the original chatbot folder (`.env` and `FIX_FRONTEND.md` line ~124). Redacted in the archived copy; originals untouched (user's data). **Rotate now** · 2026-07-13 · high until rotated.
-- **GitHub repo is PUBLIC** (plan §7 requires private) — flip visibility; see Next action 2; re-verified still public 2026-07-15 (anonymous clone succeeded on laptop-B) · 2026-07-13 · medium.
+- ~~GitHub repo is PUBLIC~~ **RESOLVED 2026-07-19: repo is PRIVATE — verified from master
+  (unauthenticated GitHub API returns 404). Collaborator machines now need authenticated
+  clones (laptop-B/laptop-C credential state should be checked on their next session).**
+  · 2026-07-13 → 2026-07-19 · closed.
 - `gh` CLI token invalid on the master machine (pushes work via git credential manager; `gh`-dependent commands don't) — `gh auth login` when convenient. laptop-B status noted in the PR handoff. **laptop-C: gh not installed at all** — the 2026-07-18 overhaul landed as a direct no-ff merge (full PR-style description in the merge commit 8a2fee7); install+auth gh there if PR records are wanted from that machine · 2026-07-13 · low.
 - CI gitleaks job failed on run #1 despite a clean local full-history scan — suspected gitleaks-action empty-`before` quirk on the first push to an empty repo; ledger header says run #2 was green; the `feat/features-structural` push will produce another data point · 2026-07-13 · low-medium.
 - pre-commit's gitleaks hook builds via Go on first run (pre-commit bootstraps its own Go toolchain); first-commit hook setup took ~2 min on the master machine — expected, one-time per machine · 2026-07-13 · low.
