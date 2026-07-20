@@ -125,6 +125,28 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-20 · **§7 STEP 32 — the −focal row SETTLED by 5-seed campaign: the GATv2
+  loss choice is SECOND-ORDER.** GATv2-wce multi-seed (config
+  `gnn_elliptic_pp_gatv2_wce_multiseed.yaml`, protocol byte-identical to the focal
+  campaign; ~8.5 min/seed here): **0.4435 ± 0.0615** (seeds 0.5012 / 0.4908 / 0.4137 /
+  0.4601 / 0.3519; P@100 0.708 ± 0.147) vs focal **0.4729 ± 0.0525** (master class;
+  P@100 0.812 ± 0.238). Focal leads by ~0.03 mean — WITHIN one seed-σ, and the two
+  campaigns ran on different hardware classes (±0.02 recorded class variance; the
+  cross-machine consistency check holds: wce seed-0 here 0.5012 vs master's
+  single-seed 0.4869, Δ0.014). **Honest verdict: unlike SAGE (focal 0.4743 vs wce
+  0.3882 — decisive), the loss choice on GATv2 does not clear seed noise; focal stays
+  the default (no evidence to switch), and the paper claim demotes from "focal wins"
+  to "imbalance-loss choice is second-order on the attention model."** With this, the
+  step-32 grid is MEASURED for every component the shipped headline model actually
+  carries: −bidirectional (−0.19, the strongest), −unsupervised members (−0.03),
+  −focal (second-order), screens-as-features (input-dependent, three-way), plus the
+  earlier channel verdicts (B-CF, B-LG). The two §7-listed arms with NO referent in
+  the shipped architecture — −injection and −temporal-encodings — are recorded as
+  N/A-by-construction (injection is an evaluation instrument, not a model component;
+  temporal encodings live in feature packs the B-CF verdict declined to adopt), not
+  silently skipped. **M7's ablation half is complete; the practitioner study (step
+  31) is the remaining M7 item.** Artifact:
+  `eval_outputs/elliptic_pp/gnn_gatv2_wce_multiseed/multiseed.json` · [laptop-B]
 - 2026-07-20 · **§7 STEP 32 — the −screens-as-features ablation MEASURED (learned-model
   direction), and it flips the composite verdict: the dataset's precomputed screens
   are the BEST tabular signal on Mendeley firms.** `include_precomputed: true` in a
@@ -649,13 +671,9 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## In-flight
 <!-- exactly what is unfinished, where, why, and which machine/branch has it -->
-- **§7 step 32 (−focal on GATv2): the 5-seed wce campaign is RUNNING on laptop-B**
-  (`configs/experiment/gnn_elliptic_pp_gatv2_wce_multiseed.yaml`, launched
-  2026-07-20; ~35 min/seed on this hardware class → ~3 h total; RESUMABLE — re-run
-  the same command to continue; config committed). When it lands: record the
-  aggregate here against the focal campaign (0.4729 ± 0.0525, measured on the
-  master class — ±0.02 machine-class variance caveat applies to the comparison),
-  and settle the step-32 −focal row (single-seed wce 0.4869 was INCONCLUSIVE).
+- ~~§7 step 32 (−focal on GATv2): 5-seed wce campaign running~~ **LANDED same day —
+  0.4435 ± 0.0615, the −focal row is SETTLED as second-order (see Completed).
+  Nothing is running on laptop-B.**
 - ~~5-seed GATv2 campaign~~ ~~ensemble multi-seed~~ ~~label-noise curve~~ ~~step-32
   ablation arms~~ **ALL DONE (see Completed — step 29 fully measured; step-32 arms
   −bidir/−focal/−unsup measured; serving rebuilt with the noise curve). NOTHING is
