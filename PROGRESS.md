@@ -125,6 +125,27 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-20 · **DEFERRED ITEM CLOSED (ledger 2026-07-16 item 8) — the datasets'
+  PRECOMPUTED screens wired through as B4 inputs, and the first measured verdict is
+  an honest wash-to-negative.** `precomputed_screens` in `features/screens.py`
+  extracts the values the datasets ship in edge `raw_attrs`: Mendeley `awarded`
+  attrs (`lot_bidscount` — the classic single-bidding screen — and
+  `relative_value`) aggregated per firm (mean/min) and per tender; García `bids_on`
+  screen family (CV/SPD/DIFFP/RD/KURT/SKEW/KSTEST/number_bids) per tender. Full
+  `pc_*` schema always emitted (nulls where absent); attrs carrying OTHER keys
+  (OCDS bid attrs) produce NO row; §9.1b as-of discipline with a leakage-marked
+  test (future award attrs cannot enter aggregates). **Wired as a SEPARATE
+  `precomputed` column group in `assemble_features` — B2/B3 published inputs stay
+  byte-identical, pinned by test.** *Measured on Mendeley firms* (deterministic
+  composite, current post-audit protocol, both variants re-run on this machine —
+  anchor award-only B4: AUC-PR 0.3811 / P@4 1.00 / P@18 0.778 / P@36 0.417):
+  **+precomputed B4: AUC-PR 0.3874 (+0.006) but P@18 0.500 (−0.28) and P@36 0.354
+  (≈prevalence)** — the unweighted composite halves the concentration trio's weight
+  and the added screens dilute the queue head. Config
+  `baselines_mendeley_b4_precomputed.yaml` (separate output_dir; published
+  scoreboard untouched). The learned-weighting question (pc columns into B2/B3) is
+  exactly the §7 step-32 −screens-as-features ablation — see Next actions. 6 new
+  tests — **suite 353/353** · [laptop-B]
 - 2026-07-20 · **§7 STEP-30 RIGOR — the at-scale injection study MULTI-SEED CONFIRMED
   (5 seeds, step-29 bar).** `run_injection_recovery` gained a `seeds:` wrapper
   (step-29 pattern: per-seed dirs, resume-by-artifact, mean±std(ddof=1) per
@@ -609,6 +630,13 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## In-flight
 <!-- exactly what is unfinished, where, why, and which machine/branch has it -->
+- **§7 step 32 (−focal on GATv2): the 5-seed wce campaign is RUNNING on laptop-B**
+  (`configs/experiment/gnn_elliptic_pp_gatv2_wce_multiseed.yaml`, launched
+  2026-07-20; ~35 min/seed on this hardware class → ~3 h total; RESUMABLE — re-run
+  the same command to continue; config committed). When it lands: record the
+  aggregate here against the focal campaign (0.4729 ± 0.0525, measured on the
+  master class — ±0.02 machine-class variance caveat applies to the comparison),
+  and settle the step-32 −focal row (single-seed wce 0.4869 was INCONCLUSIVE).
 - ~~5-seed GATv2 campaign~~ ~~ensemble multi-seed~~ ~~label-noise curve~~ ~~step-32
   ablation arms~~ **ALL DONE (see Completed — step 29 fully measured; step-32 arms
   −bidir/−focal/−unsup measured; serving rebuilt with the noise curve). NOTHING is
@@ -729,7 +757,7 @@ still public 2026-07-15 — anonymous clone succeeded).
    issues).** Still open from this item: consider rotating the Kaggle token that was
    shared in a chat session. (OpenAI key rotation stays open as action 6 — user confirmed
    2026-07-19 it will happen later.)
-8. Deferred small items: HeteroExplanation for R-GCN (R12 finding — mask-based explainer is GATv2-only); AMLworld injection-recovery calibration + feature packs + baselines + `NeighborLoader` training on a machine with Kaggle credentials; wire the datasets' **precomputed screens** through as B4 inputs (Mendeley `lot_bidscount`/`relative_value`, García screen columns in `raw_attrs`); ~~automatic percent→k budget resolution in `run_eval`~~ (DONE 2026-07-18, see Completed); Mendeley R-GCN follow-up (firm+tender joint supervision, García co-bid enrichment) before concluding graph signal is absent; degree-preserving null-model z-scores for the structural floor (Phase 2).
+8. Deferred small items: HeteroExplanation for R-GCN (R12 finding — mask-based explainer is GATv2-only); AMLworld injection-recovery calibration + feature packs + baselines + `NeighborLoader` training on a machine with Kaggle credentials; ~~wire the datasets' **precomputed screens** through as B4 inputs~~ (DONE 2026-07-20 [laptop-B], see Completed — measured wash-to-negative on the Mendeley B4 composite; the remaining question is the LEARNED weighting: run B2/B3 variants whose columns include `groups["precomputed"]` — that is the §7 step-32 −screens-as-features ablation, now one config away; a García tender-level B4 additionally needs a year-coverage EDA to pick a defensible split); ~~automatic percent→k budget resolution in `run_eval`~~ (DONE 2026-07-18, see Completed); Mendeley R-GCN follow-up (firm+tender joint supervision, García co-bid enrichment) before concluding graph signal is absent; degree-preserving null-model z-scores for the structural floor (Phase 2).
 
 ## Decision log
 <!-- - YYYY-MM-DD · decision · rationale · plan section affected -->
