@@ -894,6 +894,19 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Known issues
 <!-- - description · discovered when · severity -->
+- ~~**Main's CI was RED for ~30 consecutive pushes (2026-07-18 → 2026-07-20) and no
+  ledger entry recorded it.**~~ **FOUND + FIXED 2026-07-20 [laptop-B] (PR #8):** the
+  cp1252 console test added by eb4a617 forced the CLI child to EMIT cp1252 bytes but
+  decoded them with the PARENT's locale (`text=True`) — UTF-8 on Linux CI, so the
+  em-dash byte 0x97 raised UnicodeDecodeError on every CI run since the day it
+  landed, while every Windows dev machine (parent locale cp1252) saw green locally.
+  The CLI itself was always correct (exit 0, help printed); the fix pins
+  `encoding="cp1252"` in the test's subprocess call. **Process lesson recorded: local
+  suite green ≠ CI green — check `gh run list` (or the Actions tab) after pushing;
+  three sessions on two machines pushed onto a red main without noticing.** Also
+  fixed in passing: gitleaks-action 403s on pull_request events since the repo went
+  private (needs `pull-requests: read` — first PR since privatization was #8) ·
+  2026-07-18 → 2026-07-20 · closed.
 - **Live OpenAI key exposed in TWO places** in the original chatbot folder (`.env` and `FIX_FRONTEND.md` line ~124). Redacted in the archived copy; originals untouched (user's data). **Rotate now** · 2026-07-13 · high until rotated.
 - ~~GitHub repo is PUBLIC~~ **RESOLVED 2026-07-19: repo is PRIVATE — verified from master
   (unauthenticated GitHub API returns 404). Collaborator machines now need authenticated

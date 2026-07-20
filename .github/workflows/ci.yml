@@ -12,6 +12,12 @@ on:
 jobs:
   gitleaks:
     runs-on: ubuntu-latest
+    # The action reads PR commit metadata via the API on pull_request events;
+    # since the repo went private (2026-07-19) the default token scope 403s
+    # without this explicit grant (first seen on PR #8).
+    permissions:
+      contents: read
+      pull-requests: read
     steps:
       - uses: actions/checkout@v4
         with:
