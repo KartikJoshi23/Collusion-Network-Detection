@@ -52,6 +52,11 @@ MENDELEY_FILES = {
 GARCIA_SUPPLEMENT_URL = "https://ars.els-cdn.com/content/image/1-s2.0-S0926580521004982-mmc2.zip"
 AMLWORLD_KAGGLE_SLUG = "ealtman2019/ibm-transactions-for-anti-money-laundering-aml"
 AMLWORLD_HI_SMALL_FILES = ["HI-Small_Trans.csv", "HI-Small_Patterns.txt", "HI-Small_accounts.csv"]
+# OCP Data Registry publication 52 (Georgia OpenTender) — §4.3 D5 publisher,
+# selected 2026-07-20 for standard bids.details[] coverage incl. losing bidders
+# (Decision log). Per-year compiled-release JSONL; ~14 MB/year, ~230 MB total.
+OCDS_GEORGIA_DOWNLOAD = "https://data.open-contracting.org/en/publication/52/download?name="
+OCDS_GEORGIA_YEARS = range(2010, 2026)  # registry coverage 2010-11 .. 2025-01
 
 KAGGLE_SETUP_HELP = (
     "Kaggle credentials not found. Setup (documented in README.md):\n"
@@ -200,6 +205,13 @@ def fetch_garcia(dest: Path) -> None:
         zf.extractall(dest / "extracted")
 
 
+def fetch_ocds_georgia(dest: Path) -> None:
+    dest.mkdir(parents=True, exist_ok=True)
+    for year in OCDS_GEORGIA_YEARS:
+        name = f"{year}.jsonl.gz"
+        stream_download(f"{OCDS_GEORGIA_DOWNLOAD}{name}", dest / name)
+
+
 def kaggle_credentials_present() -> bool:
     import os
 
@@ -296,6 +308,22 @@ DATASETS: dict[str, dict] = {
         ),
         "notes": "D3: multi-country collusion dataset (Brazil, Italy, Japan, Switzerland ×2, US).",
         "fetch": fetch_garcia,
+    },
+    "ocds_georgia": {
+        "source": "https://data.open-contracting.org/en/publication/52 "
+        "(OCP Data Registry: Georgia OpenTender, compiled releases, per-year JSONL)",
+        "license": (
+            "CC BY-NC-SA 4.0 (as stated on the registry publication page, "
+            "verified 2026-07-20). Research use with attribution; not "
+            "redistributed in this repository."
+        ),
+        "notes": (
+            "D5: unlabeled OCDS publisher for the unsupervised regime + synthetic "
+            "injection at scale (§7 step 30). Selected for standard bids.details[] "
+            "coverage with identified losing bidders (co-bid structure). "
+            "Coverage 2010-11..2025-01, updated half-yearly."
+        ),
+        "fetch": fetch_ocds_georgia,
     },
 }
 
