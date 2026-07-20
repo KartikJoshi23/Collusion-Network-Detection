@@ -287,6 +287,176 @@ class TestInjector:
         store.write("aug", "nodes", result.nodes)
         store.write("aug", "edges", result.edges)
 
+    def test_unlabeled_injection_recovery_end_to_end(self, tmp_path) -> None:
+        """§7 step 30: the unlabeled regime (OCDS shape) runs without labels or
+        a supervised member — structural-template features, rank-only fusion,
+        and the report names the regime (fusion_mode: rank_unlabeled)."""
+        from collusiongraph.training import run_injection_recovery
+
+        rng = np.random.default_rng(0)
+        firms = [f"firm:bg:{i}" for i in range(12)]
+        tenders = [f"tender:bg:{i}" for i in range(18)]
+        nodes = pl.DataFrame(
+            {
+                "node_id": firms + tenders,
+                "node_type": ["firm"] * 12 + ["tender"] * 18,
+                "domain": ["procurement"] * 30,
+                "time_first_seen": [2020] * 30,
+                "raw_features": pl.Series([None] * 30, dtype=pl.List(pl.Float32)),
+                "raw_attrs": pl.Series([None] * 30, dtype=pl.Utf8),
+            }
+        )
+        edges = pl.DataFrame(
+            {
+                "src": [firms[int(rng.integers(12))] for _ in range(40)],
+                "dst": [tenders[int(rng.integers(18))] for _ in range(40)],
+                "edge_type": ["bids_on"] * 40,
+                "timestamp": [int(rng.integers(2020, 2025)) for _ in range(40)],
+                "amount": [float(rng.uniform(1e3, 1e5)) for _ in range(40)],
+                "directed": [True] * 40,
+                "raw_attrs": pl.Series([None] * 40, dtype=pl.Utf8),
+            }
+        )
+        labels = pl.DataFrame(
+            {
+                "node_id": firms + tenders,
+                "label": ["unknown"] * 30,
+                "label_source": ["ocds_unlabeled"] * 30,
+                "confidence": pl.Series([1.0] * 30, dtype=pl.Float32),
+            }
+        )
+        store = GraphStore(tmp_path)
+        store.write("toy_ocds", "nodes", nodes)
+        store.write("toy_ocds", "edges", edges)
+        store.write("toy_ocds", "labels", labels)
+        store.write_meta("toy_ocds", {"dataset": "toy_ocds"})  # no n_features key
+
+        report = run_injection_recovery(
+            {
+                "dataset": "toy_ocds",
+                "domain": "procurement",
+                "store_root": str(tmp_path),
+                "output_dir": str(tmp_path / "out"),
+                "seed": 0,
+                "split": {"test_start": 2020, "window_end": 2024},
+                "motifs": {"cover_bid": 1},
+                "n_bridge_edges": 1,
+                "unsupervised": {
+                    "edge_type": "bids_on",
+                    "features": "structural",
+                    "hid_dim": 8,
+                    "epochs": 5,
+                },
+                "budgets": [10],
+            }
+        )
+        assert report["fusion_mode"] == "rank_unlabeled"
+        assert set(report["recovery"]) == {"dominant", "gae", "floor", "ensemble_rank"}
+        rec = report["recovery"]["ensemble_rank"][0]
+        assert rec["motif_type"] == "cover_bid"
+        assert 0.0 <= rec["recall@10"] <= 1.0
+
+    def test_unknown_unsupervised_feature_kind_rejected(self, tmp_path) -> None:
+        from collusiongraph.training.ensemble_run import _member_scores
+
+        nodes = pl.DataFrame({"node_id": ["a", "b"], "raw_features": [None, None]})
+        edges = pl.DataFrame(
+            {"src": ["a"], "dst": ["b"], "edge_type": ["bids_on"], "timestamp": [1]}
+        )
+        with pytest.raises(ValueError, match=r"unknown unsupervised\.features"):
+            unsup = {"edge_type": "bids_on", "features": "pca"}
+            _member_scores(nodes, edges, 0, {"unsupervised": unsup})
+
+    def test_multi_family_injection_ids_are_disjoint(self) -> None:
+        """Regression (2026-07-20): procurement families reused market strings,
+        so rotation/common_control/coordinated_cluster instances with the same
+        tag overwrote each other's members. All ids must be unique across the
+        whole multi-family injection."""
+        ids = [f"tender:bg:{i}" for i in range(5)]
+        nodes = pl.DataFrame(
+            {
+                "node_id": ids,
+                "node_type": ["tender"] * 5,
+                "domain": ["procurement"] * 5,
+                "time_first_seen": [10] * 5,
+                "raw_features": pl.Series([None] * 5, dtype=pl.List(pl.Float32)),
+                "raw_attrs": pl.Series([None] * 5, dtype=pl.Utf8),
+            }
+        )
+        edges = pl.DataFrame(
+            {
+                "src": ids[:-1],
+                "dst": ids[1:],
+                "edge_type": ["bids_on"] * 4,
+                "timestamp": [10] * 4,
+                "amount": pl.Series([None] * 4, dtype=pl.Float64),
+                "directed": [True] * 4,
+                "raw_attrs": pl.Series([None] * 4, dtype=pl.Utf8),
+            }
+        )
+        result = inject(
+            nodes,
+            edges,
+            "procurement",
+            {m: 2 for m in PROC},
+            window=(10, 20),
+            seed=0,
+        )
+        injected = result.nodes["node_id"].to_list()[5:]
+        assert len(injected) == len(set(injected))
+        members = result.ground_truth["member_node_ids"].explode(empty_as_null=False)
+        per_instance = result.ground_truth.select(pl.col("member_node_ids").list.len().alias("n"))[
+            "n"
+        ].sum()
+        assert members.n_unique() == per_instance  # no member shared across instances
+
+    def test_colliding_generator_ids_are_refused(self, monkeypatch) -> None:
+        """The injector guard: a generator emitting an id that already exists
+        must raise, never silently corrupt ground truth."""
+        import collusiongraph.injection.injector as injector_mod
+
+        def clashing(tag, rng, t0, t1):
+            ids = ["firm:clash:F0"]
+            nodes = pl.DataFrame(
+                {
+                    "node_id": ids,
+                    "node_type": ["firm"],
+                    "domain": ["procurement"],
+                    "time_first_seen": [t0],
+                }
+            )
+            edges = pl.DataFrame(
+                {
+                    "src": ids,
+                    "dst": ids,
+                    "edge_type": ["bids_on"],
+                    "timestamp": [t0],
+                    "directed": [True],
+                }
+            )
+            return nodes, edges, ids
+
+        monkeypatch.setitem(injector_mod.GENERATORS, "procurement", {"clasher": clashing})
+        nodes = pl.DataFrame(
+            {
+                "node_id": ["tender:bg:0"],
+                "node_type": ["tender"],
+                "domain": ["procurement"],
+                "time_first_seen": [10],
+            }
+        )
+        edges = pl.DataFrame(
+            {
+                "src": ["tender:bg:0"],
+                "dst": ["tender:bg:0"],
+                "edge_type": ["bids_on"],
+                "timestamp": [10],
+                "directed": [True],
+            }
+        )
+        with pytest.raises(ValueError, match="already exist"):
+            inject(nodes, edges, "procurement", {"clasher": 2}, window=(10, 20), seed=0)
+
     def test_deterministic_under_seed(self) -> None:
         nodes, edges = self.background()
         a = inject(nodes, edges, "financial", {"fan_out": 2}, window=(10, 20), seed=3)

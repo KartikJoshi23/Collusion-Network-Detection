@@ -1,7 +1,11 @@
 """Procurement motif generators (§4.4 motif table, §7 step 16) — the five
 rows' cartel variants, following the OECD red-flag catalogue. Node ids embed a
-synthetic market group (``inj<tag>``) so LOCO grouping still works on augmented
-graphs."""
+synthetic market group (``inj_<motif>_<tag>``) so LOCO grouping still works on
+augmented graphs. The motif name MUST be part of the market group: the injector
+reuses the same tag across families, and market strings without the family
+collided (firm:inj0x0:F0 from rotation vs common_control vs
+coordinated_cluster) — found 2026-07-20 when the at-scale OCDS study crashed on
+the duplicated ids; the injector now also guards against any recurrence."""
 
 from __future__ import annotations
 
@@ -42,7 +46,7 @@ def _edges(rows: Sequence[tuple[str, str, str, int, float | None, bool]]) -> pl.
 
 def rotation(tag: str, rng: np.random.Generator, t0: int, t1: int, n_firms: int = 4):
     """Row 1 — circular coordination: the win rotates around n firms."""
-    market = f"inj{tag}"
+    market = f"inj_rotation_{tag}"
     firms = [f"firm:{market}:F{i}" for i in range(n_firms)]
     n_tenders = n_firms * 2
     tenders = [f"tender:{market}:T{i}" for i in range(n_tenders)]
@@ -58,7 +62,7 @@ def rotation(tag: str, rng: np.random.Generator, t0: int, t1: int, n_firms: int 
 def cover_bid(tag: str, rng: np.random.Generator, t0: int, t1: int, k_covers: int = 4):
     """Row 2 — convergent funneling: losing bids sit tightly above the
     pre-agreed winner."""
-    market = f"inj{tag}"
+    market = f"inj_cover_bid_{tag}"
     tender = f"tender:{market}:T0"
     winner = f"firm:{market}:W"
     covers = [f"firm:{market}:C{i}" for i in range(k_covers)]
@@ -77,7 +81,7 @@ def cover_bid(tag: str, rng: np.random.Generator, t0: int, t1: int, k_covers: in
 def partition(tag: str, rng: np.random.Generator, t0: int, t1: int, n_per_side: int = 2):
     """Row 3 — divergent dispersal: firms split buyers exclusively (market
     allocation) — nobody ever crosses the line."""
-    market = f"inj{tag}"
+    market = f"inj_partition_{tag}"
     firms_a = [f"firm:{market}:A{i}" for i in range(n_per_side)]
     firms_b = [f"firm:{market}:B{i}" for i in range(n_per_side)]
     buyers = [f"buyer:{market}:P", f"buyer:{market}:Q"]
@@ -103,7 +107,7 @@ def partition(tag: str, rng: np.random.Generator, t0: int, t1: int, n_per_side: 
 def common_control(tag: str, rng: np.random.Generator, t0: int, t1: int, k: int = 3):
     """Row 4 — hidden common control: 'rival' firms joined by a linked_to
     clique (shared director/address analog), all winning from one buyer."""
-    market = f"inj{tag}"
+    market = f"inj_common_control_{tag}"
     firms = [f"firm:{market}:F{i}" for i in range(k)]
     buyer = f"buyer:{market}:B"
     tenders = [f"tender:{market}:T{i}" for i in range(k)]
@@ -125,7 +129,7 @@ def common_control(tag: str, rng: np.random.Generator, t0: int, t1: int, k: int 
 def coordinated_cluster(tag: str, rng: np.random.Generator, t0: int, t1: int, k: int = 4):
     """Row 5 — coordinated clustering: a co-bid near-clique with clustered
     prices and sequential timestamps."""
-    market = f"inj{tag}"
+    market = f"inj_coordinated_cluster_{tag}"
     firms = [f"firm:{market}:F{i}" for i in range(k)]
     tenders = [f"tender:{market}:T{i}" for i in range(k)]
     edges = []

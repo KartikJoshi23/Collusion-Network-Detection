@@ -56,11 +56,23 @@ def inject(
 
     rng = np.random.default_rng(seed)
     background_ids = nodes["node_id"].to_list()
+    seen_ids: set[str] = set(background_ids)
     new_nodes, new_edges, records = [], [], []
     for motif, count in motifs.items():
         for k in range(count):
             tag = f"{seed}x{k}"
             n_frame, e_frame, members = generators[motif](tag, rng, t0, t1)
+            # Duplicate ids across instances silently corrupt ground truth and
+            # every downstream join (found 2026-07-20: procurement families
+            # shared market strings) — refuse loudly instead.
+            fresh = n_frame["node_id"].to_list()
+            clash = seen_ids.intersection(fresh)
+            if clash:
+                raise ValueError(
+                    f"{motif} instance {tag} emits node ids that already exist "
+                    f"(background or another instance): {sorted(clash)[:5]}"
+                )
+            seen_ids.update(fresh)
             bridges = _bridge_edges(members, background_ids, domain, rng, t0, t1, n_bridge_edges)
             new_nodes.append(n_frame)
             new_edges.append(e_frame)
