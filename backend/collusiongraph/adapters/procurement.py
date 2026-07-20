@@ -12,15 +12,25 @@ core graph alone; enrichment tiers activate only where the data carries them.
   (Japan, Italy, Brazil, America carry ``Competitors``; the two Swiss markets
   do not), so firm nodes, ``awarded`` and ``co_bid`` edges are emitted only
   there. Collusion labels attach to bids (and firms where identified).
+* OCDS (§4.3 D5, §7 step 30): compiled-release JSONL from an OCP Data Registry
+  publisher — firm/tender/buyer nodes; ``awarded`` + ``buys_from`` core;
+  ``bids_on`` enrichment wherever the publisher populates ``bids.details`` with
+  identified tenderers (the D5 selection criterion — Georgia OpenTender does,
+  losing bidders included). **No ground-truth labels exist**: every firm/tender
+  is emitted ``unknown`` — this is the unsupervised-regime / synthetic-injection
+  substrate, never a supervised anchor.
 
 Timestamps use the year as the time unit (Mendeley has only ``tender_year``;
-García dates are reduced to year for cross-market comparability; full dates
-where present are preserved in ``raw_attrs``).
+García dates are reduced to year for cross-market comparability; OCDS release
+dates are reduced to year to match; full dates where present are preserved in
+``raw_attrs``).
 """
 
 from __future__ import annotations
 
+import gzip
 import json
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
@@ -339,6 +349,203 @@ def mendeley_firm_labels_as_of(edges: pl.DataFrame, as_of: int) -> pl.DataFrame:
         pl.lit(f"mendeley_is_cartel_asof_{as_of}").alias("label_source"),
         pl.lit(1.0, dtype=pl.Float32).alias("confidence"),
     )
+
+
+def _release_year(release: dict[str, Any]) -> int | None:
+    """Year of a compiled release: release date first, tenderPeriod.endDate fallback."""
+    for candidate in (
+        release.get("date"),
+        ((release.get("tender") or {}).get("tenderPeriod") or {}).get("endDate"),
+    ):
+        if isinstance(candidate, str) and len(candidate) >= 4 and candidate[:4].isdigit():
+            return int(candidate[:4])
+    return None
+
+
+def _ocds_lines(raw_dir: Path) -> Iterator[str]:
+    """Stream lines from every ``*.jsonl.gz`` / ``*.jsonl`` under ``raw_dir``."""
+    paths = sorted(p for p in raw_dir.iterdir() if p.name.endswith((".jsonl", ".jsonl.gz")))
+    if not paths:
+        raise FileNotFoundError(f"no *.jsonl[.gz] release files in {raw_dir} — run poe data first")
+    for path in paths:
+        if path.name.endswith(".gz"):
+            with gzip.open(path, "rt", encoding="utf-8") as fh:
+                yield from fh
+        else:
+            yield from path.open(encoding="utf-8")
+
+
+def ocds_to_ir(
+    raw_dir: Path | str,
+    store: GraphStore,
+    dataset: str = "ocds_georgia",
+    publisher: str = "georgia",
+) -> dict[str, Any]:
+    """OCDS compiled-release JSONL → IR graph (unlabeled; §4.3 D5). Returns stats.
+
+    Award-network-first (§4.2 rule 1): ``awarded``/``buys_from`` come from
+    ``awards[]``/``buyer`` and function alone; ``bids_on`` activates per release
+    wherever ``bids.details[]`` carries identified tenderers. Bids without a
+    tenderer id are counted (``bids_skipped_no_tenderer``), never guessed at.
+    Releases with no derivable year are counted and skipped
+    (``releases_skipped_no_date``) — undated edges cannot enter a temporal
+    split honestly (§9.1b).
+    """
+    raw = Path(raw_dir)
+    node_first_seen: dict[str, tuple[str, int]] = {}  # node_id -> (node_type, min year)
+    edge_rows: list[dict[str, Any]] = []
+    n_releases = n_no_date = n_bids_skipped = n_bids_kept = 0
+    years: dict[int, int] = {}
+
+    def see(node_id: str, node_type: NodeType, year: int) -> None:
+        prev = node_first_seen.get(node_id)
+        if prev is None or year < prev[1]:
+            node_first_seen[node_id] = (node_type.value, year)
+
+    for line in _ocds_lines(raw):
+        if not line.strip():
+            continue
+        release = json.loads(line)
+        n_releases += 1
+        year = _release_year(release)
+        if year is None:
+            n_no_date += 1
+            continue
+        years[year] = years.get(year, 0) + 1
+
+        ocid = release["ocid"]
+        tender_id = f"tender:{publisher}:{ocid}"
+        tender = release.get("tender") or {}
+        see(tender_id, NodeType.TENDER, year)
+
+        buyer = release.get("buyer") or {}
+        if buyer.get("id"):
+            buyer_id = f"buyer:{publisher}:{buyer['id']}"
+            see(buyer_id, NodeType.BUYER, year)
+            edge_rows.append(
+                {
+                    "src": buyer_id,
+                    "dst": tender_id,
+                    "edge_type": EdgeType.BUYS_FROM.value,
+                    "timestamp": year,
+                    "amount": (tender.get("value") or {}).get("amount"),
+                    "directed": True,
+                    "raw_attrs": None,
+                }
+            )
+
+        for bid in (release.get("bids") or {}).get("details") or []:
+            tenderers = [t for t in bid.get("tenderers") or [] if t.get("id")]
+            if not tenderers:
+                n_bids_skipped += 1
+                continue
+            n_bids_kept += 1
+            for tenderer in tenderers:
+                firm_id = f"firm:{publisher}:{tenderer['id']}"
+                see(firm_id, NodeType.FIRM, year)
+                edge_rows.append(
+                    {
+                        "src": firm_id,
+                        "dst": tender_id,
+                        "edge_type": EdgeType.BIDS_ON.value,
+                        "timestamp": year,
+                        "amount": (bid.get("value") or {}).get("amount"),
+                        "directed": True,
+                        "raw_attrs": _json_attrs(
+                            bid_id=bid.get("id"),
+                            date=release.get("date"),
+                            currency=(bid.get("value") or {}).get("currency"),
+                            n_tenderers=len(tenderers),
+                        ),
+                    }
+                )
+
+        for award in release.get("awards") or []:
+            for supplier in award.get("suppliers") or []:
+                if not supplier.get("id"):
+                    continue
+                firm_id = f"firm:{publisher}:{supplier['id']}"
+                see(firm_id, NodeType.FIRM, year)
+                edge_rows.append(
+                    {
+                        "src": tender_id,
+                        "dst": firm_id,
+                        "edge_type": EdgeType.AWARDED.value,
+                        "timestamp": year,
+                        "amount": (award.get("value") or {}).get("amount"),
+                        "directed": True,
+                        "raw_attrs": _json_attrs(
+                            award_id=award.get("id"),
+                            date=release.get("date"),
+                            related_bid=award.get("relatedBid"),
+                        ),
+                    }
+                )
+
+    nodes = (
+        pl.DataFrame(
+            {
+                "node_id": list(node_first_seen),
+                "node_type": [t for t, _ in node_first_seen.values()],
+                "time_first_seen": [y for _, y in node_first_seen.values()],
+            }
+        )
+        .select(
+            "node_id",
+            "node_type",
+            pl.lit(Domain.PROCUREMENT.value).alias("domain"),
+            pl.col("time_first_seen").cast(pl.Int64),
+            pl.lit(None, dtype=pl.List(pl.Float32)).alias("raw_features"),
+            pl.lit(None, dtype=pl.Utf8).alias("raw_attrs"),
+        )
+        .sort("node_id")
+    )
+    edges = pl.DataFrame(
+        edge_rows,
+        schema={
+            "src": pl.Utf8,
+            "dst": pl.Utf8,
+            "edge_type": pl.Utf8,
+            "timestamp": pl.Int64,
+            "amount": pl.Float64,
+            "directed": pl.Boolean,
+            "raw_attrs": pl.Utf8,
+        },
+    )
+    # No ground truth exists for this publisher (D5): firms and tenders are
+    # emitted `unknown` so downstream label handling is explicit, never absent.
+    labels = nodes.filter(
+        pl.col("node_type").is_in([NodeType.FIRM.value, NodeType.TENDER.value])
+    ).select(
+        "node_id",
+        pl.lit(Label.UNKNOWN.value).alias("label"),
+        pl.lit("ocds_unlabeled").alias("label_source"),
+        pl.lit(1.0, dtype=pl.Float32).alias("confidence"),
+    )
+
+    store.write(dataset, "nodes", nodes)
+    store.write(dataset, "edges", edges)
+    store.write(dataset, "labels", labels)
+    node_counts = dict(nodes.group_by("node_type").len().sort("node_type").iter_rows())
+    stats = {
+        "dataset": dataset,
+        "adapter_version": ADAPTER_VERSION,
+        "time_unit": "year",
+        "publisher": publisher,
+        "n_releases": n_releases,
+        "releases_skipped_no_date": n_no_date,
+        "n_nodes": nodes.height,
+        "n_edges": edges.height,
+        "node_counts": node_counts,
+        "edge_counts": dict(edges.group_by("edge_type").len().sort("edge_type").iter_rows()),
+        "bids_kept": n_bids_kept,
+        "bids_skipped_no_tenderer": n_bids_skipped,
+        "years": {str(y): years[y] for y in sorted(years)},
+        "note": "unlabeled publisher (§4.3 D5) — unsupervised/injection substrate only; "
+        "bids_on carries identified losing bidders (co_bid derived downstream)",
+    }
+    store.write_meta(dataset, stats)
+    return stats
 
 
 def _json_attrs(**kwargs: Any) -> str:  # small helper for tests/fixtures

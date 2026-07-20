@@ -258,11 +258,17 @@ class TestCliDispatch:  # F22
         import subprocess
         import sys as _sys
 
+        # Decode with the encoding we forced on the child — text=True would use
+        # the PARENT's locale (UTF-8 on Linux CI), which cannot decode the
+        # cp1252 em-dash byte the child legitimately emits. This exact mismatch
+        # kept main's CI red from 2026-07-18 to 2026-07-20 while Windows
+        # machines (parent locale cp1252) saw green.
         result = subprocess.run(
             [_sys.executable, "-m", "collusiongraph.cli", "--help"],
             env={**_os.environ, "PYTHONIOENCODING": "cp1252"},
             capture_output=True,
-            text=True,
+            encoding="cp1252",
+            errors="replace",
             timeout=120,
         )
         assert result.returncode == 0, result.stderr

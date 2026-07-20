@@ -35,6 +35,7 @@ _INGEST_DEFAULTS = {
         "procurement",
         "garcia_to_ir",
     ),
+    "ocds_georgia": ("data/raw/ocds_georgia", "procurement", "ocds_to_ir"),
 }
 
 
