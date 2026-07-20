@@ -4,6 +4,7 @@ Every value asserted here is hand-computed on a fixture small enough to check
 on paper — the metric-test discipline of §9.1 applied to features.
 """
 
+import json
 import math
 
 import polars as pl
@@ -13,6 +14,7 @@ from collusiongraph.features import (
     bid_screens,
     co_bid_stats,
     financial_features,
+    precomputed_screens,
     sinusoidal_time_encoding,
     structural_features,
     zscore_per_graph,
@@ -357,6 +359,85 @@ class TestBidScreens:
         nodes, edges = bid_fixture()
         anonymous = edges.with_columns(pl.col("src").str.replace("firm:", "bid:").alias("src"))
         assert co_bid_stats(nodes, anonymous).is_empty()
+
+
+def precomputed_fixture() -> tuple[pl.DataFrame, pl.DataFrame]:
+    """Mendeley-shaped awarded attrs (lot_bidscount / relative_value) on years
+    1 and 3, plus a García-shaped bids_on screen attr and an OCDS-shaped
+    bids_on attr with NO screen keys."""
+    nodes = pl.DataFrame(
+        {
+            "node_id": [
+                "firm:M:F1",
+                "tender:M:T1",
+                "tender:M:T2",
+                "tender:G:TG",
+                "tender:O:TO",
+                "bid:G:B0",
+                "firm:O:FO",
+            ],
+            "time_first_seen": [1, 1, 3, 1, 1, 2, 2],
+        }
+    )
+    edges = pl.DataFrame(
+        {
+            "src": ["tender:M:T1", "tender:M:T2", "bid:G:B0", "firm:O:FO"],
+            "dst": ["firm:M:F1", "firm:M:F1", "tender:G:TG", "tender:O:TO"],
+            "edge_type": ["awarded", "awarded", "bids_on", "bids_on"],
+            "timestamp": [1, 3, 2, 2],
+            "directed": [True] * 4,
+            "raw_attrs": [
+                json.dumps({"lot_id": "L1", "lot_bidscount": 4, "relative_value": 0.2}),
+                json.dumps({"lot_id": "L2", "lot_bidscount": 1, "relative_value": 0.8}),
+                json.dumps({"winner": 1, "number_bids": 5, "cv": 0.03, "diffp": 0.01}),
+                json.dumps({"bid_id": "bid-1", "currency": "GEL", "n_tenderers": 2}),
+            ],
+        }
+    )
+    return nodes, edges
+
+
+class TestPrecomputedScreens:
+    def test_mendeley_award_attrs_aggregate_per_firm_and_tender(self) -> None:
+        nodes, edges = precomputed_fixture()
+        by_id = {r["node_id"]: r for r in precomputed_screens(nodes, edges).iter_rows(named=True)}
+        f1 = by_id["firm:M:F1"]
+        assert f1["pc_lot_bidscount_mean"] == pytest.approx(2.5)  # (4+1)/2
+        assert f1["pc_lot_bidscount_min"] == pytest.approx(1.0)  # the single-bid lot
+        assert f1["pc_relative_value_mean"] == pytest.approx(0.5)
+        assert by_id["tender:M:T1"]["pc_lot_bidscount_mean"] == pytest.approx(4.0)
+        assert by_id["tender:M:T1"]["pc_cv"] is None  # no bid-tier data on Mendeley
+
+    def test_garcia_bid_screen_attrs_land_per_tender(self) -> None:
+        nodes, edges = precomputed_fixture()
+        by_id = {r["node_id"]: r for r in precomputed_screens(nodes, edges).iter_rows(named=True)}
+        tg = by_id["tender:G:TG"]
+        assert tg["pc_cv"] == pytest.approx(0.03)
+        assert tg["pc_diffp"] == pytest.approx(0.01)
+        assert tg["pc_number_bids"] == pytest.approx(5.0)
+        assert tg["pc_kstest"] is None  # key absent in the attrs — null, never 0
+        assert tg["pc_lot_bidscount_mean"] is None
+
+    def test_attrs_without_screen_keys_produce_no_row(self) -> None:
+        """OCDS bids_on attrs (bid_id/currency/…) carry none of the screen
+        keys — the node must get NO row, not an all-null noise row."""
+        nodes, edges = precomputed_fixture()
+        ids = set(precomputed_screens(nodes, edges)["node_id"].to_list())
+        assert "tender:O:TO" not in ids
+
+    @pytest.mark.leakage
+    def test_as_of_excludes_future_award_attrs(self) -> None:
+        """§9.1b: at as_of=2 the year-3 award (lot_bidscount=1) must not enter
+        F1's aggregates — a screen value can never encode future information."""
+        nodes, edges = precomputed_fixture()
+        by_id = {
+            r["node_id"]: r
+            for r in precomputed_screens(nodes, edges, as_of=2).iter_rows(named=True)
+        }
+        f1 = by_id["firm:M:F1"]
+        assert f1["pc_lot_bidscount_mean"] == pytest.approx(4.0)  # year-1 award only
+        assert f1["pc_lot_bidscount_min"] == pytest.approx(4.0)
+        assert f1["pc_relative_value_mean"] == pytest.approx(0.2)
 
 
 class TestFeatureStore:

@@ -50,6 +50,41 @@ class TestRulesEngine:
             RulesEngine([Rule("deg", "high", 90.0)]).score(self.features())
 
 
+class TestAssembleFeatureGroups:
+    def test_precomputed_group_never_leaks_into_tabular(self) -> None:
+        """Published-number guard: the M1 B2/B3 inputs are groups['tabular'] /
+        ['graph'] — wiring the datasets' precomputed screens (2026-07-20) must
+        add them ONLY as the separate 'precomputed' group."""
+        import json as _json
+
+        from collusiongraph.training.baseline_run import assemble_features
+
+        nodes = pl.DataFrame({"node_id": ["firm:M:F1", "tender:M:T1"], "time_first_seen": [1, 1]})
+        edges = pl.DataFrame(
+            {
+                "src": ["tender:M:T1"],
+                "dst": ["firm:M:F1"],
+                "edge_type": ["awarded"],
+                "timestamp": [1],
+                "directed": [True],
+                "raw_attrs": [_json.dumps({"lot_bidscount": 3, "relative_value": 0.4})],
+            }
+        )
+        features, groups = assemble_features("procurement", nodes, edges, as_of=None)
+        assert groups["tabular"] == [
+            "n_awards",
+            "market_share",
+            "buyer_hhi",
+            "n_awards_made",
+            "n_distinct_winners",
+            "supplier_hhi",
+            "winner_rotation_entropy",
+        ]
+        assert not any(c.startswith("pc_") for c in groups["tabular"] + groups["graph"])
+        assert "pc_lot_bidscount_mean" in groups["precomputed"]
+        assert "pc_lot_bidscount_mean" in features.columns
+
+
 class TestNeighborMean:
     def graph(self) -> tuple[pl.DataFrame, pl.DataFrame, pl.DataFrame]:
         nodes = pl.DataFrame({"node_id": ["a", "b", "c", "d"], "time_first_seen": [1, 1, 1, 1]})

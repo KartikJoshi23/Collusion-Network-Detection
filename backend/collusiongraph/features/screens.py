@@ -180,3 +180,73 @@ def co_bid_stats(
 _EMPTY_CO_BID = pl.DataFrame(
     schema={"node_id": pl.Utf8, "n_co_bidders": pl.UInt32, "co_bid_repeat_max": pl.UInt32}
 )
+
+
+# the García screen family as the adapter stores it in bids_on raw_attrs
+# (lowercased _SCREEN_COLS + number_bids); Mendeley rides awarded raw_attrs
+_PC_BID_KEYS = ["cv", "spd", "diffp", "rd", "kurt", "skew", "kstest", "number_bids"]
+_PC_COLUMNS = [
+    "pc_lot_bidscount_mean",
+    "pc_lot_bidscount_min",
+    "pc_relative_value_mean",
+    *[f"pc_{k}" for k in _PC_BID_KEYS],
+]
+
+
+def _json_float(key: str) -> pl.Expr:
+    return pl.col("raw_attrs").str.json_path_match(f"$.{key}").cast(pl.Float64, strict=False)
+
+
+def precomputed_screens(
+    nodes: pl.DataFrame, edges: pl.DataFrame, as_of: int | None = None
+) -> pl.DataFrame:
+    """The datasets' OWN precomputed screen values, extracted from edge
+    ``raw_attrs`` (the deferred B4 wiring — ledger 2026-07-16 item 8).
+
+    * Mendeley ``awarded`` attrs — ``lot_bidscount`` (the single-bidding /
+      competition screen) and ``relative_value``: aggregated per FIRM (dst,
+      mean/min over its awards) and per TENDER (src, mean over its lots).
+    * García ``bids_on`` attrs — the per-tender screen family (CV, SPD, DIFFP,
+      RD, KURT, SKEW, KSTEST, number_bids): per TENDER (dst; values are
+      per-tender constants replicated across bid rows — mean recovers them).
+
+    Always emits the full ``pc_*`` schema (nulls where a dataset carries no
+    value); nodes with no precomputed value at all get NO row — raw_attrs that
+    carry other keys (e.g. the OCDS bid attrs) must not produce noise rows.
+    Same as-of discipline as every feature (§9.1b).
+    """
+    nodes, edges = restrict_as_of(nodes, edges, as_of)
+    attrs = edges.filter(pl.col("raw_attrs").is_not_null())
+
+    aw = attrs.filter(pl.col("edge_type") == EdgeType.AWARDED.value).select(
+        pl.col("src").alias("_tender"),
+        pl.col("dst").alias("_firm"),
+        _json_float("lot_bidscount").alias("_bidscount"),
+        _json_float("relative_value").alias("_relvalue"),
+    )
+    award_aggs = [
+        pl.col("_bidscount").mean().alias("pc_lot_bidscount_mean"),
+        pl.col("_bidscount").min().alias("pc_lot_bidscount_min"),
+        pl.col("_relvalue").mean().alias("pc_relative_value_mean"),
+    ]
+    firm = aw.group_by(pl.col("_firm").alias("node_id")).agg(award_aggs)
+    tender_award = aw.group_by(pl.col("_tender").alias("node_id")).agg(award_aggs)
+
+    tender_bid = (
+        attrs.filter(pl.col("edge_type") == EdgeType.BIDS_ON.value)
+        .select(
+            pl.col("dst").alias("node_id"),
+            *[_json_float(k).alias(f"pc_{k}") for k in _PC_BID_KEYS],
+        )
+        .group_by("node_id")
+        .agg([pl.col(f"pc_{k}").mean() for k in _PC_BID_KEYS])
+    )
+
+    tender = tender_award.join(tender_bid, on="node_id", how="full", coalesce=True)
+    combined = pl.concat([firm, tender], how="diagonal").select(
+        "node_id", *[pl.col(c).cast(pl.Float64) for c in _PC_COLUMNS]
+    )
+    # drop all-null rows (attrs existed but carried none of the screen keys)
+    return combined.filter(pl.any_horizontal([pl.col(c).is_not_null() for c in _PC_COLUMNS])).sort(
+        "node_id"
+    )
