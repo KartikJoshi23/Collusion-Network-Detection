@@ -367,6 +367,83 @@ class TestInjector:
             unsup = {"edge_type": "bids_on", "features": "pca"}
             _member_scores(nodes, edges, 0, {"unsupervised": unsup})
 
+    def test_injection_multiseed_aggregates_and_resumes(self, tmp_path) -> None:
+        """§7 step-30 rigor: a seeds-list config runs per-seed dirs, aggregates
+        mean±std, and RESUMES from existing per-seed reports (proven by planting
+        a sentinel recall in one report and seeing it in the aggregate)."""
+        import json as _json
+
+        from collusiongraph.training import run_injection_recovery
+
+        store = GraphStore(tmp_path)
+        ids = [f"firm:bg:{i}" for i in range(6)] + [f"tender:bg:{i}" for i in range(9)]
+        nodes = pl.DataFrame(
+            {
+                "node_id": ids,
+                "node_type": ["firm"] * 6 + ["tender"] * 9,
+                "domain": ["procurement"] * 15,
+                "time_first_seen": [2020] * 15,
+                "raw_features": pl.Series([None] * 15, dtype=pl.List(pl.Float32)),
+                "raw_attrs": pl.Series([None] * 15, dtype=pl.Utf8),
+            }
+        )
+        rng = np.random.default_rng(0)
+        edges = pl.DataFrame(
+            {
+                "src": [ids[int(rng.integers(6))] for _ in range(20)],
+                "dst": [ids[6 + int(rng.integers(9))] for _ in range(20)],
+                "edge_type": ["bids_on"] * 20,
+                "timestamp": [int(rng.integers(2020, 2025)) for _ in range(20)],
+                "amount": [float(rng.uniform(1e3, 1e5)) for _ in range(20)],
+                "directed": [True] * 20,
+                "raw_attrs": pl.Series([None] * 20, dtype=pl.Utf8),
+            }
+        )
+        labels = pl.DataFrame(
+            {
+                "node_id": ids,
+                "label": ["unknown"] * 15,
+                "label_source": ["ocds_unlabeled"] * 15,
+                "confidence": pl.Series([1.0] * 15, dtype=pl.Float32),
+            }
+        )
+        store.write("toy_ocds", "nodes", nodes)
+        store.write("toy_ocds", "edges", edges)
+        store.write("toy_ocds", "labels", labels)
+        store.write_meta("toy_ocds", {"dataset": "toy_ocds"})
+
+        cfg = {
+            "dataset": "toy_ocds",
+            "domain": "procurement",
+            "store_root": str(tmp_path),
+            "output_dir": str(tmp_path / "ms"),
+            "seeds": [0, 1],
+            "split": {"test_start": 2020, "window_end": 2024},
+            "motifs": {"cover_bid": 1},
+            "n_bridge_edges": 1,
+            "unsupervised": {
+                "edge_type": "bids_on",
+                "features": "structural",
+                "hid_dim": 8,
+                "epochs": 5,
+            },
+            "budgets": [10],
+        }
+        report = run_injection_recovery(cfg)
+        agg = report["recovery_multiseed"]["ensemble_rank"]["cover_bid"]["recall@10"]
+        assert set(agg["values"]) == {"0", "1"}
+        assert min(agg["values"].values()) <= agg["mean"] <= max(agg["values"].values())
+
+        # resume proof: plant a sentinel in seed_1's stored report and re-run
+        seed1 = tmp_path / "ms" / "seed_1" / "injection_recovery_report.json"
+        payload = _json.loads(seed1.read_text(encoding="utf-8"))
+        for row in payload["recovery"]["ensemble_rank"]:
+            row["recall@10"] = 0.123
+        seed1.write_text(_json.dumps(payload), encoding="utf-8")
+        rerun = run_injection_recovery(cfg)
+        values = rerun["recovery_multiseed"]["ensemble_rank"]["cover_bid"]["recall@10"]["values"]
+        assert values["1"] == 0.123  # loaded from disk, not recomputed
+
     def test_multi_family_injection_ids_are_disjoint(self) -> None:
         """Regression (2026-07-20): procurement families reused market strings,
         so rotation/common_control/coordinated_cluster instances with the same

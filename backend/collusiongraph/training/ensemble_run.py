@@ -191,6 +191,8 @@ def run_ensemble(config: dict[str, Any] | str | Path) -> dict[str, Any]:
 
 def run_injection_recovery(config: dict[str, Any] | str | Path) -> dict[str, Any]:
     cfg = load_config(config)
+    if "seeds" in cfg:  # §7 step-30 rigor: multi-seed wrapper (step-29 pattern)
+        return _run_injection_multiseed(cfg)
     store = GraphStore(cfg.get("store_root", "data/interim"))
     dataset: str = cfg["dataset"]
     out_dir = Path(cfg["output_dir"])
@@ -246,6 +248,65 @@ def run_injection_recovery(config: dict[str, Any] | str | Path) -> dict[str, Any
         rec = recovery_at_budget(frame, result.ground_truth, budgets)
         report["recovery"][name] = rec.to_dicts()
     (out_dir / "injection_recovery_report.json").write_text(
+        json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
+    return report
+
+
+def _run_injection_multiseed(cfg: dict[str, Any]) -> dict[str, Any]:
+    """Seeds-list wrapper over the single-seed protocol (§7 step-30 rigor,
+    step-29 pattern): per-seed dirs, resume-by-artifact (a seed whose report
+    exists is loaded, never re-run), mean±std(ddof=1) aggregation per
+    arm × motif family × budget to ``injection_multiseed.json``."""
+    seeds: list[int] = list(cfg["seeds"])
+    out_dir = Path(cfg["output_dir"])
+    per_seed: dict[int, dict[str, Any]] = {}
+    for seed in seeds:
+        seed_dir = out_dir / f"seed_{seed}"
+        report_path = seed_dir / "injection_recovery_report.json"
+        if report_path.is_file():
+            per_seed[seed] = json.loads(report_path.read_text(encoding="utf-8"))
+            continue
+        sub_cfg = {k: v for k, v in cfg.items() if k != "seeds"}
+        sub_cfg["seed"] = seed
+        sub_cfg["output_dir"] = str(seed_dir)
+        per_seed[seed] = run_injection_recovery(sub_cfg)
+
+    first = per_seed[seeds[0]]
+    arms = sorted(first["recovery"])
+    aggregate: dict[str, Any] = {}
+    for arm in arms:
+        aggregate[arm] = {}
+        motifs = {row["motif_type"] for r in per_seed.values() for row in r["recovery"][arm]}
+        for motif in sorted(motifs):
+            rows = [
+                row
+                for r in per_seed.values()
+                for row in r["recovery"][arm]
+                if row["motif_type"] == motif
+            ]
+            metrics = sorted(k for k in rows[0] if k.startswith("recall@"))
+            entry: dict[str, Any] = {"n_members": rows[0]["n_members"]}
+            for metric in metrics:
+                values = [row[metric] for row in rows]
+                series = pl.Series(values)
+                entry[metric] = {
+                    "mean": series.mean(),
+                    "std": series.std(ddof=1) if len(values) > 1 else 0.0,
+                    "values": dict(zip(map(str, seeds), values, strict=True)),
+                }
+            aggregate[arm][motif] = entry
+
+    report = {
+        "dataset": first["dataset"],
+        "seeds": seeds,
+        "fusion_mode": first["fusion_mode"],
+        "n_injected_instances": first["n_injected_instances"],
+        "population": first["population"],
+        "recovery_multiseed": aggregate,
+    }
+    out_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / "injection_multiseed.json").write_text(
         json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
     )
     return report
