@@ -75,6 +75,12 @@ def _member_scores(
     fits financial account/tx graphs only — a procurement run must name its
     projection ("awarded", "bids_on", …), and an empty projection is an error,
     never a silent attribute-only autoencoder.
+
+    ``unsupervised.features`` selects the detectors' attribute matrix:
+    ``raw`` (default — the dataset's own features, the published Elliptic
+    behavior) or ``structural`` (the §4.2 rule-2 template, computed on the
+    scored graph) for datasets that carry no raw features, e.g. the OCDS
+    substrate (§7 step 30).
     """
     unsup_cfg = cfg.get("unsupervised", {})
     edge_type = unsup_cfg.get("edge_type", "pays")
@@ -84,7 +90,13 @@ def _member_scores(
             f"homogeneous projection {edge_type!r} has no edges — "
             "set unsupervised.edge_type to an edge type this dataset carries"
         )
-    features = zscore_per_graph(raw_feature_frame(nodes, n_raw))
+    feature_kind = unsup_cfg.get("features", "raw")
+    if feature_kind == "structural":
+        features = zscore_per_graph(structural_features(nodes, edges))
+    elif feature_kind == "raw":
+        features = zscore_per_graph(raw_feature_frame(nodes, n_raw))
+    else:
+        raise ValueError(f"unknown unsupervised.features {feature_kind!r} (raw|structural)")
     members = {
         name: unsupervised_scores(
             nodes,
@@ -202,16 +214,27 @@ def run_injection_recovery(config: dict[str, Any] | str | Path) -> dict[str, Any
         scorers["supervised"] = _supervised_scores_on(
             result.nodes, result.edges, store.read(dataset, "labels"), n_raw, cfg
         )
-    # the ensemble arm uses the PRIMARY fusion (calibrated on the train-window
-    # validation pool), not the rank-fusion ablation mode (audit F5)
-    members_val, val_labels = _validation_members(cfg, store, dataset, n_raw)
-    scorers["ensemble"] = calibrated_fusion(dict(scorers), members_val, val_labels)
+    if "supervised_scores_dir" in cfg:
+        # labeled regime: the ensemble arm uses the PRIMARY fusion (calibrated
+        # on the train-window validation pool), not the rank-fusion ablation
+        # mode (audit F5)
+        members_val, val_labels = _validation_members(cfg, store, dataset, n_raw)
+        scorers["ensemble"] = calibrated_fusion(dict(scorers), members_val, val_labels)
+        fusion_mode = "calibrated"
+    else:
+        # unlabeled regime (§4.3 D5, §7 step 30): calibration requires labeled
+        # validation nodes, which this substrate does not have — rank fusion is
+        # the only label-free fusion, reported under its own honest name (it is
+        # the measured §4.4 failure mode on Elliptic, never a calibrated proxy)
+        scorers["ensemble_rank"] = rank_fusion(dict(scorers))
+        fusion_mode = "rank_unlabeled"
 
     budgets: list[int] = cfg["budgets"]
     out_dir.mkdir(parents=True, exist_ok=True)
     report: dict[str, Any] = {
         "dataset": dataset,
         "seed": cfg.get("seed", 0),
+        "fusion_mode": fusion_mode,
         "n_injected_instances": result.ground_truth.height,
         "n_injected_members": result.ground_truth["member_node_ids"]
         .explode(empty_as_null=False)
