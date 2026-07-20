@@ -61,13 +61,17 @@
 > 687,336 `bids_on` edges with identified losing bidders — the co-bid substrate synthetic
 > cartel motifs need, ~50× Mendeley's node count. *Injection at scale (RQ2, unsupervised
 > regime):* 100 instances / 940 members of all five procurement families planted into the
-> 163,327-node test window; **verdict: only clique-type coordination is recoverable at
-> budget** — coordinated_cluster rank-fusion **1.00 @2000** (co-bid clique; both
-> autoencoders agree), common_control 0.59 (linked_to clique); **rotation / partition /
-> cover_bid evade every structure-only arm** (≤0.20 / ≤0.09 / ≈0) — the M3 budget-evasion
-> finding replicates at ~80× population. Found+fixed in passing: procurement generators
-> shared market strings across families (silent ground-truth corruption; injector now
-> guards). Suite 347/347. M6's remainder stays GPU-gated (AMLworld).
+> 163,327-node test window; **verdict (CONFIRMED over 5 seeds): only clique-type
+> coordination is recoverable at budget** — coordinated_cluster rank-fusion **0.93 ±
+> 0.16 @2000** (4/5 seeds reach 1.00; co-bid clique, both autoencoders agree),
+> common_control: the floor catches **100% of the linked_to-clique FIRMS
+> deterministically** (member-level 0.4286, zero variance — dilution by tender/buyer
+> members), dominant 0.58 ± 0.02; **rotation / partition / cover_bid evade every
+> structure-only arm seed-invariantly** (≤0.10 / ≤0.24 / ≤0.02) — the M3
+> budget-evasion finding replicates at ~80× population. Found+fixed in passing:
+> procurement generators shared market strings across families (silent ground-truth
+> corruption; injector now guards). Suite 348/348. M6's remainder stays GPU-gated
+> (AMLworld).
 
 **M5 COMPLETE — MVP exit criterion met [master, 2026-07-18].** Clone → `poe demo` (+ `npm run dev`)
 or `docker compose up` → dashboard → ranked alert → highlighted subgraph → explanation, both
@@ -121,6 +125,27 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-20 · **§7 STEP-30 RIGOR — the at-scale injection study MULTI-SEED CONFIRMED
+  (5 seeds, step-29 bar).** `run_injection_recovery` gained a `seeds:` wrapper
+  (step-29 pattern: per-seed dirs, resume-by-artifact, mean±std(ddof=1) per
+  arm × family × budget → `injection_multiseed.json`; single-seed configs untouched);
+  config `injection_recovery_ocds_georgia_multiseed.yaml` (protocol byte-identical to
+  the published seed-0 run; ~20 min CPU). *Measured:* **the verdict is seed-robust,
+  with one honest refinement** — (a) coordinated_cluster @2000: ensemble_rank
+  **0.9275 ± 0.162** (seeds: 1.00/0.64/1.00/1.00/1.00 — the published seed-0 1.00 is
+  the modal outcome, not luck; gae 0.914 ± 0.118); (b) common_control: floor
+  DETERMINISTIC at 0.4286 across every seed AND budget = exactly the 60 firm members
+  of 140 — **the floor recovers 100% of the linked_to-clique firms and 0% of
+  tender/buyer members** (member-level recall is dilution, not miss); dominant
+  0.581 ± 0.016 @2000; (c) evasion is SEED-INVARIANT: cover_bid ≤0.017 (every
+  arm/seed), rotation ≤0.10, partition ≤0.24 (dominant best) — tight stds throughout.
+  Paper-ready claim: structure-only unsupervised screening at 163k-node scale
+  recovers dense-clique coordination near-completely at 1.2% budget but is blind to
+  award-pattern cartels (rotation/partition/cover-bid) — the RQ2 motivation for the
+  supervised/typology arms. 1 new test (multiseed aggregation + resume proof via
+  sentinel) — **suite 348/348**. Artifact:
+  `eval_outputs/ocds_georgia/injection_recovery_multiseed/injection_multiseed.json` ·
+  [laptop-B]
 - 2026-07-20 · **§7 STEP 30 (second half) — synthetic injection AT SCALE on the
   unlabeled OCDS substrate: measured, and a ground-truth-corrupting injector bug
   found+fixed on the way.** *(a) The bug (would have silently poisoned any
@@ -605,9 +630,8 @@ still public 2026-07-15 — anonymous clone succeeded).
 - ~~§7 step 30 half-done~~ **STEP 30 CLOSED [laptop-B, 2026-07-20]: both the
   ingestion half AND the at-scale injection study are measured (see Completed).**
   Nothing half-written. M6's only remainder is the GPU-gated AMLworld set (see the
-  Phase-2 bullet above). Optional rigor follow-up queued in Next actions: multi-seed
-  confirmation of the injection study (seed 0 only today; the step-29 bar applies to
-  headline claims, and the clique-vs-award-pattern verdict is one).
+  Phase-2 bullet above). ~~Optional rigor follow-up: multi-seed confirmation~~
+  **DONE same day — 5-seed campaign measured, verdict seed-robust (see Completed).**
 - ~~The overhaul was verified against a synthetic serving store on laptop-C~~ **Resolved
   2026-07-18 [master]:** the overhauled UI is verified against REAL artifacts on BOTH laptop-C
   and master; master walked all five views live in both domains and verified the compose path.
@@ -662,11 +686,10 @@ still public 2026-07-15 — anonymous clone succeeded).
    scripts/download_data.py --only ocds_georgia` → `uv run collusiongraph ingest
    --dataset ocds_georgia` → `uv run collusiongraph train -c
    configs/experiment/injection_recovery_ocds_georgia.yaml` (~5 min CPU total).**
-   Optional step-30 rigor follow-up (CPU, ~20 min): multi-seed the injection study —
-   `run_injection_recovery` takes `seed:`; run seeds 1–4 by pointing `output_dir` at
-   per-seed dirs and aggregate by hand (or wire a `multiseed:` wrapper like step
-   29's if the paper headlines the verdict), then record mean±std recall per family
-   here.
+   ~~Optional step-30 rigor follow-up: multi-seed the injection study~~ **DONE
+   2026-07-20 [laptop-B] — `seeds:` wrapper wired, 5-seed campaign measured, verdict
+   seed-robust (see Completed; reproduce: `uv run collusiongraph train -c
+   configs/experiment/injection_recovery_ocds_georgia_multiseed.yaml`).**
 4. ~~[collaborator] Copilot 27b DOCK~~ **DONE on laptop-C (2026-07-19, see Completed) —
    dock + SSE live-verified with a faked LLM client (no key on that machine).**
    ~~Remaining before MC closes: verify live-LLM + goldens on a keyed machine~~
