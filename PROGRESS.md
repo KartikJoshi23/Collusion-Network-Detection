@@ -53,6 +53,14 @@
 > (RQ4): García transfers positively on EVERY market (macro lift 1.57, Italy P@10 1.00);
 > Mendeley is market-dependent — macro lift 1.17 but its largest market fails (lift 0.90).
 > Suite 298/298. Next: step-29 multi-seed/CI/sensitivity rigor (Next action 3).
+>
+> 🚀 **§7 STEP 30 OPENED (M6 gate) — ingestion half DONE [laptop-B, 2026-07-20]:** OCDS
+> publisher selected per the D5 bid-coverage criterion (**Georgia OpenTender**, OCP Data
+> Registry id 52 — Decision log) and the FULL 2010–2025 corpus ingested through the new
+> `ocds_to_ir` adapter: **451,346 releases → 488,300 nodes / 1,449,077 edges**, incl.
+> 687,336 `bids_on` edges with identified losing bidders — the co-bid substrate synthetic
+> cartel motifs need, ~50× Mendeley's node count. Suite 343/343. Remaining half:
+> synthetic injection at scale for the unsupervised regime (Next actions).
 
 **M5 COMPLETE — MVP exit criterion met [master, 2026-07-18].** Clone → `poe demo` (+ `npm run dev`)
 or `docker compose up` → dashboard → ranked alert → highlighted subgraph → explanation, both
@@ -106,6 +114,27 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-20 · **§7 STEP 30 (first half) — OCDS publisher ingestion, selected + built +
+  run at full scale.** *Selection (D5 criterion):* probed the OCP Data Registry's
+  per-publication field-coverage API for publishers populating the standard
+  `bids.details[]` extension — **Georgia OpenTender (publication 52)** chosen (Decision
+  log; Paraguay/Guatemala runners-up). *Acquisition:* `fetch_ocds_georgia` in
+  `scripts/download_data.py` (16 per-year compiled-release JSONL.gz files, ~230 MB,
+  license CC BY-NC-SA 4.0 recorded in `data/manifests/ocds_georgia.json` — manifest
+  committed, raw data never). *Adapter:* `ocds_to_ir` in `adapters/procurement.py` —
+  streaming JSONL → IR; `awarded`/`buys_from` core + `bids_on` enrichment with
+  per-tenderer edges on joint bids (award-network-first, §4.2 rule 1); id-less
+  buyers/tenderers and undated releases skipped AND counted, never guessed; all
+  firm/tender labels emitted `unknown` (`ocds_unlabeled`) — unsupervised/injection
+  substrate only. CLI `ingest --dataset ocds_georgia` wired. *Full-corpus run on this
+  machine:* **451,346 releases (2010–2025) → 488,300 nodes / 1,449,077 edges; 687,336
+  identified-bidder `bids_on` edges (losing bidders included); zero skipped bids, zero
+  undated releases.** 9 new tests incl. a `@leakage`-marked §9.1b guard
+  (time_first_seen ≤ every incident edge's timestamp; golden fixture exercises joint
+  bids, award-only degradation, id-less skips, undated skip) — **suite 343/343**;
+  ruff/black/mypy clean. Also bootstrapped this machine post-privatization (auth OK,
+  `uv sync`, frontend `npm install`; backend + frontend + build verified green before
+  any code was written) · [laptop-B]
 - 2026-07-20 · **docs: demo script brought current with the shipped product** — `docs/demo_script.md` still walked the M5-era five-view V1 UI; rewritten against today's console (About opener, constellation + spotlight, measured-P@k readout + hover sparklines/actions, temporal scrubber, DrawSVG dossier, actor-level dataset, Phase-2 rigor panel, Copilot dock walk incl. the guilt-guard beat + key setup note); a ~3-minute walk with the 90-second cut marked. Verified against the live API on this machine (3 datasets + rigor endpoint answering) and the current frontend build (green, vitest 22/22); the stakeholder review-#3 path now matches what they will see · [laptop-C]
 - 2026-07-20 · **§7 STEP 32 — the two queued ablation arms MEASURED (seed 0, vs the
   published focal-bidirectional 0.5492 / P@100 0.96).** **(a) −bidirectional edges:
@@ -535,6 +564,11 @@ still public 2026-07-15 — anonymous clone succeeded).
   GATv2/ensemble), bootstrapped CIs + paired significance, budget/hit-rule/NMS
   sensitivity, label-noise check. Still GPU-gated from step 26: (b) PNA/GIN+EU AMLworld
   parity + `NeighborLoader`, learned line-encoder on AMLworld.
+- **§7 step 30 HALF-DONE [laptop-B, 2026-07-20]:** ingestion half shipped (Georgia
+  OpenTender selected, downloaded, adapter built + tested, full 2010–2025 corpus
+  ingested — see Completed). **Remaining half: synthetic injection at scale for the
+  unsupervised regime** — see the new step in Next actions 3. Nothing half-written;
+  the adapter slice landed green.
 - ~~The overhaul was verified against a synthetic serving store on laptop-C~~ **Resolved
   2026-07-18 [master]:** the overhauled UI is verified against REAL artifacts on BOTH laptop-C
   and master; master walked all five views live in both domains and verified the compose path.
@@ -582,7 +616,27 @@ still public 2026-07-15 — anonymous clone succeeded).
    HI-Small** (Multi-GNN parity; wire `NeighborLoader` minibatching there — it needs
    pyg-lib/torch-sparse, which this Windows env deliberately excludes); (d) learned
    line-encoder over materialized L(G) on AMLworld per the B-LG verdict; AMLworld
-   held-out-pattern study; OCDS publisher ingestion (step 30) closes M6.
+   held-out-pattern study. ~~OCDS publisher ingestion~~ **ingestion half DONE
+   2026-07-20 [laptop-B] (see Completed). The CPU-feasible remainder that closes the
+   non-GPU part of M6 — synthetic injection AT SCALE on `ocds_georgia` (§7 step 30,
+   unsupervised regime):** (i) on any machine, `uv run python
+   scripts/download_data.py --only ocds_georgia` (~230 MB, checksums verify against
+   the committed manifest) then `uv run collusiongraph ingest --dataset ocds_georgia`
+   (~1 min; expect the exact stats in the Completed entry); (ii) write
+   `configs/experiment/injection_recovery_ocds_georgia.yaml` modeled on
+   `injection_recovery_elliptic_pp.yaml` but procurement-shaped: year split (e.g.
+   train ≤2019 / test 2020–2024), `motifs:` from the PROCUREMENT generator families
+   (rotation, cover_bid, partition, clique, common_control — see
+   `injection/generators/procurement.py`), unsupervised arms only (NO
+   `supervised_scores_dir`/`supervised_model` — the dataset is fully `unknown`-labeled
+   by design), budgets scaled to the 33k-firm graph (e.g. [500, 1000, 2000]); (iii)
+   expect `run_injection_recovery` to need an adaptation pass — it was built on the
+   Elliptic tx graph (single `pays` edge_type; §4.4 arms) and must now run on the
+   firm–tender bipartite structure at 1.4M edges (candidate route: score firms over
+   the co-bid projection; keep memory streaming-safe); extend §9.1 leakage tests with
+   any new split/feature code it grows; (iv) record recall-at-budget per arm + the
+   RQ2 at-scale verdict here, mirroring the M3 injection-recovery entry's honesty
+   (report the arms that FAIL at budget too).
 4. ~~[collaborator] Copilot 27b DOCK~~ **DONE on laptop-C (2026-07-19, see Completed) —
    dock + SSE live-verified with a faked LLM client (no key on that machine).**
    ~~Remaining before MC closes: verify live-LLM + goldens on a keyed machine~~
@@ -626,6 +680,24 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Decision log
 <!-- - YYYY-MM-DD · decision · rationale · plan section affected -->
+- 2026-07-20 · **[laptop-B] OCDS publisher PINNED: Georgia OpenTender (OCP Data
+  Registry publication 52), per-year compiled-release JSONL.** Selection was
+  measured, not assumed — the registry's per-publication `coverage` field (JSON-path →
+  record counts, probed 2026-07-20 across all 134 publications) shows Georgia
+  populates the STANDARD `bids.details[]` extension with identified tenderers
+  (12.08M bid-field records; verified in-corpus: 687,336 bids, all with tenderer
+  ids, losing bidders included) — the §4.3 D5 criterion, since co-bid structure is
+  where injected cartel motifs live. Runners-up: Paraguay DNCP (bid data only under
+  nonstandard `auctions[]/stages[]` paths), Guatemala (standard paths but ~3× the
+  bulk), big OpenTender EU publications (Italy/Poland/Spain — right shape, 5–8× the
+  size; Italy stays attractive later for a García cross-check). Georgia adds:
+  active publication (half-yearly updates, 2010–2025), laptop-scale bulk (~230 MB),
+  and single-currency GEL amounts. License CC BY-NC-SA 4.0 (research use OK,
+  recorded in the manifest; raw data never committed). Time unit = year (matches the
+  procurement adapter family; full ISO dates preserved in `raw_attrs`). Undated
+  releases are EXCLUDED at ingest (counted in meta) — undated edges cannot enter a
+  temporal split honestly (§9.1b); measured impact on the real corpus: zero ·
+  §4.3 D5, §7 step 30, R13.
 - 2026-07-19 · **[master] LOCO-matrix validation-group policy FIXED (before any matrix
   test number was read): each fold's early-stopping group = the SMALLEST other group
   with ≥ `min_val_per_class` (default 3) confirmed nodes per class, ties lexicographic;
