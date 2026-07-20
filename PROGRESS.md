@@ -54,13 +54,20 @@
 > Mendeley is market-dependent — macro lift 1.17 but its largest market fails (lift 0.90).
 > Suite 298/298. Next: step-29 multi-seed/CI/sensitivity rigor (Next action 3).
 >
-> 🚀 **§7 STEP 30 OPENED (M6 gate) — ingestion half DONE [laptop-B, 2026-07-20]:** OCDS
+> 🏁 **§7 STEP 30 CLOSED [laptop-B, 2026-07-20] — both halves.** *Ingestion:* OCDS
 > publisher selected per the D5 bid-coverage criterion (**Georgia OpenTender**, OCP Data
 > Registry id 52 — Decision log) and the FULL 2010–2025 corpus ingested through the new
 > `ocds_to_ir` adapter: **451,346 releases → 488,300 nodes / 1,449,077 edges**, incl.
 > 687,336 `bids_on` edges with identified losing bidders — the co-bid substrate synthetic
-> cartel motifs need, ~50× Mendeley's node count. Suite 343/343. Remaining half:
-> synthetic injection at scale for the unsupervised regime (Next actions).
+> cartel motifs need, ~50× Mendeley's node count. *Injection at scale (RQ2, unsupervised
+> regime):* 100 instances / 940 members of all five procurement families planted into the
+> 163,327-node test window; **verdict: only clique-type coordination is recoverable at
+> budget** — coordinated_cluster rank-fusion **1.00 @2000** (co-bid clique; both
+> autoencoders agree), common_control 0.59 (linked_to clique); **rotation / partition /
+> cover_bid evade every structure-only arm** (≤0.20 / ≤0.09 / ≈0) — the M3 budget-evasion
+> finding replicates at ~80× population. Found+fixed in passing: procurement generators
+> shared market strings across families (silent ground-truth corruption; injector now
+> guards). Suite 347/347. M6's remainder stays GPU-gated (AMLworld).
 
 **M5 COMPLETE — MVP exit criterion met [master, 2026-07-18].** Clone → `poe demo` (+ `npm run dev`)
 or `docker compose up` → dashboard → ranked alert → highlighted subgraph → explanation, both
@@ -114,6 +121,37 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-20 · **§7 STEP 30 (second half) — synthetic injection AT SCALE on the
+  unlabeled OCDS substrate: measured, and a ground-truth-corrupting injector bug
+  found+fixed on the way.** *(a) The bug (would have silently poisoned any
+  multi-family procurement injection):* the five procurement generators embedded only
+  `inj<tag>` as the market group while the injector reuses tags across families —
+  rotation/common_control/coordinated_cluster instances with the same tag emitted
+  IDENTICAL node ids (`firm:inj0x0:F0`), entangling ground truth; surfaced as a 45×
+  row-multiplication crash in the at-scale feature join. Markets now embed the family
+  (`inj_<motif>_<tag>`), and `inject()` refuses any id collision with background or
+  another instance (negative test pinned). Financial generators were never affected
+  (ids carry the motif name) — the published M3 Elliptic numbers stand. *(b) Runner
+  adaptation (unlabeled regime, §4.3 D5):* `unsupervised.features: raw|structural`
+  knob in `_member_scores` (default `raw` — published Elliptic behavior untouched;
+  `structural` feeds the §4.2 rule-2 template to DOMINANT/GAE on datasets with no raw
+  features); `run_injection_recovery` branches on `supervised_scores_dir` — absent
+  (unlabeled) it reports the unsupervised members + label-free `rank_fusion` under the
+  honest name `ensemble_rank` with `fusion_mode: rank_unlabeled` (calibration is
+  impossible without labels — Decision log). *(c) The measured study* (config
+  `injection_recovery_ocds_georgia.yaml`; seed 0; 20×5 families = 100 instances / 940
+  members into the 2020–2024 window, population 163,327; budgets 500/1000/2000 =
+  top 0.3–1.2%; ~4 min CPU): **RQ2 at-scale verdict — only clique-type coordination
+  is recoverable at budget.** coordinated_cluster: ensemble_rank **0.74@1000 →
+  1.00@2000** (gae 0.79, dominant 0.51 — fusion beats both members where they agree);
+  common_control: dominant 0.59@2000, floor flat 0.43 (the linked_to clique stays the
+  floor's only catch, as in M3); **rotation ≤0.09, partition ≤0.20, cover_bid ≈0
+  across every arm** — award-pattern motifs without dense co-bid structure evade
+  structure-only unsupervised arms at 80× the M3 population. 4 new tests (e2e
+  unlabeled runner on a toy store, feature-kind rejection, multi-family disjointness
+  regression, collision-guard negative) — **suite 347/347**, ruff/black/mypy clean.
+  Artifact: `eval_outputs/ocds_georgia/injection_recovery/injection_recovery_report.json`
+  · [laptop-B]
 - 2026-07-20 · **§7 STEP 30 (first half) — OCDS publisher ingestion, selected + built +
   run at full scale.** *Selection (D5 criterion):* probed the OCP Data Registry's
   per-publication field-coverage API for publishers populating the standard
@@ -564,11 +602,12 @@ still public 2026-07-15 — anonymous clone succeeded).
   GATv2/ensemble), bootstrapped CIs + paired significance, budget/hit-rule/NMS
   sensitivity, label-noise check. Still GPU-gated from step 26: (b) PNA/GIN+EU AMLworld
   parity + `NeighborLoader`, learned line-encoder on AMLworld.
-- **§7 step 30 HALF-DONE [laptop-B, 2026-07-20]:** ingestion half shipped (Georgia
-  OpenTender selected, downloaded, adapter built + tested, full 2010–2025 corpus
-  ingested — see Completed). **Remaining half: synthetic injection at scale for the
-  unsupervised regime** — see the new step in Next actions 3. Nothing half-written;
-  the adapter slice landed green.
+- ~~§7 step 30 half-done~~ **STEP 30 CLOSED [laptop-B, 2026-07-20]: both the
+  ingestion half AND the at-scale injection study are measured (see Completed).**
+  Nothing half-written. M6's only remainder is the GPU-gated AMLworld set (see the
+  Phase-2 bullet above). Optional rigor follow-up queued in Next actions: multi-seed
+  confirmation of the injection study (seed 0 only today; the step-29 bar applies to
+  headline claims, and the clique-vs-award-pattern verdict is one).
 - ~~The overhaul was verified against a synthetic serving store on laptop-C~~ **Resolved
   2026-07-18 [master]:** the overhauled UI is verified against REAL artifacts on BOTH laptop-C
   and master; master walked all five views live in both domains and verified the compose path.
@@ -616,27 +655,18 @@ still public 2026-07-15 — anonymous clone succeeded).
    HI-Small** (Multi-GNN parity; wire `NeighborLoader` minibatching there — it needs
    pyg-lib/torch-sparse, which this Windows env deliberately excludes); (d) learned
    line-encoder over materialized L(G) on AMLworld per the B-LG verdict; AMLworld
-   held-out-pattern study. ~~OCDS publisher ingestion~~ **ingestion half DONE
-   2026-07-20 [laptop-B] (see Completed). The CPU-feasible remainder that closes the
-   non-GPU part of M6 — synthetic injection AT SCALE on `ocds_georgia` (§7 step 30,
-   unsupervised regime):** (i) on any machine, `uv run python
-   scripts/download_data.py --only ocds_georgia` (~230 MB, checksums verify against
-   the committed manifest) then `uv run collusiongraph ingest --dataset ocds_georgia`
-   (~1 min; expect the exact stats in the Completed entry); (ii) write
-   `configs/experiment/injection_recovery_ocds_georgia.yaml` modeled on
-   `injection_recovery_elliptic_pp.yaml` but procurement-shaped: year split (e.g.
-   train ≤2019 / test 2020–2024), `motifs:` from the PROCUREMENT generator families
-   (rotation, cover_bid, partition, clique, common_control — see
-   `injection/generators/procurement.py`), unsupervised arms only (NO
-   `supervised_scores_dir`/`supervised_model` — the dataset is fully `unknown`-labeled
-   by design), budgets scaled to the 33k-firm graph (e.g. [500, 1000, 2000]); (iii)
-   expect `run_injection_recovery` to need an adaptation pass — it was built on the
-   Elliptic tx graph (single `pays` edge_type; §4.4 arms) and must now run on the
-   firm–tender bipartite structure at 1.4M edges (candidate route: score firms over
-   the co-bid projection; keep memory streaming-safe); extend §9.1 leakage tests with
-   any new split/feature code it grows; (iv) record recall-at-budget per arm + the
-   RQ2 at-scale verdict here, mirroring the M3 injection-recovery entry's honesty
-   (report the arms that FAIL at budget too).
+   held-out-pattern study. ~~OCDS publisher ingestion~~ ~~synthetic injection at
+   scale~~ **STEP 30 CLOSED 2026-07-20 [laptop-B] — both halves measured (see
+   Completed; RQ2 at-scale verdict: clique-type coordination recoverable at budget,
+   award-pattern motifs evade). To reproduce on any machine: `uv run python
+   scripts/download_data.py --only ocds_georgia` → `uv run collusiongraph ingest
+   --dataset ocds_georgia` → `uv run collusiongraph train -c
+   configs/experiment/injection_recovery_ocds_georgia.yaml` (~5 min CPU total).**
+   Optional step-30 rigor follow-up (CPU, ~20 min): multi-seed the injection study —
+   `run_injection_recovery` takes `seed:`; run seeds 1–4 by pointing `output_dir` at
+   per-seed dirs and aggregate by hand (or wire a `multiseed:` wrapper like step
+   29's if the paper headlines the verdict), then record mean±std recall per family
+   here.
 4. ~~[collaborator] Copilot 27b DOCK~~ **DONE on laptop-C (2026-07-19, see Completed) —
    dock + SSE live-verified with a faked LLM client (no key on that machine).**
    ~~Remaining before MC closes: verify live-LLM + goldens on a keyed machine~~
@@ -680,6 +710,18 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Decision log
 <!-- - YYYY-MM-DD · decision · rationale · plan section affected -->
+- 2026-07-20 · **[laptop-B] Unlabeled-regime fusion policy: rank fusion ONLY, reported
+  as `ensemble_rank` with `fusion_mode: rank_unlabeled` — never a calibrated-fusion
+  stand-in.** The §4.4 primary ensemble calibrates members on labeled validation nodes;
+  the OCDS substrate has none by design (D5), so `run_injection_recovery` without
+  `supervised_scores_dir` now fuses the unsupervised members by rank alone and names
+  the regime in the report. Rationale: rank fusion is the §4.4 MEASURED failure mode on
+  Elliptic (0.056 vs calibrated 0.674; seed-invariant) — presenting it under the
+  primary ensemble's name would launder that finding, while omitting fusion entirely
+  would hide genuinely useful agreement signal (measured same-day: coordinated_cluster
+  1.00@2000 where the best single member reaches 0.79). Labeled configs are
+  byte-identical in behavior (`supervised_scores_dir` present → calibrated, audit F5
+  unchanged) · §4.4, §4.3 D5, §7 step 30.
 - 2026-07-20 · **[laptop-B] OCDS publisher PINNED: Georgia OpenTender (OCP Data
   Registry publication 52), per-year compiled-release JSONL.** Selection was
   measured, not assumed — the registry's per-publication `coverage` field (JSON-path →
