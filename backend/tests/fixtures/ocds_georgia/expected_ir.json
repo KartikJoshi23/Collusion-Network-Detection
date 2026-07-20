@@ -1,0 +1,163 @@
+{
+ "nodes": [
+  {
+   "node_id": "buyer:georgia:B1",
+   "node_type": "buyer",
+   "domain": "procurement",
+   "time_first_seen": 2015,
+   "raw_features": null,
+   "raw_attrs": null
+  },
+  {
+   "node_id": "firm:georgia:F1",
+   "node_type": "firm",
+   "domain": "procurement",
+   "time_first_seen": 2015,
+   "raw_features": null,
+   "raw_attrs": null
+  },
+  {
+   "node_id": "firm:georgia:F2",
+   "node_type": "firm",
+   "domain": "procurement",
+   "time_first_seen": 2015,
+   "raw_features": null,
+   "raw_attrs": null
+  },
+  {
+   "node_id": "firm:georgia:F3",
+   "node_type": "firm",
+   "domain": "procurement",
+   "time_first_seen": 2015,
+   "raw_features": null,
+   "raw_attrs": null
+  },
+  {
+   "node_id": "tender:georgia:ocds-toy-a",
+   "node_type": "tender",
+   "domain": "procurement",
+   "time_first_seen": 2015,
+   "raw_features": null,
+   "raw_attrs": null
+  },
+  {
+   "node_id": "tender:georgia:ocds-toy-b",
+   "node_type": "tender",
+   "domain": "procurement",
+   "time_first_seen": 2016,
+   "raw_features": null,
+   "raw_attrs": null
+  },
+  {
+   "node_id": "tender:georgia:ocds-toy-c",
+   "node_type": "tender",
+   "domain": "procurement",
+   "time_first_seen": 2016,
+   "raw_features": null,
+   "raw_attrs": null
+  }
+ ],
+ "edges": [
+  {
+   "src": "buyer:georgia:B1",
+   "dst": "tender:georgia:ocds-toy-a",
+   "edge_type": "buys_from",
+   "timestamp": 2015,
+   "amount": 15000.0,
+   "directed": true,
+   "raw_attrs": null
+  },
+  {
+   "src": "buyer:georgia:B1",
+   "dst": "tender:georgia:ocds-toy-b",
+   "edge_type": "buys_from",
+   "timestamp": 2016,
+   "amount": 5200.0,
+   "directed": true,
+   "raw_attrs": null
+  },
+  {
+   "src": "firm:georgia:F1",
+   "dst": "tender:georgia:ocds-toy-a",
+   "edge_type": "bids_on",
+   "timestamp": 2015,
+   "amount": 12000.0,
+   "directed": true,
+   "raw_attrs": "{\"bid_id\": \"bid-1\", \"date\": \"2015-03-06T00:00:00.000Z\", \"currency\": \"GEL\", \"n_tenderers\": 1}"
+  },
+  {
+   "src": "firm:georgia:F2",
+   "dst": "tender:georgia:ocds-toy-a",
+   "edge_type": "bids_on",
+   "timestamp": 2015,
+   "amount": 13000.0,
+   "directed": true,
+   "raw_attrs": "{\"bid_id\": \"bid-2\", \"date\": \"2015-03-06T00:00:00.000Z\", \"currency\": \"GEL\", \"n_tenderers\": 2}"
+  },
+  {
+   "src": "firm:georgia:F3",
+   "dst": "tender:georgia:ocds-toy-a",
+   "edge_type": "bids_on",
+   "timestamp": 2015,
+   "amount": 13000.0,
+   "directed": true,
+   "raw_attrs": "{\"bid_id\": \"bid-2\", \"date\": \"2015-03-06T00:00:00.000Z\", \"currency\": \"GEL\", \"n_tenderers\": 2}"
+  },
+  {
+   "src": "tender:georgia:ocds-toy-a",
+   "dst": "firm:georgia:F1",
+   "edge_type": "awarded",
+   "timestamp": 2015,
+   "amount": 11500.0,
+   "directed": true,
+   "raw_attrs": "{\"award_id\": \"award-1\", \"date\": \"2015-03-06T00:00:00.000Z\", \"related_bid\": \"bid-1\"}"
+  },
+  {
+   "src": "tender:georgia:ocds-toy-b",
+   "dst": "firm:georgia:F1",
+   "edge_type": "awarded",
+   "timestamp": 2016,
+   "amount": 5000.0,
+   "directed": true,
+   "raw_attrs": "{\"award_id\": \"award-1\", \"date\": \"2016-01-12T00:00:00.000Z\", \"related_bid\": null}"
+  }
+ ],
+ "labels": [
+  {
+   "node_id": "firm:georgia:F1",
+   "label": "unknown",
+   "label_source": "ocds_unlabeled",
+   "confidence": 1.0
+  },
+  {
+   "node_id": "firm:georgia:F2",
+   "label": "unknown",
+   "label_source": "ocds_unlabeled",
+   "confidence": 1.0
+  },
+  {
+   "node_id": "firm:georgia:F3",
+   "label": "unknown",
+   "label_source": "ocds_unlabeled",
+   "confidence": 1.0
+  },
+  {
+   "node_id": "tender:georgia:ocds-toy-a",
+   "label": "unknown",
+   "label_source": "ocds_unlabeled",
+   "confidence": 1.0
+  },
+  {
+   "node_id": "tender:georgia:ocds-toy-b",
+   "label": "unknown",
+   "label_source": "ocds_unlabeled",
+   "confidence": 1.0
+  },
+  {
+   "node_id": "tender:georgia:ocds-toy-c",
+   "label": "unknown",
+   "label_source": "ocds_unlabeled",
+   "confidence": 1.0
+  }
+ ]
+}
