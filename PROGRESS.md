@@ -125,6 +125,25 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-20 · **§7 STEP 32 — the −screens-as-features ablation MEASURED (learned-model
+  direction), and it flips the composite verdict: the dataset's precomputed screens
+  are the BEST tabular signal on Mendeley firms.** `include_precomputed: true` in a
+  baselines config appends the `pc_*` group to B2/B3 inputs (published configs never
+  set it — B2 width pinned unchanged by a monkeypatch test; flag recorded in the
+  scoreboard). *Measured* (`baselines_mendeley_screens_ablation.yaml`, protocol
+  byte-identical to the published sweep, same-machine anchors B2 0.3925 / B3 0.3775):
+  **B2+pc AUC-PR 0.4558 (+0.063) with P@18 0.222→0.611 — the best Mendeley
+  firm-level number in the project** (beats B3 0.3775, B4 0.3811, R-GCN
+  0.2808±0.0087); **B3+pc 0.3450 (−0.033, P@4→0.0)** — stacked on 30+ graph columns
+  the screens HURT at n_train=638 (small-n dilution). Three-way step-32 screens row,
+  honest reading: the single-bidding/relative-value screens carry real
+  discriminative signal (B2+pc), the unweighted B4 composite cannot exploit it
+  (yesterday's wash-to-negative), and the graph-feature learner is harmed by it —
+  screens-as-features is an INPUT-DEPENDENT component, not a universal win. Paper
+  note: the strongest procurement firm screen is now tabular-learned, which
+  sharpens (not weakens) the R-GCN honest-negative story. 1 new test — **suite
+  354/354**. Artifact: `eval_outputs/mendeley_eu/baselines_screens_ablation/` ·
+  [laptop-B]
 - 2026-07-20 · **DEFERRED ITEM CLOSED (ledger 2026-07-16 item 8) — the datasets'
   PRECOMPUTED screens wired through as B4 inputs, and the first measured verdict is
   an honest wash-to-negative.** `precomputed_screens` in `features/screens.py`

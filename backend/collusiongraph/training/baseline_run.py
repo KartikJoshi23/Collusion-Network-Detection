@@ -171,12 +171,18 @@ def run_baselines(config: dict[str, Any] | str | Path) -> dict[str, Any]:
         "baselines": {},
     }
 
+    # §7 step-32 −screens-as-features ablation knob: opt the datasets'
+    # precomputed screens into the learned baselines' inputs. Published
+    # configs don't set it — B2/B3 columns stay byte-identical by default.
+    extra_cols: list[str] = groups["precomputed"] if cfg.get("include_precomputed") else []
+    scoreboard["include_precomputed"] = bool(cfg.get("include_precomputed"))
+
     for name in cfg["baselines"]:
         if name == "b1_rules":
             engine = RulesEngine([Rule(**r) for r in cfg["rules"]]).fit(train_features)
             scored = engine.score(test_features)
         elif name == "b2_xgb":
-            cols = groups["tabular"]
+            cols = groups["tabular"] + extra_cols
             preds = xgb_scores(
                 matrix(train_labeled, cols),
                 train_labeled["y"].to_numpy(),
@@ -186,7 +192,7 @@ def run_baselines(config: dict[str, Any] | str | Path) -> dict[str, Any]:
             )
             scored = test_features.select("node_id").with_columns(pl.Series("score", preds))
         elif name == "b3_xgb_graph":
-            cols = groups["tabular"] + groups["graph"]
+            cols = groups["tabular"] + groups["graph"] + extra_cols
             preds = xgb_scores(
                 matrix(train_labeled, cols),
                 train_labeled["y"].to_numpy(),
