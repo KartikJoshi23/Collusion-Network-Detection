@@ -1,0 +1,33 @@
+# Deferred-item slice (ledger 2026-07-16 item 8, built 2026-07-20): the
+# dataset's OWN precomputed screens as B4 inputs — lot_bidscount (the classic
+# single-bidding / competition screen: LOW bid counts are the red flag, so both
+# aggregates carry low_risk direction) and relative_value (high relative
+# contract value = the risk direction in the screens literature). Protocol
+# otherwise identical to the published baselines_mendeley_eu.yaml B4; separate
+# output_dir so the published scoreboard stays untouched. Also the substrate
+# for the §7 step-32 −screens-as-features ablation.
+dataset: mendeley_eu
+domain: procurement
+node_type: firm
+store_root: data/interim
+output_dir: eval_outputs/mendeley_eu/baselines_b4_precomputed
+seed: 0
+
+split:
+  train_end: 2013
+
+budgets: [4, 18, 36]
+
+baselines: [b4_screens]
+
+screens:
+  columns:
+    - n_awards
+    - market_share
+    - buyer_hhi
+    - pc_lot_bidscount_mean
+    - pc_lot_bidscount_min
+    - pc_relative_value_mean
+  low_risk_columns: [pc_lot_bidscount_mean, pc_lot_bidscount_min]
+
+train_label_policy: mendeley_as_of

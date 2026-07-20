@@ -24,6 +24,7 @@ from collusiongraph.eval import load_config, run_eval
 from collusiongraph.features import (
     award_screens,
     financial_features,
+    precomputed_screens,
     structural_features,
 )
 from collusiongraph.models.baselines import (
@@ -59,10 +60,15 @@ def assemble_features(
     ``tabular`` — per-node attributes only (B2's world): raw dataset features
     (financial) / award-tier screens (procurement).
     ``graph`` — structural template + GADBench neighborhood means (B3 adds these).
+    ``precomputed`` — the datasets' OWN precomputed screens from edge raw_attrs
+    (procurement only; ledger 2026-07-16 deferred item). Deliberately NOT part
+    of ``tabular``: B2/B3 inputs stay byte-identical to the published M1 runs —
+    B4 configs (and future ablations) opt in by naming ``pc_*`` columns.
     """
     structural = structural_features(nodes, edges, as_of=as_of)
     struct_cols = [c for c in structural.columns if c != "node_id"]
 
+    precomputed = None
     if domain == "financial":
         tabular = raw_feature_frame(nodes, n_raw_features)
         tabular = tabular.join(
@@ -73,6 +79,7 @@ def assemble_features(
         tabular = nodes.select("node_id").join(
             award_screens(nodes, edges, as_of=as_of), on="node_id", how="left"
         )
+        precomputed = precomputed_screens(nodes, edges, as_of=as_of)
         neighbor_base = structural
     else:
         raise ValueError(f"unknown domain {domain!r}")
@@ -84,9 +91,17 @@ def assemble_features(
         .join(structural, on="node_id", how="left")
         .join(neighbors, on="node_id", how="left")
     )
+    pc_cols: list[str] = []
+    if precomputed is not None:
+        features = features.join(precomputed, on="node_id", how="left")
+        pc_cols = [c for c in precomputed.columns if c != "node_id"]
     tabular_cols = [c for c in tabular.columns if c != "node_id"]
     nbr_cols = [c for c in neighbors.columns if c != "node_id"]
-    return features, {"tabular": tabular_cols, "graph": struct_cols + nbr_cols}
+    return features, {
+        "tabular": tabular_cols,
+        "graph": struct_cols + nbr_cols,
+        "precomputed": pc_cols,
+    }
 
 
 def _binary_labels(labels: pl.DataFrame) -> pl.DataFrame:
