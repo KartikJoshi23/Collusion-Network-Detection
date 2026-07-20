@@ -266,6 +266,48 @@ class TestRunBaselines:
         )
         assert set(b1.head(2)["node_id"]) == {"firm:M:F4", "firm:M:F5"}
 
+    def test_include_precomputed_flag_widens_xgb_inputs(self, tmp_path, monkeypatch) -> None:
+        """§7 step-32 −screens-as-features knob: pc_* columns enter B2's input
+        matrix ONLY when include_precomputed is set (published configs never
+        set it — width pinned unchanged)."""
+        import json as _json
+
+        import collusiongraph.training.baseline_run as br
+
+        store = synthetic_procurement_store(tmp_path)
+        edges = store.read("toyproc", "edges")
+        store.write(
+            "toyproc",
+            "edges",
+            edges.with_columns(
+                pl.lit(_json.dumps({"lot_bidscount": 2, "relative_value": 0.5})).alias("raw_attrs")
+            ),
+        )
+
+        widths: list[int] = []
+
+        def fake_xgb(x_train, y, x_test, seed=0, **kw):
+            widths.append(x_train.shape[1])
+            return np.zeros(x_test.shape[0])
+
+        monkeypatch.setattr(br, "xgb_scores", fake_xgb)
+        base_cfg = {
+            "dataset": "toyproc",
+            "domain": "procurement",
+            "node_type": "firm",
+            "store_root": str(store.root),
+            "split": {"train_end": 2015},
+            "budgets": [2],
+            "baselines": ["b2_xgb"],
+        }
+        off = run_baselines({**base_cfg, "output_dir": str(tmp_path / "off")})
+        on = run_baselines(
+            {**base_cfg, "output_dir": str(tmp_path / "on"), "include_precomputed": True}
+        )
+        assert off["include_precomputed"] is False
+        assert on["include_precomputed"] is True
+        assert widths[1] - widths[0] == 11  # the full pc_* schema, and only then
+
     def test_single_class_split_rejected(self, tmp_path) -> None:
         store = synthetic_procurement_store(tmp_path)
         config = {
