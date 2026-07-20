@@ -106,6 +106,7 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-20 · **docs: demo script brought current with the shipped product** — `docs/demo_script.md` still walked the M5-era five-view V1 UI; rewritten against today's console (About opener, constellation + spotlight, measured-P@k readout + hover sparklines/actions, temporal scrubber, DrawSVG dossier, actor-level dataset, Phase-2 rigor panel, Copilot dock walk incl. the guilt-guard beat + key setup note); a ~3-minute walk with the 90-second cut marked. Verified against the live API on this machine (3 datasets + rigor endpoint answering) and the current frontend build (green, vitest 22/22); the stakeholder review-#3 path now matches what they will see · [laptop-C]
 - 2026-07-20 · **§7 STEP 32 — the two queued ablation arms MEASURED (seed 0, vs the
   published focal-bidirectional 0.5492 / P@100 0.96).** **(a) −bidirectional edges:
   0.3549 / P@100 0.21 — a large, clean drop (−0.19):** reverse edges carry real signal
