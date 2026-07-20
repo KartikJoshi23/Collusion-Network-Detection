@@ -1,0 +1,36 @@
+# §7 step 30 (second half) — synthetic cartel-motif injection AT SCALE into the
+# unlabeled OCDS substrate (§4.3 D5): all five procurement motif-table rows,
+# 20 instances each, planted into the 2020–2024 test window (162,387 background
+# nodes / 91,321 edges under the _test_window protocol — new-entrant firms).
+# Unsupervised regime: no supervised member and no calibrated fusion exist here
+# BY DESIGN (every label is `unknown`); the fusion arm is rank-only and the
+# report says so (fusion_mode: rank_unlabeled). Detector attributes come from
+# the §4.2 rule-2 structural template (features: structural) — this dataset
+# ships no raw features.
+dataset: ocds_georgia
+domain: procurement
+store_root: data/interim
+output_dir: eval_outputs/ocds_georgia/injection_recovery
+seed: 0
+
+split:
+  test_start: 2020
+  window_end: 2024
+
+motifs:
+  rotation: 20
+  cover_bid: 20
+  partition: 20
+  common_control: 20
+  coordinated_cluster: 20
+
+n_bridge_edges: 2
+
+unsupervised:
+  edge_type: bids_on
+  features: structural
+  hid_dim: 32
+  epochs: 50
+
+# top 0.3% / 0.6% / 1.2% of the ~163k-node augmented population
+budgets: [500, 1000, 2000]
