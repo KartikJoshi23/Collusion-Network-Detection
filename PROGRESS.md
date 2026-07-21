@@ -125,6 +125,26 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-21 · **§7 STEP 33 — PAPER TABLES from the harness (`poe paper-tables`).**
+  `eval/tables.py`: nine table builders over the stored rigor artifacts —
+  Elliptic++ headline (baselines + GATv2-focal/wce + ensemble multiseed), Mendeley
+  headline (baselines + screens ablations + R-GCN multiseed), LOCO/LOMO matrices,
+  paired-bootstrap significance, the label-noise curve, the OCDS injection
+  multi-seed table, and both label-efficiency curves — each emitted as markdown AND
+  LaTeX (booktabs; `_`/`%`/±/Δ/→ escaped) with the caption carrying the protocol
+  note. House rule enforced: values are COPIED from artifacts (the harness is the
+  single source of truth), **a table whose artifact is absent is SKIPPED with the
+  missing path recorded in `BUILD_REPORT.json` — a table renders complete or not
+  at all** (pinned: the elliptic table skips when only the wce campaign is local).
+  Artifact shapes taken from the same contracts the frontend rigor panel parses.
+  Output `paper/tables/` is gitignored (derived, per-machine — run on the machine
+  holding the current campaign artifacts for the manuscript). *Proven live here:*
+  `injection_ocds` builds and byte-matches the ledger campaign; the other eight
+  skip with named paths (this machine's elliptic/transfer artifacts are
+  master-side). 4 new tests (copied-value formatting, skip honesty, LaTeX
+  escaping, report roundtrip) — **suite 371/371**. Remaining step-33: red-team
+  review; figures ride the Model Lab's existing SVG/PNG export; writing +
+  submission + Zenodo [user] · [laptop-B]
 - 2026-07-21 · **§7 STEP 33 — the REPRODUCIBILITY PACKAGE assembled
   (`docs/reproducibility.md`) with a mechanical drift guard.** The paper's
   reproducibility statement in executable form: frozen-environment section
