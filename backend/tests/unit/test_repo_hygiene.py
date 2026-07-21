@@ -43,6 +43,28 @@ def test_env_example_contains_no_values() -> None:
         assert value.strip() in allowed_values, f"unexpected value in .env.example: {line!r}"
 
 
+def test_repro_map_matches_configs() -> None:
+    """§7 step 33: docs/reproducibility.md and configs/experiment/ must agree
+    in BOTH directions — every committed experiment config appears in the
+    reproducibility map, and the map references no phantom config. 'One YAML =
+    one reproducible experiment', made mechanical."""
+    import re
+
+    doc = (REPO_ROOT / "docs" / "reproducibility.md").read_text(encoding="utf-8")
+    referenced = set(re.findall(r"`([\w./]+\.yaml)`(?:\s|/|\|)", doc))
+    referenced = {name.removeprefix("configs/experiment/") for name in referenced}
+    on_disk = {p.name for p in (REPO_ROOT / "configs" / "experiment").glob("*.yaml")}
+    missing_from_doc = on_disk - referenced
+    phantom_in_doc = {r for r in referenced if r not in on_disk and "/" not in r}
+    assert not missing_from_doc, (
+        f"configs missing from docs/reproducibility.md: {sorted(missing_from_doc)} — "
+        "every experiment config gets a row in the repro map"
+    )
+    assert (
+        not phantom_in_doc
+    ), f"repro map references configs that do not exist: {sorted(phantom_in_doc)}"
+
+
 def test_m8_governance_docs_present_and_caveated() -> None:
     """§7 step 33 deliverables (model card, datasheets, ethics statement) exist
     and the two governance docs carry the exact screening caveat (R11)."""
