@@ -26,6 +26,7 @@ structure" transfers across both domains.
 | [`implementation-plan.md`](implementation-plan.md) | Implementation plan v3.0 — the single source of truth for **how** (architecture §3, ML stack §4, frontend §5, roadmap §7, layout §8, testing §9, risks §11) |
 | [`handoff-prompt.md`](handoff-prompt.md) | Reusable session prompts (master/collaborator) for multi-machine development |
 | [`PROGRESS.md`](PROGRESS.md) | Running ledger: milestone position, completed / in-flight / next actions, decision log |
+| [`docs/model_card.md`](docs/model_card.md) · [`docs/datasheets/`](docs/datasheets) · [`docs/ethics_and_scope.md`](docs/ethics_and_scope.md) | M8 governance artifacts: model card, per-dataset datasheets, ethics & scope with the per-surface enforcement map |
 
 ## Quickstart (any machine)
 
@@ -97,9 +98,11 @@ data/manifests/     dataset checksums + licenses (committed; raw data never is)
 backend/collusiongraph/   the Python package: schema, adapters, features, injection,
                           splits, models, training, explain, eval, artifacts, cli
 backend/api/        FastAPI serving layer (precomputed artifacts; batch inference)
+backend/copilot/    Investigator Copilot: read-only SQL agent + RAG + guilt-language
+                    guard, mounted at /api/v1/copilot (goldens gate: poe copilot-goldens)
 backend/tests/      unit / integration / leakage tests (leakage tests protect the paper)
-frontend/           React + WebGL investigator console (scaffolded Week 8)
-reference/          archived Gen-AI Chatbot port source (Phase-2 Investigator Copilot)
+frontend/           React + WebGL investigator console (six views + Copilot dock)
+reference/          archived Gen-AI Chatbot source (ported into backend/copilot in Week 11)
 notebooks/          numbered EDA notebooks, read-only after merge
 scripts/            download_data.py and other repo utilities
 paper/              manuscript (Phase 2)

@@ -11,7 +11,16 @@ in `notebooks/` are read-only after merge.
 | D2 | IBM AMLworld HI-Small (Kaggle) | ✅ downloaded + checksummed (3 files, ~510 MB) | CDLA-Sharing-1.0 (verified via Kaggle metadata) | `amlworld_hi_small.json` |
 | D3 | García Rodríguez supplement ec0010/mmc2 | ✅ downloaded + checksummed (11 files) — **fallback R2 NOT triggered** | CC BY-NC-ND 4.0 (article OA license per Crossref) | `garcia_rodriguez.json` |
 | D4 | Mendeley EU cartel f3y4nrn3s6 v2 | ✅ downloaded; sha256 **matches Mendeley's official API hash** | CC BY NC 3.0 | `mendeley_eu.json` |
-| D5 | OCDS bulk | Phase 2 (publisher chosen for bid-level coverage) | per publisher | — |
+| D5 | OCDS — Georgia OpenTender (OCP Data Registry pub. 52) | ✅ downloaded + checksummed 2026-07-20 (16 per-year JSONL.gz, ~230 MB) | CC BY-NC-SA 4.0 (registry publication page) | `ocds_georgia.json` |
+
+### OCDS — Georgia OpenTender (D5, added 2026-07-20)
+
+Publisher selected by measuring `bids.details[]` coverage across all 134 registry
+publications (rationale + runners-up in the PROGRESS.md Decision log). Measured at
+ingestion: 451,346 compiled releases (2010–2025) → 488,300 nodes / 1,449,077 edges,
+687,336 identified-bidder `bids_on` edges incl. losing bidders; zero undated releases,
+zero id-less bids. **Unlabeled by construction** — unsupervised/injection substrate
+only. Full datasheet: [`datasheets/ocds_georgia.md`](datasheets/ocds_georgia.md).
 
 ## Week-1 EDA verification vs. the plan's stated counts
 
