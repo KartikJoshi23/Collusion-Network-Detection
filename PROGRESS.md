@@ -125,6 +125,30 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-20 · **§7 STEP 31 — the practitioner-study KIT built, tested, and run
+  end-to-end on real bundles (§10.3, RQ3): the human study is now fully unblocked.**
+  `eval/study.py`: seeded stratified case sampling (quota-STRICT — an unmeetable
+  stratum raises, never short-fills), blinded rater packets (markdown per case;
+  screening caveat verbatim on every packet; a **ground-truth leak guard refuses to
+  render label vocabulary** — bundles carry none by construction, belt-and-braces
+  pinned by a poisoned-bundle test), `ratings_template.csv`, the §10.3 arms
+  (bundle-only vs bundle+Copilot, 50/50 in randomized case order — MC passed),
+  **Krippendorff's α (ordinal + nominal, missing-data tolerant, HAND-VERIFIED:
+  the test derives α = 0.79 exactly on paper from the coincidence matrix)**, and
+  `summarize_study` (per-dimension means±sd, α per dimension, per-arm means). CLI:
+  `collusiongraph eval -c configs/experiment/practitioner_study.yaml` (dispatches
+  on `study: true`). Protocol runbook `docs/practitioner_study.md`: §10.3
+  instrument verbatim (verifiability / red-flag alignment / actionability, 5-point
+  anchors + free text), rater procedure, ethics note (public anonymized data;
+  capstone-rules check), R14 recruitment fallback, analysis plan with α
+  interpretation guardrails, and the between-case arm-design caveat for the paper.
+  **Run on this machine's real artifacts: 20 cases (elliptic 5 motif-flagged/5
+  unflagged; mendeley 5 top-10/5 below), arms 10/10** — NOTE: this machine's
+  bundles predate the PGExplainer switch; REGENERATE bundles (or build packets on
+  master) before the real study — the config carries the same warning. 11 new
+  tests — **suite 365/365**, ruff/black/mypy clean. **Remaining for M7: only the
+  human phase** (recruit ≥5 raters per §10.3, run, `summarize_study`, record α +
+  means here) · [laptop-B]
 - 2026-07-20 · **§7 STEP 32 — the −focal row SETTLED by 5-seed campaign: the GATv2
   loss choice is SECOND-ORDER.** GATv2-wce multi-seed (config
   `gnn_elliptic_pp_gatv2_wce_multiseed.yaml`, protocol byte-identical to the focal
@@ -794,6 +818,16 @@ still public 2026-07-15 — anonymous clone succeeded).
    issues).** Still open from this item: consider rotating the Kaggle token that was
    shared in a chat session. (OpenAI key rotation stays open as action 6 — user confirmed
    2026-07-19 it will happen later.)
+8a. **[user] §7 step 31 — RUN the practitioner study (the last M7 item; kit is
+   built and tested, see Completed 2026-07-20).** Self-contained: (i) on a machine
+   with CURRENT bundles (master, or regenerate via the explanations configs), run
+   `uv run collusiongraph eval -c configs/experiment/practitioner_study.yaml`;
+   (ii) recruit ≥5 raters per `docs/practitioner_study.md` (R14 fallback:
+   rubric-trained graduate raters + ≥1 domain expert — report the substitution);
+   (iii) Arm-B sessions need a keyed serving machine (Copilot dock live); (iv)
+   collect `ratings_<rater>.csv`, run `summarize_study` (command in the doc),
+   record per-dimension means, Krippendorff α, per-arm comparison + themes in this
+   ledger. Check capstone ethics rules before recruiting (lightweight expected).
 8. Deferred small items: HeteroExplanation for R-GCN (R12 finding — mask-based explainer is GATv2-only); AMLworld injection-recovery calibration + feature packs + baselines + `NeighborLoader` training on a machine with Kaggle credentials; ~~wire the datasets' **precomputed screens** through as B4 inputs~~ (DONE 2026-07-20 [laptop-B], see Completed — measured wash-to-negative on the Mendeley B4 composite; the remaining question is the LEARNED weighting: run B2/B3 variants whose columns include `groups["precomputed"]` — that is the §7 step-32 −screens-as-features ablation, now one config away; a García tender-level B4 additionally needs a year-coverage EDA to pick a defensible split); ~~automatic percent→k budget resolution in `run_eval`~~ (DONE 2026-07-18, see Completed); Mendeley R-GCN follow-up (firm+tender joint supervision, García co-bid enrichment) before concluding graph signal is absent; degree-preserving null-model z-scores for the structural floor (Phase 2).
 
 ## Decision log

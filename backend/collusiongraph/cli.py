@@ -144,6 +144,12 @@ def _cmd_eval(args: argparse.Namespace) -> int:
     from collusiongraph.eval import load_config, run_eval, run_sensitivity
 
     cfg = load_config(args.config)
+    if cfg.get("study"):  # §7 step 31: practitioner-study packet build (§10.3)
+        from collusiongraph.eval.study import build_study_packets
+
+        summary = build_study_packets(cfg)
+        print(json.dumps(summary, indent=2))
+        return 0
     if "sweep" in cfg:  # §7 step 29 (iii): protocol-sensitivity grid
         report = run_sensitivity(cfg)
         out_dir = cfg.get("output_dir", f"eval_outputs/{report['dataset']}/sensitivity")
