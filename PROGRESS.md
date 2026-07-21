@@ -125,6 +125,23 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-21 · **§7 STEP 33 — the REPRODUCIBILITY PACKAGE assembled
+  (`docs/reproducibility.md`) with a mechanical drift guard.** The paper's
+  reproducibility statement in executable form: frozen-environment section
+  (uv.lock / .python-version / the deliberate pyg-lib exclusion), data acquisition
+  via committed checksum+license manifests, **the complete number→config map — all
+  40 experiment configs, each with the ledger-recorded headline it produces**
+  (baselines through multi-seed campaigns, ablation arms, matrices, curves,
+  injection studies, queues, explanations, study packets), the measured
+  determinism statement (what byte-reproduces cross-machine — XGB, the LOCO fold,
+  the probes — vs torch same-machine-only with the recorded ±0.02 class variance;
+  seed σ ±0.05 dominates; multi-seed means are the only paper numbers), and the
+  §9.1 protocol-guarantee section. **New hygiene test
+  `test_repro_map_matches_configs` enforces the map BIDIRECTIONALLY** — a config
+  missing from the doc, or a phantom config in the doc, fails CI ("one YAML = one
+  reproducible experiment", made mechanical). Suite **367/367**. Remaining
+  step-33: figures/tables export pass, red-team review, writing [user],
+  submission + Zenodo [user] · [laptop-B]
 - 2026-07-21 · **docs drift sweep (small):** root README — repository layout now lists
   the shipped `backend/copilot/` package (it still framed the Copilot as future work
   in `reference/`), frontend line updated to the shipped six-views+dock console, and
