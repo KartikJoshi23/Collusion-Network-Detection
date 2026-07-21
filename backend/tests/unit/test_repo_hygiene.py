@@ -41,3 +41,24 @@ def test_env_example_contains_no_values() -> None:
             continue
         _, _, value = line.partition("=")
         assert value.strip() in allowed_values, f"unexpected value in .env.example: {line!r}"
+
+
+def test_m8_governance_docs_present_and_caveated() -> None:
+    """§7 step 33 deliverables (model card, datasheets, ethics statement) exist
+    and the two governance docs carry the exact screening caveat (R11)."""
+    from collusiongraph import SCREENING_CAVEAT
+
+    datasheets = REPO_ROOT / "docs" / "datasheets"
+    for name in (
+        "elliptic_pp",
+        "amlworld_hi_small",
+        "mendeley_eu",
+        "garcia_rodriguez",
+        "ocds_georgia",
+    ):
+        assert (datasheets / f"{name}.md").is_file(), f"datasheet missing: {name}"
+    for doc in ("model_card.md", "ethics_and_scope.md"):
+        text = (REPO_ROOT / "docs" / doc).read_text(encoding="utf-8")
+        assert (
+            SCREENING_CAVEAT.split(" — ")[0].lower() in text.lower()
+        ), f"{doc} must carry the screening caveat (R11)"
