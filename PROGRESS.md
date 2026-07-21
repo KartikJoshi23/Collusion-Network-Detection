@@ -125,6 +125,13 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-21 · **docs drift sweep (small):** root README — repository layout now lists
+  the shipped `backend/copilot/` package (it still framed the Copilot as future work
+  in `reference/`), frontend line updated to the shipped six-views+dock console, and
+  the M8 governance docs (model card / datasheets / ethics) linked from the Project
+  documents table; `docs/DATASETS.md` — the stale D5 "Phase 2" row replaced with the
+  downloaded/checksummed Georgia OpenTender reality (license, manifest, measured
+  ingestion stats, datasheet pointer). Suite 366/366 (docs-only) · [laptop-B]
 - 2026-07-21 · **§7 STEP 33 OPENED (M8) — the governance artifacts shipped: model
   card + five dataset datasheets + ethics-and-scope statement (the §8 docs/
   deliverables).** `docs/model_card.md` (Mitchell-et-al. structure): the full stack
