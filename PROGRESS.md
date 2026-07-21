@@ -125,6 +125,26 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-21 · **§7 STEP 33 OPENED (M8) — the governance artifacts shipped: model
+  card + five dataset datasheets + ethics-and-scope statement (the §8 docs/
+  deliverables).** `docs/model_card.md` (Mitchell-et-al. structure): the full stack
+  per domain, intended-use with the enforcement map, the honest headline numbers
+  (multi-seed means with the XGB gap, the R-GCN negative, transfer asymmetry,
+  injection verdicts), the complete step-32 ablation summary, and the five
+  quantified limitations (val-blindness, seed variance, anonymized features,
+  case-control artifacts, R12). `docs/datasheets/{elliptic_pp, amlworld_hi_small,
+  mendeley_eu, garcia_rodriguez, ocds_georgia}.md` (Gebru-et-al. structure,
+  abbreviated): composition numbers from the Week-1 EDA + ingestion meta, the
+  per-dataset traps (t43 shift, AMLworld post-window tail, Mendeley case-control +
+  zero losing bidders, García 4/6 identity coverage, OCDS unlabeled-by-construction),
+  licenses + never-redistributed policy. `docs/ethics_and_scope.md` (§8): the
+  screening-only rule with its per-surface ENFORCEMENT table (API caveats field,
+  bundle validator, UI footer, Copilot guard, study-packet leak guard), data
+  boundaries, TRL 3–4 scope limits, EU AI Act posture. Hygiene test pins all seven
+  docs present + the caveat in both governance docs (R11). Every number
+  cross-checked against this ledger's measured entries. **Suite 366/366.**
+  Remaining step-33 items: figures/tables export pass, §10.4 writing [user],
+  red-team review, repro package + Zenodo (M8) · [laptop-B]
 - 2026-07-20 · **§7 STEP 31 — the practitioner-study KIT built, tested, and run
   end-to-end on real bundles (§10.3, RQ3): the human study is now fully unblocked.**
   `eval/study.py`: seeded stratified case sampling (quota-STRICT — an unmeetable
