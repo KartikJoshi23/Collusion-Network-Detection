@@ -70,7 +70,7 @@ def elliptic_headline(root: Path) -> Table:
         ["Model", "AUC-PR", "P@100"],
         rows,
         "Elliptic++ node-level results (test steps 35–49, prevalence 0.065). "
-        "Tree baselines are deterministic; GNN/ensemble rows are 5-seed mean ± std.",
+        "Rule/tree baselines are deterministic; GNN/ensemble rows are 5-seed mean ± std.",
     )
 
 
@@ -154,7 +154,9 @@ def significance(root: Path) -> Table:
         ["Comparison", "Δ AUC-PR", "95% CI", "p"],
         rows,
         "Paired-bootstrap comparisons over identical confirmed test nodes "
-        "(2,000 resamples, stratified).",
+        "(2,000 resamples, stratified; seed-0 score files — deltas measure "
+        "sampling uncertainty at fixed seed and do not equal differences of "
+        "multi-seed means).",
     )
 
 
