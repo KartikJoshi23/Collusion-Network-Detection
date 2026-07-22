@@ -46,11 +46,13 @@ comparisons.
   tables must quote the mean); queue head P@100 0.812 ± 0.238 (seed-unstable).
   **XGB-Graph baseline 0.8104 (deterministic) sits ~6σ above the GNN mean** —
   the GADBench finding, replicated and reported, not hidden
-  (Δ −0.261, 95% CI [−0.285, −0.235], p ≈ 0.001).
+  (seed-0 paired bootstrap: Δ −0.261, 95% CI [−0.285, −0.235], p ≈ 0.001;
+  the multi-seed mean difference is larger still, −0.338).
 * **Actor-level view:** global AUC-PR 0.2473 but queue-head P@100 ≥ 0.98
   seed-stable — served as a node-triage surface alongside the tx-level queue.
 * **Calibrated fusion 0.4434 ± 0.0501** tracks its strongest member; naive
-  rank fusion collapses to 0.0511 ± 0.0019 (Δ +0.471, CI [0.440, 0.499]) —
+  rank fusion collapses to 0.0511 ± 0.0019 (seed-0 paired bootstrap:
+  Δ +0.471, CI [0.440, 0.499]; the multi-seed mean difference is +0.392) —
   calibrate-before-fusing is a measured requirement, not a preference.
   Unsupervised members alone score at/below prevalence on Elliptic++
   (their value is coverage, and they cost −0.030 AUC-PR in the fusion).

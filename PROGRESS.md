@@ -72,6 +72,24 @@
 > procurement generators shared market strings across families (silent ground-truth
 > corruption; injector now guards). Suite 348/348. M6's remainder stays GPU-gated
 > (AMLworld).
+>
+> 🏁 **§7 STEP 33 RED-TEAM REVIEW DONE [laptop-D, 2026-07-22]** — the §9.3
+> pre-submission adversarial pass, recorded in
+> [`docs/red_team_review.md`](docs/red_team_review.md): **no finding invalidates a
+> published number or a protocol guarantee.** Two presentation defects FIXED (RT-1:
+> the seed-0 paired-bootstrap deltas were quoted beside multi-seed means without the
+> seed-0 label — a reviewer recomputing deltas from means lands outside the CIs; RT-2:
+> the README determinism line contradicted the measured `docs/reproducibility.md` §4
+> statement) and two writing-phase items RECORDED (RT-3: the paper must state the
+> no-search-on-either-side tuning policy; RT-4: no baseline-scored queue comparator
+> exists — one config away if the writing wants a queue-necessity claim). **The §9.3
+> clean-clone reproduction ran on this never-before-used machine:** every
+> cross-machine-deterministic headline byte-reproduced — Mendeley + Elliptic baselines
+> exact, the LOCO country_5 torch fold to the last digit (0.8025340470101002), García
+> LOMO at recorded precision, OCDS ingest byte-identical — and torch-scoped injection
+> values shifted within the recorded variance with **no verdict moved**. Suite
+> **373/373**. Step-33 remainder: `poe paper-tables` on the artifact-holding machine
+> for the manuscript, writing + submission + Zenodo [user].
 
 **M5 COMPLETE — MVP exit criterion met [master, 2026-07-18].** Clone → `poe demo` (+ `npm run dev`)
 or `docker compose up` → dashboard → ranked alert → highlighted subgraph → explanation, both
@@ -125,6 +143,39 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-22 · **§7 STEP 33 — the internal RED-TEAM REVIEW (§9.3) executed, recorded,
+  and its fixes landed (`docs/red_team_review.md`).** *The checklist pass:* leakage
+  (25-test suite green standalone; every post-audit data/feature module carries its own
+  leakage-marked coverage), imbalance reporting (prevalence/lift discipline verified
+  end-to-end), baseline fairness (**RT-3, for the writing phase:** §4.5's "same tuning
+  budget" is honest but must be stated as no-search-on-either-side; conservative in our
+  disfavor since the trees win every comparison they enter), honest transfer reporting
+  (matrix-level, lift-only, negatives first-class), number consistency (every model-card/
+  repro-map value traced to its ledger entry; `poe paper-tables` exercised live on this
+  artifact-bare clone — 0 built, all 9 skipped with named paths, exit 0), ablation-grid
+  completeness, explanation validity, ethics propagation (repo re-verified PRIVATE via
+  unauthenticated API). *Findings fixed:* **RT-1 (medium)** — the two paired-bootstrap
+  deltas (Δ +0.471 / Δ −0.261) are seed-0 comparisons but were quoted beside multi-seed
+  means whose differences (+0.392 / −0.338) fall outside the quoted CIs; model card +
+  significance-table caption now label them seed-0 and state the mean differences
+  (both larger — no claim weakens), regression-pinned by test. **RT-2 (low)** — README
+  determinism line said same-machine-only, contradicting the measured §4 statement; now
+  matches. **RT-4 (medium, recorded)** — no baseline-scored alert queue exists; the paper
+  must not imply the learned scorer is necessary for queue quality (a B3-scored queue is
+  one config away — baselines already persist score parquets). *The §9.3 clean-clone
+  reproduction* (this machine had never held the repo; README bootstrap verbatim; all
+  manifests checksum-verified, AMLworld `blocked` as designed): Mendeley B1–B4 and
+  Elliptic++ B1–B3 **exact to every recorded decimal**; the LOCO country_5 torch fold
+  **byte-exact** (0.8025340470101002 — the §4 cross-machine claim verified on a third
+  machine class); García LOMO matrix exact at recorded precision (macro lift 1.57, Italy
+  P@10=P@25=1.00); OCDS ingest byte-identical (451,346 → 488,300 / 1,449,077 / 687,336 /
+  0 skipped); OCDS injection seed-0 deterministic parts exact (floor 0.4286 flat,
+  cover_bid 0.0, coordinated_cluster 1.00@2000), torch members shifted within recorded
+  variance (dominant/common_control 0.536 vs 0.59) with the RQ2 verdict unchanged. 2 new
+  hygiene tests (checklist-coverage pin; RT-1 seed-0-label regression pin) — **suite
+  373/373**, ruff/black/mypy clean, frontend build + vitest 31/31. Step-33 remainder:
+  paper-tables export on the artifact-holding machine, writing + red-team-informed
+  statements (RT-1/RT-3) + submission + Zenodo [user] · [laptop-D]
 - 2026-07-21 · **§7 STEP 33 — PAPER TABLES from the harness (`poe paper-tables`).**
   `eval/tables.py`: nine table builders over the stored rigor artifacts —
   Elliptic++ headline (baselines + GATv2-focal/wce + ensemble multiseed), Mendeley
@@ -790,6 +841,12 @@ still public 2026-07-15 — anonymous clone succeeded).
   and master; master walked all five views live in both domains and verified the compose path.
   Either machine can host the stakeholder demo as-is.
 - Nothing else mid-implementation. Weeks 3–6 stacks + the audit fix pass are merged to main; feature branches deleted.
+- **laptop-D is now fully bootstrapped (2026-07-22):** authenticated clone via the
+  machine's git credential manager, `uv sync`, frontend deps, ALL datasets downloaded +
+  checksum-verified (AMLworld blocked — no Kaggle credentials), and it holds fresh
+  eval_outputs for both baseline scoreboards, the LOCO fold, the García LOMO matrix, and
+  the OCDS seed-0 injection run (regenerated during the red-team reproduction). No
+  `.env` keys on this machine; `gh` not installed.
 - Post-audit follow-ups queued in Next actions: explicit test-time-adaptation ablation (the F3 finding), PGExplainer for the 41/50 fidelity-insane explanations, HeteroExplanation (R12), AMLworld activation.
 - Stratified (minority-enriched) neighbor sampling and `NeighborLoader` minibatching are deferred to the AMLworld run (full-batch is faster at Elliptic++ scale on CPU); the imbalance ablation shipped is focal-vs-weighted-CE.
 - Procurement top-% budgets were resolved manually for Mendeley (4/18/36 = top 1/5/10% of the 363-firm test queue, in the experiment config); automatic percent→k resolution inside `run_eval` remains a nice-to-have.
@@ -892,6 +949,16 @@ still public 2026-07-15 — anonymous clone succeeded).
    collect `ratings_<rater>.csv`, run `summarize_study` (command in the doc),
    record per-dimension means, Krippendorff α, per-arm comparison + themes in this
    ledger. Check capstone ethics rules before recruiting (lightweight expected).
+8b. **§7 step 33 remainder (M8 close-out), sharpened by the red-team review
+   (`docs/red_team_review.md`):** (i) on the machine holding the current campaign
+   artifacts (master), run `uv run poe paper-tables` and carry `paper/tables/` into the
+   manuscript — the builders and skip-honesty are verified; (ii) **[user]** writing per
+   §10.4, honoring RT-1 (label the seed-0 paired-bootstrap deltas wherever quoted beside
+   multi-seed means) and RT-3 (state the no-search-on-either-side tuning policy in the
+   baselines section); (iii) OPTIONAL, only if the writing wants a queue-necessity claim:
+   the RT-4 B3-scored queue — clone `alert_queue_elliptic_pp_ensemble.yaml`, point
+   `scores_dir`/`scores_file` at the B3 baseline parquet; (iv) **[user]** submission +
+   Zenodo DOI (M8 definition of done).
 8. Deferred small items: HeteroExplanation for R-GCN (R12 finding — mask-based explainer is GATv2-only); AMLworld injection-recovery calibration + feature packs + baselines + `NeighborLoader` training on a machine with Kaggle credentials; ~~wire the datasets' **precomputed screens** through as B4 inputs~~ (DONE 2026-07-20 [laptop-B], see Completed — measured wash-to-negative on the Mendeley B4 composite; the remaining question is the LEARNED weighting: run B2/B3 variants whose columns include `groups["precomputed"]` — that is the §7 step-32 −screens-as-features ablation, now one config away; a García tender-level B4 additionally needs a year-coverage EDA to pick a defensible split); ~~automatic percent→k budget resolution in `run_eval`~~ (DONE 2026-07-18, see Completed); Mendeley R-GCN follow-up (firm+tender joint supervision, García co-bid enrichment) before concluding graph signal is absent; degree-preserving null-model z-scores for the structural floor (Phase 2).
 
 ## Decision log
@@ -1140,7 +1207,7 @@ still public 2026-07-15 — anonymous clone succeeded).
   (unauthenticated GitHub API returns 404). Collaborator machines now need authenticated
   clones (laptop-B/laptop-C credential state should be checked on their next session).**
   · 2026-07-13 → 2026-07-19 · closed.
-- `gh` CLI token invalid on the master machine (pushes work via git credential manager; `gh`-dependent commands don't) — `gh auth login` when convenient. laptop-B status noted in the PR handoff. **laptop-C: gh not installed at all** — the 2026-07-18 overhaul landed as a direct no-ff merge (full PR-style description in the merge commit 8a2fee7); install+auth gh there if PR records are wanted from that machine · 2026-07-13 · low.
+- `gh` CLI token invalid on the master machine (pushes work via git credential manager; `gh`-dependent commands don't) — `gh auth login` when convenient. laptop-B status noted in the PR handoff. **laptop-C: gh not installed at all** — the 2026-07-18 overhaul landed as a direct no-ff merge (full PR-style description in the merge commit 8a2fee7); install+auth gh there if PR records are wanted from that machine. **laptop-D (2026-07-22): gh not installed either** — PR/merge/CI-check done via the GitHub REST API with the credential-manager token (never printed) · 2026-07-13 · low.
 - CI gitleaks job failed on run #1 despite a clean local full-history scan — suspected gitleaks-action empty-`before` quirk on the first push to an empty repo; ledger header says run #2 was green; the `feat/features-structural` push will produce another data point · 2026-07-13 · low-medium.
 - pre-commit's gitleaks hook builds via Go on first run (pre-commit bootstraps its own Go toolchain); first-commit hook setup took ~2 min on the master machine — expected, one-time per machine · 2026-07-13 · low.
 - ~~`collusiongraph` CLI: only `eval` implemented~~ **STALE — closed by the 2026-07-19 audit sweep:

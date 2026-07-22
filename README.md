@@ -27,6 +27,7 @@ structure" transfers across both domains.
 | [`handoff-prompt.md`](handoff-prompt.md) | Reusable session prompts (master/collaborator) for multi-machine development |
 | [`PROGRESS.md`](PROGRESS.md) | Running ledger: milestone position, completed / in-flight / next actions, decision log |
 | [`docs/model_card.md`](docs/model_card.md) · [`docs/datasheets/`](docs/datasheets) · [`docs/ethics_and_scope.md`](docs/ethics_and_scope.md) | M8 governance artifacts: model card, per-dataset datasheets, ethics & scope with the per-surface enforcement map |
+| [`docs/red_team_review.md`](docs/red_team_review.md) · [`docs/reproducibility.md`](docs/reproducibility.md) | M8 rigor artifacts: the §9.3 pre-submission red-team pass (incl. the clean-clone reproduction record) and the number→config reproducibility map |
 
 ## Quickstart (any machine)
 
@@ -71,8 +72,11 @@ uv run poe score  -- -c configs/experiment/alert_queue_elliptic_pp_ensemble.yaml
 uv run poe explain -- -c configs/experiment/explanations_elliptic_pp.yaml
 ```
 
-Headline numbers and protocol decisions live in [`PROGRESS.md`](PROGRESS.md); reproducibility
-is same-machine (XGBoost/torch thread-level determinism is not guaranteed across platforms).
+Headline numbers and protocol decisions live in [`PROGRESS.md`](PROGRESS.md). Determinism is
+measured, not assumed (`docs/reproducibility.md` §4): XGBoost baselines, the LOCO country_5
+fold, and the frozen-encoder probes byte-reproduce **cross-machine**; torch GNN training is
+same-machine deterministic only (±0.02 machine-class variance, dominated by ±0.05 seed
+variance — paper numbers are multi-seed means).
 
 ### What git does NOT carry (per-machine bootstrap)
 

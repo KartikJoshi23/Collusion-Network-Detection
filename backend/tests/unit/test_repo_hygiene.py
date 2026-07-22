@@ -84,3 +84,30 @@ def test_m8_governance_docs_present_and_caveated() -> None:
         assert (
             SCREENING_CAVEAT.split(" — ")[0].lower() in text.lower()
         ), f"{doc} must carry the screening caveat (R11)"
+
+
+def test_red_team_review_covers_the_checklist() -> None:
+    """§9.3: the pre-submission red-team pass exists and addresses every
+    checklist dimension by name; findings carry RT- ids so the writing phase
+    can cite them."""
+    text = (REPO_ROOT / "docs" / "red_team_review.md").read_text(encoding="utf-8")
+    for dimension in (
+        "Leakage",
+        "Imbalance reporting",
+        "Baseline fairness",
+        "transfer reporting",
+        "Reproduction-from-scratch",
+    ):
+        assert dimension in text, f"red-team review must address: {dimension}"
+    assert "RT-1" in text, "findings must carry RT- ids"
+
+
+def test_significance_quotes_stay_seed_labeled() -> None:
+    """RT-1 regression pin: wherever the model card quotes the paired-bootstrap
+    deltas it must label them seed-0 — they are not differences of multi-seed
+    means and presenting them beside means without the label misleads."""
+    text = (REPO_ROOT / "docs" / "model_card.md").read_text(encoding="utf-8")
+    assert "seed-0 paired bootstrap" in text, (
+        "model card must label the paired-bootstrap deltas as seed-0 "
+        "comparisons (docs/red_team_review.md RT-1)"
+    )
