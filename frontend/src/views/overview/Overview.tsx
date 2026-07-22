@@ -64,8 +64,8 @@ export function Overview() {
       </div>
 
       <div className="grid gap-3 xl:grid-cols-[3fr_2fr]">
-        {/* hero — the queue as a constellation */}
-        <Glass strong neon className="overflow-hidden">
+        {/* hero — the queue as a constellation (beam = V3 hero affordance) */}
+        <Glass strong neon beam className="overflow-hidden">
           <div className="flex items-center border-b border-hairline/60 px-4 py-2.5">
             <h3 className="text-sm font-medium">
               Flagged-community constellation

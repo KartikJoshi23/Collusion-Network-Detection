@@ -23,10 +23,12 @@ interface Pulse {
   speed: number;
 }
 
+// V3 quality bump (docs/frontend_overhaul.md V3 §1): the mesh now rides on the
+// WebGL aurora, so it can afford more presence.
 const LINK_DIST = 150;
-const MAX_NODES = 80;
-const MAX_PULSES = 4;
-const PULSE_EVERY_MS = 1400;
+const MAX_NODES = 110;
+const MAX_PULSES = 5;
+const PULSE_EVERY_MS = 1100;
 
 // V2: the backdrop is multi-hue in both domains; the dominant accent leads
 // but cyan/violet/magenta are all present (single-accent was the V1 failure).
@@ -239,7 +241,7 @@ export function NetworkBackground() {
       ref={canvasRef}
       aria-hidden
       className="pointer-events-none fixed inset-0 -z-10"
-      style={{ opacity: 0.7 }}
+      style={{ opacity: 0.85 }}
     />
   );
 }

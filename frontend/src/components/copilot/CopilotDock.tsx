@@ -14,6 +14,7 @@ import {
 } from "../../api/copilot";
 import { UI_HUES } from "../../lib/palette";
 import { useConsole } from "../../state/console";
+import { CopilotMark } from "./CopilotMark";
 
 interface Turn {
   question: string;
@@ -101,13 +102,13 @@ export function CopilotDock() {
         >
           <div className="flex items-center gap-2 border-b border-hairline/60 px-3 py-2.5">
             <span
-              className="grid h-6 w-6 place-items-center rounded-md text-xs"
+              className="grid h-7 w-7 place-items-center rounded-md"
               style={{
-                color: UI_HUES.magenta,
-                background: `color-mix(in srgb, ${UI_HUES.magenta} 14%, transparent)`,
+                background: `color-mix(in srgb, ${UI_HUES.magenta} 12%, transparent)`,
+                boxShadow: `0 0 16px -4px ${UI_HUES.magenta}`,
               }}
             >
-              ◈
+              <CopilotMark size={19} active />
             </span>
             <div className="min-w-0">
               <div className="display text-sm font-semibold leading-tight">

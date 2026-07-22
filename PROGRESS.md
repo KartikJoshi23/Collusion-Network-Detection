@@ -73,6 +73,27 @@
 > corruption; injector now guards). Suite 348/348. M6's remainder stays GPU-gated
 > (AMLworld).
 >
+> ⛔ **REVIEW #3 VERDICT (stakeholder, 2026-07-22): the V2 UI REJECTED** — "not at the
+> level our project is… proper hover effects, glassmorphism, not a single color
+> dominated schema, proper tabs, an icon/logo for the chatbot… should look like it is
+> built using modern frontend tech (WebGL, GSAP, Framer)." Diagnosis + V3 requirements
+> appended to [`docs/frontend_overhaul.md`](docs/frontend_overhaul.md) (V3 section):
+> V2 executed correctly but too quietly — the depth layer whispers, the nav doesn't
+> read as tabs, the Copilot has no identity, one hue still owns ~80% of any screen at
+> rest. *(21st.dev Magic MCP considered per the user's suggestion: `.mcp.json` is
+> scaffolded but no `TWENTYFIRST_API_KEY` exists on this machine and key creation is a
+> [user] action — V3 shipped dependency-free instead.)*
+>
+> ✅ **OVERHAUL V3 DELIVERED [laptop-D, 2026-07-22]** — see Completed: a real WebGL2
+> fragment-shader aurora (domain-reactive, CSS fallback, reduced-motion static frame),
+> a hue-typed icon tab system (six views, six fixed hues — coral stays
+> flagged-exclusive), the CopilotMark orbital-spark logo (header + dock), cursor-
+> tracking spotlight on every glass panel, an animated conic beam on hero glass, domain
+> ramps on the toggle, and a multi-hue header sweep. Build + vitest + backend suite
+> green; verified programmatically against the live dev-store console (WebGL pipeline
+> proven, CSS fallback retirement proven, every V3 element present in the DOM).
+> **Awaiting stakeholder review #4 — the visual walk needs a displayed browser pane.**
+>
 > 🏁 **§7 STEP 33 RED-TEAM REVIEW DONE [laptop-D, 2026-07-22]** — the §9.3
 > pre-submission adversarial pass, recorded in
 > [`docs/red_team_review.md`](docs/red_team_review.md): **no finding invalidates a
@@ -143,6 +164,39 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-22 · **FRONTEND OVERHAUL V3 — the review-#3 rejection answered in code
+  (docs/frontend_overhaul.md V3 §§1–6, all six requirements shipped).** *(1) WebGL
+  depth layer:* `components/bg/AuroraGL.tsx` — a raw-WebGL2 fullscreen fragment
+  shader (fbm-driven three-lobe nebula, domain-reactive hue uniforms re-read on
+  `data-domain` flips, half-resolution render behind the glass blur, banding
+  dither, vignette); CSS-aurora fallback retires itself only when a context
+  initializes (`.gl-aurora`); reduced-motion renders one static frame; paused when
+  hidden; **zero new dependencies**. StrictMode trap found+fixed live: `loseContext()`
+  in effect cleanup killed the canvas on dev double-mount — the context now lives
+  with the canvas. *(2) Tab system:* segmented glass tabbar, per-view inline-SVG
+  icons (`ui/ViewIcons.tsx`), FIXED per-view hue identity (cyan/amber/teal/magenta/
+  violet/slate — coral stays flagged-exclusive per §5.2), Motion sliding pill with
+  per-hue underglow, and the active view's hue drives the view H1 gradient via a
+  scoped `--accent-grad` override. *(3) Copilot identity:* `copilot/CopilotMark.tsx`
+  — orbital-spark SVG logo (gradient ring, four-point spark core, CSS-orbiting
+  electron, breathing glow, active state), in the header button AND the dock
+  header. *(4) Cursor-reactive glass:* every `Glass` panel gets a pointer-tracking
+  spotlight (CSS vars written directly — zero re-renders) + a `beam` variant
+  (@property-driven conic border sweep, 9s) on the constellation hero. *(5)
+  Multi-hue at rest:* domain-toggle pills carry their §5.2 ramps, multi-hue header
+  underline sweep, benign-teal footer ink, mesh bumped (110 nodes, 0.85, faster
+  pulses). *(6) Constraints held:* caveat on every screen, read-only API untouched,
+  every animation collapses under prefers-reduced-motion, one blurred layer per
+  stack. **Verified live against the dev-store console on this machine:** shader
+  pipeline proven (isolated readPixels probe + the component's own gl-aurora stamp),
+  CSS-fallback retirement, 6 hue-typed icon tabs, mark + electron, 6 spotlight
+  panels, 1 beam panel, zero console errors; `npm run build` green, vitest 31/31,
+  backend suite 373/373 untouched. Also: `scripts/build_dev_store.py` committed —
+  builds a full synthetic serving store (injector-planted motifs, real matcher
+  bundles, ledger-numbered rigor artifacts) so ANY keyless machine can run the
+  console for UI work (`uv run python scripts/build_dev_store.py` → `poe serve`).
+  **Visual sign-off pending: stakeholder review #4** (the pane was not displayed
+  this session, so the walk was programmatic, not visual) · [laptop-D]
 - 2026-07-22 · **§7 STEP 33 — the internal RED-TEAM REVIEW (§9.3) executed, recorded,
   and its fixes landed (`docs/red_team_review.md`).** *The checklist pass:* leakage
   (25-test suite green standalone; every post-audit data/feature module carries its own
@@ -858,7 +912,18 @@ still public 2026-07-15 — anonymous clone succeeded).
    workstreams shipped and verified live on real artifacts in both domains; constraints held
    (caveat everywhere, read-only API, build+vitest+backend green, offline fonts,
    reduced-motion, one blurred layer per stack).
-2. **[user/stakeholder] REVIEW #3 — the V2 UI** — `poe demo` + `npm run dev` (or
+2a. **[user/stakeholder] REVIEW #4 — the V3 UI (2026-07-22).** On any machine:
+   `uv run python scripts/build_dev_store.py` (or use real artifacts) → `uv run
+   collusiongraph serve` (+ `npm run dev` in `frontend/`, proxy via
+   `VITE_API_TARGET` if the API port differs) → walk: the WebGL aurora field
+   (both domains — flip the toggle and watch the nebula re-hue), the icon tab
+   bar (hover + active glow per view, H1 gradient follows the tab hue), the
+   Copilot mark (header + dock, orbiting electron), cursor spotlight on any
+   panel, the beam sweep on the constellation hero. Known limits recorded
+   honestly: this session's walk was programmatic (hidden pane) — the visual
+   judgment is exactly what this review is for.
+2. ~~[user/stakeholder] REVIEW #3 — the V2 UI~~ **DONE 2026-07-22: REJECTED (see
+   banner; V3 shipped in response).** — `poe demo` + `npm run dev` (or
    `docker compose up` → :8080), walk all SIX views (About is new — the demo-day opener) in
    both domains; hover the queue rows (sparklines + actions), drag the budget slider
    (measured-precision readout), play the explorer's temporal scrubber, export a Model Lab
