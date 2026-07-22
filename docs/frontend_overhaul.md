@@ -201,3 +201,65 @@ variable fonts, designed loading/error/empty states — all constraints held.
 Why V1 failed re-review: see §2 — the shipped motion/glass/palette were all keyed to a
 single accent family and tuned too subtle to register; the §5.3 flagship features that
 create the "impressive" reaction were deferred as optional. V2 makes them required.
+
+---
+
+# V3 — the "unmistakably modern" pass (2026-07-22, laptop-D)
+
+**Review #3 verdict (stakeholder, 2026-07-22): REJECTED — "not at the level our
+project is… proper hover effects, glassmorphism, not a single color dominated
+schema, proper tabs, an icon/logo for the chatbot… should look like it is built
+using modern frontend tech (WebGL, GSAP, Framer)."**
+
+## Diagnosis (V2 walked live on laptop-D against a dev store)
+
+V2 executes its brief *correctly but too quietly* — the same failure class as
+V1 at a higher baseline. Measured on the live page:
+
+1. **The depth layer is a whisper.** The backdrop is an 80-node 2D-canvas mesh
+   at 0.7 opacity over CSS radial washes at 14–22% mix — behind panels it reads
+   as flat black. Nothing on screen says "GPU". The glass blur has almost no
+   luminance to eat, so the glassmorphism the stakeholder keeps asking for is
+   physically invisible (V2's own §3.2 diagnosis, still true).
+2. **The nav does not read as tabs.** text-xs buttons with a subtle accent-dim
+   pill; no icons, no per-view identity, small hit areas.
+3. **The Copilot has no identity.** A text glyph (◈) in the header and dock —
+   the stakeholder explicitly asks for a logo.
+4. **Single-color dominance persists PERCEPTUALLY.** The five-hue inventory
+   exists (tokens, KPI tiles, motif chips) but the accent still owns headings,
+   nav, toggle, borders, and buttons — at rest a screen is ~80% one hue.
+5. **Hover language exists but is sparse** (4 hover-lift surfaces on the
+   overview) and there is no cursor-reactive surface anywhere.
+
+## V3 requirements (all shipped in this pass)
+
+1. **WebGL aurora field** (`components/bg/AuroraGL.tsx`): a real fragment-shader
+   nebula — three fbm-driven hue blobs (domain-reactive: cyan/violet/magenta ⇄
+   violet/magenta/cyan), animated at ~0.03 uv/s, bright enough to feed every
+   glass blur. Raw WebGL2, zero dependencies. CSS-aurora fallback when WebGL is
+   unavailable; `prefers-reduced-motion` renders a single static frame; paused
+   when the tab hides. The 2D mesh stays above it (opacity 0.85, 110-node cap)
+   so the subject-matter ambience survives.
+2. **A real tab system**: segmented glass tab bar with per-view inline-SVG
+   icons and a FIXED per-view hue identity (overview cyan, queue amber, explorer
+   teal, case magenta, lab violet, about slate — coral stays flagged-exclusive
+   per §5.2, so no tab may take it) — the active pill, underglow,
+   icon ink, and the view H1 gradient all take the view hue (kills accent
+   monoculture at rest); sliding Motion pill kept; hover lifts + label always
+   visible.
+3. **Copilot identity**: `CopilotMark` — an orbital-spark SVG logo (magenta⇄
+   violet gradient ring, spark core, breathing glow when idle, presence dot) in
+   the header button AND the dock header.
+4. **Cursor-reactive glass**: every `Glass` panel gets a spotlight highlight
+   that tracks the pointer (CSS vars set from one mousemove handler — no
+   re-render), plus a `beam` variant: an animated conic border sweep
+   (@property-driven) for hero panels.
+5. **Multi-hue at rest, enforced**: domain toggle pills carry their domain
+   ramps (cyan→teal / violet→magenta); header underline is a slow multi-hue
+   conic sweep; footer caveat keeps its shield but gains the teal benign ink.
+6. **Constraints unchanged**: ethics caveat on every screen, read-only API
+   untouched, one blurred layer per stack, reduced-motion collapses every
+   animation, `npm run build` + vitest green, no new runtime dependencies.
+
+Cut order under pressure: beam sweep → mesh quality bump → toggle ramps. The
+aurora, tabs, Copilot mark, and spotlight are the non-negotiable core.
