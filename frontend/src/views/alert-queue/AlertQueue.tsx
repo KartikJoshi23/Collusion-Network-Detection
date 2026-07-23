@@ -4,6 +4,7 @@ import { useAlerts, useExplanation, useMetrics, useSubgraph } from "../../api/ho
 import type { AlertRow } from "../../api/types";
 import { BudgetSlider } from "../../components/ui/BudgetSlider";
 import { CountUp } from "../../components/ui/CountUp";
+import { CopilotMark } from "../../components/copilot/CopilotMark";
 import { FlagBadge, MotifChip, RiskChip } from "../../components/ui/Chips";
 import { Glass } from "../../components/ui/Glass";
 import { Empty, ErrorState, Loading } from "../../components/ui/States";
@@ -199,7 +200,7 @@ function Row({
               background: "color-mix(in srgb, var(--hue-magenta) 14%, transparent)",
             }}
           >
-            ◈
+            <CopilotMark size={13} />
           </button>
         </span>
       </td>

@@ -1,6 +1,7 @@
 import { motion } from "motion/react";
 import { useExplanation } from "../../api/hooks";
 import { SCREENING_CAVEAT } from "../../api/types";
+import { CopilotMark } from "../../components/copilot/CopilotMark";
 import { Glass } from "../../components/ui/Glass";
 import { MotifSchematic } from "../../components/ui/MotifSchematic";
 import { Empty, ErrorState, Loading } from "../../components/ui/States";
@@ -114,7 +115,9 @@ export function CaseDetail() {
                 "inset 0 0 0 1px color-mix(in srgb, var(--hue-magenta) 35%, transparent)",
             }}
           >
-            ◈ Ask Copilot
+            <span className="inline-flex items-center gap-1.5">
+              <CopilotMark size={14} /> Ask Copilot
+            </span>
           </button>
           <button
             onClick={() => setView("explorer")}
