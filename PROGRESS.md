@@ -168,6 +168,27 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-20 · **DASHBOARD DEEP AUDIT (stakeholder-reported issues) — 2 real code bugs found
+  &amp; FIXED, 2 symptoms explained as data/artifact differences (not code).** *(BUG 1, the
+  "replay directly gets over / does nothing"):* the Graph Explorer replay animated edges by
+  `edge.timestamp` from span.min→span.max, but Elliptic tx-graph edges ALL share one time
+  step (measured: top alert = 101 edges all at window 38; alert 2 = 49 edges all at 35) and
+  many Mendeley alerts sit in one year → `span.min === span.max` → the cutoff was constant,
+  every edge lit the whole time, the 6 s tween ran but nothing moved. **Fix:** per-edge
+  reveal-time `rt∈[0,1]` computed by timestamp when timestamps vary, else by SEQUENCE order;
+  control relabels "replay flow" (time) vs "replay order" (sequence) with an honest readout
+  ("all edges · window 38" vs "full window 2014–2018"). Verified live both modes. *(BUG 2,
+  "cluttered"):* 100 members were placed on a fixed radius-1 ring → heavy overlap. **Fix:**
+  ring radius now scales with member/context count (memberR = 1 + n/14) and node size +
+  label density thin out above 40 nodes. *(SYMPTOM 3, "only one dataset per domain"):* NOT a
+  bug — `serving.json` on master has only elliptic_pp + mendeley_eu because those are the
+  only two datasets with real trained score runs here; the actor-graph &amp; García queues
+  need training runs to appear (offered as follow-up). *(SYMPTOM 4, "collaborator laptop
+  looked different / replay worked / cases differed"):* laptop-D has NO trained artifacts and
+  runs `scripts/build_dev_store.py` — a SYNTHETIC store with `time_first_seen` spread across
+  steps 1–49 and injected motif cases, so its replay animates and its cases differ by
+  construction; master runs REAL artifacts. Frontend tsc + build + vitest 31/31 green ·
+  [master]
 - 2026-07-20 · **Architecture doc v6 — locked format with the stakeholder first (AskUser
   question) after 5 rejections, then built to spec.** Stakeholder chose: clone the "one
   stack, two crimes" VERTICAL numbered-box reference, SMALL boxes (few words each), and

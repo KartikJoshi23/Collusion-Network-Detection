@@ -35,6 +35,13 @@ function layout(data: SubgraphResponse): Graph {
     ...data.edges.map((e) => e.amount ?? 0),
     0,
   );
+  // Rings grow with member/context count so a 100-member alert no longer
+  // overlaps on a unit circle (the "cluttered" report); nodes shrink as the
+  // graph gets busy. Sigma fits the camera to the bounds, so larger radii =
+  // wider angular spacing on screen.
+  const big = data.nodes.length > 40;
+  const memberR = 1 + members.length / 14;
+  const contextR = memberR + 2 + context.length / 40;
   const place = (
     list: typeof data.nodes,
     radius: number,
@@ -45,28 +52,44 @@ function layout(data: SubgraphResponse): Graph {
       g.addNode(n.node_id, {
         x: radius * Math.cos(theta),
         y: radius * Math.sin(theta),
-        size: memberRing ? 9 : 4,
+        size: memberRing ? (big ? 6 : 9) : big ? 3 : 4,
         color: memberRing ? c.member : c.context,
         label: n.node_id,
         zIndex: memberRing ? 2 : 1,
       });
     });
-  place(members, 1, true);
-  place(context, 3, false);
-  for (const e of data.edges) {
-    if (g.hasNode(e.src) && g.hasNode(e.dst)) {
-      g.addEdge(e.src, e.dst, {
-        // amount-scaled width where amounts exist; uniform otherwise
-        size:
-          e.amount && maxAmount > 0
-            ? 1 + 2.5 * Math.sqrt(e.amount / maxAmount)
-            : 1,
-        color: c.edge,
-        type: "arrow",
-        ts: e.timestamp,
-      });
-    }
-  }
+  place(members, memberR, true);
+  place(context, contextR, false);
+
+  // Per-edge reveal time in [0,1] for the replay. When edge timestamps vary
+  // we animate in true time order; when they DON'T (Elliptic tx-graph edges
+  // all live in a single time step, so span.min === span.max) we fall back to
+  // sequence order — otherwise the scrubber lit everything at once and looked
+  // like it "did nothing / ended instantly".
+  const ts = data.edges
+    .map((e) => e.timestamp)
+    .filter((t): t is number => t != null);
+  const tMin = ts.length ? Math.min(...ts) : 0;
+  const tMax = ts.length ? Math.max(...ts) : 0;
+  const timeVaries = tMax > tMin;
+  const denom = Math.max(data.edges.length - 1, 1);
+  data.edges.forEach((e, i) => {
+    if (!g.hasNode(e.src) || !g.hasNode(e.dst)) return;
+    const rt =
+      timeVaries && e.timestamp != null
+        ? (e.timestamp - tMin) / (tMax - tMin)
+        : i / denom;
+    g.addEdge(e.src, e.dst, {
+      // amount-scaled width where amounts exist; uniform otherwise
+      size:
+        e.amount && maxAmount > 0
+          ? 1 + 2.5 * Math.sqrt(e.amount / maxAmount)
+          : 1,
+      color: c.edge,
+      type: "arrow",
+      rt,
+    });
+  });
   return g;
 }
 
@@ -82,32 +105,41 @@ export function GraphExplorer() {
   const [progress, setProgress] = useState(1);
   const [playing, setPlaying] = useState(false);
 
-  const span = useMemo(() => {
+  // Replay descriptor: whether there is anything to replay, and whether edge
+  // timestamps actually vary (they don't on single-time-window subgraphs).
+  const timeline = useMemo(() => {
     const ts = (data?.edges ?? [])
       .map((e) => e.timestamp)
       .filter((t): t is number => t !== null);
-    return ts.length
-      ? { min: Math.min(...ts), max: Math.max(...ts), n: ts.length }
-      : null;
+    const min = ts.length ? Math.min(...ts) : 0;
+    const max = ts.length ? Math.max(...ts) : 0;
+    return {
+      hasEdges: (data?.edges?.length ?? 0) > 0,
+      varies: max > min,
+      min,
+      max,
+    };
   }, [data]);
 
   useEffect(() => {
     if (!data || !containerRef.current) return;
     const g = layout(data);
     const c = tokens();
+    // thin the labels out on busy graphs so 100 members don't smear together
+    const busy = data.nodes.length > 40;
     const renderer = new Sigma(g, containerRef.current, {
       defaultEdgeType: "arrow",
       labelColor: { color: c.label },
       labelFont: "JetBrains Mono Variable, ui-monospace, monospace",
       labelSize: 10,
-      labelDensity: 0.4,
+      labelDensity: busy ? 0.05 : 0.4,
+      labelRenderedSizeThreshold: busy ? 12 : 6,
       renderLabels: true,
       edgeReducer: (_edge, attrs) => {
         const t = playheadRef.current;
-        if (t >= 1 || !span || attrs.ts === null || attrs.ts === undefined)
-          return attrs;
-        const cutoff = span.min + t * (span.max - span.min);
-        const lit = (attrs.ts as number) <= cutoff;
+        if (t >= 1) return attrs;
+        const rt = (attrs.rt as number) ?? 0;
+        const lit = rt <= t;
         return {
           ...attrs,
           color: lit ? c.edgeLit : "#1a2138",
@@ -121,7 +153,7 @@ export function GraphExplorer() {
       renderer.kill();
       sigmaRef.current = null;
     };
-  }, [data, span]);
+  }, [data]);
 
   const seek = (t: number) => {
     playheadRef.current = t;
@@ -130,7 +162,7 @@ export function GraphExplorer() {
   };
 
   const play = () => {
-    if (!span) return;
+    if (!timeline.hasEdges) return;
     tweenRef.current?.kill();
     setPlaying(true);
     const proxy = { t: playheadRef.current >= 1 ? 0 : playheadRef.current };
@@ -226,8 +258,9 @@ export function GraphExplorer() {
         )}
       </div>
 
-      {/* temporal playback scrubber (V2 §3.4) — real edge timestamps */}
-      {span && (
+      {/* replay scrubber — by timestamp when they vary, else in sequence order
+          (single-time-window subgraphs like Elliptic tx-graphs) */}
+      {timeline.hasEdges && (
         <div className="flex items-center gap-3 border-t border-hairline/60 px-4 py-2">
           <button
             onClick={playing ? pause : play}
@@ -235,7 +268,9 @@ export function GraphExplorer() {
             title={
               playing
                 ? "pause playback"
-                : "replay the flow in timestamp order"
+                : timeline.varies
+                  ? "replay the flow in timestamp order"
+                  : "all activity in one time window — replay reveals edges in sequence order"
             }
             style={{
               color: "var(--accent)",
@@ -244,7 +279,7 @@ export function GraphExplorer() {
                 "inset 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent)",
             }}
           >
-            {playing ? "❚❚" : "▶"} replay flow
+            {playing ? "❚❚" : "▶"} replay {timeline.varies ? "flow" : "order"}
           </button>
           <input
             type="range"
@@ -259,12 +294,16 @@ export function GraphExplorer() {
             style={
               { "--fill": `${progress * 100}%` } as React.CSSProperties
             }
-            aria-label="temporal playback position"
+            aria-label="replay position"
           />
-          <span className="mono w-40 text-right text-xs text-text-2">
-            {progress >= 1
-              ? `full window ${span.min} – ${span.max}`
-              : `t ≤ ${Math.round(span.min + progress * (span.max - span.min))}`}
+          <span className="mono w-44 text-right text-xs text-text-2">
+            {timeline.varies
+              ? progress >= 1
+                ? `full window ${timeline.min} – ${timeline.max}`
+                : `t ≤ ${Math.round(timeline.min + progress * (timeline.max - timeline.min))}`
+              : progress >= 1
+                ? `all edges${timeline.min ? ` · window ${timeline.min}` : ""}`
+                : `${Math.round(progress * 100)}% revealed`}
           </span>
         </div>
       )}
