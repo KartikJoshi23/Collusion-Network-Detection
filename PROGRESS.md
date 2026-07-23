@@ -168,6 +168,20 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-20 · **Architecture doc OVERHAULED on stakeholder rejection (v1 "not industry
+  grade — flowcharts expected").** `docs/architecture.html` rebuilt as true flowchart
+  architecture: 25 hue-coded nodes with 20 numbered directional arrows across 5 flow
+  lanes (offline **Deep Learning pipeline** → artifact store → always-on serving loop
+  with return path; AWS serving + DL planes), 9-process DFD with data-store shapes and
+  the trust boundary, NEW plain-language "Algorithms" section (16 cards: GNN message
+  passing, GATv2 attention, GraphSAGE, R-GCN, autoencoders, focal loss, calibration,
+  Leiden, NMS, XGBoost yardsticks, PGExplainer, motif matcher, guarded copilot, rigor
+  protocols — each with "in simple words" + "how it works"), 3-tier cost tables kept.
+  Naming fixed project-wide in living docs: "ML pipeline" → deep-learning pipeline
+  (deployment.md too); zero week/phase/milestone references (project complete); content
+  reflects the post-#21 state (6 datasets incl. OCDS, PGExplainer, NIM copilot, 373
+  tests). Verified in-browser: structure renders, both themes contrast-audited (dark
+  ≥6.0:1, light ≥5.4:1 on every text class), no stale tokens · [master]
 - 2026-07-20 · **Collaborator batch (PRs #8–#21) INTEGRATED + two stakeholder docs
   shipped.** *Integration:* pulled 963b294..a709b67 fast-forward (step 30 closed → M6,
   step-31 kit, step-32 remainder, M8 artifacts incl. `poe paper-tables` + red-team

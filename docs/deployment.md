@@ -38,7 +38,7 @@ replaceable, and scalable:
 ```
 
 Rules:
-- The **ML pipeline is not a service** — it is a batch job whose only product is the
+- The **deep-learning pipeline is not a service** — it is a batch job whose only product is the
   artifact directory. Serving never imports torch (pinned by a test). Measured
   2026-07-17: the serving image builds at **815 MB** (polars/pyarrow/duckdb wheels)
   vs ~3.5 GB with torch — the single biggest cost/scalability lever. Container
@@ -70,7 +70,7 @@ charges until you upgrade), and **30+ always-free services**; the legacy
 | Frontend | **S3 static site + CloudFront** | CloudFront always-free: 1 TB egress + 10M requests/month — effectively $0 forever |
 | API (+Copilot later) | **one t3.micro EC2 instance** (per stakeholder guidance; 2 vCPU burstable / 1 GB RAM, ~ $8–10/mo) running `docker compose up` | Paid, but covered by the $100–$200 credits for ≈ the whole capstone window. 1 GB RAM is tight for polars over the larger parquet artifacts — add a swap file, and step up to t4g.small (~$12–15/mo) only if the API is memory-bound in practice |
 | Artifact store | **S3 bucket** (artifacts are MBs, not GBs) | Pennies; within credits |
-| Batch ML | **not on AWS** — local GPU / Colab / Kaggle | $0 |
+| Batch deep learning (GNN training/scoring) | **not on AWS** — local GPU / Colab / Kaggle | $0 |
 | Demo data egress | first 100 GB/month outbound free account-wide | $0 at demo traffic |
 
 ### Track B — the scalability story (what the paper/product pitch cites)
