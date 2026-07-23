@@ -168,6 +168,25 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-20 · **Collaborator batch (PRs #8–#21) INTEGRATED + two stakeholder docs
+  shipped.** *Integration:* pulled 963b294..a709b67 fast-forward (step 30 closed → M6,
+  step-31 kit, step-32 remainder, M8 artifacts incl. `poe paper-tables` + red-team
+  review + repro map, frontend V3, CI cp1252 fix); verified on master — backend
+  **373/373**, frontend **31/31 + build**. *Docs:* **(a)
+  [`docs/architecture.html`](architecture.html)** — self-contained architecture
+  reference: layered system architecture (data → IR → batch ML → artifacts →
+  torch-free serving → console/copilot), 9-step data-flow with the batch/serving trust
+  boundary, AWS deployment architecture (edge/storage/compute/batch/ops zones, Track
+  A→B) with a 3-tier cost model (demo ≈$10/mo list → $0 on credits; serverless launch
+  ≈$14–55/mo; growth ≈$90–183/mo, yearly figures included); dark default + light
+  toggle, BOTH themes contrast-audited programmatically (all text ≥4.3:1; verified in
+  the browser — the pane's frozen animation clock explains the one measurement
+  artifact, not a real defect). **(b) [`docs/paper_blueprint.md`](paper_blueprint.md)**
+  — the paper writing blueprint: framing decisions (title/venue/claim shape),
+  section-by-section content plans with every claim mapped to its measured artifact,
+  the T1–T8 table map keyed to `poe paper-tables` outputs with per-machine 🔶 status,
+  figure list from Model Lab exports, writing order, submission checklist ·
+  [master]
 - 2026-07-23 · **REVIEW #4 PASSED + full-solution AUDIT SWEEP (user-directed) — 3
   findings, all fixed.** *Verified clean:* backend `poe check` green (ruff + mypy +
   373 tests), frontend build + vitest 31/31, the frontend Docker image BUILDS from
