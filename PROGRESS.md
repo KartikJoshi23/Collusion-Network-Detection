@@ -168,6 +168,19 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-20 · **Architecture doc v3 after second stakeholder rejection** (v2 verdicts:
+  split-up lanes wrong, horizontal scrollbars "horrible", language too hard, Copilot
+  invisible, colors poor → wants glassmorphism). Rebuilt on the reference pattern: ONE
+  unified system diagram (5-box glass flow on a single row — Investigator → Dashboard →
+  API → Results Store → Deep Learning Pipeline — numbered arrows + return strip) with a
+  dedicated highlighted **AI Copilot row inside the main diagram** (13 mentions
+  page-wide); 8-step plain-language data flow; 12 algorithm cards rewritten in everyday
+  words (zero jargon tokens — no "isotonic/inductive/LOCO/NMS" in the rendered text);
+  single-flow AWS diagram + the 3 cost tiers. Full glassmorphism pass (aurora washes,
+  blurred translucent cards, gradient tags/pills, hover lift) in BOTH themes. Verified
+  in-browser at 1280px (5 columns, one row, zero horizontal overflow, no overflowing
+  elements) AND 562px (single column, zero overflow); contrast audited: dark ≥7.5:1,
+  light ≥4.8:1 on every sampled class · [master]
 - 2026-07-20 · **Architecture doc OVERHAULED on stakeholder rejection (v1 "not industry
   grade — flowcharts expected").** `docs/architecture.html` rebuilt as true flowchart
   architecture: 25 hue-coded nodes with 20 numbered directional arrows across 5 flow
