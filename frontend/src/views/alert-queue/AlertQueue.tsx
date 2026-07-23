@@ -1,5 +1,4 @@
 import { motion } from "motion/react";
-import { useState } from "react";
 import { useAlerts, useExplanation, useMetrics, useSubgraph } from "../../api/hooks";
 import type { AlertRow } from "../../api/types";
 import { BudgetSlider } from "../../components/ui/BudgetSlider";
@@ -110,7 +109,6 @@ function Row({
   const selectAlert = useConsole((s) => s.selectAlert);
   const setView = useConsole((s) => s.setView);
   const askCopilotAbout = useConsole((s) => s.askCopilotAbout);
-  const [hovered, setHovered] = useState(false);
 
   // lazy, cached; 404 (no bundle for this alert) is a normal outcome
   const bundle = useExplanation(dataset, a.alert_id, withBadge);
@@ -128,8 +126,6 @@ function Row({
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: Math.min(index, 14) * 0.022, duration: 0.25 }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
       onClick={() => open("explorer")}
       className="hover-row group cursor-pointer border-b border-hairline/40"
       style={
@@ -153,7 +149,7 @@ function Row({
       </td>
       <td className="mono px-4 py-1.5 text-text-1">{a.n_members}</td>
       <td className="px-2 py-1.5">
-        <HoverSparkline dataset={dataset} alertId={a.alert_id} armed={hovered} />
+        <ActivitySparkline dataset={dataset} alertId={a.alert_id} />
       </td>
       <td className="mono px-4 py-1.5 text-text-1">
         {fmtTimeWindow(a.time_window_start, a.time_window_end)}
@@ -208,28 +204,33 @@ function Row({
   );
 }
 
-// Fetches the alert's REAL windowed subgraph on first hover and draws its
-// edge-timestamp histogram as a self-drawing polyline.
-function HoverSparkline({
+// Draws the alert's REAL edge-timestamp histogram as a self-drawing polyline.
+// Loads eagerly (cached + deduped by TanStack Query) so the Activity column is
+// populated for every row — not blank until hovered. A single-time-window
+// subgraph (e.g. Elliptic tx-graphs all in one step) draws a flat baseline
+// rather than a gap, so the column reads consistently.
+function ActivitySparkline({
   dataset,
   alertId,
-  armed,
 }: {
   dataset: string;
   alertId: string;
-  armed: boolean;
 }) {
-  const [everArmed, setEverArmed] = useState(false);
-  if (armed && !everArmed) setEverArmed(true);
-  const { data } = useSubgraph(dataset, alertId, 1, everArmed);
+  const { data, isLoading } = useSubgraph(dataset, alertId, 1, true);
 
-  if (!data)
+  if (isLoading || !data)
     return (
-      <span className="block h-4 w-16 rounded bg-bg-2/60" aria-hidden />
+      <span
+        className="block h-4 w-16 animate-pulse rounded bg-bg-2/60"
+        aria-hidden
+      />
     );
   const counts = bucketTimestamps(data.edges.map((e) => e.timestamp), 14);
-  if (counts.every((c) => c === 0))
-    return <span className="text-xs text-text-2">no timestamps</span>;
+  // no timestamps at all → a flat baseline (still a consistent mark)
+  const flat = counts.every((c) => c === 0);
+  const points = flat
+    ? "0,15 64,15"
+    : sparklinePoints(counts, 64, 16);
   return (
     <svg
       viewBox="0 0 64 16"
@@ -238,9 +239,9 @@ function HoverSparkline({
       aria-label="temporal activity sparkline (windowed subgraph)"
     >
       <polyline
-        points={sparklinePoints(counts, 64, 16)}
+        points={points}
         fill="none"
-        stroke="var(--accent)"
+        stroke={flat ? "var(--text-2)" : "var(--accent)"}
         strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
