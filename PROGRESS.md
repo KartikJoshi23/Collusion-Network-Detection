@@ -168,6 +168,21 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-20 · **Architecture doc v5 after fourth stakeholder rejection — the diagnosis was
+  the visual GRAMMAR: big stacked cards are not a flowchart.** Both diagrams are now
+  hand-drawn inline **SVG flowcharts** (the reference images' actual form): compact
+  rounded-rect nodes with real connecting arrow lines + labeled edges. System chart: 10
+  stages top-to-bottom inside two cluster boundaries (green offline DL pipeline / blue
+  always-on product) with a 4-node parallel arm row, split/converge elbow edges, the
+  dashed trust-boundary line, and the Copilot as a side node wired to the API with
+  bidirectional arrows. AWS chart: users → serving-plane cluster (edge → S3 | compute →
+  versioned S3 + ops strip) and a dashed scheduled-DL cluster (EventBridge → spot GPU →
+  publish, with the up-edge into the serving plane's bucket). SVG styling routes through
+  the CSS theme tokens so both themes work; glass page chrome, plain-language algorithm
+  cards (now cross-referenced to flowchart box numbers) and 3 cost tiers kept.
+  **Verified programmatically: 0 text-fit violations across all 23 nodes** (every SVG
+  text bbox inside its rect), 26 drawn edges with arrowheads, zero horizontal overflow
+  (viewBox scaling), contrast dark ≥7.6:1 / light ≥4.2:1 · [master]
 - 2026-07-20 · **Architecture doc v4 after third stakeholder rejection** (v3 verdicts: too
   short, horizontal format wrong, cloud diagram "false" — wants the project's original
   VERTICAL numbered-stage form, with depth). Rebuilt as the vertical staged pipeline the
