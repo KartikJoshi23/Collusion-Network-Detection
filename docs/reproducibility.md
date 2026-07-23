@@ -79,6 +79,7 @@ parquets and are persisted by `scripts/build_demo_artifacts.py`.
 | Config | Produces |
 |---|---|
 | `transfer_lomo_matrix_garcia.yaml` | 4×5 LOMO matrix: macro lift 1.57, positive on every market (Italy P@10 1.00) |
+| `alert_queue_garcia_italy.yaml` | dashboard queue over the Italy LOMO fold (market-based `test_group`, precalibrated): 3 alerts, all confirmed cartels |
 | `cross_domain_probe_proc2fin.yaml` | frozen-probe proc→fin: 0.1501 vs 0.065 prevalence (byte-reproduces cross-machine) |
 | `cross_domain_probe_fin2proc.yaml` | frozen-probe fin→proc: 0.2843 < 0.358 prevalence (negative) |
 | `label_efficiency_proc2fin.yaml` / `label_efficiency_fin2proc.yaml` | label-efficiency curves: transfer never pays at ≤500 target labels, either direction |

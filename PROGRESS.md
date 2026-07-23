@@ -168,6 +168,23 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-20 · **DASHBOARD: 2 more real datasets added (both domains now show two) +
+  Activity-sparkline fix.** *(Activity bug):* the alert-queue "Activity" sparkline only
+  fetched its subgraph on first hover (`armed={hovered}`) → blank until moused-over. Now
+  `ActivitySparkline` loads eagerly (TanStack cached/deduped) so all rows draw on load;
+  single-window subgraphs draw a flat baseline. Verified 50/50 rows draw. *(Financial 2nd
+  dataset):* trained the **Elliptic wallet/actor R-GCN** on master (ingest 822,942 wallets
+  17 s + train 3.5 min + queue → **2,514 actor alerts**, `elliptic_pp_actor`) — the
+  tx-level vs wallet-level two-granularity story is now live in the console. *(Procurement
+  2nd dataset):* **García** — added a market-based `test_group` option to
+  `build_alert_queue` (entity-disjoint LOMO markets have no post-2013 temporal window;
+  requires precalibrated fold scores, guarded) + `alert_queue_garcia_italy.yaml`; queued
+  the strongest LOMO fold (Italy) → **3 alerts, all confirmed cartels** (García's bipartite
+  market graph rolls up few multi-firm communities — honest, thin). Wired both into
+  `build_demo_artifacts.py` + serving.json (4 datasets). **Verified live:** domain toggle
+  shows financial = elliptic_pp + elliptic_pp_actor, procurement = mendeley_eu +
+  garcia_rodriguez; zero console errors. 1 new test (market queue isolation + precalibrated
+  guard); repro map updated; suite 374/374, frontend 31/31 · [master]
 - 2026-07-20 · **DASHBOARD DEEP AUDIT (stakeholder-reported issues) — 2 real code bugs found
   &amp; FIXED, 2 symptoms explained as data/artifact differences (not code).** *(BUG 1, the
   "replay directly gets over / does nothing"):* the Graph Explorer replay animated edges by

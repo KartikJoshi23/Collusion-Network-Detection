@@ -133,6 +133,92 @@ def test_train_score_queue_eval_end_to_end(tmp_path) -> None:
     assert ((alerts["risk_score"] >= 0.0) & (alerts["risk_score"] <= 1.0)).all()
 
 
+def test_market_test_group_queue(tmp_path) -> None:
+    """Entity-disjoint (LOMO) market queue: `test_group` selects one market by
+    the id's second segment and uses precalibrated fold scores — the García
+    path (no temporal test window). Asserts market isolation + the guard."""
+    store = GraphStore(tmp_path / "interim")
+    rows, edges, labels = [], [], []
+    for m in ("A", "B"):
+        for i in range(4):
+            fid = f"firm:{m}:{i}"
+            rows.append(
+                {
+                    "node_id": fid,
+                    "node_type": "firm",
+                    "domain": "procurement",
+                    "time_first_seen": 2010,
+                    "raw_features": None,
+                    "raw_attrs": None,
+                }
+            )
+            labels.append(
+                {
+                    "node_id": fid,
+                    "label": "illicit" if i == 0 else "licit",
+                    "label_source": "toy",
+                    "confidence": 1.0,
+                }
+            )
+        for a, b in [(0, 1), (1, 2), (2, 3), (3, 0)]:  # one community per market
+            edges.append(
+                {
+                    "src": f"firm:{m}:{a}",
+                    "dst": f"firm:{m}:{b}",
+                    "edge_type": "linked",
+                    "timestamp": 2010,
+                    "amount": None,
+                    "directed": True,
+                    "raw_attrs": None,
+                }
+            )
+    store.write("toyproc", "nodes", pl.DataFrame(rows))
+    store.write("toyproc", "edges", pl.DataFrame(edges))
+    store.write("toyproc", "labels", pl.DataFrame(labels))
+    store.write_meta("toyproc", {"dataset": "toyproc", "time_unit": "year", "n_features": 0})
+
+    run_dir = tmp_path / "fold_A"
+    run_dir.mkdir()
+    pl.DataFrame(
+        {"node_id": [f"firm:A:{i}" for i in range(4)], "score": [0.9, 0.8, 0.7, 0.6]}
+    ).write_parquet(run_dir / "scores_test.parquet")
+
+    summary = build_alert_queue(
+        {
+            "dataset": "toyproc",
+            "domain": "procurement",
+            "store_root": str(store.root),
+            "scores_dir": str(run_dir),
+            "output_dir": str(tmp_path / "q"),
+            "test_group": "A",
+            "precalibrated": True,
+            "scores_file": "scores_test.parquet",
+            "seed": 0,
+            "budgets": [2],
+            "model_run_id": "lomo_A",
+        }
+    )
+    assert summary["n_alerts"] >= 1
+    alerts = pl.read_parquet(tmp_path / "q" / "alerts.parquet")
+    members = [m for row in alerts["member_node_ids"].to_list() for m in row]
+    assert members and all(":A:" in m for m in members)  # market B never leaks in
+
+    with pytest.raises(ValueError, match="precalibrated"):
+        build_alert_queue(
+            {
+                "dataset": "toyproc",
+                "domain": "procurement",
+                "store_root": str(store.root),
+                "scores_dir": str(run_dir),
+                "output_dir": str(tmp_path / "q2"),
+                "test_group": "A",
+                "seed": 0,
+                "budgets": [2],
+                "model_run_id": "x",
+            }
+        )
+
+
 def test_explainer_ablation_end_to_end(tmp_path) -> None:
     """§7 step 27 wiring: train a tiny GATv2 → queue → three-arm explainer
     ablation over the queue's top members; asserts report structure and the

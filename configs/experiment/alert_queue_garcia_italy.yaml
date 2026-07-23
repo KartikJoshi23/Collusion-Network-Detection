@@ -1,0 +1,23 @@
+# García procurement alert queue — the Italy market (the strongest LOMO fold:
+# AUC-PR 0.786, P@10 = 1.00). García is evaluated leave-one-market-out (no
+# post-2013 temporal window), so the queue's triage window is the ENTITY-
+# disjoint Italy market subgraph the LOMO fold already scored, not a time
+# window. Scores are the fold's held-out sigmoid outputs (precalibrated —
+# a held-out market has no temporal validation pool to fit a calibrator on).
+dataset: garcia_rodriguez
+domain: procurement
+store_root: data/interim
+scores_dir: eval_outputs/garcia_rodriguez/transfer_lomo_matrix/fold_Italy_s0
+output_dir: eval_outputs/garcia_rodriguez/alert_queue_italy
+model_run_id: rgcn_lomo_italy_s0
+seed: 0
+
+test_group: Italy
+precalibrated: true
+scores_file: scores_test.parquet
+
+resolution: 1.0
+min_community_size: 2
+top_p: 0.25
+# Italy market: 821 confirmed firms; top 1/5/10%-ish review budgets
+budgets: [10, 25, 50]

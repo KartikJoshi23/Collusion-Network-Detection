@@ -57,6 +57,21 @@ DEMOS = [
         "train_label_policy": "history_as_of",
         "metrics": ["eval_outputs/elliptic_pp_actor/gnn_rgcn_focal/metrics.json"],
     },
+    # procurement second dataset: García, queued on its strongest LOMO fold
+    # (Italy) — entity-disjoint market subgraph, precalibrated fold scores
+    # (no post-2013 temporal window; García is evaluated leave-one-market-out)
+    {
+        "dataset": "garcia_rodriguez",
+        "domain": "procurement",
+        "scores_dir": "eval_outputs/garcia_rodriguez/transfer_lomo_matrix/fold_Italy_s0",
+        "output_dir": "eval_outputs/garcia_rodriguez/alert_queue_italy",
+        "model_run_id": "rgcn_lomo_italy_s0",
+        "test_group": "Italy",
+        "precalibrated": True,
+        "scores_file": "scores_test.parquet",
+        "budgets": [10, 25, 50],
+        "metrics": ["eval_outputs/garcia_rodriguez/transfer_lomo_matrix/fold_Italy_s0/run.json"],
+    },
 ]
 
 # Phase-2 rigor artifacts (§7 steps 28–29, 32) per dataset: name → path.
@@ -78,8 +93,13 @@ RIGOR = {
     "mendeley_eu": {
         "multiseed_rgcn": "eval_outputs/mendeley_eu/gnn_rgcn_focal_multiseed/multiseed.json",
         "loco_matrix": "eval_outputs/mendeley_eu/transfer_loco_matrix/matrix.json",
-        "lomo_matrix_garcia": "eval_outputs/garcia_rodriguez/transfer_lomo_matrix/matrix.json",
         "sensitivity": "eval_outputs/mendeley_eu/sensitivity/sensitivity.json",
+        "label_efficiency": (
+            "eval_outputs/cross_domain/label_efficiency_fin2proc/label_efficiency.json"
+        ),
+    },
+    "garcia_rodriguez": {
+        "lomo_matrix_garcia": "eval_outputs/garcia_rodriguez/transfer_lomo_matrix/matrix.json",
         "label_efficiency": (
             "eval_outputs/cross_domain/label_efficiency_fin2proc/label_efficiency.json"
         ),
@@ -102,14 +122,16 @@ def main() -> int:
             "output_dir": spec["output_dir"],
             "model_run_id": spec["model_run_id"],
             "seed": 0,
-            "split": spec["split"],
             "resolution": 1.0,
             "min_community_size": 2,
             "top_p": 0.25,
             "budgets": spec["budgets"],
         }
-        if "train_label_policy" in spec:
-            cfg["train_label_policy"] = spec["train_label_policy"]
+        # temporal queues carry a split; entity-disjoint LOMO market queues
+        # (García) carry test_group + precalibrated fold scores instead
+        for key in ("split", "train_label_policy", "test_group", "precalibrated", "scores_file"):
+            if key in spec:
+                cfg[key] = spec[key]
         summary = build_alert_queue(cfg)
         print(f"{spec['dataset']}: {summary['n_alerts']} alerts")
 

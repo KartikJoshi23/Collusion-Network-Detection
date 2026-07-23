@@ -31,18 +31,34 @@ def build_alert_queue(config: dict[str, Any] | str | Path) -> dict[str, Any]:
     cfg = load_config(config)
     store = GraphStore(cfg.get("store_root", "data/interim"))
     dataset: str = cfg["dataset"]
-    run_dir = Path(cfg["scores_dir"])  # a train_gnn output dir
+    run_dir = Path(cfg["scores_dir"])  # a train_gnn / transfer-fold output dir
     out_dir = Path(cfg.get("output_dir", str(run_dir / "alerts")))
-    test_start: int = cfg["split"]["test_start"]
     seed: int = cfg.get("seed", 0)
 
     nodes = store.read(dataset, "nodes")
     edges = store.read(dataset, "edges")
     labels = store.read(dataset, "labels")
 
-    test_nodes = nodes.filter(pl.col(_TIME).is_not_null() & (pl.col(_TIME) >= test_start))
+    # The triage window is TEMPORAL by default (nodes at/after test_start). For
+    # entity-disjoint LOMO/LOCO datasets (García markets have no post-period
+    # test window) a ``test_group`` selects one held-out group by the id's
+    # second segment (``firm:Italy:…`` → "Italy") — the isolated market subgraph
+    # the LOMO fold already scored. Exactly one selector must be given.
+    test_group: str | None = cfg.get("test_group")
+    if test_group is not None:
+        seg = pl.col("node_id").str.split(":").list.get(1)
+        test_nodes = nodes.filter(seg == test_group)
+    else:
+        test_start: int = cfg["split"]["test_start"]
+        test_nodes = nodes.filter(pl.col(_TIME).is_not_null() & (pl.col(_TIME) >= test_start))
     kept = test_nodes["node_id"].implode()
     test_edges = edges.filter(pl.col("src").is_in(kept) & pl.col("dst").is_in(kept))
+
+    if test_group is not None and not cfg.get("precalibrated", False):
+        raise ValueError(
+            "test_group queues require precalibrated scores — a held-out "
+            "group has no temporal validation pool to fit a calibrator on"
+        )
 
     if cfg.get("precalibrated", False):
         # e.g. the calibrated-fusion ensemble: scores are already probabilities
