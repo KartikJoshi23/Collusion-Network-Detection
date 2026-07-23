@@ -168,6 +168,20 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-20 · **Architecture doc v6 — locked format with the stakeholder first (AskUser
+  question) after 5 rejections, then built to spec.** Stakeholder chose: clone the "one
+  stack, two crimes" VERTICAL numbered-box reference, SMALL boxes (few words each), and
+  (by unchecking dark-glass) a LIGHT/airy look like the reference. Delivered exactly that:
+  system flowchart = slim numbered boxes (1→10) stacked top-to-bottom, thin colored
+  borders on white, real connecting arrows with labels, the 4 model arms in a parallel
+  row, two dashed group boundaries (offline pipeline / product) + dashed trust-boundary
+  line, Copilot as its own dashed side-box wired to the API with in/out arrows; AWS
+  flowchart same clean style (serving plane + scheduled DL plane). **Light default with a
+  working dark toggle** (localStorage), flat/clean not glassy. Detailed prose moved OUT of
+  boxes into the algorithm cards + cost tables below. Verified in-browser: 0 text-fit
+  overflow across all 23 SVG nodes, 28 drawn arrows, zero horizontal overflow, contrast
+  light ≥4.6:1 / dark ≥5.7:1. (Stakeholder can flip the default to dark in one line if
+  preferred.) · [master]
 - 2026-07-20 · **Architecture doc v5 after fourth stakeholder rejection — the diagnosis was
   the visual GRAMMAR: big stacked cards are not a flowchart.** Both diagrams are now
   hand-drawn inline **SVG flowcharts** (the reference images' actual form): compact
