@@ -5,55 +5,49 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CollusionGraph — System Architecture</title>
 <style>
-/* ═══════════════ THEME TOKENS — light re-specifies everything ═══════════════ */
+/* ═════════════ THEME TOKENS — the light theme re-specifies everything ═════════════ */
 :root, [data-theme="dark"] {
   --bg: #070b16;
-  --aur1: rgba(34,211,238,.16);  /* cyan wash */
-  --aur2: rgba(167,139,250,.15); /* violet wash */
-  --aur3: rgba(232,121,249,.12); /* magenta wash */
+  --aur1: rgba(34,211,238,.15); --aur2: rgba(167,139,250,.14); --aur3: rgba(232,121,249,.11);
   --glass: rgba(255,255,255,.055);
-  --glass-strong: rgba(255,255,255,.085);
+  --glass-strong: rgba(255,255,255,.09);
   --glass-border: rgba(255,255,255,.14);
-  --glass-inner: rgba(255,255,255,.09);
-  --ink: #f2f6ff;
-  --ink-2: #c6d0e4;
-  --ink-3: #93a0ba;
-  --arrow: #a5b6d6;
+  --glass-inner: rgba(255,255,255,.10);
+  --ink: #f2f6ff; --ink-2: #c9d3e6; --ink-3: #96a3bd;
+  --arrow: #a9bad9;
   --cyan: #38dcf5; --violet: #b39dfc; --magenta: #ef8df9;
-  --green: #57e6a2; --amber: #ffd166; --rose: #ff8fa3;
-  --cyan-d: #0b6f83; --violet-d: #5b3fd6;
+  --green: #57e6a2; --amber: #ffd166; --rose: #ff8fa3; --blue: #7db4ff;
+  --grad-a: #0b6f83; --grad-b: #5b3fd6;
   --chip: rgba(255,255,255,.08);
   --table-line: rgba(255,255,255,.10);
   --code-bg: rgba(255,255,255,.07);
+  --shadow: 0 18px 44px rgba(0,0,0,.24);
 }
 [data-theme="light"] {
-  --bg: #eef2fb;
-  --aur1: rgba(56,189,248,.22);
-  --aur2: rgba(167,139,250,.20);
-  --aur3: rgba(244,114,182,.14);
-  --glass: rgba(255,255,255,.62);
-  --glass-strong: rgba(255,255,255,.80);
+  --bg: #edf1fa;
+  --aur1: rgba(56,189,248,.22); --aur2: rgba(167,139,250,.19); --aur3: rgba(244,114,182,.13);
+  --glass: rgba(255,255,255,.66);
+  --glass-strong: rgba(255,255,255,.85);
   --glass-border: rgba(30,58,138,.16);
-  --glass-inner: rgba(255,255,255,.9);
-  --ink: #101a33;
-  --ink-2: #37425e;
-  --ink-3: #5d6a88;
-  --arrow: #4c5c7e;
-  --cyan: #0e7fa0; --violet: #6d3df0; --magenta: #c026d3;
-  --green: #0e9f6e; --amber: #b45309; --rose: #dc2650;
-  --cyan-d: #0e7fa0; --violet-d: #6d3df0;
+  --glass-inner: rgba(255,255,255,.95);
+  --ink: #0f1a33; --ink-2: #36415e; --ink-3: #5c6987;
+  --arrow: #47587c;
+  --cyan: #0d7fa2; --violet: #6c3cf0; --magenta: #bc25d1;
+  --green: #0d9f6d; --amber: #b25407; --rose: #dc2550; --blue: #1d5fd6;
+  --grad-a: #0d7fa2; --grad-b: #6c3cf0;
   --chip: rgba(30,58,138,.07);
   --table-line: rgba(30,58,138,.14);
   --code-bg: rgba(30,58,138,.08);
+  --shadow: 0 14px 34px rgba(30,58,138,.10);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 body {
   background:
-    radial-gradient(900px 520px at 12% -4%, var(--aur1), transparent 60%),
-    radial-gradient(1000px 600px at 88% 12%, var(--aur2), transparent 62%),
-    radial-gradient(900px 700px at 50% 105%, var(--aur3), transparent 60%),
+    radial-gradient(900px 520px at 10% -4%, var(--aur1), transparent 60%),
+    radial-gradient(1000px 620px at 90% 10%, var(--aur2), transparent 62%),
+    radial-gradient(950px 700px at 50% 108%, var(--aur3), transparent 60%),
     var(--bg);
   background-attachment: fixed;
   color: var(--ink-2);
@@ -61,148 +55,124 @@ body {
   line-height: 1.5;
   overflow-x: hidden;
 }
-code { font-family: Consolas, Menlo, monospace; font-size: .88em; background: var(--code-bg);
+code { font-family: Consolas, Menlo, monospace; font-size: .86em; background: var(--code-bg);
   border-radius: 5px; padding: 1px 6px; color: var(--ink); }
 
-.wrap { max-width: 1150px; margin: 0 auto; padding: 0 20px 90px; }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px 90px; }
 
-/* ═══ header ═══ */
+/* header */
 header.site { position: sticky; top: 0; z-index: 50;
-  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  background: color-mix(in srgb, var(--bg) 74%, transparent);
   backdrop-filter: blur(14px) saturate(1.3);
   border-bottom: 1px solid var(--glass-border); }
-.site-inner { max-width: 1150px; margin: 0 auto; padding: 13px 20px; display: flex; align-items: center; gap: 14px; }
-.brand { color: var(--ink); font-weight: 700; font-size: 1rem; }
+.site-inner { max-width: 1080px; margin: 0 auto; padding: 12px 20px; display: flex; align-items: center; gap: 14px; }
+.brand { color: var(--ink); font-weight: 700; }
 .brand em { font-style: normal; background: linear-gradient(90deg, var(--cyan), var(--violet), var(--magenta));
   -webkit-background-clip: text; background-clip: text; color: transparent; }
 nav.toc { margin-left: auto; display: flex; gap: 2px; flex-wrap: wrap; }
-nav.toc a { color: var(--ink-3); text-decoration: none; font-size: .8rem; padding: 5px 11px; border-radius: 8px; }
+nav.toc a { color: var(--ink-3); text-decoration: none; font-size: .8rem; padding: 5px 10px; border-radius: 8px; }
 nav.toc a:hover { color: var(--ink); background: var(--chip); }
 .theme-btn { border: 1px solid var(--glass-border); background: var(--glass); backdrop-filter: blur(10px);
-  color: var(--ink); border-radius: 999px; padding: 6px 15px; font-size: .8rem; cursor: pointer;
+  color: var(--ink); border-radius: 999px; padding: 6px 14px; font-size: .8rem; cursor: pointer;
   display: flex; gap: 7px; align-items: center; transition: .2s; }
-.theme-btn:hover { border-color: var(--cyan); box-shadow: 0 0 0 4px color-mix(in srgb, var(--cyan) 18%, transparent); }
+.theme-btn:hover { border-color: var(--cyan); box-shadow: 0 0 0 4px color-mix(in srgb, var(--cyan) 16%, transparent); }
 
-/* ═══ hero ═══ */
-.hero { text-align: center; padding: 52px 0 10px; }
-.hero h1 { color: var(--ink); font-size: clamp(1.5rem, 3.4vw, 2.1rem); letter-spacing: .01em; }
+/* hero + section heads */
+.hero { text-align: center; padding: 48px 0 6px; }
+.hero h1 { color: var(--ink); font-size: clamp(1.45rem, 3.2vw, 2rem); }
 .hero h1 em { font-style: normal; background: linear-gradient(90deg, var(--cyan), var(--violet), var(--magenta));
   -webkit-background-clip: text; background-clip: text; color: transparent; }
-.hero p { color: var(--ink-3); max-width: 74ch; margin: 10px auto 0; font-size: .92rem; }
-
-/* ═══ section headers ═══ */
-section { margin-top: 64px; }
-.sec { text-align: center; margin-bottom: 24px; }
-.sec h2 { color: var(--ink); font-size: 1.3rem; }
+.hero p { color: var(--ink-3); max-width: 76ch; margin: 10px auto 0; font-size: .9rem; }
+section { margin-top: 62px; }
+.sec { text-align: center; margin-bottom: 22px; }
+.sec h2 { color: var(--ink); font-size: 1.28rem; }
 .sec h2 b { background: linear-gradient(90deg, var(--cyan), var(--violet)); -webkit-background-clip: text;
   background-clip: text; color: transparent; }
-.sec p { color: var(--ink-3); font-size: .85rem; margin-top: 5px; }
+.sec p { color: var(--ink-3); font-size: .84rem; margin-top: 4px; max-width: 90ch; margin-left: auto; margin-right: auto; }
 
-/* ═══ glass surfaces ═══ */
-.glass { background: var(--glass); backdrop-filter: blur(18px) saturate(1.35);
-  border: 1px solid var(--glass-border); border-radius: 20px;
-  box-shadow: inset 0 1px 0 var(--glass-inner), 0 18px 44px rgba(0,0,0,.22);
-  position: relative; }
-[data-theme="light"] .glass { box-shadow: inset 0 1px 0 var(--glass-inner), 0 14px 34px rgba(30,58,138,.10); }
-.frame { padding: 26px 24px 24px; }
-.frame-tag { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); white-space: nowrap;
-  font-size: .78rem; font-weight: 700; letter-spacing: .04em; color: #fff; padding: 5px 20px; border-radius: 999px;
-  background: linear-gradient(90deg, var(--cyan-d), var(--violet-d)); box-shadow: 0 6px 18px rgba(0,0,0,.25); }
+/* ═════════════ VERTICAL STAGE ARCHITECTURE ═════════════ */
+.pipe { display: flex; flex-direction: column; }
+.stage { background: var(--glass); backdrop-filter: blur(18px) saturate(1.35);
+  border: 1px solid var(--glass-border); border-radius: 18px; padding: 15px 18px 15px;
+  box-shadow: inset 0 1px 0 var(--glass-inner), var(--shadow); position: relative;
+  transition: transform .18s; }
+.stage:hover { transform: translateY(-2px); }
+.stage-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.stage-num { flex-shrink: 0; width: 30px; height: 30px; border-radius: 50%; align-self: center;
+  display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: .86rem;
+  background: linear-gradient(135deg, var(--grad-a), var(--grad-b)); box-shadow: 0 5px 14px rgba(0,0,0,.3); }
+.stage-head h3 { color: var(--ink); font-size: .98rem; }
+.stage-head .note { color: var(--ink-3); font-size: .74rem; margin-left: auto; text-align: right; }
+.stage > p.lead { font-size: .78rem; color: var(--ink-2); margin-top: 6px; max-width: 100ch; }
+.subs { display: grid; gap: 10px; margin-top: 11px; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); }
+.sub { background: var(--glass-strong); border: 1px solid var(--glass-border); border-top: 3px solid var(--cyan);
+  border-radius: 12px; padding: 10px 12px; }
+.sub h5 { color: var(--ink); font-size: .8rem; margin-bottom: 5px; }
+.sub ul { padding-left: 14px; }
+.sub li { font-size: .7rem; color: var(--ink-2); margin-bottom: 3px; }
+.sub.v { border-top-color: var(--violet); } .sub.m { border-top-color: var(--magenta); }
+.sub.g { border-top-color: var(--green); }  .sub.a { border-top-color: var(--amber); }
+.sub.b { border-top-color: var(--blue); }   .sub.r { border-top-color: var(--rose); }
 
-/* ═══ the main flow — 5 columns, arrows live in the gaps, NEVER scrolls ═══ */
-.flow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 40px 34px; }
-.fbox { background: var(--glass-strong); backdrop-filter: blur(14px);
-  border: 1px solid var(--glass-border); border-top: 3px solid; border-radius: 16px;
-  padding: 13px 13px 12px; position: relative; transition: transform .18s, box-shadow .18s; }
-.fbox:hover { transform: translateY(-4px); box-shadow: 0 16px 34px rgba(0,0,0,.28); }
-.fbox .ico { font-size: 1.5rem; margin-bottom: 6px; }
-.fbox h4 { color: var(--ink); font-size: .85rem; margin-bottom: 6px; line-height: 1.25; }
-.fbox ul { padding-left: 15px; }
-.fbox li { font-size: .71rem; color: var(--ink-2); margin-bottom: 3px; }
-.fbox.cyan { border-top-color: var(--cyan); }   .fbox.violet { border-top-color: var(--violet); }
-.fbox.magenta { border-top-color: var(--magenta); } .fbox.green { border-top-color: var(--green); }
-.fbox.amber { border-top-color: var(--amber); } .fbox.rose { border-top-color: var(--rose); }
-/* arrow into the next column */
-.fbox[data-next]::after { content: "➜"; position: absolute; right: -29px; top: 50%;
-  transform: translateY(-50%); color: var(--arrow); font-size: 1.25rem; }
-.fbox[data-next]::before { content: attr(data-next); position: absolute; right: -34px; top: calc(50% - 30px);
-  transform: translateX(50%); right: -17px; font-size: .62rem; font-weight: 700; color: var(--ink);
-  background: var(--chip); backdrop-filter: blur(8px); border: 1px solid var(--glass-border);
-  border-radius: 999px; padding: 2px 8px; white-space: nowrap; z-index: 2; }
-@media (max-width: 920px) {
-  .flow { grid-template-columns: 1fr; gap: 34px; }
-  .fbox[data-next]::after { right: auto; left: 50%; top: auto; bottom: -27px; transform: translateX(-50%) rotate(90deg); }
-  .fbox[data-next]::before { right: auto; left: 50%; top: auto; bottom: -30px; transform: translate(30px, 0); }
-}
+/* vertical arrow between stages */
+.varrow { align-self: center; display: flex; flex-direction: column; align-items: center; padding: 7px 0; }
+.varrow .lbl { font-size: .7rem; font-weight: 700; color: var(--arrow); background: var(--chip);
+  border: 1px solid var(--glass-border); backdrop-filter: blur(8px); border-radius: 999px; padding: 2px 12px; margin-bottom: 4px; }
+.varrow .head { color: var(--arrow); font-size: 1.05rem; line-height: 1; }
 
-/* return strip */
-.return { margin-top: 26px; border: 1.5px dashed var(--arrow); border-radius: 14px;
-  background: var(--chip); backdrop-filter: blur(8px);
-  padding: 9px 16px; display: flex; align-items: center; gap: 12px; font-size: .8rem; color: var(--ink-2); }
-.return .num { font-weight: 800; color: var(--ink); white-space: nowrap; }
-.return .arr { color: var(--arrow); font-size: 1.15rem; transform: scaleX(-1); }
+/* side-by-side stage (API + Copilot) */
+.duo { display: grid; grid-template-columns: 1.5fr 1fr; gap: 14px; }
+@media (max-width: 880px) { .duo { grid-template-columns: 1fr; } }
+.stage.copilot { border: 1.5px solid var(--violet);
+  background: color-mix(in srgb, var(--violet) 8%, transparent); backdrop-filter: blur(18px); }
+.stage.copilot .stage-num { background: linear-gradient(135deg, var(--violet), var(--magenta)); }
 
-/* copilot spotlight row */
-.copilot-row { margin-top: 26px; border: 1.5px solid var(--violet);
-  background: color-mix(in srgb, var(--violet) 9%, transparent);
-  border-radius: 16px; padding: 16px 18px; }
-.copilot-row h3 { color: var(--ink); font-size: .95rem; margin-bottom: 3px; }
-.copilot-row h3 span { color: var(--violet); }
-.copilot-row > p { font-size: .8rem; color: var(--ink-2); margin-bottom: 12px; }
-.copilot-flow { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 34px; }
-@media (max-width: 920px) { .copilot-flow { grid-template-columns: 1fr; } }
+/* trust boundary */
+.boundary { border: 1.5px dashed var(--rose); background: color-mix(in srgb, var(--rose) 7%, transparent);
+  border-radius: 14px; padding: 9px 16px; margin: 12px 0; text-align: center; font-size: .78rem; color: var(--ink-2); }
+.boundary b { color: var(--rose); letter-spacing: .03em; }
 
-/* ═══ support rows ═══ */
-.panels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 18px; }
-@media (max-width: 920px) { .panels { grid-template-columns: 1fr; } }
-.panel { padding: 15px 17px; border-radius: 16px; }
-.panel h4 { font-size: .87rem; color: var(--ink); margin-bottom: 8px; display: flex; gap: 8px; align-items: center; }
-.panel ul { padding-left: 16px; }
-.panel li { font-size: .76rem; color: var(--ink-2); margin-bottom: 4px; }
-.panel .edge { width: 26px; height: 3px; border-radius: 2px; }
+/* cloud boundary boxes */
+.cloud { border: 2px solid var(--blue); border-radius: 20px; padding: 20px 16px 16px; position: relative; margin-top: 26px;
+  background: color-mix(in srgb, var(--blue) 5%, transparent); backdrop-filter: blur(10px); }
+.cloud.batch { border-color: var(--green); background: color-mix(in srgb, var(--green) 5%, transparent); }
+.cloud-tag { position: absolute; top: -13px; left: 24px; font-size: .74rem; font-weight: 800; letter-spacing: .05em;
+  color: #fff; padding: 4px 16px; border-radius: 999px; background: linear-gradient(90deg, var(--grad-a), var(--grad-b)); }
+.cloud .pipe { gap: 0; }
 
-/* ═══ vertical data-flow steps ═══ */
-.steps { max-width: 860px; margin: 0 auto; }
-.step { display: grid; grid-template-columns: 46px 1fr; gap: 16px; }
-.step .rail { display: flex; flex-direction: column; align-items: center; }
-.step .n { width: 36px; height: 36px; border-radius: 50%; color: #fff; font-weight: 800;
-  display: flex; align-items: center; justify-content: center; font-size: .9rem;
-  background: linear-gradient(135deg, var(--cyan-d), var(--violet-d)); box-shadow: 0 6px 16px rgba(0,0,0,.25); }
-.step .stem { width: 2px; flex: 1; min-height: 22px; background: var(--arrow); opacity: .5; margin: 4px 0; }
-.step:last-child .stem { display: none; }
-.step .card { margin-bottom: 20px; padding: 13px 17px; border-radius: 14px; }
-.step h4 { color: var(--ink); font-size: .9rem; margin-bottom: 3px; }
-.step p { font-size: .8rem; color: var(--ink-2); }
-.honesty { max-width: 860px; margin: 6px auto 0; border: 1.5px dashed var(--rose); border-radius: 14px;
-  background: color-mix(in srgb, var(--rose) 8%, transparent); padding: 11px 17px; font-size: .8rem; color: var(--ink-2); }
-.honesty b { color: var(--rose); }
-
-/* ═══ algorithms ═══ */
-.alg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+/* algorithms */
+.alg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 @media (max-width: 860px) { .alg-grid { grid-template-columns: 1fr; } }
-.alg { padding: 14px 17px; border-radius: 16px; border-left: 3px solid var(--cyan); transition: transform .18s; }
+.alg { background: var(--glass); backdrop-filter: blur(16px); border: 1px solid var(--glass-border);
+  border-left: 3px solid var(--cyan); border-radius: 15px; padding: 13px 16px; transition: transform .18s; }
 .alg:hover { transform: translateY(-3px); }
 .alg.v { border-left-color: var(--violet); } .alg.m { border-left-color: var(--magenta); }
 .alg.g { border-left-color: var(--green); }  .alg.a { border-left-color: var(--amber); }
-.alg h5 { color: var(--ink); font-size: .88rem; margin-bottom: 6px; }
-.alg h5 .where { display: block; font-weight: 400; font-size: .68rem; color: var(--ink-3); margin-top: 2px; }
-.alg p { font-size: .78rem; margin-bottom: 5px; }
+.alg h5 { color: var(--ink); font-size: .86rem; margin-bottom: 5px; }
+.alg h5 .where { display: block; font-weight: 400; font-size: .67rem; color: var(--ink-3); margin-top: 2px; }
+.alg p { font-size: .77rem; margin-bottom: 5px; }
 .alg p b { color: var(--ink); font-weight: 650; }
 
-/* ═══ cost tables ═══ */
-.tier { margin-bottom: 18px; padding: 18px 20px 14px; border-radius: 18px; }
-.tier h3 { font-size: .92rem; color: var(--ink); margin-bottom: 10px; }
-.tier h3 span { font-size: .7rem; font-weight: 700; letter-spacing: .04em; color: #fff; border-radius: 999px;
-  padding: 3px 12px; margin-left: 10px; background: linear-gradient(90deg, var(--cyan-d), var(--violet-d)); }
-table { width: 100%; border-collapse: collapse; font-size: .8rem; }
-th { text-align: left; color: var(--ink-3); font-size: .68rem; text-transform: uppercase; letter-spacing: .06em;
-  padding: 7px 9px; border-bottom: 1.5px solid var(--table-line); }
-td { padding: 7px 9px; border-bottom: 1px solid var(--table-line); color: var(--ink-2); }
+/* cost tables */
+.tier { background: var(--glass); backdrop-filter: blur(16px); border: 1px solid var(--glass-border);
+  margin-bottom: 16px; padding: 16px 18px 12px; border-radius: 17px; box-shadow: inset 0 1px 0 var(--glass-inner); }
+.tier h3 { font-size: .9rem; color: var(--ink); margin-bottom: 9px; }
+.tier h3 span { font-size: .68rem; font-weight: 700; letter-spacing: .04em; color: #fff; border-radius: 999px;
+  padding: 3px 11px; margin-left: 9px; background: linear-gradient(90deg, var(--grad-a), var(--grad-b)); white-space: nowrap; }
+table { width: 100%; border-collapse: collapse; font-size: .79rem; }
+th { text-align: left; color: var(--ink-3); font-size: .67rem; text-transform: uppercase; letter-spacing: .06em;
+  padding: 7px 8px; border-bottom: 1.5px solid var(--table-line); }
+td { padding: 7px 8px; border-bottom: 1px solid var(--table-line); color: var(--ink-2); }
 td.r, th.r { text-align: right; font-family: Consolas, monospace; white-space: nowrap; }
 tr.sum td { color: var(--ink); font-weight: 700; background: var(--chip); }
-.finenote { color: var(--ink-3); font-size: .76rem; max-width: 100ch; margin: 6px auto 0; text-align: center; }
+@media (max-width: 540px) {
+  table { font-size: .7rem; }
+  td, th { padding: 5px 4px; }
+  td.r, th.r { white-space: normal; } /* price ranges may wrap — the page never scrolls sideways */
+}
+.finenote { color: var(--ink-3); font-size: .76rem; max-width: 100ch; margin: 8px auto 0; text-align: center; }
 
-footer { margin-top: 70px; border-top: 1px solid var(--glass-border); padding-top: 16px;
+footer { margin-top: 68px; border-top: 1px solid var(--glass-border); padding-top: 16px;
   display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; color: var(--ink-3); font-size: .76rem; }
 footer .cav { color: var(--amber); font-weight: 600; }
 </style>
@@ -213,7 +183,7 @@ footer .cav { color: var(--amber); font-weight: 600; }
   <div class="site-inner">
     <div class="brand">Collusion<em>Graph</em></div>
     <nav class="toc">
-      <a href="#system">Architecture</a><a href="#flow">Data Flow</a><a href="#alg">Algorithms</a><a href="#aws">Cloud &amp; Costs</a>
+      <a href="#system">Architecture</a><a href="#alg">Algorithms</a><a href="#aws">AWS</a><a href="#costs">Costs</a>
     </nav>
     <button class="theme-btn" id="themeToggle"><span id="themeIcon">☀</span><span id="themeLabel">Light</span></button>
   </div>
@@ -222,179 +192,163 @@ footer .cav { color: var(--amber); font-weight: 600; }
 <div class="wrap">
 
 <div class="hero">
-  <h1>Collusion<em>Graph</em> — Deep Learning for Financial Crime Screening</h1>
-  <p>One system that finds <b>money-laundering rings</b> and <b>bid-rigging cartels</b> by learning from the
-     <i>connections</i> between accounts and companies — and explains every alert it raises.
-     A human always makes the final call.</p>
+  <h1>Collusion<em>Graph</em> — one stack, two crimes: how it runs</h1>
+  <p>A completed deep-learning system that screens <b>money-laundering networks</b> and <b>bid-rigging cartels</b>
+     with one graph pipeline — and explains every alert it raises. Built, measured and shipped:
+     404 automated tests, honest numbers, a human always making the final call.</p>
 </div>
 
-<!-- ═════════════ 1. SYSTEM ARCHITECTURE — one diagram ═════════════ -->
+<!-- ═════════════ SYSTEM ARCHITECTURE — vertical staged pipeline ═════════════ -->
 <section id="system">
   <div class="sec">
     <h2>System <b>Architecture</b></h2>
-    <p>Everything runs on one machine with <code>docker compose up</code> — the same containers also deploy to the cloud.</p>
+    <p>Top to bottom: data enters at stage 1 and a decision leaves at stage 10.
+       Stages 1–7 run offline as the deep-learning batch pipeline; stages 8–10 are the always-on product.
+       The whole thing runs on one machine with <code>docker compose up</code>.</p>
   </div>
 
-  <div class="glass frame">
-    <span class="frame-tag">HOW THE SYSTEM WORKS — ONE FLOW</span>
+  <div class="pipe">
 
-    <div class="flow">
-      <div class="fbox cyan" data-next="1. opens dashboard">
-        <div class="ico">🧑‍💼</div>
-        <h4>Investigator<br>(the user)</h4>
-        <ul>
-          <li>Opens the web dashboard</li>
-          <li>Reviews a short list of alerts</li>
-          <li>Makes the final decision</li>
-        </ul>
-      </div>
-      <div class="fbox violet" data-next="2. asks for data">
-        <div class="ico">🖥️</div>
-        <h4>Web Dashboard<br>(React)</h4>
-        <ul>
-          <li>Ranked alert list with risk scores</li>
-          <li>Interactive network viewer</li>
-          <li>Evidence page for every alert</li>
-          <li>Built-in AI Copilot chat</li>
-        </ul>
-      </div>
-      <div class="fbox magenta" data-next="3. reads results">
-        <div class="ico">🔌</div>
-        <h4>Backend API<br>(FastAPI)</h4>
-        <ul>
-          <li>Read-only — can never change data</li>
-          <li>Sends alerts, graphs &amp; evidence</li>
-          <li>Adds the safety note to every reply</li>
-        </ul>
-      </div>
-      <div class="fbox amber" data-next="4. produced by">
-        <div class="ico">🗄️</div>
-        <h4>Results Store<br>(files on disk)</h4>
-        <ul>
-          <li>Ranked alerts</li>
-          <li>Evidence for each alert</li>
-          <li>Accuracy reports</li>
-        </ul>
-      </div>
-      <div class="fbox green">
-        <div class="ico">🧠</div>
-        <h4>Deep Learning Pipeline<br>(runs in the background)</h4>
-        <ul>
-          <li>Learns from 6 public datasets</li>
-          <li>Graph Neural Networks score risk</li>
-          <li>Groups suspects into alerts</li>
-          <li>Attaches evidence to each alert</li>
-        </ul>
+    <div class="stage">
+      <div class="stage-head"><span class="stage-num">1</span><h3>Data sources — six public datasets, two crime domains</h3>
+        <span class="note">downloaded + checksum-verified · licenses recorded · never committed to git</span></div>
+      <div class="subs">
+        <div class="sub g"><h5>Elliptic++ (financial)</h5><ul><li>203,769 Bitcoin transactions · 234,355 edges</li><li>real AML labels, 49 time steps</li><li>+ wallet-level actor graph (822,942 wallets)</li></ul></div>
+        <div class="sub g"><h5>IBM AMLworld (financial)</h5><ul><li>5.08M synthetic transactions, 515k accounts</li><li>8 known laundering patterns with ground truth</li></ul></div>
+        <div class="sub v"><h5>Mendeley EU + García (procurement)</h5><ul><li>73 verified cartel cases across 7 countries</li><li>64,348 bids · 6 markets · bid-screen tradition</li></ul></div>
+        <div class="sub v"><h5>OCDS Georgia (procurement)</h5><ul><li>open-contracting feed, 16 years (~230 MB)</li><li>unlabeled — used for at-scale pattern-injection tests</li></ul></div>
       </div>
     </div>
 
-    <div class="return"><span class="arr">➜</span><span class="num">5. Results go back</span>
-      Ranked alerts with their evidence appear on the dashboard — the investigator reviews them and decides what to escalate.</div>
+    <div class="varrow"><span class="lbl">six thin ingestion adapters — faithful, no silent “cleaning”</span><span class="head">▼</span></div>
 
-    <div class="copilot-row">
-      <h3>💬 Built-in <span>AI Copilot</span> — ask questions in plain English</h3>
-      <p>“Why is this alert ranked first?” · “Which red flags match this pattern?” — the Copilot answers by looking up real data, never by guessing.</p>
-      <div class="copilot-flow">
-        <div class="fbox violet" data-next="a. question">
-          <div class="ico">⌨️</div><h4>Chat panel in the dashboard</h4>
-          <ul><li>Type a question, or click “Ask Copilot” on any alert</li></ul>
+    <div class="stage">
+      <div class="stage-head"><span class="stage-num">2</span><h3>Unified graph schema — one format for both domains</h3>
+        <span class="note">Parquet + DuckDB · validated on write</span></div>
+      <p class="lead">Every dataset becomes the same picture: typed <b>nodes</b> (accounts, wallets, firms, tenders) connected by typed
+      <b>edges</b> (payments, awards, bids), with <b>labels</b> (illicit / licit / unknown) and time stamps. One schema is why one
+      model family serves both crime domains — the project's core idea.</p>
+      <div class="subs">
+        <div class="sub b"><h5>Time-safe by construction</h5><ul><li>models train on the past, are tested on the future</li><li>features only use information available at the cutoff</li><li>a dedicated leakage test-suite enforces this in CI</li></ul></div>
+        <div class="sub b"><h5>Honest labels</h5><ul><li>“unknown” nodes carry structure but never train the model</li><li>training labels are rolled back to what was knowable at the time</li></ul></div>
+      </div>
+    </div>
+
+    <div class="varrow"><span class="lbl">train &amp; score — four arms in parallel</span><span class="head">▼</span></div>
+
+    <div class="stage">
+      <div class="stage-head"><span class="stage-num">3</span><h3>Deep learning &amp; comparison arms</h3>
+        <span class="note">PyTorch Geometric · every headline run repeated over ≥5 random seeds</span></div>
+      <div class="subs">
+        <div class="sub v"><h5>Supervised GNNs (the core)</h5><ul><li><b>GATv2</b> — attention over neighbours (main financial model)</li><li><b>GraphSAGE</b> — direction-aware (money in ≠ money out)</li><li><b>R-GCN</b> — one rule per relation type (procurement)</li><li>focal loss handles the ~2%-positive imbalance</li></ul></div>
+        <div class="sub m"><h5>Unsupervised arm</h5><ul><li><b>DOMINANT &amp; GAE</b> graph autoencoders — no labels needed</li><li>transparent structural “floor” score</li><li>honest result: weaker than supervised here, reported as such</li></ul></div>
+        <div class="sub g"><h5>Graph feature channels</h5><ul><li>degrees, motifs, clustering, k-core, burstiness</li><li>financial ratios · procurement bid screens</li><li>all computed time-safely</li></ul></div>
+        <div class="sub a"><h5>Baselines &amp; validation</h5><ul><li><b>XGBoost</b> (+graph features) — the honesty yardstick; it still wins on Elliptic++ and we say so</li><li>synthetic motif injection with known ground truth</li><li>404 automated tests keep everything green</li></ul></div>
+      </div>
+    </div>
+
+    <div class="varrow"><span class="lbl">merge model opinions fairly</span><span class="head">▼</span></div>
+
+    <div class="stage">
+      <div class="stage-head"><span class="stage-num">4</span><h3>Calibrated ensemble — one comparable risk score per node</h3></div>
+      <p class="lead">Each model's scores are first converted into honest probabilities on held-out data, then combined by weighted
+      average — so a weak model can never drown out a strong one. (Skipping calibration collapses the ensemble; we keep that
+      measured failure in the results as a warning.)</p>
+    </div>
+
+    <div class="varrow"><span class="lbl">collusion is a team crime — group the suspects</span><span class="head">▼</span></div>
+
+    <div class="stage">
+      <div class="stage-head"><span class="stage-num">5</span><h3>Community grouping → ranked alert queue</h3>
+        <span class="note">254 financial + 223 procurement alerts · plus a wallet-level queue</span></div>
+      <p class="lead">The <b>Leiden</b> algorithm finds tightly-knit clusters; each cluster's member scores roll up into one alert.
+      Overlapping alerts are removed top-down, oversized clusters are capped, and the queue is cut to a fixed
+      <b>review budget</b> — quality is measured exactly there (precision in the top-k an analyst can actually read).</p>
+    </div>
+
+    <div class="varrow"><span class="lbl">attach evidence to every top alert</span><span class="head">▼</span></div>
+
+    <div class="stage">
+      <div class="stage-head"><span class="stage-num">6</span><h3>Explanation layer — every alert carries its “why”</h3></div>
+      <div class="subs">
+        <div class="sub a"><h5>PGExplainer (learned)</h5><ul><li>highlights the few connections that triggered the alert</li><li>each explanation is double-checked: remove those links → the alert collapses</li></ul></div>
+        <div class="sub a"><h5>Pattern matcher (rule-based, AI-free)</h5><ul><li>searches for 9 known collusion shapes — fan-in, round-trips, bid rotation, cover bids…</li><li>validated at 100% recall on planted patterns</li></ul></div>
+        <div class="sub a"><h5>Official red flags</h5><ul><li>every matched shape cites its <b>FATF / OECD</b> indicator</li><li>fixed caveat on every bundle: screening, never guilt</li></ul></div>
+      </div>
+    </div>
+
+    <div class="varrow"><span class="lbl">publish results as plain files, then exit</span><span class="head">▼</span></div>
+
+    <div class="stage">
+      <div class="stage-head"><span class="stage-num">7</span><h3>Artifact store — the only bridge between pipeline and product</h3>
+        <span class="note">versioned per run · rollback = point at yesterday's folder</span></div>
+      <div class="subs">
+        <div class="sub a"><h5><code>alerts.parquet</code></h5><ul><li>the ranked queues (transaction-level + wallet-level)</li></ul></div>
+        <div class="sub a"><h5><code>explanations/*.json</code></h5><ul><li>one evidence dossier per alert</li></ul></div>
+        <div class="sub a"><h5><code>metrics + rigor</code></h5><ul><li>accuracy reports, multi-seed spreads, significance tests, robustness curves</li></ul></div>
+        <div class="sub a"><h5><code>serving.json</code></h5><ul><li>the index — anything missing is honestly omitted, never faked</li></ul></div>
+      </div>
+    </div>
+
+    <div class="boundary"><b>TRUST BOUNDARY</b> — everything above writes files and exits; everything below is read-only, has no
+    deep-learning code loaded, and can never change a score, retrain, or see raw features. Enforced by tests and by IAM in the cloud.</div>
+
+    <div class="duo">
+      <div class="stage">
+        <div class="stage-head"><span class="stage-num">8</span><h3>FastAPI REST layer — read-only</h3>
+          <span class="note">tiny CPU container · no GPU ever</span></div>
+        <p class="lead">Serves the precomputed artifacts to the console:</p>
+        <div class="subs" style="grid-template-columns: 1fr;">
+          <div class="sub b"><ul>
+            <li><code>/domains</code> · <code>/datasets</code> — what's available</li>
+            <li><code>/datasets/{id}/alerts?budget=k</code> — the ranked queue</li>
+            <li><code>/…/alerts/{id}</code> · <code>/…/subgraph/{id}</code> — one alert + its network neighbourhood (windowed server-side; raw features never leave)</li>
+            <li><code>/…/explanations/{id}</code> — the evidence dossier</li>
+            <li><code>/…/metrics</code> · <code>/…/rigor</code> — accuracy + uncertainty</li>
+            <li>every response carries the screening caveat</li>
+          </ul></div>
         </div>
-        <div class="fbox violet" data-next="b. looks up real data">
-          <div class="ico">🤖</div><h4>AI with safety guards</h4>
-          <ul><li>Can only <b>read</b> the results store</li><li>Every number must come from real data</li><li>Accusing language is auto-rewritten</li></ul>
-        </div>
-        <div class="fbox violet">
-          <div class="ico">📎</div><h4>Answer + its evidence</h4>
-          <ul><li>Shows exactly what it looked up</li><li>Ends with the safety note: <i>screening only, never guilt</i></li></ul>
+      </div>
+      <div class="stage copilot">
+        <div class="stage-head"><span class="stage-num">💬</span><h3>GenAI Investigator Copilot</h3>
+          <span class="note">NVIDIA NIM LLM · mounted at <code>/api/v1/copilot</code></span></div>
+        <p class="lead">Plain-English questions over the same artifacts — with hard guardrails:</p>
+        <div class="subs" style="grid-template-columns: 1fr;">
+          <div class="sub r"><ul>
+            <li>read-only SQL over the queue + alert/evidence/metrics tools + FATF/OECD reference corpus</li>
+            <li>every number must appear in the looked-up evidence — or the answer is blocked</li>
+            <li>accusing language is auto-rewritten; the caveat is always appended</li>
+            <li>live answer streaming with the full evidence trail shown</li>
+            <li>release-gated by a 24-question exam — currently 24/24</li>
+          </ul></div>
         </div>
       </div>
     </div>
-  </div>
 
-  <div class="panels">
-    <div class="glass panel">
-      <h4><span class="edge" style="background:var(--green)"></span>📦 What's stored on disk</h4>
-      <ul>
-        <li><code>data/raw</code> — the 6 downloaded datasets</li>
-        <li><code>data/interim</code> — all datasets in one shared graph format</li>
-        <li><code>eval_outputs</code> — alerts, evidence &amp; accuracy reports</li>
-      </ul>
+    <div class="varrow"><span class="lbl">one dashboard for everything</span><span class="head">▼</span></div>
+
+    <div class="stage">
+      <div class="stage-head"><span class="stage-num">9</span><h3>Investigator console — React + WebGL</h3>
+        <span class="note">domain toggle: financial ⇄ procurement · works offline</span></div>
+      <div class="subs">
+        <div class="sub b"><h5>Overview + Alert Queue</h5><ul><li>command deck, ranked alerts, budget slider with <b>measured</b> precision readout, red-flag badges</li></ul></div>
+        <div class="sub b"><h5>Graph Explorer + Case Dossier</h5><ul><li>interactive network view (WebGL), evidence panels, temporal playback, JSON export for case files</li></ul></div>
+        <div class="sub b"><h5>Model Lab + Copilot dock</h5><ul><li>real accuracy charts with uncertainty (exportable as paper figures), chat dock on every view</li></ul></div>
+      </div>
     </div>
-    <div class="glass panel">
-      <h4><span class="edge" style="background:var(--cyan)"></span>🧰 Tech stack</h4>
-      <ul>
-        <li>Python · <b>PyTorch Geometric</b> (deep learning)</li>
-        <li>FastAPI · DuckDB (backend)</li>
-        <li>React · Sigma.js (dashboard)</li>
-        <li>Docker · NVIDIA NIM (AI Copilot)</li>
-      </ul>
+
+    <div class="varrow"><span class="lbl">ranked alerts + evidence + answers</span><span class="head">▼</span></div>
+
+    <div class="stage">
+      <div class="stage-head"><span class="stage-num">10</span><h3>Investigators decide — the system only screens</h3></div>
+      <p class="lead">Analysts share one queue, work a fixed budget, open the evidence, question the Copilot — and make the
+      escalation call themselves. Every screen repeats it: <b>screening signal only, never a determination of guilt.</b></p>
     </div>
-    <div class="glass panel">
-      <h4><span class="edge" style="background:var(--amber)"></span>✅ Key points</h4>
-      <ul>
-        <li>One-command demo, works offline</li>
-        <li>404 automated tests keep it honest</li>
-        <li>No GPU needed to run the product</li>
-        <li>Every screen says: screening, not guilt</li>
-      </ul>
-    </div>
+
   </div>
 </section>
 
-<!-- ═════════════ 2. DATA FLOW ═════════════ -->
-<section id="flow">
-  <div class="sec">
-    <h2>How Data <b>Flows</b></h2>
-    <p>From public datasets to a decision — eight simple steps.</p>
-  </div>
-
-  <div class="steps">
-    <div class="step">
-      <div class="rail"><div class="n">1</div><div class="stem"></div></div>
-      <div class="glass card"><h4>Download the datasets</h4>
-        <p>Six public datasets — Bitcoin transactions, a simulated banking world, and European procurement records — are downloaded and checksum-verified. Raw data stays on disk, never in the code repository.</p></div>
-    </div>
-    <div class="step">
-      <div class="rail"><div class="n">2</div><div class="stem"></div></div>
-      <div class="glass card"><h4>Turn everything into one graph</h4>
-        <p>Each dataset becomes the same simple picture: dots (accounts, companies) connected by lines (payments, contracts). One format means one model family works for both crime domains.</p></div>
-    </div>
-    <div class="step">
-      <div class="rail"><div class="n">3</div><div class="stem"></div></div>
-      <div class="glass card"><h4>Split by time — no cheating</h4>
-        <p>The models train only on the past and are tested only on the future, exactly like real life. Automated tests make it impossible for tomorrow's information to leak into today's training.</p></div>
-    </div>
-    <div class="step">
-      <div class="rail"><div class="n">4</div><div class="stem"></div></div>
-      <div class="glass card"><h4>Deep learning scores every node</h4>
-        <p>Graph Neural Networks read each account's connections and give it a risk score. Classic methods (decision-tree models) run alongside as a fairness check — and we report honestly when they win.</p></div>
-    </div>
-    <div class="step">
-      <div class="rail"><div class="n">5</div><div class="stem"></div></div>
-      <div class="glass card"><h4>Group suspects into alerts</h4>
-        <p>Collusion is a team crime, so suspicious nodes that are tightly connected get grouped into one alert. Alerts are ranked, near-duplicates removed, and only a short reviewable list remains.</p></div>
-    </div>
-    <div class="step">
-      <div class="rail"><div class="n">6</div><div class="stem"></div></div>
-      <div class="glass card"><h4>Attach evidence to every alert</h4>
-        <p>For each top alert the system highlights the few connections that triggered it, names the known pattern it matches (e.g. “fan-in”, “bid rotation”), and cites the official FATF / OECD red flag it corresponds to.</p></div>
-    </div>
-    <div class="step">
-      <div class="rail"><div class="n">7</div><div class="stem"></div></div>
-      <div class="glass card"><h4>Publish results as simple files</h4>
-        <p>The pipeline writes its results — alerts, evidence, accuracy reports — as plain files and exits. The dashboard and API only ever <i>read</i> these files; they can never change a score.</p></div>
-    </div>
-    <div class="step">
-      <div class="rail"><div class="n">8</div><div class="stem"></div></div>
-      <div class="glass card"><h4>A human decides</h4>
-        <p>The investigator reviews the ranked list, opens the evidence, asks the Copilot questions — and makes the escalation decision. The system only screens; it never judges.</p></div>
-    </div>
-  </div>
-
-  <div class="honesty"><b>The one rule everything obeys:</b> the deep-learning side writes files, the product side reads files — nothing else crosses between them. That's why serving is safe, cheap, and can never “retrain itself”.</div>
-</section>
-
-<!-- ═════════════ 3. ALGORITHMS ═════════════ -->
+<!-- ═════════════ ALGORITHMS ═════════════ -->
 <section id="alg">
   <div class="sec">
     <h2>The Algorithms, <b>Explained Simply</b></h2>
@@ -402,120 +356,138 @@ footer .cav { color: var(--amber); font-weight: 600; }
   </div>
 
   <div class="alg-grid">
-    <div class="glass alg v">
-      <h5>Graph Neural Networks — the heart of the system
-        <span class="where">used everywhere risk is scored</span></h5>
-      <p><b>What it does:</b> gives every account or company a risk score by looking at <i>who it deals with</i>, not just what it looks like.</p>
-      <p><b>How it works:</b> each node starts with a simple profile of numbers. In a few rounds, every node mixes its neighbours' profiles into its own — so after two rounds, a node “knows” about its whole neighbourhood. A node sitting inside a laundering ring ends up looking measurably different from a normal one.</p>
+    <div class="alg v">
+      <h5>Graph Neural Networks — the heart of the system<span class="where">stage 3 · used everywhere risk is scored</span></h5>
+      <p><b>What it does:</b> scores every account or company by looking at <i>who it deals with</i>, not just what it looks like.</p>
+      <p><b>How it works:</b> each node starts with a profile of numbers; in a few rounds every node blends its neighbours' profiles
+      into its own, so a node inside a laundering ring ends up looking measurably different from a normal one.</p>
     </div>
-    <div class="glass alg v">
-      <h5>GATv2 — attention: not all neighbours matter equally
-        <span class="where">the main model on the Bitcoin graph</span></h5>
-      <p><b>What it does:</b> learns which of a node's connections are the important ones and listens to those the most.</p>
-      <p><b>How it works:</b> for every connection it computes an importance weight, then blends neighbours accordingly. Those weights double as a first clue for explanations — they show which links the model cared about.</p>
+    <div class="alg v">
+      <h5>GATv2 — attention<span class="where">stage 3 · main model on the Bitcoin graph</span></h5>
+      <p><b>What it does:</b> learns which of a node's connections matter most and listens to those the hardest.</p>
+      <p><b>How it works:</b> computes an importance weight for every connection before blending — and those weights double as a
+      first clue when explaining an alert.</p>
     </div>
-    <div class="glass alg v">
-      <h5>GraphSAGE &amp; R-GCN — the direction and type of a link matter
-        <span class="where">GraphSAGE on financial data · R-GCN on procurement data</span></h5>
-      <p><b>What it does:</b> treats “money coming in” differently from “money going out” (GraphSAGE), and “won a tender” differently from “bought from” (R-GCN).</p>
-      <p><b>How it works:</b> each direction — and each type of relationship — gets its own learned mixing rule instead of throwing everything into one pot.</p>
+    <div class="alg v">
+      <h5>GraphSAGE &amp; R-GCN — direction and relation types<span class="where">stage 3 · financial / procurement</span></h5>
+      <p><b>What it does:</b> treats “money in” differently from “money out”, and “won a tender” differently from “bought from”.</p>
+      <p><b>How it works:</b> each direction and each relationship type gets its own learned mixing rule instead of one shared pot.</p>
     </div>
-    <div class="glass alg v">
-      <h5>Focal loss — learning when 98% of examples are innocent
-        <span class="where">training every deep model</span></h5>
-      <p><b>What it does:</b> stops the model from taking the lazy shortcut of calling everything “innocent” (which would be 98% correct and 100% useless).</p>
-      <p><b>How it works:</b> during training, easy examples the model already gets right earn almost no credit, so all the learning effort concentrates on the rare, hard, suspicious cases.</p>
+    <div class="alg v">
+      <h5>Focal loss — learning from 2% positives<span class="where">stage 3 · trains every deep model</span></h5>
+      <p><b>What it does:</b> stops the model from lazily calling everything “innocent” (98% correct, 100% useless).</p>
+      <p><b>How it works:</b> easy, already-correct examples earn almost no credit during training, so effort concentrates on the
+      rare suspicious cases.</p>
     </div>
-    <div class="glass alg m">
-      <h5>Autoencoders (DOMINANT &amp; GAE) — finding odd nodes without any labels
-        <span class="where">the unsupervised safety net</span></h5>
-      <p><b>What it does:</b> flags unusual nodes even where no one has ever labelled a crime.</p>
-      <p><b>How it works:</b> a network learns to compress and then rebuild the graph. Whatever it rebuilds badly is unusual — an anomaly candidate. (Honest result: on our data these score below the supervised models, and we say so.)</p>
+    <div class="alg m">
+      <h5>Autoencoders (DOMINANT &amp; GAE) — anomalies without labels<span class="where">stage 3 · the unsupervised arm</span></h5>
+      <p><b>What it does:</b> flags unusual nodes even where nobody ever labelled a crime.</p>
+      <p><b>How it works:</b> a network learns to compress and rebuild the graph; whatever rebuilds badly is unusual. (Honest
+      finding: weaker than the supervised models on our data — reported, not hidden.)</p>
     </div>
-    <div class="glass alg m">
-      <h5>Calibration + ensemble — combining models fairly
-        <span class="where">turns many model outputs into one risk score</span></h5>
-      <p><b>What it does:</b> merges several models' opinions without letting a loud weak model drown out a quiet strong one.</p>
-      <p><b>How it works:</b> each model's scores are first converted into honest probabilities (checked against held-out data), and only then averaged. We also show what happens if you skip this step — the ensemble collapses.</p>
+    <div class="alg m">
+      <h5>Calibration + ensemble — merging models fairly<span class="where">stage 4</span></h5>
+      <p><b>What it does:</b> combines several models without letting a loud weak one drown out a quiet strong one.</p>
+      <p><b>How it works:</b> each model's scores become honest probabilities first (checked on held-out data), then they're
+      averaged. Skip that first step and the ensemble collapses — we measured it.</p>
     </div>
-    <div class="glass alg g">
-      <h5>Leiden grouping + de-duplication — from scores to a short queue
-        <span class="where">builds the alert list the investigator sees</span></h5>
-      <p><b>What it does:</b> turns two hundred thousand scores into a few hundred group-shaped alerts, because collusion is done by groups.</p>
-      <p><b>How it works:</b> a community-finding algorithm spots tightly-knit clusters; each cluster's scores roll up into one alert; overlapping alerts are removed top-down so the queue never wastes the investigator's time twice.</p>
+    <div class="alg g">
+      <h5>Leiden grouping + de-duplication — the short queue<span class="where">stage 5</span></h5>
+      <p><b>What it does:</b> turns hundreds of thousands of node scores into a few hundred group-shaped alerts.</p>
+      <p><b>How it works:</b> a community-finding algorithm spots tightly-knit clusters; clusters become alerts; overlapping
+      alerts are removed from the top down so no analyst reads the same case twice.</p>
     </div>
-    <div class="glass alg g">
-      <h5>XGBoost baselines — the honesty yardstick
-        <span class="where">every headline comparison</span></h5>
-      <p><b>What it does:</b> before claiming deep learning helps, we field the strongest classic method (boosted decision trees) on the same data.</p>
-      <p><b>How it works:</b> hundreds of small decision trees, each correcting the last. On the Bitcoin data the trees still win — we report that openly, with a statistical significance test, instead of hiding it.</p>
+    <div class="alg g">
+      <h5>XGBoost baselines — the honesty yardstick<span class="where">stage 3 · every headline comparison</span></h5>
+      <p><b>What it does:</b> fields the strongest classic method (boosted decision trees) before any deep-learning claim is made.</p>
+      <p><b>How it works:</b> hundreds of small decision trees, each correcting the last. On the Bitcoin data the trees still win —
+      we report that openly, with a statistical significance test.</p>
     </div>
-    <div class="glass alg a">
-      <h5>PGExplainer — “show me why”
-        <span class="where">evidence for every top alert</span></h5>
+    <div class="alg a">
+      <h5>PGExplainer — “show me why”<span class="where">stage 6 · evidence for every top alert</span></h5>
       <p><b>What it does:</b> answers “which few connections made the model raise this alert?”</p>
-      <p><b>How it works:</b> a small helper network learns to keep only the connections that the prediction truly depends on. We then double-check every explanation: remove those links and the alert should collapse; keep only them and it should stand.</p>
+      <p><b>How it works:</b> a small helper network keeps only the links the prediction truly depends on — then every explanation
+      is verified: remove those links and the alert should collapse; keep only them and it should stand.</p>
     </div>
-    <div class="glass alg a">
-      <h5>Pattern matcher + official red flags — evidence a regulator recognises
-        <span class="where">runs on every alert, independent of the AI</span></h5>
-      <p><b>What it does:</b> checks each alert against nine known collusion shapes — like many small deposits converging on one account, or companies taking turns to win tenders — and cites the official FATF / OECD red-flag each shape corresponds to.</p>
-      <p><b>How it works:</b> hand-written rules (no AI involved) search the alert's neighbourhood for these shapes, so this evidence stands even if you distrust the neural network entirely.</p>
+    <div class="alg a">
+      <h5>Pattern matcher + official red flags<span class="where">stage 6 · runs on every alert, no AI involved</span></h5>
+      <p><b>What it does:</b> checks each alert against nine known collusion shapes and cites the official FATF / OECD red flag
+      each corresponds to.</p>
+      <p><b>How it works:</b> hand-written graph rules search the alert's neighbourhood — evidence that stands even if you
+      distrust the neural network entirely.</p>
     </div>
-    <div class="glass alg">
-      <h5>The Copilot's guardrails — an AI that can't make things up
-        <span class="where">wrapped around every Copilot answer</span></h5>
+    <div class="alg">
+      <h5>The Copilot's guardrails — an AI that can't make things up<span class="where">stage 8 · wrapped around every answer</span></h5>
       <p><b>What it does:</b> lets investigators question the system in plain English without the usual AI risks.</p>
-      <p><b>How it works:</b> the Copilot may only <i>read</i> the published results; every number in its answer must literally appear in what it looked up (otherwise the answer is blocked); and phrases like “is guilty” are automatically rewritten into “shows patterns consistent with…”. A 24-question exam gates every release — currently a perfect score.</p>
+      <p><b>How it works:</b> the Copilot may only <i>read</i> published results; every number must literally appear in what it
+      looked up; accusing phrases are rewritten automatically; a 24-question exam gates every release.</p>
     </div>
-    <div class="glass alg">
-      <h5>Statistical rigor — why the numbers can be trusted
-        <span class="where">behind every published result</span></h5>
+    <div class="alg">
+      <h5>Statistical rigor — why the numbers can be trusted<span class="where">behind every published result</span></h5>
       <p><b>What it does:</b> makes sure no result is a lucky accident.</p>
-      <p><b>How it works:</b> every headline model is trained five times with different random starts and reported with its spread; model comparisons are re-checked thousands of times on resampled data; and each country or market takes a turn being fully held out to prove the system works on places it has never seen.</p>
+      <p><b>How it works:</b> every headline model is retrained five times with different random starts and reported with its
+      spread; comparisons are re-checked thousands of times on resampled data; every country and market takes a turn being fully
+      held out to prove the system works on places it never saw.</p>
     </div>
   </div>
 </section>
 
-<!-- ═════════════ 4. AWS + COSTS ═════════════ -->
+<!-- ═════════════ AWS ═════════════ -->
 <section id="aws">
   <div class="sec">
-    <h2>Cloud Deployment <b>on AWS</b></h2>
-    <p>The same containers, hosted as a product. Cheap by design: the always-on part never needs a GPU.</p>
+    <h2>AWS Cloud <b>Architecture</b></h2>
+    <p>The same three Docker containers, hosted as a product. Two separate planes — the always-on serving path and a
+       scheduled deep-learning plane that exists only while it runs. No GPU is ever provisioned 24/7.</p>
   </div>
 
-  <div class="glass frame">
-    <span class="frame-tag">AWS ARCHITECTURE — ONE FLOW</span>
-    <div class="flow">
-      <div class="fbox cyan" data-next="1. HTTPS">
-        <div class="ico">👥</div><h4>Analyst teams</h4>
-        <ul><li>Just a browser — nothing to install</li></ul>
+  <div class="cloud">
+    <span class="cloud-tag">AWS CLOUD — SERVING PLANE (always on)</span>
+    <div class="pipe">
+      <div class="stage">
+        <div class="stage-head"><span class="stage-num">1</span><h3>Edge — Route 53 · CloudFront · WAF</h3>
+          <span class="note">TLS everywhere · free tier: 1 TB delivery + 10M requests / month</span></div>
+        <p class="lead">Analysts need only a browser. DNS resolves the product domain; CloudFront serves the dashboard from
+        cache worldwide and forwards <code>/api/*</code> to the backend; the WAF firewall rate-limits and filters when public.</p>
       </div>
-      <div class="fbox violet" data-next="2. website / api">
-        <div class="ico">🌐</div><h4>CloudFront + Route 53</h4>
-        <ul><li>Global content network + DNS</li><li>Free tier covers 1 TB/month</li><li>WAF firewall when public</li></ul>
+      <div class="varrow"><span class="lbl">2. static website / api traffic split</span><span class="head">▼</span></div>
+      <div class="stage">
+        <div class="stage-head"><span class="stage-num">2</span><h3>Hosting &amp; compute</h3></div>
+        <div class="subs">
+          <div class="sub b"><h5>S3 — the dashboard</h5><ul><li>React build in a private bucket behind CloudFront</li><li>hashed, cache-friendly bundles</li></ul></div>
+          <div class="sub v"><h5>API + Copilot — two options, same images</h5><ul><li><b>Launch:</b> Lambda containers + API Gateway — costs $0 while idle, scales to zero</li><li><b>Growth:</b> ECS Fargate containers behind a load balancer, two availability zones, CPU autoscaling</li></ul></div>
+          <div class="sub r"><h5>Security &amp; ops around it</h5><ul><li>Secrets Manager holds the one LLM key</li><li>serving role: read-only on artifacts (IAM)</li><li>CloudWatch logs + latency alarms · Budgets alert from day one</li></ul></div>
+        </div>
       </div>
-      <div class="fbox magenta" data-next="3. reads results">
-        <div class="ico">⚙️</div><h4>API — serverless or containers</h4>
-        <ul><li><b>Start:</b> Lambda — costs $0 when idle</li><li><b>Grow:</b> Fargate containers + load balancer</li><li>Same Docker images either way</li></ul>
-      </div>
-      <div class="fbox amber" data-next="4. refreshed by">
-        <div class="ico">🪣</div><h4>S3 storage</h4>
-        <ul><li>Website files + results store</li><li>Every batch run is versioned</li><li>Roll back = point at yesterday's run</li></ul>
-      </div>
-      <div class="fbox green">
-        <div class="ico">🧠</div><h4>Scheduled deep-learning job</h4>
-        <ul><li>Rents a GPU only while it runs (spot pricing)</li><li>Writes fresh results to S3, then shuts down</li><li>Can also run free on a local GPU / Colab</li></ul>
+      <div class="varrow"><span class="lbl">3. read-only access to published results</span><span class="head">▼</span></div>
+      <div class="stage">
+        <div class="stage-head"><span class="stage-num">3</span><h3>S3 artifact bucket — versioned results</h3></div>
+        <p class="lead">Queues, dossiers and reports live under <code>runs/&lt;run_id&gt;/</code>. A new batch run lands as a new
+        prefix; the API reloads its index; rolling back a bad run means pointing at yesterday's folder. The container registry
+        (ECR) keeps the three images beside it.</p>
       </div>
     </div>
-    <div class="return"><span class="arr">➜</span><span class="num">Always protected:</span>
-      secrets in Secrets Manager · read-only permissions for serving · logs and alarms in CloudWatch · a budget alert from day one.</div>
   </div>
 
-  <div class="sec" style="margin-top:44px"><h2>What It <b>Costs</b></h2>
+  <div class="cloud batch">
+    <span class="cloud-tag">DEEP-LEARNING PLANE (scheduled — exists only while it runs)</span>
+    <div class="pipe">
+      <div class="stage">
+        <div class="stage-head"><span class="stage-num">1</span><h3>EventBridge schedule → rented GPU → publish → shut down</h3>
+          <span class="note">daily or weekly cadence · failure alarms via SNS · last good run keeps serving</span></div>
+        <p class="lead">On schedule, a spot GPU instance (or SageMaker job) spins up, runs the full pipeline — ingest, train the
+        GNNs, score, group, explain — writes fresh artifacts to the S3 bucket above, and terminates. Training can also run for
+        free on a local GPU or Colab and upload the same files. The expensive hardware exists for a few hours a week, never 24/7.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════ COSTS ═════════════ -->
+<section id="costs">
+  <div class="sec"><h2>What It <b>Costs</b></h2>
     <p>All costs for the architecture above — monthly and yearly, US-East list prices (July 2026).</p></div>
 
-  <div class="glass tier">
+  <div class="tier">
     <h3>Tier 1 — University demo <span>≈ $0 WITH FREE CREDITS</span></h3>
     <table>
       <thead><tr><th>What</th><th>AWS service</th><th class="r">Monthly</th><th class="r">Yearly</th></tr></thead>
@@ -531,13 +503,13 @@ footer .cav { color: var(--amber); font-weight: 600; }
     </table>
   </div>
 
-  <div class="glass tier">
+  <div class="tier">
     <h3>Tier 2 — Product launch <span>SERVERLESS · SCALES TO ZERO</span></h3>
     <table>
       <thead><tr><th>What</th><th>AWS service</th><th class="r">Monthly</th><th class="r">Yearly</th></tr></thead>
       <tbody>
         <tr><td>Website hosting + delivery</td><td>S3 + CloudFront</td><td class="r">$0.10</td><td class="r">$1.20</td></tr>
-        <tr><td>API (up to 1M requests/month)</td><td>Lambda + API Gateway</td><td class="r">$0 – 5</td><td class="r">$0 – 60</td></tr>
+        <tr><td>API (up to 1M requests / month)</td><td>Lambda + API Gateway</td><td class="r">$0 – 5</td><td class="r">$0 – 60</td></tr>
         <tr><td>Storage + container registry</td><td>S3 + ECR</td><td class="r">$0.50</td><td class="r">$6</td></tr>
         <tr><td>Weekly model refresh (rented GPU)</td><td>EC2 g5 spot, ~4 h/week</td><td class="r">$6 – 25</td><td class="r">$72 – 300</td></tr>
         <tr><td>Copilot AI answers</td><td>LLM API, pay-per-use</td><td class="r">$5 – 20</td><td class="r">$60 – 240</td></tr>
@@ -547,7 +519,7 @@ footer .cav { color: var(--amber); font-weight: 600; }
     </table>
   </div>
 
-  <div class="glass tier">
+  <div class="tier">
     <h3>Tier 3 — Growing product <span>ALWAYS-ON · HARDENED</span></h3>
     <table>
       <thead><tr><th>What</th><th>AWS service</th><th class="r">Monthly</th><th class="r">Yearly</th></tr></thead>
@@ -564,9 +536,9 @@ footer .cav { color: var(--amber); font-weight: 600; }
     </table>
   </div>
 
-  <p class="finenote">Why so cheap? The user-facing side is a website, a tiny read-only API and some files —
-  the expensive part (GPU deep learning) runs briefly on rented hardware, writes its results, and shuts down.
-  A budget alarm is set from day one, and every release can be rolled back by pointing at the previous results folder.</p>
+  <p class="finenote">Why so cheap? The user-facing side is a website, a tiny read-only API and some files. The expensive part —
+  GPU deep learning — runs briefly on rented hardware, writes its results, and shuts down. A budget alarm is set from day one,
+  and every release can be rolled back by pointing at the previous results folder.</p>
 </section>
 
 <footer>

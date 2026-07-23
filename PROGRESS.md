@@ -168,6 +168,20 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-20 · **Architecture doc v4 after third stakeholder rejection** (v3 verdicts: too
+  short, horizontal format wrong, cloud diagram "false" — wants the project's original
+  VERTICAL numbered-stage form, with depth). Rebuilt as the vertical staged pipeline the
+  stakeholder pointed at: **10 numbered stages flowing top-to-bottom** (data sources with
+  real counts → unified schema → 4-arm parallel deep-learning stage → calibrated
+  ensemble → Leiden queue 254/223 → explanation layer → artifact store → TRUST BOUNDARY
+  → API+**Copilot side-by-side** (real endpoint paths; NIM, guards, 24/24 goldens) →
+  console → human decision), 25 detail sub-boxes, labeled down-arrows between every
+  stage. AWS redrawn as TWO bounded planes (always-on serving: edge → hosting/compute →
+  versioned S3; scheduled DL plane: EventBridge → spot GPU → publish → shutdown) — no
+  request-path/batch conflation. Glassmorphism + dual themes kept; plain-language
+  algorithm cards kept (12). Verified in-browser: stages flow strictly vertically; zero
+  horizontal overflow at 1265px AND 400px (cost tables wrap below 540px); contrast dark
+  ≥7.7:1 / light ≥4.9:1; no jargon/stale tokens · [master]
 - 2026-07-20 · **Architecture doc v3 after second stakeholder rejection** (v2 verdicts:
   split-up lanes wrong, horizontal scrollbars "horrible", language too hard, Copilot
   invisible, colors poor → wants glassmorphism). Rebuilt on the reference pattern: ONE
