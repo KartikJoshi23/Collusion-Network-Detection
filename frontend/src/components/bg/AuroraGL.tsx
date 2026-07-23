@@ -211,6 +211,15 @@ export function AuroraGL() {
       attributeFilter: ["data-domain"],
     });
 
+    // A GPU reset would otherwise leave a permanently-black backdrop with the
+    // CSS fallback retired — hand the stage back to the CSS aurora instead.
+    const onContextLost = (e: Event) => {
+      e.preventDefault();
+      stop();
+      document.documentElement.classList.remove("gl-aurora");
+    };
+    canvas.addEventListener("webglcontextlost", onContextLost);
+
     resize();
     applyHues();
     applyMode();
@@ -225,6 +234,7 @@ export function AuroraGL() {
       stop();
       document.documentElement.classList.remove("gl-aurora");
       observer.disconnect();
+      canvas.removeEventListener("webglcontextlost", onContextLost);
       window.removeEventListener("resize", resize);
       document.removeEventListener("visibilitychange", onVisibility);
       reduced.removeEventListener("change", applyMode);

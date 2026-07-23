@@ -48,9 +48,9 @@ Open **http://localhost:5173**.
    updates live and the **measured P@k readout** counts to the run's published
    precision at the nearest measured budget (never interpolated). **Hover a row**:
    a temporal sparkline draws itself from the alert's real windowed-subgraph
-   timestamps, and the actions slide in — *subgraph*, *dossier*, and *◈* (ask the
-   Copilot about this alert). Rows carry motif glyph chips and red-flag badges
-   where a bundle cites indicators.
+   timestamps, and the actions slide in — *subgraph*, *dossier*, and the
+   *Copilot orbital mark* (ask the Copilot about this alert). Rows carry motif
+   glyph chips and red-flag badges where a bundle cites indicators.
 4. Click the top alert → **Graph Explorer** — the flagged community's ego-network
    in WebGL (Sigma.js): members coral, 1-hop context dimmed, windowed server-side
    (the browser never receives the full graph). Press **▶ replay flow** — the
@@ -61,9 +61,9 @@ Open **http://localhost:5173**.
    tiles (a failed fidelity sanity check is *shown*, never hidden), the full
    payload in the technical appendix, and **Export JSON** — the one
    case-management touchpoint in scope.
-6. Flip the **domain toggle** to *Procurement* — the dominant hue shifts (the
-   inventory stays multi-hue) and the dataset switches to the Mendeley EU cartel
-   anchor. Repeat beats 3–5 on a cartel community. Back in *Financial*, the
+6. Flip the **domain toggle** to *Procurement* — the WebGL aurora re-hues live,
+   the dominant accent shifts (the inventory stays multi-hue), and the dataset
+   switches to the Mendeley EU cartel anchor. Repeat beats 3–5 on a cartel community. Back in *Financial*, the
    dataset selector also offers **elliptic_pp_actor** — the wallet-level queue
    (§4.5 reports both granularities; the actor head is the precise one at tight
    budgets, its community roll-up honestly weak).
@@ -74,7 +74,8 @@ Open **http://localhost:5173**.
    its band), LOCO/LOMO transfer matrices, paired-significance rows, the
    label-noise robustness curve, and the cross-domain label-efficiency curve —
    the honest-numbers story on one screen.
-8. **◈ Copilot** (header) — open the dock and ask, e.g., *"How many alerts are in
+8. **Copilot** (header — the orbital-spark mark with the orbiting electron) —
+   open the dock and ask, e.g., *"How many alerts are in
    the mendeley queue and what is the measured precision at budget 18?"* The
    agent's tool calls stream live into the trace timeline; the answer arrives
    with confidence + grounding badges, the evidence panel (every tool call and

@@ -92,7 +92,11 @@
 > ramps on the toggle, and a multi-hue header sweep. Build + vitest + backend suite
 > green; verified programmatically against the live dev-store console (WebGL pipeline
 > proven, CSS fallback retirement proven, every V3 element present in the DOM).
-> **Awaiting stakeholder review #4 — the visual walk needs a displayed browser pane.**
+> ~~**Awaiting stakeholder review #4 — the visual walk needs a displayed browser
+> pane.**~~ ✅ **REVIEW #4 PASSED (stakeholder, 2026-07-23): "Dashboard looks fine"**
+> — the UI-acceptance gate that held from review #1 is CLOSED. A same-day audit
+> sweep (see Completed) fixed the V2 glyph remnants, demo-script drift, and a
+> GPU-reset robustness gap found in the V3 backdrop.
 >
 > 🏁 **§7 STEP 33 RED-TEAM REVIEW DONE [laptop-D, 2026-07-22]** — the §9.3
 > pre-submission adversarial pass, recorded in
@@ -164,6 +168,24 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-23 · **REVIEW #4 PASSED + full-solution AUDIT SWEEP (user-directed) — 3
+  findings, all fixed.** *Verified clean:* backend `poe check` green (ruff + mypy +
+  373 tests), frontend build + vitest 31/31, the frontend Docker image BUILDS from
+  the V3 tree (the A1-class compose-path check), CI workflow scope still complete
+  (scripts/ linted, copilot in mypy, dedicated leakage step, frontend job), repo
+  hygiene tests green. *Findings fixed:* **(B1)** the V2-era ◈ text glyph survived
+  as the Copilot affordance in the AlertQueue row actions and the CaseDetail "Ask
+  Copilot" button — both now carry the V3 `CopilotMark` (identity consistency the
+  stakeholder asked for); **(B2)** `docs/demo_script.md` still described the ◈
+  glyph (2 beats) and missed the aurora re-hue on the domain flip — presenter
+  script now matches the shipped V3 console; **(B3)** `AuroraGL` had no
+  `webglcontextlost` handling — a GPU reset would leave a permanently BLACK
+  backdrop because the CSS aurora retires itself once WebGL initializes; a lost
+  context now stops the loop and hands the stage back to the CSS fallback
+  (listener removed in cleanup). Also caught by the always-on gates mid-session: a
+  transient TS error in my own B1 edit (background build flagged it before commit
+  — the "local suite green ≠ done" lesson working as designed). Suites after
+  fixes: backend 373/373, frontend build + vitest 31/31 · [laptop-D]
 - 2026-07-22 · **FRONTEND OVERHAUL V3 — the review-#3 rejection answered in code
   (docs/frontend_overhaul.md V3 §§1–6, all six requirements shipped).** *(1) WebGL
   depth layer:* `components/bg/AuroraGL.tsx` — a raw-WebGL2 fullscreen fragment
