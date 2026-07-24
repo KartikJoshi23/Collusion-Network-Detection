@@ -78,6 +78,81 @@ def fixture_tree(tmp_path: Path) -> Path:
     return tmp_path
 
 
+def ablation_tree(tmp_path: Path) -> Path:
+    """Minimal artifact set for the component-ablation table (§7 step 32)."""
+    for run_dir, auc in [
+        ("gnn_gatv2_focal", 0.5492),
+        ("gnn_gatv2_focal_unidir", 0.3549),
+        ("gnn_gatv2_focal_multi", 0.3781),
+        ("gnn_gatv2_focal_line", 0.4986),
+        ("gnn_gatv2_focal_cf", 0.4501),
+    ]:
+        _write(
+            tmp_path,
+            f"eval_outputs/elliptic_pp/{run_dir}/run.json",
+            {"node_level": {"auc_pr": auc}},
+        )
+    _write(
+        tmp_path,
+        "eval_outputs/elliptic_pp/gnn_gatv2_focal_multiseed/multiseed.json",
+        {"aggregate": {"auc_pr_mean": 0.4729, "auc_pr_std": 0.0525}},
+    )
+    _write(
+        tmp_path,
+        "eval_outputs/elliptic_pp/gnn_gatv2_wce_multiseed/multiseed.json",
+        {"aggregate": {"auc_pr_mean": 0.4435, "auc_pr_std": 0.0615}},
+    )
+    _write(
+        tmp_path,
+        "eval_outputs/elliptic_pp/ensemble_multiseed/ensemble_multiseed.json",
+        {
+            "members": {
+                "ensemble_calibrated": {"auc_pr_mean": 0.4434, "auc_pr_std": 0.0501},
+                "supervised": {"auc_pr_mean": 0.4729, "auc_pr_std": 0.0525},
+            }
+        },
+    )
+    _write(
+        tmp_path,
+        "eval_outputs/mendeley_eu/baselines/scoreboard.json",
+        {"baselines": {"b2_xgb": {"auc_pr": 0.3925, "precision@18": 0.2222}}},
+    )
+    _write(
+        tmp_path,
+        "eval_outputs/mendeley_eu/baselines_screens_ablation/scoreboard.json",
+        {"baselines": {"b2_xgb": {"auc_pr": 0.4558, "precision@18": 0.6111}}},
+    )
+    return tmp_path
+
+
+def test_ablation_deltas_are_formed_within_a_basis(tmp_path) -> None:
+    ablation_tree(tmp_path)
+    out = tmp_path / "paper" / "tables"
+    report = build_paper_tables(root=tmp_path, out_dir=out)
+    assert "ablations" in report["built"]
+    md = (out / "ablations.md").read_text(encoding="utf-8")
+    # multi-seed arm: Δ against the multi-seed reference, not the seed-0 one
+    assert "| − focal loss (weighted CE) | 5 seeds | 0.4435 ± 0.0615 | -0.0294 |" in md
+    # seed-0 arm: Δ against the seed-0 reference (the RT-1 separation)
+    assert "| − bidirectional edges | seed 0 | 0.3549 | -0.1943 |" in md
+    # ensemble composition: both operands copied from the one multiseed artifact
+    assert "| − unsupervised members | 5 seeds | 0.4729 ± 0.0525 | +0.0295 |" in md
+    # deterministic procurement arm
+    assert "| + dataset screens | deterministic | 0.4558 | +0.0633 |" in md
+    # every basis block opens with its own reference row
+    assert md.count("| reference |") == 4
+
+
+def test_ablation_table_skips_whole_when_one_arm_is_absent(tmp_path) -> None:
+    ablation_tree(tmp_path)
+    (tmp_path / "eval_outputs/elliptic_pp/gnn_gatv2_focal_line/run.json").unlink()
+    out = tmp_path / "paper" / "tables"
+    report = build_paper_tables(root=tmp_path, out_dir=out)
+    assert "ablations" in report["skipped"]
+    assert "gnn_gatv2_focal_line/run.json" in report["skipped"]["ablations"]
+    assert not (out / "ablations.md").exists()
+
+
 def test_builds_available_and_skips_missing_with_reason(tmp_path) -> None:
     fixture_tree(tmp_path)
     report = build_paper_tables(root=tmp_path, out_dir=tmp_path / "paper" / "tables")
@@ -122,6 +197,8 @@ def test_latex_escapes_and_structure() -> None:
     assert r"$\Delta$" in tex
     assert r"50\% of a\_b $\to$ done" in tex
     assert tex.count(r"\toprule") == 1 and tex.count(r"\bottomrule") == 1
+    # U+2212 opens every ablation arm label and is not a LaTeX-safe character
+    assert r"$-$ focal loss" in to_latex(["A"], [["− focal loss"]], "cap")
 
 
 def test_markdown_shape() -> None:

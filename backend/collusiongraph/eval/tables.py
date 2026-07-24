@@ -224,6 +224,107 @@ def label_efficiency_proc2fin(root: Path) -> Table:
     )
 
 
+_SEED0_ARMS = [
+    ("gnn_gatv2_focal_unidir", "− bidirectional edges"),
+    ("gnn_gatv2_focal_multi", "+ raw+structural channels"),
+    ("gnn_gatv2_focal_line", "+ line-graph channel"),
+    ("gnn_gatv2_focal_cf", "+ context-fusion arm"),
+]
+
+
+def _run_auc_pr(root: Path, run_dir: str) -> float:
+    payload = _load(root, f"eval_outputs/elliptic_pp/{run_dir}/run.json")
+    return float(payload["node_level"]["auc_pr"])
+
+
+def ablations(root: Path) -> Table:
+    """The component-ablation table (§7 step 32).
+
+    Each block opens with its own reference row and every Δ is formed against
+    THAT reference — never across bases. This is the RT-1 discipline applied
+    structurally: a seed-0 delta is a single-seed comparison and is not the
+    difference of two multi-seed means, so the two never share a reference.
+    Both operands of every Δ are printed in the table, so each one is
+    checkable against the artifacts it was copied from.
+    """
+    rows: list[Row] = []
+
+    ref_ms = _load(root, "eval_outputs/elliptic_pp/gnn_gatv2_focal_multiseed/multiseed.json")[
+        "aggregate"
+    ]
+    ref_mean = ref_ms["auc_pr_mean"]
+    rows.append(
+        ["GATv2-focal (headline)", "5 seeds", _ms(ref_mean, ref_ms["auc_pr_std"]), "reference"]
+    )
+    wce = _load(root, "eval_outputs/elliptic_pp/gnn_gatv2_wce_multiseed/multiseed.json")[
+        "aggregate"
+    ]
+    rows.append(
+        [
+            "− focal loss (weighted CE)",
+            "5 seeds",
+            _ms(wce["auc_pr_mean"], wce["auc_pr_std"]),
+            f"{wce['auc_pr_mean'] - ref_mean:+.4f}",
+        ]
+    )
+
+    # Ensemble composition — both operands live in the one multiseed artifact.
+    ens = _load(root, "eval_outputs/elliptic_pp/ensemble_multiseed/ensemble_multiseed.json")[
+        "members"
+    ]
+    cal, sup = ens["ensemble_calibrated"], ens["supervised"]
+    rows.append(
+        [
+            "Calibrated ensemble",
+            "5 seeds",
+            _ms(cal["auc_pr_mean"], cal["auc_pr_std"]),
+            "reference",
+        ]
+    )
+    rows.append(
+        [
+            "− unsupervised members",
+            "5 seeds",
+            _ms(sup["auc_pr_mean"], sup["auc_pr_std"]),
+            f"{sup['auc_pr_mean'] - cal['auc_pr_mean']:+.4f}",
+        ]
+    )
+
+    ref0 = _run_auc_pr(root, "gnn_gatv2_focal")
+    rows.append(["GATv2-focal (headline)", "seed 0", f"{ref0:.4f}", "reference"])
+    for run_dir, label in _SEED0_ARMS:
+        value = _run_auc_pr(root, run_dir)
+        rows.append([label, "seed 0", f"{value:.4f}", f"{value - ref0:+.4f}"])
+
+    b2 = _load(root, "eval_outputs/mendeley_eu/baselines/scoreboard.json")["baselines"]["b2_xgb"]
+    b2s = _load(root, "eval_outputs/mendeley_eu/baselines_screens_ablation/scoreboard.json")[
+        "baselines"
+    ]["b2_xgb"]
+    rows.append(["Mendeley B2 XGBoost", "deterministic", f"{b2['auc_pr']:.4f}", "reference"])
+    rows.append(
+        [
+            "+ dataset screens",
+            "deterministic",
+            f"{b2s['auc_pr']:.4f}",
+            f"{b2s['auc_pr'] - b2['auc_pr']:+.4f}",
+        ]
+    )
+
+    return (
+        ["Ablation arm", "Basis", "AUC-PR", "Δ vs reference"],
+        rows,
+        "Component ablations on Elliptic++ (test steps 35–49) plus the Mendeley EU "
+        "feature arm. A '−' row REMOVES a component of the adopted model, so its Δ is an "
+        "ablation cost; a '+' row ADDS a variant that was evaluated and NOT adopted, so "
+        "its Δ is a rejection margin — the two are not comparable, and only '−' rows "
+        "support a 'strongest component' claim. Δ is measured against the reference row "
+        "of the SAME basis: seed-0 deltas are single-seed comparisons and are NOT "
+        "differences of multi-seed means. Ensemble rows read both operands from the "
+        "multi-seed ensemble artifact, where removing the unsupervised members leaves the "
+        "supervised member's ranking (per-member isotonic calibration is monotone).",
+    )
+
+
 def label_efficiency_fin2proc(root: Path) -> Table:
     return _label_efficiency_table(
         root,
@@ -242,10 +343,19 @@ TABLES: dict[str, Callable[[Path], Table]] = {
     "injection_ocds": injection_ocds,
     "label_efficiency_proc2fin": label_efficiency_proc2fin,
     "label_efficiency_fin2proc": label_efficiency_fin2proc,
+    "ablations": ablations,
 }
 
 _TEX_ESCAPE = str.maketrans(
-    {"_": r"\_", "%": r"\%", "±": r"$\pm$", "Δ": r"$\Delta$", "→": r"$\to$"}
+    {
+        "_": r"\_",
+        "%": r"\%",
+        "±": r"$\pm$",
+        "Δ": r"$\Delta$",
+        "→": r"$\to$",
+        "−": r"$-$",  # U+2212, the ablation arms' minus sign
+        "–": "--",
+    }
 )
 
 

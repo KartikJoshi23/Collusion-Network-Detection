@@ -72,7 +72,7 @@ Thread → key cites (full list in §10.4 of the plan):
 
 ## 6. Results (~2.5 pages) — every table pre-generated
 
-Run `uv run poe paper-tables` → `eval_outputs/paper_tables/`. Status key: ✅ artifact exists on ≥1 machine · 🔶 regenerate (per-machine artifact) · ⛔ needs a run.
+Run `uv run poe paper-tables` → `paper/tables/` (markdown + LaTeX per table, plus `BUILD_REPORT.json`; gitignored — derived and per-machine). Status key: ✅ artifact exists on ≥1 machine · 🔶 regenerate (per-machine artifact) · ⛔ needs a run.
 
 | Table | Content | Source artifact | Status |
 |---|---|---|---|
@@ -82,7 +82,7 @@ Run `uv run poe paper-tables` → `eval_outputs/paper_tables/`. Status key: ✅ 
 | **T4 LOCO/LOMO** | Mendeley 7×5 matrix (macro lift 1.17, country_2 fails 0.90) + García 4×5 (uniform, macro 1.57) | `loco_mendeley`, `lomo_garcia` | ✅ |
 | **T5 cross-domain** | Probes both directions + label-efficiency curves (proc→fin pays only k ≥ ~1000; fin→proc never) | `label_efficiency_*` | ✅ (fin2proc) / 🔶 (proc2fin, laptop-C) |
 | **T6 injection (RQ2)** | At-scale OCDS injection recovery, 5-seed verdict | `injection_ocds` (laptop-D artifact) | 🔶 |
-| **T7 ablations** | −bidir (−0.19), −focal (second-order per wce campaign), −unsup (−0.03), −screens, line-graph, context-fusion — one honest-ablation table | assemble from run.json entries listed in reproducibility.md | ⛔ assemble |
+| **T7 ablations** | −bidir (−0.19), −focal (second-order per wce campaign), −unsup (−0.03), +screens, line-graph, context-fusion — one honest-ablation table, each Δ against the reference of its OWN basis (5-seed / seed-0 / deterministic are never mixed — RT-1 applied structurally) | `ablations` table | ✅ |
 | **T8 robustness** | Label-noise curve (0.48→0.60 while val 0.94→0.57) + sensitivity sweeps (NMS-invariant; hit-rule-robust) | `label_noise` + sensitivity.json | ✅ |
 
 Figures (export from the Model Lab — every chart has SVG/PNG export):
