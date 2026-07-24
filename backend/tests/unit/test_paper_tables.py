@@ -153,6 +153,37 @@ def test_ablation_table_skips_whole_when_one_arm_is_absent(tmp_path) -> None:
     assert not (out / "ablations.md").exists()
 
 
+def test_mendeley_screens_rows_name_the_mechanism_not_the_baseline(tmp_path) -> None:
+    """b4_screens is already the structural screen composite, so a bare '+screens'
+    suffix renders 'b4_screens +screens' — a reviewer reads that as a duplication.
+    The suffix must name what is actually added: the publisher's pc_* columns."""
+    ablation_tree(tmp_path)  # supplies baselines + screens_ablation scoreboards
+    _write(
+        tmp_path,
+        "eval_outputs/mendeley_eu/baselines_b4_precomputed/scoreboard.json",
+        {"baselines": {"b4_screens": {"auc_pr": 0.3874, "precision@18": 0.5}}},
+    )
+    _write(
+        tmp_path,
+        "eval_outputs/mendeley_eu/gnn_rgcn_focal_multiseed/multiseed.json",
+        {
+            "aggregate": {
+                "auc_pr_mean": 0.2808,
+                "auc_pr_std": 0.0087,
+                "precision@18_mean": 0.0746,
+                "precision@18_std": 0.0363,
+            }
+        },
+    )
+    out = tmp_path / "paper" / "tables"
+    build_paper_tables(root=tmp_path, out_dir=out)
+    md = (out / "mendeley_headline.md").read_text(encoding="utf-8")
+    assert "b4_screens +screens" not in md
+    assert "| b4_screens +dataset screens | 0.3874 (det.) | 0.50 |" in md
+    assert "| b2_xgb +dataset screens | 0.4558 (det.) | 0.61 |" in md
+    assert "pc_* screen" in md  # the caption says what was added
+
+
 def test_builds_available_and_skips_missing_with_reason(tmp_path) -> None:
     fixture_tree(tmp_path)
     report = build_paper_tables(root=tmp_path, out_dir=tmp_path / "paper" / "tables")

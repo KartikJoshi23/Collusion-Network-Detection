@@ -76,10 +76,20 @@ def elliptic_headline(root: Path) -> Table:
 
 def mendeley_headline(root: Path) -> Table:
     rows: list[Row] = []
+    # " +dataset screens" = the publisher's OWN precomputed pc_* screens added to
+    # that baseline's inputs. Not to be confused with b4_screens, whose name refers
+    # to its structural screen composite (n_awards / market_share / buyer_hhi) —
+    # "b4_screens +screens" would read as a duplication.
     for rel, suffix in [
         ("eval_outputs/mendeley_eu/baselines/scoreboard.json", ""),
-        ("eval_outputs/mendeley_eu/baselines_screens_ablation/scoreboard.json", " +screens"),
-        ("eval_outputs/mendeley_eu/baselines_b4_precomputed/scoreboard.json", " +screens"),
+        (
+            "eval_outputs/mendeley_eu/baselines_screens_ablation/scoreboard.json",
+            " +dataset screens",
+        ),
+        (
+            "eval_outputs/mendeley_eu/baselines_b4_precomputed/scoreboard.json",
+            " +dataset screens",
+        ),
     ]:
         sb = _load(root, rel)["baselines"]
         rows += [
@@ -97,7 +107,9 @@ def mendeley_headline(root: Path) -> Table:
         ["Model", "AUC-PR", "P@18"],
         rows,
         "Mendeley EU firm-level results (within case-control sample, prevalence 0.358). "
-        "Lift-style reading applies; see the datasheet for the sample caveat.",
+        "Lift-style reading applies; see the datasheet for the sample caveat. "
+        "'+dataset screens' rows add the publisher's own precomputed pc_* screen "
+        "columns to that baseline's inputs.",
     )
 
 
