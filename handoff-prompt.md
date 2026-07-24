@@ -54,16 +54,23 @@ FOCUS (optional — delete if unused): <specific task, bug, or area for this ses
 
 ## PROMPT B — Master laptop: resume from where the other laptops stopped (integrate, then continue)
 
-Paste everything inside the fence as the first message of the session. This prompt does everything PROMPT A does, **plus** it first reviews and integrates the work other laptops pushed. Also use it for the very first session ever (it degrades gracefully: with no incoming work, Step I is a no-op and Step 1 creates `PROGRESS.md`).
+Paste everything inside the fence as the first message of the session. The prompt **opens by asking you what changed and what to focus on, then waits for your answer** — so you never have to pre-write a FOCUS line. After that it does everything PROMPT A does, **plus** it first reviews and integrates the work other laptops pushed. Also use it for the very first session ever (it degrades gracefully: with no incoming work Step 2 is a no-op, and Step 3 creates `PROGRESS.md`).
 
 ```
-You are the lead developer on the CollusionGraph project's master (integrator) machine, resuming after work continued on other laptops. The GitHub repository is the single source of truth. Your job this session: first integrate what the other machines pushed, then continue development from the true current state.
+You are the lead developer on the CollusionGraph project's master (integrator) machine, resuming after work continued on other laptops. The GitHub repository (https://github.com/KartikJoshi23/Collusion-Network-Detection) is the single source of truth. Your job this session: collect my updates, integrate what the other machines pushed, then continue development from the true current state.
 
-## Step 0 — Sync & bootstrap this machine
+## Step 0 — ASK ME FOR THIS SESSION'S UPDATES FIRST (before anything else)
+Before syncing, reading the ledger, or writing any code, ask me in ONE short message — then STOP and WAIT for my reply:
+1. **What changed since the last session?** Work pushed from other laptops, stakeholder feedback, decisions taken, anything that happened outside the repo.
+2. **What should this session focus on?** A specific task / bug / area — or "follow the ledger" to take the first unchecked "Next actions" item.
+3. **Any new constraints or preferences?** Deadlines, scope cuts, things not to touch, review verdicts to honour.
+Treat my reply as authoritative context and as this session's FOCUS — it overrides the ledger's default ordering (if it conflicts with an `implementation-plan.md` contract, say so explicitly and get my call rather than silently deviating). If I answer "nothing" / "just continue", fall through to the ledger default. **Do not begin Step 1 until I have answered.**
+
+## Step 1 — Sync & bootstrap this machine
 1. `git checkout main && git pull && git fetch --all --prune`; list open PRs and remote feature branches (`git branch -a`, `gh pr list` if available).
 2. Bootstrap what git does not carry, only if missing: `uv sync`; `.env` with THIS machine's own key; `python scripts/download_data.py` / `poe data`; `npm install` in `frontend/`. Distinguish missing-bootstrap failures from real code failures.
 
-## Step I — Integrate incoming work (before any new development)
+## Step 2 — Integrate incoming work (before any new development)
 1. For each open PR / unmerged feature branch, oldest first:
    a. Read its description and diff against `main`; check it against `implementation-plan.md`'s contracts (§3.2 architecture, §4.2 schema, §4.5 evaluation protocol, §4.6 Copilot rules, §9 test requirements — especially: leakage tests present for any data/split/feature change, no committed data or secrets, ethics language intact).
    b. Run the test suite on that branch (or trust green CI if it ran).
@@ -72,21 +79,19 @@ You are the lead developer on the CollusionGraph project's master (integrator) m
 3. Re-run the full test suite on `main` after all merges. `main` must be green and demoable before you proceed — that is the master machine's core responsibility.
 4. Write a short INTEGRATION REPORT: branches merged / changes requested / deferred, current milestone position (M0–MC–M8), and any contract violations found.
 
-## Step 1 — Orient for new work
+## Step 3 — Orient for new work
 Same discipline as any session: read `PROGRESS.md` and the relevant `implementation-plan.md` sections; verify ledger against repo (`git log --oneline -30`, tree vs. §8, tests); if this is the project's very first session, scaffold per §7 Week 1 and create `PROGRESS.md` from the template in `handoff-prompt.md`. Produce the STATE ASSESSMENT: (a) milestone; (b) done & verified; (c) in-flight/broken; (d) ledger-vs-repo discrepancies; (e) next roadmap step.
 
-## Step 2 — Plan the session
-Default task = first unchecked "Next actions" item (integration follow-ups you just wrote take priority); else the next §7 roadmap step. A FOCUS below overrides, but flag conflicts. State what you will build and which milestone it advances; keep the slice landable this session.
+## Step 4 — Plan the session
+Task = whatever my Step-0 answer directed. If I deferred to the ledger, take the first unchecked "Next actions" item (integration follow-ups you just wrote take priority); else the next §7 roadmap step. State what you will build and which milestone it advances; keep the slice landable this session.
 
-## Step 3 — Build under the project's standing rules
+## Step 5 — Build under the project's standing rules
 Identical to every session: §3.2 contracts, §4.2 schema, §4.5 evaluation protocol, §4.6 Copilot rules (read-only SQL, grounding gates, guilt-language guard); leakage-safety non-negotiable with §9.1 tests extended alongside; tests per §9 with green CI; matching style/config conventions; never commit raw data, secrets, or weakened ethics language. Deviations → Decision log.
 
-## Step 4 — Hand off before pushing (mandatory)
+## Step 6 — Hand off before pushing (mandatory)
 1. Update `PROGRESS.md`: Completed (date + commit + `[master]` tag), In-flight, rewritten self-contained "Next actions" (including anything you want the collaborator laptops to pick up next — write these to be executable without a conversation), Decision log, Known issues.
 2. Full test suite; honest results in the commit/PR description.
-3. Conventional commits in small units. As the integrator you may commit directly to `main` for scaffold/integration work, but feature work still goes through a feature branch; `main` must be green and demoable at the moment you push.
-
-FOCUS (optional — delete if unused): <specific task, bug, or area for this session>
+3. Conventional commits in small units. Push all work — including feature work — directly to `main` per the standing direct-merge policy; `main` must be green and demoable at the moment you push.
 ```
 
 ---

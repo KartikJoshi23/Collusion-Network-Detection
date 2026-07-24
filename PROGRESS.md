@@ -1024,16 +1024,15 @@ still public 2026-07-15 — anonymous clone succeeded).
   master (2026-07-18, see Completed); awaiting stakeholder review #3.** Nothing half-written.
   Per the stakeholder's 2026-07-18 instruction (Decision log), further UI iteration is
   deferred to the end — Phase-2 development proceeds now.
-- **Phase 2 in progress [master]:** step 27 (PGExplainer) DONE; step 26a v1 (line-graph
-  channel) DONE — measured negative; step 26c (actor graph) DONE [laptop-C]; **Week 11 /
-  MC CLOSED (2026-07-19)**; **Weeks 12–13 OPENED — step 28 first slice DONE (Mendeley
-  LOCO matrix, 7 folds × 5 seeds; García LOMO matrix, 4 markets × 5 seeds — both
-  procurement matrices measured)**. Remaining step 28: cross-domain fine-tuning
-  label-efficiency curves (CPU-feasible), AMLworld held-out-pattern study (GPU).
-  Remaining step 29: multi-seed ≥5 for the HEADLINE experiments (Elliptic++
-  GATv2/ensemble), bootstrapped CIs + paired significance, budget/hit-rule/NMS
-  sensitivity, label-noise check. Still GPU-gated from step 26: (b) PNA/GIN+EU AMLworld
-  parity + `NeighborLoader`, learned line-encoder on AMLworld.
+- **Phase 2 status [master, current as of 2026-07-20]:** steps 26a/26c/27 DONE;
+  **MC CLOSED**; **steps 28, 29 and 30 CLOSED — every campaign measured and recorded**
+  (both procurement transfer matrices, both label-efficiency directions, multi-seed
+  GATv2/ensemble/R-GCN, bootstrap significance, sensitivity sweeps, label-noise curve,
+  at-scale injection). Step 31's kit is built (human phase is the M7 gate); step 32 has
+  three measured rows (−bidir/−unsup/−focal). **NOTHING is running on master** — the
+  only remaining compute is GPU-gated (PNA/GIN+EU on AMLworld + `NeighborLoader`,
+  learned line-encoder, held-out-pattern study) plus the optional ablations in Next
+  actions 5.
 - ~~§7 step 30 half-done~~ **STEP 30 CLOSED [laptop-B, 2026-07-20]: both the
   ingestion half AND the at-scale injection study are measured (see Completed).**
   Nothing half-written. M6's only remainder is the GPU-gated AMLworld set (see the
@@ -1057,123 +1056,76 @@ still public 2026-07-15 — anonymous clone succeeded).
 - AMLworld raw data is absent on laptop-B (Kaggle credentials are per-machine; script reports `blocked` as designed). Financial pack is untested at AMLworld scale (5M edges) — see Next action 5.
 
 ## Next actions (ordered, self-contained)
-1. ~~FRONTEND OVERHAUL V2~~ **DONE on laptop-C (2026-07-18, see Completed)** — all six V2
-   workstreams shipped and verified live on real artifacts in both domains; constraints held
-   (caveat everywhere, read-only API, build+vitest+backend green, offline fonts,
-   reduced-motion, one blurred layer per stack).
-2a. **[user/stakeholder] REVIEW #4 — the V3 UI (2026-07-22).** On any machine:
-   `uv run python scripts/build_dev_store.py` (or use real artifacts) → `uv run
-   collusiongraph serve` (+ `npm run dev` in `frontend/`, proxy via
-   `VITE_API_TARGET` if the API port differs) → walk: the WebGL aurora field
-   (both domains — flip the toggle and watch the nebula re-hue), the icon tab
-   bar (hover + active glow per view, H1 gradient follows the tab hue), the
-   Copilot mark (header + dock, orbiting electron), cursor spotlight on any
-   panel, the beam sweep on the constellation hero. Known limits recorded
-   honestly: this session's walk was programmatic (hidden pane) — the visual
-   judgment is exactly what this review is for.
-2. ~~[user/stakeholder] REVIEW #3 — the V2 UI~~ **DONE 2026-07-22: REJECTED (see
-   banner; V3 shipped in response).** — `poe demo` + `npm run dev` (or
-   `docker compose up` → :8080), walk all SIX views (About is new — the demo-day opener) in
-   both domains; hover the queue rows (sparklines + actions), drag the budget slider
-   (measured-precision readout), play the explorer's temporal scrubber, export a Model Lab
-   chart. *(Phase-2 work no longer waits on this — stakeholder decision 2026-07-18, Decision
-   log; further UI iteration is deferred to the end.)*
-3. **Phase 2 — §7 steps 28–29 (Weeks 12–13, M6):** ~~Mendeley LOCO matrix~~ ~~García
-   LOMO matrix~~ **BOTH DONE 2026-07-19 [master] (see Completed; RQ4 verdict pair in the
-   Decision log + García entry — lift is the cross-fold comparator).** Step-29 progress
-   2026-07-19 [master]: ~~(i) multi-seed machinery~~ **runner DONE, resumable; the 5-seed
-   GATv2 campaign is in flight (see In-flight — finish/aggregate it first)**; ~~(ii)
-   bootstrap CIs + paired significance~~ **DONE — `eval/significance.py`, two headline
-   comparisons measured (see Completed)**; ~~(iii) sensitivity curves~~ **DONE — both
-   published queues measured NMS-invariant and hit-rule-robust (see Completed)**;
-   ~~Mendeley R-GCN multi-seed~~ **DONE — 0.2808 ± 0.0087, negative is seed-stable (see
-   Completed)**; ~~(iv) label-noise machinery~~ **BUILT + tested; the real Elliptic curve
-   is QUEUED: run `uv run collusiongraph train -c
-   configs/experiment/label_noise_elliptic_pp.yaml` when the CPU is free (12 grid points
-   × ~20–40 min each; RESUMABLE — re-run the same command to continue; record the curve
-   in the ledger)**; ~~GATv2 5-seed campaign~~ **DONE — 0.4729 ± 0.0525, the published
-   seed-0 is the BEST seed (see Completed; the paper table must use the multi-seed
-   mean)**; ~~ensemble multi-seed machinery~~ **BUILT; the ensemble run + label-noise
-   curve are IN FLIGHT on master (see In-flight — record both aggregates in this ledger
-   when they land)**. After those land, step 29 is CLOSED except bootstrapped CIs for any
-   NEW headline comparisons the paper adds. ~~Then step 28 remainder: cross-domain
-   fine-tuning label-efficiency curves~~ **DONE 2026-07-19 [laptop-C] (see Completed —
-   honest negative: the frozen encoder only beats the target's own features at k ≳ 1000
-   labels; paired comparator measured, never dropped).** Still GPU-gated (Colab/Kaggle): (b) **PNA + GIN+EU on AMLworld
-   HI-Small** (Multi-GNN parity; wire `NeighborLoader` minibatching there — it needs
-   pyg-lib/torch-sparse, which this Windows env deliberately excludes); (d) learned
-   line-encoder over materialized L(G) on AMLworld per the B-LG verdict; AMLworld
-   held-out-pattern study. ~~OCDS publisher ingestion~~ ~~synthetic injection at
-   scale~~ **STEP 30 CLOSED 2026-07-20 [laptop-B] — both halves measured (see
-   Completed; RQ2 at-scale verdict: clique-type coordination recoverable at budget,
-   award-pattern motifs evade). To reproduce on any machine: `uv run python
-   scripts/download_data.py --only ocds_georgia` → `uv run collusiongraph ingest
-   --dataset ocds_georgia` → `uv run collusiongraph train -c
-   configs/experiment/injection_recovery_ocds_georgia.yaml` (~5 min CPU total).**
-   ~~Optional step-30 rigor follow-up: multi-seed the injection study~~ **DONE
-   2026-07-20 [laptop-B] — `seeds:` wrapper wired, 5-seed campaign measured, verdict
-   seed-robust (see Completed; reproduce: `uv run collusiongraph train -c
-   configs/experiment/injection_recovery_ocds_georgia_multiseed.yaml`).**
-4. ~~[collaborator] Copilot 27b DOCK~~ **DONE on laptop-C (2026-07-19, see Completed) —
-   dock + SSE live-verified with a faked LLM client (no key on that machine).**
-   ~~Remaining before MC closes: verify live-LLM + goldens on a keyed machine~~
-   **RECONCILED 2026-07-19 [master]: that verification happened on master the same day —
-   see the 🏁 MILESTONE MC Completed entry (18/18, grounded 1.0, gate_passed true). MC is
-   CLOSED.** Remaining smaller follow-ups: ~~grow goldens 18→20–30~~ (DONE 2026-07-19
-   [master], 24 goldens — see Completed); wire serving artifacts into the CI goldens job;
-   optional LangGraph depth (cut order: last). **[user]** add `NVIDIA_API_KEY` as a GitHub
-   Actions secret when convenient. *(original brief follows)* Backend is DONE
-   and live (27a core, corpus+grounding, 18/18 goldens — see Completed 2026-07-19): POST
-   `/api/v1/copilot/chat` takes `{question, context_alert_id?}` and returns `{answer,
-   confidence, numbers_grounded, corpus_grounded, guard_rewrites, evidence[], trace[],
-   caveat, ai_generated}`. Build §5.3 view 7: (i) collapsible right-hand dock on every view
-   (message bubbles, agent-trace timeline from `trace`, confidence badge, evidence panel from
-   `evidence`, AI-generated label + caveat on every response — copy the payload fields, don't
-   re-derive); (ii) context-seeding — dock opened from an alert passes that alert's id as
-   `context_alert_id`; (iii) add an SSE streaming variant of /chat in `backend/copilot/api.py`
-   and use the archive's FIXED `api.ts` CRLF parser (`reference/genai-chatbot/` +
-   FIX_FRONTEND.md) in the client; (iv) restyle onto the V2 tokens (this is also the natural
-   moment for the end-stage UI polish the stakeholder deferred). PREREQ on that machine: real
-   serving artifacts (action 5 recipe) + the `nvapi-` key in `.env` (`NVIDIA_API_KEY=`; models
-   default in `backend/copilot/config.py`; keep `max_tokens` ≥ 2k). Verify: `poe serve` +
-   dock walk + `poe copilot-goldens` still `gate_passed: true` (space runs ~1 min, 40 RPM).
-   Smaller follow-ups after: grow goldens 18→20–30; wire serving artifacts into the CI
-   goldens job; optional LangGraph depth (cut order: last). **[user]** add `NVIDIA_API_KEY`
-   as a GitHub Actions secret when convenient.
-5. ~~Produce REAL serving artifacts~~ **DONE on laptop-C AND master (2026-07-18, see
-   Completed)** — both machines are demo-ready end-to-end. For any OTHER machine the recipe
-   is unchanged: `poe data` → `collusiongraph ingest` (both datasets) → `train` the four configs
-   (gatv2_focal, gatv2_focal_multi, ensemble, cross_domain_probe_proc2fin +
-   transfer_loco_mendeley) → `poe demo-artifacts` → `explain` both datasets →
-   `poe demo-artifacts` again (second pass wires `explanations/` into serving.json). The bare
-   `uv run collusiongraph …` spelling now works on a fresh `uv sync` (console script added
-   2026-07-18).
-6. **[user]** Rotate/revoke the OpenAI API key exposed in `Gen-AI Chatbot/.../.env` AND embedded in the original `FIX_FRONTEND.md` (two exposures) at platform.openai.com.
-7. ~~[user] Make the GitHub repo private~~ **DONE — verified private 2026-07-19 (see Known
-   issues).** Still open from this item: consider rotating the Kaggle token that was
-   shared in a chat session. (OpenAI key rotation stays open as action 6 — user confirmed
-   2026-07-19 it will happen later.)
-8a. **[user] §7 step 31 — RUN the practitioner study (the last M7 item; kit is
-   built and tested, see Completed 2026-07-20).** Self-contained: (i) on a machine
-   with CURRENT bundles (master, or regenerate via the explanations configs), run
-   `uv run collusiongraph eval -c configs/experiment/practitioner_study.yaml`;
-   (ii) recruit ≥5 raters per `docs/practitioner_study.md` (R14 fallback:
-   rubric-trained graduate raters + ≥1 domain expert — report the substitution);
-   (iii) Arm-B sessions need a keyed serving machine (Copilot dock live); (iv)
-   collect `ratings_<rater>.csv`, run `summarize_study` (command in the doc),
-   record per-dimension means, Krippendorff α, per-arm comparison + themes in this
-   ledger. Check capstone ethics rules before recruiting (lightweight expected).
-8b. **§7 step 33 remainder (M8 close-out), sharpened by the red-team review
-   (`docs/red_team_review.md`):** (i) on the machine holding the current campaign
-   artifacts (master), run `uv run poe paper-tables` and carry `paper/tables/` into the
-   manuscript — the builders and skip-honesty are verified; (ii) **[user]** writing per
-   §10.4, honoring RT-1 (label the seed-0 paired-bootstrap deltas wherever quoted beside
+1. **[user/stakeholder] REVIEW the V3 UI + the newly multi-dataset console.** On any
+   machine: `uv run python scripts/build_dev_store.py` (synthetic, keyless) OR use a
+   machine with real artifacts → `uv run collusiongraph serve --port 8001` and, in
+   `frontend/`, `VITE_API_TARGET=http://127.0.0.1:8001 npm run dev` (port 8000 may be
+   occupied — check first). Walk all six views in BOTH domains AND both datasets per
+   domain (the dataset dropdown now offers two each: financial = elliptic_pp +
+   elliptic_pp_actor, procurement = mendeley_eu + garcia_rodriguez). The visual judgment
+   is the point — every prior walk was programmatic, because the in-tool browser pane
+   freezes animation.
+2. **[user] §7 step 31 — RUN the practitioner study (the last M7 item).** The kit is built
+   and tested. (i) on a machine with CURRENT bundles, `uv run collusiongraph eval -c
+   configs/experiment/practitioner_study.yaml`; (ii) recruit ≥5 raters per
+   [`docs/practitioner_study.md`](docs/practitioner_study.md) (R14 fallback:
+   rubric-trained graduate raters + ≥1 domain expert — report the substitution as a
+   limitation); (iii) Arm-B sessions need a keyed serving machine (Copilot dock live);
+   (iv) collect `ratings_<rater>.csv`, run `summarize_study` (command in the doc), record
+   per-dimension means, Krippendorff α, per-arm comparison and themes in this ledger.
+   Check capstone ethics rules before recruiting (lightweight expected).
+3. **§7 step 33 — M8 close-out (the paper).** The writing blueprint is
+   [`docs/paper_blueprint.md`](docs/paper_blueprint.md): section-by-section content plans
+   with every claim mapped to the artifact that proves it, the T1–T8 table map keyed to
+   `poe paper-tables`, the figure list, writing order and submission checklist.
+   (i) run `uv run poe paper-tables` on the master machine (it holds the campaign
+   artifacts) and carry the outputs into the manuscript — three tables are flagged 🔶
+   because their artifacts live on other laptops (wce multiseed, proc2fin curve, OCDS
+   injection); regenerate those or rerun the campaigns locally; (ii) **[user]** write per
+   §10.4 honoring RT-1 (label the seed-0 paired-bootstrap deltas wherever quoted beside
    multi-seed means) and RT-3 (state the no-search-on-either-side tuning policy in the
    baselines section); (iii) OPTIONAL, only if the writing wants a queue-necessity claim:
-   the RT-4 B3-scored queue — clone `alert_queue_elliptic_pp_ensemble.yaml`, point
+   the RT-4 B3-scored queue — clone `alert_queue_elliptic_pp_ensemble.yaml` and point
    `scores_dir`/`scores_file` at the B3 baseline parquet; (iv) **[user]** submission +
    Zenodo DOI (M8 definition of done).
-8. Deferred small items: HeteroExplanation for R-GCN (R12 finding — mask-based explainer is GATv2-only); AMLworld injection-recovery calibration + feature packs + baselines + `NeighborLoader` training on a machine with Kaggle credentials; ~~wire the datasets' **precomputed screens** through as B4 inputs~~ (DONE 2026-07-20 [laptop-B], see Completed — measured wash-to-negative on the Mendeley B4 composite; the remaining question is the LEARNED weighting: run B2/B3 variants whose columns include `groups["precomputed"]` — that is the §7 step-32 −screens-as-features ablation, now one config away; a García tender-level B4 additionally needs a year-coverage EDA to pick a defensible split); ~~automatic percent→k budget resolution in `run_eval`~~ (DONE 2026-07-18, see Completed); Mendeley R-GCN follow-up (firm+tender joint supervision, García co-bid enrichment) before concluding graph signal is absent; degree-preserving null-model z-scores for the structural floor (Phase 2).
+4. **Copilot semantic layer — two gaps MEASURED live 2026-07-20** (see the query-battery
+   Completed entry). (a) *Derived-number false alarms:* the numeric-sanity gate flags
+   correct arithmetic derived from GROUNDED operands (100 ÷ 2 = 50; 50/254 = 19.7%) as
+   ungrounded because the result is not literally in the tool output — confidence drops to
+   0.3 with a spurious "verify these numbers" warning. Add a validation step that accepts a
+   number derivable from grounded operands, without weakening the anti-hallucination guard.
+   (b) *Budget exhaustion on list-shaped questions:* open-ended multi-lookup asks ("which
+   five alerts should I review and what makes each stand out") burn ~8 tool calls and
+   return "please narrow the question". Add a planning step, a batched "explain top-k"
+   tool, or a higher budget for list-shaped questions.
+5. **§7 step 32 — ablation remainder.** Measured so far: −bidirectional edges **−0.19**
+   (strongest single component), −unsupervised arm −0.03, −focal **inconclusive** on GATv2
+   at one seed (it lands inside the focal multi-seed spread). Remaining: −screens-as-
+   features (one config away — B2/B3 variants whose columns include
+   `groups["precomputed"]`) and −temporal-encodings. Optional, only if the paper wants the
+   loss claim settled: a 5-seed wce campaign (`multiseed: true` over
+   `gnn_elliptic_pp_gatv2_wce.yaml`).
+6. **GPU-gated work (Colab/Kaggle — none of it runs in this Windows CPU env).** PNA +
+   GIN+EU on AMLworld HI-Small (Multi-GNN parity; wire `NeighborLoader` first — it needs
+   pyg-lib/torch-sparse, which §4.1 deliberately excludes here); the learned line-encoder
+   over a materialized L(G) on AMLworld (per the B-LG verdict); the AMLworld
+   held-out-pattern (cross-typology) study.
+7. **Optional dashboard polish.** The García queue is honestly thin — **3 alerts**, because
+   its bipartite market graph (firm–tender–bid) rolls up few multi-firm communities. A
+   firm-firm co-bidding projection before Leiden would yield a richer procurement queue;
+   worth doing only if the demo wants it. (Japan market yields 5 alerts at P 0.2 if a
+   different fold is preferred — Italy was chosen because all 3 of its alerts are confirmed
+   cartels.)
+8. **[user] standing actions.** Rotate/revoke the OpenAI API key exposed in the original
+   `Gen-AI Chatbot/.../.env` AND embedded in the original `FIX_FRONTEND.md` (two
+   exposures) at platform.openai.com; consider rotating the Kaggle token shared in a chat
+   session; add `NVIDIA_API_KEY` as a GitHub Actions secret so the manual goldens CI job
+   can run.
+9. **Deferred small items.** HeteroExplanation for R-GCN (R12 — the mask-based explainer is
+   GATv2-only); AMLworld injection-recovery calibration + feature packs + baselines on a
+   machine with Kaggle credentials; Mendeley R-GCN follow-up (firm+tender joint
+   supervision, García co-bid enrichment) before concluding graph signal is absent;
+   degree-preserving null-model z-scores for the structural floor.
 
 ## Decision log
 <!-- - YYYY-MM-DD · decision · rationale · plan section affected -->
