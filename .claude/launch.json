@@ -6,6 +6,7 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
       "cwd": "frontend",
+      "env": { "VITE_API_TARGET": "http://127.0.0.1:8001" },
       "port": 5173
     }
   ]

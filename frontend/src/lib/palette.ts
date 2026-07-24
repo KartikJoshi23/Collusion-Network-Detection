@@ -1,8 +1,10 @@
-// V2 functional multi-hue system (docs/frontend_overhaul.md §3.1).
-// Two tiers: UI hues (bright — glow, chips, ink accents) and the CHART
-// categorical tier, validated with the dataviz six-checks against #0a0e17
-// (L band 0.48–0.67 dark, chroma ≥ 0.1, worst adjacent CVD ΔE 25+, ≥3:1).
+// V2 functional multi-hue system (docs/frontend_overhaul.md §3.1), retuned for
+// the V4 neutral-black canvas. Two tiers: UI hues (bright — glow, chips, ink
+// accents) and the CHART categorical tier, validated with the dataviz
+// six-checks against the V4 ground #08090a (L band 0.48–0.67 dark, chroma
+// ≥ 0.1, worst adjacent CVD ΔE 25+, ≥3:1).
 // Assign categorical hues in FIXED order, never cycled.
+// MUST stay in sync with --chart-1..5 in styles/tokens.css (pinned by test).
 
 export const UI_HUES = {
   cyan: "#22d3ee",
@@ -15,11 +17,11 @@ export const UI_HUES = {
 
 /** Fixed-order categorical series colors for charts (validated). */
 export const CHART_SERIES = [
-  "#0891b2", // cyan
-  "#8b5cf6", // violet
-  "#d97706", // amber
-  "#c026d3", // magenta
-  "#0d9488", // teal
+  "#22a5c4", // cyan
+  "#9a72f2", // violet
+  "#e8890c", // amber
+  "#d63ae0", // magenta
+  "#14a89a", // teal
 ] as const;
 
 /** Status colors are reserved and never reused as series colors. */

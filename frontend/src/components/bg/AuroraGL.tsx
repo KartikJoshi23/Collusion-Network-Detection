@@ -72,15 +72,19 @@ void main() {
   float b = lobe(p, cB, 1.45, t + 7., 9.4);
   float c = lobe(p, cC, 1.15, t + 3., 17.2);
 
-  // additive nebula over the base surface color
-  vec3 base = vec3(0.039, 0.055, 0.09); // --bg-0
+  // additive nebula over the base surface color.
+  // V4: the base is neutral black and the hue gains are ~1/3 of V3's. At the
+  // old 0.30/0.26/0.20 the shader WAS the console's dominant colour — it lit
+  // the whole viewport cyan before any component drew. Now it reads as depth.
+  vec3 base = vec3(0.031, 0.035, 0.039); // --bg-0 #08090a
   vec3 col = base;
-  col += uHueA * a * 0.30;
-  col += uHueB * b * 0.26;
-  col += uHueC * c * 0.20;
+  col += uHueA * a * 0.105;
+  col += uHueB * b * 0.085;
+  col += uHueC * c * 0.065;
 
-  // faint large-scale luminance ripple so the field never reads flat
-  col += vec3(0.5, 0.62, 0.85) * (fbm(p * 1.4 - t * 0.4) - 0.5) * 0.05;
+  // faint large-scale luminance ripple so the field never reads flat.
+  // NEUTRAL by design — V3's vec3(0.5,0.62,0.85) tinted even the "grey" ripple.
+  col += vec3(0.72, 0.73, 0.75) * (fbm(p * 1.4 - t * 0.4) - 0.5) * 0.035;
 
   // vignette keeps edges quiet under the film grain
   float vig = smoothstep(1.45, 0.35, length(uv - 0.5) * 1.9);

@@ -21,7 +21,7 @@ const NAV: { id: ViewId; label: string; hue: string }[] = [
   { id: "explorer", label: "Graph Explorer", hue: UI_HUES.teal },
   { id: "case", label: "Case Detail", hue: UI_HUES.magenta },
   { id: "lab", label: "Model Lab", hue: UI_HUES.violet },
-  { id: "about", label: "About", hue: "#94a3c2" },
+  { id: "about", label: "About", hue: "#a0a2a6" }, // neutral slate (V4)
 ];
 
 // The console mark: three linked nodes, one flagged — the project in 18px.

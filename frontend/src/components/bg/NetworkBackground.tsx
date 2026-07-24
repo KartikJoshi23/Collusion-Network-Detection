@@ -32,13 +32,18 @@ const PULSE_EVERY_MS = 1100;
 
 // V2: the backdrop is multi-hue in both domains; the dominant accent leads
 // but cyan/violet/magenta are all present (single-accent was the V1 failure).
+// V4: the mesh is now mostly NEUTRAL. Weighting --accent double made the
+// particle field a second full-viewport wash in the accent hue, stacking with
+// the aurora — two cyan layers is what "blue dominated" looked like. Neutral
+// nodes carry the structure; the hues punctuate it. Coral pulses unchanged.
 function hueInventory(): string[] {
   const css = getComputedStyle(document.documentElement);
   const v = (name: string, fb: string) => css.getPropertyValue(name).trim() || fb;
+  const neutral = v("--text-2", "#7c7f84");
   return [
+    neutral,
+    neutral, // the mesh reads as structure, not as colour
     v("--accent", "#22d3ee"),
-    v("--accent", "#22d3ee"), // dominant hue weighted double
-    v("--hue-cyan", "#22d3ee"),
     v("--hue-violet", "#a78bfa"),
     v("--hue-magenta", "#e879f9"),
   ];

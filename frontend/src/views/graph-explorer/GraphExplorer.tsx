@@ -18,11 +18,15 @@ function tokens() {
   const v = (name: string, fallback: string) =>
     css.getPropertyValue(name).trim() || fallback;
   return {
+    // V4: context/edge ink is NEUTRAL grey — on a black canvas the old
+    // blue-grey (#46536e / #2b3450) made the whole graph read as a blue mesh,
+    // and it competed with --accent, which is the one hue that means something
+    // here (a lit edge). Flagged members stay coral, lit edges stay accent.
     member: v("--risk-high", "#ff5a5f"),
-    context: "#46536e",
-    edge: "#2b3450",
+    context: "#4a4d55",
+    edge: "#2e3036",
     edgeLit: v("--accent", "#22d3ee"),
-    label: v("--text-1", "#9aa7bf"),
+    label: v("--text-1", "#a7a9ad"),
   };
 }
 
@@ -142,7 +146,7 @@ export function GraphExplorer() {
         const lit = rt <= t;
         return {
           ...attrs,
-          color: lit ? c.edgeLit : "#1a2138",
+          color: lit ? c.edgeLit : "#1c1e22",
           size: lit ? (attrs.size as number) + 0.5 : 0.5,
         };
       },
@@ -250,7 +254,7 @@ export function GraphExplorer() {
             <span className="inline-flex items-center gap-1">
               <span
                 className="inline-block h-2 w-2 rounded-full"
-                style={{ background: "#46536e" }}
+                style={{ background: "#4a4d55" }}
               />
               context
             </span>

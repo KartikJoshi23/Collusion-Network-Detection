@@ -1,26 +1,36 @@
-/* CollusionGraph design tokens — V2 (docs/frontend_overhaul.md §3).
-   Dark investigator console. V2 core rules:
-   - FUNCTIONAL MULTI-HUE: five hue families live simultaneously on every
-     screen (cyan=structure/financial, violet=models/procurement,
-     magenta=highlights, amber=amounts/medium-risk, coral=flagged ONLY,
-     teal=benign). The domain toggle shifts which hue DOMINATES (--accent);
-     it no longer recolors the whole inventory.
-   - VISIBLE GLASS: multi-hue aurora bright enough to feed the blur; panel
-     fills at 25–35% alpha gradients; neon edges on interactive glass.
+/* CollusionGraph design tokens — V4 (docs/frontend_overhaul.md §3, V4 section).
+   Dark investigator console on a NEUTRAL BLACK canvas.
+
+   V4 rule (review #5: "still blue dominated… not industry grade"): the CHROME
+   is achromatic and the HUE carries MEANING. Every surface, panel, border and
+   body text is a neutral grey mixed from --ink (R≈G≈B — no blue cast); colour
+   appears only where it encodes something: risk (coral/amber/teal), the six
+   view identities, the five chart categoricals, and the domain accent. That
+   inverts V2/V3, where blue-tinted surfaces + a bright cyan aurora meant one
+   hue owned ~80% of every screen at rest.
+
+   Held from V2/V3 (the earlier rejections):
+   - FUNCTIONAL MULTI-HUE: five hue families still live simultaneously — now as
+     data ink on black rather than as the canvas itself.
+   - VISIBLE GLASS: fills are neutral but MORE opaque (0.34–0.52) so panels read
+     as glass against black instead of dissolving into it.
    - HOVER LANGUAGE: every interactive surface lifts/glows/reveals. */
 
 :root {
-  /* base surfaces */
-  --bg-0: #0a0e17;
-  --bg-1: #0d1220;
-  --bg-2: #141a2e;
-  --bg-3: #1c2440;
-  --hairline: #263050;
+  /* base surfaces — neutral charcoal ramp mixed from one ink so no step can
+     drift blue; keep R≈G≈B when editing (max channel spread ≤ 8/255) */
+  --bg-0: #08090a;
+  --bg-1: #0e0f11;
+  --bg-2: #151619;
+  --bg-3: #1e2023;
+  --hairline: #2b2d32;
 
-  /* text */
-  --text-0: #eaeffa;
-  --text-1: #9aa7bf;
-  --text-2: #64718c;
+  /* text — neutral greys (no blue-grey cast) */
+  --text-0: #f3f4f6;
+  --text-1: #a7a9ad;
+  /* lifted to clear WCAG AA 4.5:1 against the bare --bg-0 ground (measured
+     4.90:1; the V3 value sat under 4.5 once the ground went darker) */
+  --text-2: #7c7f84;
 
   /* ── the five simultaneous hue families (UI tier — bright, for glow/ink) */
   --hue-cyan: #22d3ee;
@@ -35,13 +45,15 @@
   --risk-med-dim: color-mix(in srgb, var(--risk-med) 16%, transparent);
   --benign: var(--hue-teal);
 
-  /* chart categorical tier — validated against #0a0e17 (dataviz six checks:
-     L band 0.48–0.67 dark, chroma ≥ .1, CVD ΔE ≥ 12, contrast ≥ 3:1) */
-  --chart-1: #0891b2; /* cyan */
-  --chart-2: #8b5cf6; /* violet */
-  --chart-3: #d97706; /* amber */
-  --chart-4: #c026d3; /* magenta */
-  --chart-5: #0d9488; /* teal */
+  /* chart categorical tier — brightened for the V4 black canvas. The V3 ramp
+     was tuned against #0a0e17; on #08090a these carry more contrast headroom,
+     so each is lifted one step to sit in the dataviz L band 0.48–0.67 against
+     the darker ground (chroma ≥ .1, CVD ΔE ≥ 12, contrast ≥ 3:1 all hold). */
+  --chart-1: #22a5c4; /* cyan */
+  --chart-2: #9a72f2; /* violet */
+  --chart-3: #e8890c; /* amber */
+  --chart-4: #d63ae0; /* magenta */
+  --chart-5: #14a89a; /* teal */
 
   /* dominant accent — domain sets it; SUBORDINATE hues stay fixed */
   --accent: var(--hue-cyan);
@@ -54,9 +66,10 @@
     var(--hue-magenta)
   );
 
-  /* glass (V2 §3.2 — must be VISIBLE) */
-  --glass-fill-hi: rgb(44 52 84 / 0.38);
-  --glass-fill-lo: rgb(14 17 32 / 0.22);
+  /* glass (V4: NEUTRAL fill, raised alpha so panels still read against black —
+     the V2 fill rgb(44 52 84) was itself a blue light source on every panel) */
+  --glass-fill-hi: rgb(44 46 51 / 0.52);
+  --glass-fill-lo: rgb(16 17 20 / 0.34);
   --glass-blur: 16px;
 
   --radius: 12px;
@@ -93,8 +106,12 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* ── aurora backdrop — 3 distinct hues, BOTH domains, bright enough to feed
-   the glass blur (V2 §3.1). Domain shifts emphasis, never collapses hues. */
+/* ── aurora backdrop — V4: corner EMBERS, not a wash. The V2/V3 radials ran at
+   14–22% across 50rem+ fields, which is what actually made the console read
+   blue: the canvas itself was tinted before a single component drew. They are
+   now 5–7% over smaller fields, biased to the corners, so the centre of every
+   screen stays true black and the hue survives only as a depth cue at the
+   margins. Domain shifts which ember leads; all three hues remain present. */
 body::before {
   content: "";
   position: fixed;
@@ -103,37 +120,37 @@ body::before {
   pointer-events: none;
   background:
     radial-gradient(
-      50rem 34rem at 8% -6%,
-      color-mix(in srgb, var(--hue-cyan) 22%, transparent),
+      34rem 24rem at 2% -8%,
+      color-mix(in srgb, var(--hue-cyan) 7%, transparent),
+      transparent 66%
+    ),
+    radial-gradient(
+      36rem 26rem at 106% 4%,
+      color-mix(in srgb, var(--hue-violet) 6%, transparent),
+      transparent 64%
+    ),
+    radial-gradient(
+      42rem 30rem at 58% 122%,
+      color-mix(in srgb, var(--hue-magenta) 5%, transparent),
       transparent 62%
-    ),
-    radial-gradient(
-      54rem 36rem at 104% 8%,
-      color-mix(in srgb, var(--hue-violet) 20%, transparent),
-      transparent 60%
-    ),
-    radial-gradient(
-      62rem 44rem at 55% 116%,
-      color-mix(in srgb, var(--hue-magenta) 14%, transparent),
-      transparent 58%
     );
 }
 :root[data-domain="procurement"] body::before {
   background:
     radial-gradient(
-      50rem 34rem at 8% -6%,
-      color-mix(in srgb, var(--hue-violet) 22%, transparent),
+      34rem 24rem at 2% -8%,
+      color-mix(in srgb, var(--hue-violet) 7%, transparent),
+      transparent 66%
+    ),
+    radial-gradient(
+      36rem 26rem at 106% 4%,
+      color-mix(in srgb, var(--hue-magenta) 6%, transparent),
+      transparent 64%
+    ),
+    radial-gradient(
+      42rem 30rem at 58% 122%,
+      color-mix(in srgb, var(--hue-cyan) 5%, transparent),
       transparent 62%
-    ),
-    radial-gradient(
-      54rem 36rem at 104% 8%,
-      color-mix(in srgb, var(--hue-magenta) 18%, transparent),
-      transparent 60%
-    ),
-    radial-gradient(
-      62rem 44rem at 55% 116%,
-      color-mix(in srgb, var(--hue-cyan) 14%, transparent),
-      transparent 58%
     );
 }
 
@@ -190,12 +207,15 @@ body::after {
   z-index: 0;
   border-radius: inherit;
   padding: 1px;
+  /* V4: a mostly-ACHROMATIC edge. At V3's 55%/45% every panel outline was a
+     saturated accent stroke, and a screen of panels summed to a blue frame.
+     Hue now only tips the two ends of an otherwise white-alpha edge. */
   background: linear-gradient(
     165deg,
-    color-mix(in srgb, var(--accent) 55%, transparent),
-    rgb(255 255 255 / 0.14) 30%,
-    rgb(255 255 255 / 0.05) 55%,
-    color-mix(in srgb, var(--accent-2) 45%, transparent)
+    color-mix(in srgb, var(--accent) 26%, transparent),
+    rgb(255 255 255 / 0.16) 32%,
+    rgb(255 255 255 / 0.06) 58%,
+    color-mix(in srgb, var(--accent-2) 20%, transparent)
   );
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
@@ -214,8 +234,8 @@ body::after {
 .glass-strong {
   background: linear-gradient(
     160deg,
-    rgb(52 60 96 / 0.44),
-    rgb(18 21 38 / 0.26)
+    rgb(54 57 62 / 0.58),
+    rgb(18 19 22 / 0.38)
   );
 }
 /* neon edge for interactive glass — pass a hue via --panel-hue */
@@ -446,7 +466,7 @@ input[type="range"].budget::-moz-range-thumb {
   gap: 2px;
   padding: 3px;
   border-radius: 10px;
-  background: linear-gradient(160deg, var(--glass-fill-lo), rgb(10 13 24 / 0.35));
+  background: linear-gradient(160deg, var(--glass-fill-lo), rgb(12 13 15 / 0.35));
   box-shadow: inset 0 0 0 1px var(--hairline);
 }
 .tab {

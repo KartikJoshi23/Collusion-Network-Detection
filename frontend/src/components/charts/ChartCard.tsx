@@ -48,7 +48,7 @@ export function ChartCard({
       }),
     );
     img.onload = () => {
-      ctx.fillStyle = "#0a0e17"; // figures keep the console surface
+      ctx.fillStyle = "#08090a"; // figures keep the console surface (V4 --bg-0)
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       URL.revokeObjectURL(url);
