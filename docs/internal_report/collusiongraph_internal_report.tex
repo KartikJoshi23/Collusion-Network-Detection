@@ -121,6 +121,45 @@ person is guilty''\par}
 \tableofcontents
 \newpage
 
+\section*{Where everything lives}
+\addcontentsline{toc}{section}{Where everything lives}
+
+All paths are relative to the repository root.
+
+\begin{center}\small
+\begin{tabular}{@{}p{4.6cm}p{10.4cm}@{}}
+\toprule
+\textbf{What} & \textbf{Path} \\
+\midrule
+\textbf{This report (source)} & \code{docs/internal\_report/collusiongraph\_internal\_report.tex} \\
+\textbf{How to build the PDF} & \code{docs/internal\_report/README.md} \\
+\textbf{Architecture diagrams} & \code{docs/architecture.html} \quad --- open in any browser, no internet needed \\
+\midrule
+The project diary & \code{PROGRESS.md} \\
+Formal model summary & \code{docs/model\_card.md} \\
+Number $\rightarrow$ config map & \code{docs/reproducibility.md} \\
+Our attack on our own work & \code{docs/red\_team\_review.md} \\
+Binding ethical rules & \code{docs/ethics\_and\_scope.md} \\
+Per-dataset detail & \code{docs/DATASETS.md}, \code{docs/datasheets/} \\
+Warning-sign tables & \code{docs/red\_flag\_mappings.md} \\
+Assistant's glossary & \code{backend/copilot/glossary.yaml} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{plain}
+\textbf{Build this report:} \code{pdflatex collusiongraph\_internal\_report.tex}
+run \emph{twice} (for the contents page and cross-references), or
+\code{latexmk -pdf collusiongraph\_internal\_report.tex}. Overleaf compiles the
+single file as-is.
+
+\textbf{Run the dashboard:} \code{uv run collusiongraph serve --port 8001}, then
+in \code{frontend/}: \code{VITE\_API\_TARGET=http://127.0.0.1:8001 npm run dev},
+then open \code{http://localhost:5173}.
+\end{plain}
+
+\newpage
+
 % =====================================================================
 \section{The Project in One Page}
 \label{sec:story}
@@ -579,6 +618,16 @@ concerned with stopping money laundering. \\
 \textbf{Term} & \textbf{What it means} \\
 \midrule
 \endhead
+\textbf{True Positive (TP)} & We flagged it and it really was bad. The win. \\
+\textbf{True Negative (TN)} & We left it alone and it really was fine. The
+silent success, and by far the most common outcome. \\
+\textbf{False Positive (FP)} & We flagged something innocent. Wasted review
+work, and unfair attention on an innocent party. \\
+\textbf{False Negative (FN)} & A real ring existed and we missed it. The
+dangerous error. \\
+\textbf{Confusion matrix} & The 2$\times$2 table holding those four counts.
+Every other measure in this report is built from it ---
+Section~\ref{sec:confusion}. \\
 \textbf{Prevalence} & How common the bad thing actually is. If 2 in every 100
 transactions are criminal, prevalence is 0.02. This is also the score you get by
 pure blind guessing, which is why we print it beside every result. \\
@@ -807,10 +856,32 @@ the central difficulty of the whole project.
   \item The usual scoring numbers look excellent while the system is useless.
 \end{itemize}
 
-We answer this four ways: focal loss (pay extra attention to the rare cases);
-budget-based measuring instead of accuracy; always printing the guessing level
-beside every score; and planting extra known-fake cases so the model gets more
-examples to learn from without us distorting the real data.
+We answer this four ways: focal loss; budget-based measuring instead of
+accuracy; always printing the guessing level beside every score; and planting
+extra known-fake cases so the model gets more examples without us distorting the
+real data.
+
+\begin{keybox}
+\textbf{How does focal loss actually help? (The follow-up question, answered.)}
+
+Ordinary training treats every mistake as equally important. With 50 innocent
+examples for every guilty one, the fastest way for the model to reduce its total
+error is to get very good at saying ``fine'' --- the rare cases are a rounding
+error in its score, so it learns to ignore them.
+
+Focal loss changes the arithmetic. Once the model is already confident and
+correct about an easy case, that case's contribution is scaled \emph{down}
+sharply. The easy majority stops shouting, so the difficult rare cases --- the
+ones that actually carry the signal --- become the loudest thing left, and the
+model is forced to spend its capacity on them.
+
+\pw{A teacher who keeps re-marking the questions the class already gets right
+learns nothing about the class. Focal loss tells the model to stop re-marking
+the easy ones.}
+
+\textbf{And did it work?} Honestly: decisively on one model family and
+inconclusively on another. Section~\ref{sec:tuning} reports both.
+\end{keybox}
 
 \subsection{How the data is split into training and testing}
 
@@ -867,6 +938,95 @@ OCDS Georgia & --- & \textbf{33.3\%} & 162{,}377 of 488{,}300 in the test window
 about 64/36, AMLworld close to half and half. OCDS Georgia has no train side at
 all: it carries no answer key, so its 2020--2024 window is simply the region we
 plant synthetic cartels into.
+
+\subsubsection*{``But everyone says 80/20 is best --- why aren't you at 80/20?''}
+
+This is the first question people ask, and it deserves a measured answer rather
+than an appeal to convention. We tested it.
+
+\textbf{First, where 80/20 comes from.} The 80/20 rule is advice for
+\emph{randomly shuffled, independent} data --- a pile of photos, a table of
+customers --- where any row is as good as any other and you just need a big
+enough test sample. Our data is not that. It is one connected network moving
+through time. You cannot shuffle it without letting the future leak into the
+past (Rule 1 above), so the split point must be a \emph{moment}, and the
+percentage is simply whatever happens to fall either side of that moment.
+
+\textbf{Second, what 80/20 would actually cost.} We computed every possible
+temporal cut on Elliptic++. The cut closest to 80/20 is after time step 40.
+
+\begin{center}\small
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+\textbf{Split} & \textbf{Train / Test} & \textbf{Labelled test items} & \textbf{Criminal test items} \\
+\midrule
+\textbf{Ours} (cut at 34) & 66.9 / 33.1 & 16{,}670 & \textbf{1{,}083} \\
+80/20 (cut at 40) & 79.3 / 20.7 & 9{,}973 & \textbf{524} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{keybox}
+\textbf{An 80/20 split would throw away 52\% of the criminal cases we are able
+to measure on.}
+
+That is the entire argument. When only about 6 in 100 items are criminal, the
+test set's value is set by \emph{how many criminals it contains}, not how many
+rows it has. Halving your positives roughly doubles the noise in every number
+you report --- you would be making the evaluation weaker in order to hit a round
+number that was never meant for this kind of data.
+\end{keybox}
+
+\textbf{Third, and worse: 80/20 lands in a hole.} Look at what the late period
+actually contains:
+
+\begin{center}\small
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+\textbf{Time step} & \textbf{Criminal} & \textbf{Labelled} & \textbf{Criminal share} \\
+\midrule
+42 & 239 & 2{,}154 & 11.10\% \\
+\textbf{43} & \textbf{24} & 1{,}370 & \textbf{1.75\%} \quad $\leftarrow$ regime change \\
+44 & 24 & 1{,}591 & 1.51\% \\
+45 & \textbf{5} & 1{,}221 & 0.41\% \\
+46 & \textbf{2} & 712 & 0.28\% \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+A dark marketplace was shut down around step 43, and criminal activity in the
+data falls off a cliff. Steps 45 and 46 contain \textbf{five} and \textbf{two}
+criminal items. An 80/20 test set is dominated by these almost-empty periods, so
+its score would be decided by a handful of items and would swing wildly for
+reasons that have nothing to do with the model.
+
+\textbf{Fourth --- the reason that outranks all of the above.} Cutting at step 34
+is the \textbf{published convention} every other paper on this dataset uses. Our
+numbers are directly comparable with theirs; an 80/20 cut would make them
+comparable with nothing. In a research project that is worth more than any
+tuning gain.
+
+\begin{plain}
+\textbf{The short answer, for a presentation.}
+
+``80/20 is a rule for shuffled independent data. Ours is a network over time, so
+we split at a date, not at a percentage --- and the percentage is whatever falls
+either side. We also checked what 80/20 would cost: it would discard 52\% of the
+criminal cases we can measure on, and put the test set inside a period where two
+of the time steps contain five and two criminals respectively. Our cut also
+happens to be the standard used by every published paper on this dataset, so our
+numbers can be compared with theirs. More test data is a feature here, not
+waste.''
+\end{plain}
+
+\begin{plain}
+\textbf{And the same logic on the others.} Mendeley's cut is 2013/2014 because
+that is where the cartel cases and the contract record both give enough data
+either side; AMLworld's near-50/50 arises because its accounts nearly all appear
+in the first few minutes, so any cut later than that leaves almost no
+\emph{new} accounts to test on. In every case the boundary is chosen for a
+reason about the data, and the percentage is reported, never targeted.
+\end{plain}
 
 \begin{keybox}
 \textbf{The percentage that actually matters is not the row count.}
@@ -1090,6 +1250,29 @@ combine them.}
 models without translating first drops the score from \textbf{0.4434 to 0.0511}
 --- near-total collapse. It happens every single time, on every attempt.
 
+\begin{keybox}
+\textbf{Why does it collapse so badly? (The follow-up question, answered.)}
+
+Our five members are wildly unequal. The supervised model scores about 0.47; the
+autoencoders and the floor score 0.04--0.06, which is \emph{at or below blind
+guessing}.
+
+Averaging raw rankings gives all five an equal vote. Four of the five voters are
+no better than random, so their noise simply outvotes the one member that knows
+anything, and the combined ranking ends up close to random too.
+
+Calibration fixes this without anyone choosing weights by hand. Once each
+member's output is converted to a genuine probability, the weak members'
+predictions cluster tightly around the base rate --- they end up saying
+``about 5\% for everything'', which barely moves the ranking --- while the strong
+member's confident scores spread out and dominate. \emph{Being uninformative
+becomes self-silencing.}
+
+\textbf{So why keep the weak members at all?} Because on data with no answer key
+they are the only thing that works --- the entire 163{,}000-node study runs on
+them. Calibration is what makes it safe to carry them.
+\end{keybox}
+
 \subsection{Leiden --- forming the groups}
 
 \pw{Leiden finds clusters that are tightly connected inside and loosely connected
@@ -1136,6 +1319,103 @@ basic sanity check on \textbf{41 out of 50} alerts. PGExplainer learns once, the
 explains everything cheaply; failures dropped to \textbf{1 out of 50}, and it ran
 2.4 times faster. We swapped on evidence.
 
+\subsection{``Why that exact number?'' --- the settings, one by one}
+\label{sec:whynumbers}
+
+Every specific value in a system is a decision, and an examiner will pick one at
+random and ask where it came from. Here is every one that matters.
+
+\begin{warnbox}
+\textbf{Start with the uncomfortable one, because it governs all the others.}
+
+\textbf{We ran no hyperparameter search. None. On either side.}
+
+Not for our models and not for the XGBoost measuring stick. Values below are
+either standard published defaults or forced by the data.
+
+Why admit that? Because the alternative is worse. If we had tuned our models and
+not the baseline, every comparison would be rigged in our favour and worthless.
+Tuning both properly was beyond the compute we had. So we tuned neither, which
+is the only remaining honest option --- and note which way it cuts:
+\textbf{the baseline wins every comparison it enters}, so an untuned baseline
+works \emph{against} us, not for us. Any tuning we later did would most likely
+widen our reported gap, not close it.
+\end{warnbox}
+
+\begin{longtable}{@{}p{3.5cm}p{1.6cm}p{9.9cm}@{}}
+\toprule
+\textbf{Setting} & \textbf{Value} & \textbf{Why that value} \\
+\midrule
+\endhead
+Message-passing rounds (layers) & \textbf{2} &
+Each round lets a dot see one step further. Two rounds means a dot is described
+by its neighbours and its neighbours' neighbours --- which is the scale our nine
+shapes live at. Going deeper is not just slower: with more rounds every dot's
+description drifts towards the average of the whole network, a known failure
+called over-smoothing, and the thing that makes a group distinctive washes out. \\
+\addlinespace
+Hidden size & \textbf{64} &
+The standard default in this literature. Big enough to hold a useful summary,
+small enough to train on a laptop. Not searched. \\
+\addlinespace
+Attention heads & \textbf{4} &
+Lets the model attend to several kinds of neighbour at once (say, one head for
+large amounts and one for timing) rather than being forced into a single view.
+Four is the common default. Not searched. \\
+\addlinespace
+Dropout & \textbf{0.3} &
+Randomly ignores 30\% of the signal during training so the model cannot lean on
+any single feature. Standard value. \\
+\addlinespace
+Focal loss strength ($\gamma$) & \textbf{2.0} &
+The value published with the method. $\gamma=0$ would make it ordinary loss;
+higher values concentrate harder on difficult rare cases. We use the published
+default and \emph{report} the comparison against weighted cross-entropy rather
+than tuning to win it. \\
+\addlinespace
+Review budgets & \textbf{50 / 100 / 200} &
+Taken from the problem statement's own operational framing (``top 100''), with
+one lower and one higher so the trend is visible rather than a single
+cherry-picked point. Procurement additionally uses top 1 / 5 / 10\% because
+tender queues differ hugely in length between countries. \\
+\addlinespace
+Duplicate-removal threshold & \textbf{0.5} &
+Two alerts sharing more than half their members are the same lead twice. Below
+0.5 you would start merging genuinely different groups that happen to share a
+few entities. \textbf{And we did not simply assert this} --- the sensitivity
+sweep varies it, and the queue keeps all 254 alerts at every threshold tested,
+so this choice provably does not drive any published number. \\
+\addlinespace
+Alert size cap & \textbf{100 members} &
+A ``group'' of thousands is not a lead, it is a phone book --- and without a cap
+one mega-cluster absorbs the whole review budget while being impossible to
+investigate. 100 is roughly the largest group a human team can still work
+through. \\
+\addlinespace
+Hit rule & \textbf{$\geq 1$ confirmed} &
+The lenient choice, chosen deliberately \emph{and then tested against stricter
+ones} (10\% and 25\% of members confirmed). Results held. Had we only reported
+the lenient rule, that would be a fair criticism; reporting it alongside the
+strict ones is the answer to it. \\
+\addlinespace
+Seeds per campaign & \textbf{5} &
+Enough to expose instability --- and it did: it revealed our best single result
+(0.5492) was a lucky run against a true average of 0.4729. More would tighten
+the estimate, but each seed is a full training run, and five already changed
+our conclusions. Below five you cannot see a spread at all. \\
+\addlinespace
+Explanation neighbourhood & \textbf{2 hops} &
+Matched to the model: a 2-layer network can only ever use information from 2
+hops away, so explaining over a wider region would be showing evidence the model
+never actually saw. \\
+\addlinespace
+Explanations produced & \textbf{queue head} &
+Explanations cost real computation per alert. They are generated for the top of
+each queue, which is what a team at a fixed budget will actually open. Lower
+alerts still carry a score and a network. \\
+\bottomrule
+\end{longtable}
+
 \subsection{Why we did not use these other methods}
 
 An examiner will ask, so here are the honest answers.
@@ -1178,6 +1458,87 @@ against real retrieved data. \\
 % =====================================================================
 \section{How We Measure Success}
 \label{sec:metrics}
+
+\subsection{The four outcomes: TP, TN, FP, FN}
+\label{sec:confusion}
+
+Every measurement in this report is built from four possible outcomes. They are
+worth ten minutes because every other number is made of them.
+
+\pw{You point at some groups and say ``check these''. Reality then has its own
+opinion. There are exactly four ways your call and reality can line up.}
+
+\begin{center}\small
+\begin{tabular}{@{}p{2.3cm}p{6.3cm}p{6.3cm}@{}}
+\toprule
+ & \textbf{We flagged it} & \textbf{We did not flag it} \\
+\midrule
+\textbf{Really was bad} &
+\textbf{True Positive (TP)} \newline
+We said check it; it was genuinely a cartel or laundering ring. \newline
+\emph{The win.} &
+\textbf{False Negative (FN)} \newline
+A real ring existed and we stayed silent. \newline
+\emph{The dangerous miss --- the crime goes unexamined.} \\
+\addlinespace
+\textbf{Really was fine} &
+\textbf{False Positive (FP)} \newline
+We sent an investigator to look at something innocent. \newline
+\emph{The expensive mistake --- wasted work, and unfair attention on an innocent
+firm.} &
+\textbf{True Negative (TN)} \newline
+Ordinary activity we correctly left alone. \newline
+\emph{The silent success --- and there is an enormous amount of it.} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsubsection*{How the metrics are built from those four}
+
+\begin{center}\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Measure} & \textbf{Formula} & \textbf{The question it answers} \\
+\midrule
+Precision & TP / (TP + FP) &
+Of the cases we sent you, how many were real? \\
+Recall & TP / (TP + FN) &
+Of all the real cases out there, how many did we catch? \\
+False-positive rate & FP / (FP + TN) &
+Of everything innocent, what share did we bother? \\
+Accuracy & (TP + TN) / everything &
+\emph{Useless here} --- see below. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{keybox}
+\textbf{Precision and recall pull against each other, and that is the whole
+job.}
+
+Flag everything and you catch every ring (recall 1.0) but almost all your work
+is wasted (precision near zero). Flag nothing and you never waste a minute
+(no false positives) but you catch nothing.
+
+A screening tool lives on that trade-off, and the review budget is where you
+choose to sit on it. That is why we never quote a single quality number without
+saying at what budget.
+\end{keybox}
+
+\begin{warnbox}
+\textbf{A subtlety this project cannot ignore: ``unconfirmed'' is not
+``innocent''.}
+
+On the Bitcoin data about 76\% of items carry \emph{no answer at all}. So when
+we call something a false positive, what we honestly mean is ``we flagged it and
+could not confirm it''. It may well be a true positive nobody has yet verified.
+
+This cuts one way only: it means our reported precision is a
+\textbf{lower bound}, and our real-world false-positive count is probably lower
+than the number we publish. We do not quietly claim that benefit --- we report
+the pessimistic figure and state the caveat, and the Model Lab prints
+``unconfirmed $\neq$ false'' next to the queue chart for exactly this reason.
+\end{warnbox}
 
 \subsection{Why we never report ``accuracy''}
 

@@ -71,6 +71,22 @@ terms:
       illicit, and equals the score that blind guessing would achieve. It is
       printed beside every AUC-PR value so no score is ever read in isolation.
 
+  - id: CG-CONFUSION-01
+    term: true positive, true negative, false positive, false negative
+    aliases:
+      [true positive, true negative, false positive, false negative, tp, tn,
+       fp, fn, confusion matrix, missed case, false alarm]
+    text: >-
+      Every measurement rests on four outcomes. A true positive is a group we
+      flagged that really was illicit. A true negative is ordinary activity we
+      correctly left alone. A false positive is something innocent we flagged,
+      which wastes review effort and puts unfair attention on an innocent party.
+      A false negative is a real ring we missed, which is the dangerous error.
+      Precision counts true positives against everything we flagged; recall
+      counts them against everything that was really there. Note that on data
+      where most items carry no label, an apparent false positive may simply be
+      unconfirmed rather than innocent, so reported precision is a lower bound.
+
   - id: CG-ALERT-01
     term: alert
     aliases: [alert, case, community alert, flagged group]
