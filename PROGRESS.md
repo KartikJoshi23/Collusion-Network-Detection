@@ -9,13 +9,27 @@
 
 ## Current milestone
 
-> ✅ **PRESENTATION SCRIPTS + "EXPLAIN, DON'T DEFINE" REWRITE DELIVERED
-> [master, 2026-07-25]** — all four parts of the brief
-> ([`docs/presentation_scripts_brief.md`](docs/presentation_scripts_brief.md)):
-> (a) [`docs/presentation_script_dashboard.md`](docs/presentation_script_dashboard.md)
-> — 27 spoken units, ~20 min, every tab and every control; (b)
-> [`docs/presentation_script_architecture.md`](docs/presentation_script_architecture.md)
-> — 15 units, ~15 min, ten stages + trust boundary + both cloud planes + costs;
+> 🔴 **SCRIPTS REBUILT IN LATEX, REFERENCE SLIDE FORMAT [master, 2026-07-25 —
+> second pass, supersedes the markdown ones].** The stakeholder rejected the
+> first drafts: *"I wanted it in latex code not md files… the starting is so
+> vague, I have never seen a presentation in my life starting like this"* and
+> supplied two reference images. Now
+> [`docs/presentation_scripts/dashboard.tex`](docs/presentation_scripts/dashboard.tex)
+> (**30 slides, ~21 min**) and
+> [`docs/presentation_scripts/architecture.tex`](docs/presentation_scripts/architecture.tex)
+> (**19 slides, ~16 min**), sharing
+> [`scriptstyle.sty`](docs/presentation_scripts/scriptstyle.sty). Per slide:
+> a title, **Importance: x/10**, **Suggested time**, a blue **Say this** box, a
+> green **What this actually means** box, and a NEW amber **If the evaluator
+> asks** box. The markdown versions are deleted — one source of truth. The
+> dashboard script now opens like a real presentation (team, brief, the claim,
+> the running order) because the dashboard is what the talk starts with.
+> **Also fixed this pass:** the report's fidelity section used "the highlighted
+> lines" without ever defining it — now defined before use, with a worked
+> example and an exam analogy, and the phrase is repaired at all four sites.
+> Earlier the same day (superseded but still true):
+> (a) the markdown dashboard script — 27 units; (b)
+> the markdown architecture script — 15 units;
 > (c) the report's `sec:arch` / `sec:cloud` / `sec:dashboard` rebuilt from
 > one-line tables into four-part explanations (what it is · why it exists ·
 > what breaks without it · `\aloud{}` the sentence you say); (d) `plainReason`
@@ -1284,11 +1298,17 @@ still public 2026-07-15 — anonymous clone succeeded).
 ## Next actions (ordered, self-contained)
 
 0. 🔴 **[user/stakeholder] READ THE TWO SCRIPTS ALOUD AND SAY WHERE THEY FAIL.**
-   They are written, measured and pushed:
-   [`docs/presentation_script_dashboard.md`](docs/presentation_script_dashboard.md)
-   (27 units, ~20 min) and
-   [`docs/presentation_script_architecture.md`](docs/presentation_script_architecture.md)
-   (15 units, ~15 min). **The test is reading a SAY THIS block out loud, at
+   They are written, measured and pushed, in LaTeX, in the reference slide
+   format: [`docs/presentation_scripts/dashboard.tex`](docs/presentation_scripts/dashboard.tex)
+   (30 slides, ~21 min — **this is the opening of the talk**) and
+   [`docs/presentation_scripts/architecture.tex`](docs/presentation_scripts/architecture.tex)
+   (19 slides, ~16 min). Compile with `pdflatex dashboard.tex` from inside
+   `docs/presentation_scripts/` (the `.sty` must sit beside the `.tex`); there
+   is still **no LaTeX toolchain on master**, so both files are verified
+   mechanically only — braces balanced, environments matched, 0 table column
+   mismatches. **First job on any machine with TeX: compile both and eyeball
+   the boxes against the reference images.**
+   **The test is reading a Say this block out loud, at
    normal speed, with the console open in front of you.** If a block does not
    survive that, say **which unit number** and which of these it was — too long
    to say in one breath / a word you would not use / it explains the system
