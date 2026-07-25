@@ -71,6 +71,15 @@
 \newcommand{\pw}[1]{\textit{\textcolor{accent}{Picture it:}} #1}
 \newcommand{\code}[1]{\texttt{\small #1}}
 
+% The sentence you would actually say out loud about a component. Added
+% 2026-07-25 after the stakeholder's verdict that the architecture, cloud and
+% dashboard sections gave definitions rather than explanations: "there is no
+% point reading it from the report, it made the work harder rather than
+% simpler". Every component in those three sections now answers four questions
+% — what it is, why it exists, what breaks without it, and this.
+\newcommand{\aloud}[1]{\par\smallskip\noindent\textit{\textcolor{accent}{Say
+it like this:}} ``#1''\par\smallskip}
+
 \setlist[itemize]{topsep=3pt,itemsep=2pt,parsep=0pt,leftmargin=1.4em}
 \setlist[enumerate]{topsep=3pt,itemsep=2pt,parsep=0pt,leftmargin=1.6em}
 
@@ -1953,17 +1962,37 @@ is no answer key. This is deep learning doing something nothing else can.
 \section{The System Architecture}
 \label{sec:arch}
 
-This section explains \code{docs/architecture.html}, the diagram page, in the
-same plain language. Open that file in any browser. It has a light/dark switch
-and needs no internet connection.
+This section explains \code{docs/architecture.html}, the diagram page. Open that
+file in any browser. It has a light/dark switch and needs no internet
+connection.
+
+There is also a \textbf{spoken script} for this page:
+\code{docs/presentation\_script\_architecture.md}. It contains the words to say
+out loud, unit by unit, with the likely pushback and the answer. This section
+is the reference version; that file is the performance version.
 
 The page has four parts: the system flowchart, the method cards, the cloud
 diagram, and the costs.
+
+\begin{keybox}
+\textbf{If you remember one sentence about this architecture, make it this
+one.} The top half of the diagram \emph{builds} results and then stops running.
+The bottom half can only \emph{read} them.
+
+Three things follow from that one split. The security property. The running
+cost. And the fact that the whole thing demonstrates on a laptop with the wifi
+switched off.
+\end{keybox}
 
 \subsection{The flowchart --- ten numbered stages}
 
 Read it top to bottom. Everything above the trust boundary builds the results.
 Everything below only shows them.
+
+The table immediately below is a \emph{map}, not the explanation. It exists so
+you can find a box quickly. The real explanations follow it, one per stage. Each
+answers the same four questions. What is it. Why does it exist. What would
+break without it. And what would you actually say out loud about it.
 
 \begin{longtable}{@{}p{0.7cm}p{4.0cm}p{10.5cm}@{}}
 \toprule
@@ -2007,89 +2036,417 @@ never decides anything. \\
 \bottomrule
 \end{longtable}
 
+\subsection{Stages 1 and 2 --- getting two different worlds into one shape}
+
+\textbf{What it is.} Six readers, one per dataset, each checking the file's
+fingerprint before it touches anything. Then a converter that turns whatever
+came out of those readers into a single common format: things, connections
+between things, and --- where they exist --- answers. The time-splitting rules
+are applied in the same box.
+
+\textbf{Why it exists.} Because otherwise this project would be two projects. A
+bank ledger and a public-tender register have nothing in common on the surface:
+different columns, different identifiers, different time units, different words
+for everything. Box 2 is where that surface difference is deliberately thrown
+away. After it, the system genuinely does not know which crime it is looking
+at. A bank account and a construction firm arrive as the same kind of object
+with the same kind of connections.
+
+\textbf{What breaks without it.} Two things, and the second is worse than the
+first. First, every stage downstream would have to be written twice, tested
+twice, and audited twice --- two sets of bugs, two sets of leakage risks.
+Second, and fatally for the research question: \textbf{the cross-domain
+experiments would be meaningless}. Asking ``does knowledge of money laundering
+transfer to bid rigging?'' only makes sense if both are expressed in the same
+language. The shared format is what makes that question askable at all.
+
+\textbf{The checksum is not bureaucracy either.} If a download is truncated or
+somebody swaps a file, the reader stops. Without it the pipeline would train
+happily on the wrong data and produce numbers that look completely normal.
+
+\aloud{Everything gets converted into one common format --- things,
+connections, and where we have them, answers. After that box the system doesn't
+know which crime it's looking at. That's the trick of the whole project.}
+
+\subsection{Stage 3 --- four opinions, formed at the same time}
+
+\textbf{What it is.} Four boxes side by side, because they genuinely run in
+parallel over the same network, each producing its own score for every dot.
+\textbf{3a} is three deep models that learn from labelled examples. One works
+out which of a thing's connections matter most. One treats money in differently
+from money out. One handles several relationship types separately.
+\textbf{3b}, two models that need no labels at all: they learn what
+normal looks like and flag whatever they cannot rebuild. \textbf{3c},
+hand-computed measurements --- how many connections, which shapes a thing sits
+inside, and for contracts the classic warning signs. \textbf{3d}, the honesty
+group: the strongest non-deep method we could field, the planted-cartel
+studies, and the automated test suite.
+
+\textbf{Why four and not one.} Each arm fails in a different way, and the ways
+do not overlap. The supervised models are strong where labels exist and useless
+where they do not. The unlabelled models work anywhere but are noisy. The
+hand-computed features are interpretable and shallow. The baselines exist so
+that no deep-learning claim is made against a straw man.
+
+\textbf{What breaks without arm 3b.} This is the one people ask to delete,
+because it has the worst headline score. Delete it and the project loses its
+clearest result. In the Georgian planted-cartel study there is \emph{no answer
+key at all}, so the supervised models and XGBoost cannot participate --- and the
+unlabelled model recovers about nine in ten of the bid-together cartels while
+the non-learning floor manages about one in eight. The arm with the worst score
+on the labelled data is the only arm that works in the deployment case that
+actually matters.
+
+\textbf{What breaks without arm 3d.} Credibility. A deep-learning result with
+no strong classical comparison is not a result, it is a demonstration. Arm 3d is
+also why this report can say plainly that on Elliptic the trees win.
+
+\aloud{Four different opinions about the same accounts, formed at the same time.
+One group learns from known answers. One needs no answers at all. One is
+hand-computed measurements. And the fourth is there so nobody can accuse us of
+only racing against ourselves.}
+
+\subsection{Stage 4 --- combining the four opinions}
+
+\textbf{What it is.} One box that turns four scores per thing into one, with
+one crucial ordering constraint: each model's output is first translated onto a
+proper probability scale, checked against held-out data, and only then merged.
+
+\textbf{Why the ordering matters more than the merging.} Two models can both be
+excellent at ranking and still be on completely different scales. One is
+confident at 0.9; the other is certain at 0.1. Averaging those raw lets the loud
+one flatten the quiet one regardless of which was right.
+
+\textbf{What breaks without it --- measured, not asserted.} We ran it both ways
+over five attempts. Translate first and the combined result is
+\textbf{0.4434}; skip the translation and it collapses to \textbf{0.0511},
+which is essentially the guessing level of 0.065. Same models, same data, same
+seeds. That single ordering decision was worth more than any model we trained.
+
+\aloud{Two models can both be good at ranking and still be on totally different
+scales. Combine them raw and the loud one flattens the quiet one. So we put
+them on the same scale first --- and we measured what happens if you don't. It
+collapses to roughly what guessing gets you.}
+
+\subsection{Stage 5 --- turning scores into somebody's morning}
+
+\textbf{What it is.} Communities are found in the test-window network. Each
+community inherits a score from its members. Near-duplicates are removed and
+oversized groups excluded. The list is then cut at the number of cases the team
+can review. Output: 254 alerts on the money side, 223 on the contracts side.
+
+\textbf{Why it exists.} Up to here the system has a score on all 67{,}504 test
+things. That is a research artefact, not a product. Nobody investigates
+67{,}504 items, and a ranked list of individual accounts is barely better,
+because collusion is not something one account does. It takes at least two.
+The unit of investigation has to be the group.
+
+\textbf{What breaks without it.} Two failures. Without the grouping you would
+hand an analyst a list of individuals and leave them to reconstruct the ring by
+hand --- which is the work you were trying to save. Without the duplicate
+removal the same ring appears three times under three reference numbers, and
+your measured precision silently counts it three times.
+
+\textbf{Note what this stage does not use: the answers.} Grouping is structural
+only. That is deliberate, and it is why the identical grouping step runs on the
+Georgian corpus, where no cartel labels exist.
+
+\aloud{We've got a score on sixty-seven thousand accounts, which helps nobody.
+So we find the clusters, rank them, throw away near-duplicates, and cut the
+list at whatever the team can review. Two hundred and fifty-four cases. That's
+a morning's work, not a research output.}
+
+\subsection{Stage 6 --- why an alert is not enough on its own}
+
+\textbf{What it is.} Three things happen to every case at the head of the
+queue. The explainer isolates the few connections the decision actually
+depended on. A set of hand-written rules checks the case against nine known
+shapes and names one only when it can formally prove it. And where a shape
+matches, the official warning sign it corresponds to is attached, quoted, with
+its source.
+
+\textbf{Why it exists.} An unexplained alert is not actionable and, in this
+domain, not defensible. Somebody has to be able to say \emph{why} a firm was
+looked at, to that firm's lawyer if necessary.
+
+\textbf{Why the three parts are deliberately independent.} The explainer is
+learned and can be wrong. The matcher is deterministic and cannot invent a
+shape. The warning-sign citation is quoted text from a fixed reference file.
+An investigator who distrusts the neural network entirely can throw away the
+first part and the other two still stand on their own --- and that is the
+property that makes this usable rather than merely impressive.
+
+\textbf{What breaks without the verification step.} Explanations that sound
+good and are not true. So each one is tested twice: show the model only the
+highlighted connections (does the same alert still come out?), and remove them
+(does it disappear?). Before we replaced the explainer, 38 of our 50 published
+Bitcoin explanations failed that check. Now one does. We kept the old figure in
+writing rather than quietly improving it.
+
+\aloud{The explainer says which few connections mattered --- and then we check
+it, by re-running the case with only those connections, and again with them
+taken away. And separately, hand-written rules name the shape, but only when
+they can prove it.}
+
+\subsection{Stage 7 --- why the results are just files}
+
+\textbf{What it is.} Everything the pipeline produced goes into ordinary files
+in a folder: the alert table, one file per explanation, the metrics, and a
+small index telling the website what exists.
+
+\textbf{Why it exists.} It sounds unambitious and it is one of the better
+decisions in the project. Files can be copied, fingerprinted, versioned,
+handed to an examiner on a memory stick, and rolled back by pointing at a
+different folder. A database would have given us nothing here and taken away
+all of that.
+
+\textbf{What breaks without it.} The trust boundary, which is the next
+subsection. A file opened read-only cannot be modified by the thing reading it.
+A running database service shared between the trainer and the website could be.
+
+\aloud{Everything goes into ordinary files in a folder. Not a database. Files
+can be copied, checksummed, versioned, emailed to an examiner --- and rolled
+back by pointing at a different folder.}
+
+\subsection{The trust boundary --- the most important line on the page}
+
+\textbf{What it is.} A single horizontal line across the diagram. Above it, the
+pipeline: it trains, it scores, it writes files, and then the process exits.
+Below it, the product: the doorway, the assistant, the website. The only thing
+crossing the line is files being read.
+
+\textbf{Why it exists.} The two halves have opposite risk profiles. Training is
+powerful --- it can change what the system believes about a person. The website
+is the part the outside world can reach, so it is the part that will be
+attacked. Those two properties must never live in the same process.
+
+\textbf{What breaks without it.} Imagine somebody breaks into the public
+website tomorrow. With the boundary, they can read published results and
+nothing else: they cannot retrain a model, cannot change anybody's score, and
+cannot plant evidence in a case file. Without it, the most damaging attack on
+this system is not stealing data --- it is \emph{quietly altering who looks
+suspicious}, which is far harder to notice and far worse in its consequences.
+
+\textbf{And it pays for itself twice.} Because the serving half never trains
+anything, it needs no expensive graphics hardware. It starts instantly, runs on
+the cheapest machine on the price list, and demonstrates on a laptop with the
+wifi switched off. The security argument and the cost argument are the same
+argument.
+
 \begin{keybox}
-\textbf{Why the trust boundary is the most important line on the diagram.}
-
-Training is powerful and risky --- it can change what the system believes. The
-website is the part the outside world can touch.
-
-By separating them completely (the pipeline writes files and stops; the website
-can only read those files), somebody who breaks into the public website still
-cannot alter a single score or retrain anything. As a bonus, the website needs no
-expensive graphics chip, starts instantly, and can be demonstrated on a laptop
-with no internet.
+\textbf{The strongest form of this claim.} In the cloud design
+(Section~\ref{sec:cloud}) the boundary is not enforced by our own code being
+polite. The serving side is granted \emph{read-only} permissions on the
+results storage by the cloud provider itself. Our code could contain a bug that
+tries to write, and it would still be refused.
 \end{keybox}
+
+\aloud{Above the line we train, and then we stop. Below the line we show people
+things, and we can't change anything. If somebody breaks into our website
+tomorrow they can read results --- they cannot retrain a model or change
+anyone's score.}
+
+\subsection{Stages 8 to 10 --- the doorway, the assistant, and the person}
+
+\textbf{The doorway (box 8).} A small read-only service that hands out the
+stored files. Ask for a case, it gives you the case. Ask for the network, it
+trims it to the alert's own members plus one hop of context, on the server,
+before sending. Without that trimming the browser would receive a
+million-line network, and would either freeze or --- worse --- show a silently
+cropped slice that the reader assumes is the whole thing. Every response
+carries the ethics wording, not just the pretty pages.
+
+\textbf{The assistant, and why it sits beside the doorway rather than behind
+it.} On the diagram the Copilot is a separate box with both arrows pointing in
+and out of the same read-only service. That placement is the point: it has no
+private access to anything. It reads exactly what a human reading the dashboard
+could read. Every number it states must appear literally in what it looked up;
+accusing language is rewritten on the way out; and it sits a 24-question exam
+before every release. \textbf{Without those guards} you have a confident
+narrator attached to a screening system, which is the single most dangerous
+component you could add to a project like this.
+
+\textbf{The person (box 10).} A human is drawn on the architecture diagram on
+purpose. The system produces a ranked list and the evidence behind it; a person
+decides what happens next, within a fixed number of cases. That is not modesty
+about model quality. \textbf{If a screening tool made the escalation decision,
+you would have automated an accusation.}
+
+\aloud{The doorway is read-only --- there's no write endpoint to abuse, because
+none exists. The assistant sits beside it, not behind it, so it can only read
+what you could read. And at the bottom of the diagram there's a person, on
+purpose.}
 
 \subsection{The method cards}
 
-Below the flowchart the page has explanation cards, each with a ``what it does''
-and a ``how it works'' line. They cover graph networks, attention, GraphSAGE and
-R-GCN, the autoencoders, combining scores, grouping and duplicate removal, the
-XGBoost measuring sticks, the shape matcher with its official warning signs, and
-the rigour rules. These are the same explanations as Section~\ref{sec:algos}
-here: the page is the visual version, this report is the reference version.
+Below the flowchart the page has twelve explanation cards, each with a ``what
+it does'' and a ``how it works'' line: graph networks, attention, GraphSAGE and
+R-GCN, focal loss, the autoencoders, combining scores, grouping and duplicate
+removal, the XGBoost measuring sticks, the explainer, the shape matcher with
+its official warning signs, the assistant's guardrails, and the rigour rules.
+
+These are the same explanations as Section~\ref{sec:algos} of this report: the
+page is the visual version, this report is the reference version, and
+\code{docs/presentation\_script\_architecture.md} is the spoken version. If the
+three ever disagree, the report is correct and the other two are stale.
 
 % =====================================================================
 \section{The Cloud Design}
 \label{sec:cloud}
 
 The second diagram shows how this would run as a real hosted product. It has
-\textbf{two halves}, and keeping them apart is the entire point.
+\textbf{two halves}, and keeping them apart is the entire point --- it is the
+same trust boundary as Section~\ref{sec:arch}, redrawn in cloud services.
+
+The service names below are Amazon's. They matter less than what each one is
+\emph{for}, so each is explained the same way as the pipeline stages: what it
+is, why it exists, what breaks without it.
 
 \subsection{Half 1 --- the part that is always on (cheap, no graphics chip)}
 
-\begin{longtable}{@{}p{4.3cm}p{11.2cm}@{}}
-\toprule
-\textbf{Piece} & \textbf{What it is} \\
-\midrule
-\endhead
-\textbf{The users} & Analyst teams. They need only a browser. Nothing to
-install. \\
-\textbf{Route 53} & The internet's address book. Turns our web address into a
-real machine's location. \\
-\textbf{CloudFront} & Copies of the site kept around the world, so the page loads
-fast wherever you are. \\
-\textbf{WAF} & A filter in front of everything that blocks common attacks. \\
-\textbf{HTTPS} & The locked connection, so nobody can read or alter the traffic on
-its way. \\
-\textbf{S3 (website)} & Cheap storage holding the dashboard files, in a private
-area only CloudFront may read. \\
-\textbf{The compute} & The machine running the doorway and the assistant. At
-launch: Lambda, which costs nothing while nobody is using it. Later, as usage
-grows: containers spread across two data centres. \\
-\textbf{S3 (results)} & Versioned storage. Every run writes to its own dated
-folder. \textbf{Undoing a bad model is just pointing at the previous folder} ---
-no retraining, no panic. \\
-\textbf{ECR} & Storage for our container images. Keeps the last three. \\
-\textbf{Secrets Manager} & Where the assistant's key is kept, so no key is ever in
-the code. \\
-\textbf{IAM, read-only} & Permissions. The public side is given
-\emph{read-only} rights to the results. That means the trust boundary is enforced
-by Amazon itself, not merely by our own code. \\
-\textbf{CloudWatch} & Logs and alarms --- how you find out something broke before a
-user tells you. \\
-\textbf{Budget alarm} & A spending alert, switched on from day one, so a runaway
-job cannot quietly cost a fortune. \\
-\bottomrule
-\end{longtable}
+\subsubsection*{How a request reaches the dashboard at all}
+
+An analyst opens a browser and types our address. Three things then happen
+before anything of ours runs.
+
+\textbf{Route 53} is the internet's address book: it turns our name into a real
+machine's location. \textbf{CloudFront} keeps copies of the dashboard in data
+centres around the world, so the page loads from somewhere near the analyst
+rather than from one machine on one continent. \textbf{WAF} sits in front of
+everything and blocks the well-known attack patterns before they reach us. And
+the whole conversation runs over \textbf{HTTPS}, so nobody in between can read
+it or alter it in flight.
+
+\textbf{What breaks without them.} Drop Route 53 and users type an IP address.
+Drop CloudFront and the site is slow for anybody far away, and every visitor
+hits our one small machine directly --- so the cheapest tier stops being viable
+the moment more than a handful of people use it. Drop WAF and the first
+automated scanner that finds us starts probing the doorway itself. Drop HTTPS
+and alert data --- which is data about who is under suspicion --- crosses the
+internet in the clear.
+
+\aloud{Route 53 turns our web address into a machine. CloudFront keeps copies
+of the site around the world so it loads fast wherever you are. And there's a
+filter in front of everything that blocks the common attacks.}
+
+\subsubsection*{Where the dashboard itself lives}
+
+\textbf{S3, the website bucket.} The dashboard is a folder of files --- there is
+no server rendering pages. Those files sit in cheap storage, in a private area
+that only CloudFront is allowed to read.
+
+\textbf{Why private rather than a public bucket.} A publicly readable bucket is
+one misconfiguration away from being writable by somebody else, and it bypasses
+the protective layer in front. Making the delivery network the only reader
+means every visitor goes through the filter, without exception.
+
+\textbf{What breaks without it.} Nothing about the machine learning. This is
+purely how you serve a static site cheaply and safely, and it is why hosting
+the dashboard costs cents rather than dollars.
+
+\subsubsection*{Where the compute is, and why it starts as Lambda}
+
+\textbf{The compute} runs the doorway and the assistant. At launch it is
+\textbf{Lambda}: code that runs on demand and costs nothing while nobody is
+using it. As usage grows it becomes \textbf{containers across two data
+centres} behind a load balancer.
+
+\textbf{Why start small.} The honest state of a university project is that
+nobody is using it most of the time. Paying by the hour for an idle machine is
+paying for nothing. Lambda's pricing shape matches the actual usage shape.
+
+\textbf{Why the migration is not a rewrite.} The service is stateless and
+read-only. It holds no session, writes nothing, and can be started and stopped
+freely --- so moving it to containers is a configuration change. That property
+came free from the trust boundary; it was not designed for separately.
+
+\textbf{What breaks without the two data centres at tier 3.} Nothing until a
+data centre has a bad day, at which point everything. That is why it is a tier-3
+line item and not a tier-1 one: you buy it when the tool is load-bearing.
+
+\aloud{At launch the doorway is code that only runs when somebody asks for
+something, so it costs nothing while idle. When it gets busy it becomes proper
+containers in two data centres --- and that's a config change, not a rewrite.}
+
+\subsubsection*{Where the results live, and why versioning is the safety net}
+
+\textbf{S3, the results bucket.} Every pipeline run writes into its own dated
+folder --- \code{runs/<run\_id>/} --- and nothing is ever overwritten in place.
+The website is pointed at one folder.
+
+\textbf{Why this is the most operationally important box in the diagram.}
+Models get worse sometimes. A retrain lands, the queue looks wrong, and
+somebody has to decide what to do at four in the afternoon. Here that decision
+is: point at yesterday's folder. Seconds, no retraining, no panic, and the bad
+run is still on disk to be investigated rather than destroyed.
+
+\textbf{What breaks without it.} Rolling back means retraining, which means
+hours of graphics-machine time and a period where the tool is either wrong or
+down. And a half-finished run --- a job killed mid-write --- could corrupt the
+good results it was overwriting. With per-run folders it simply produces an
+incomplete folder nobody is pointing at.
+
+\aloud{Every run writes into its own dated folder. So undoing a bad model is
+pointing at yesterday's folder --- no retraining, no panic --- and the bad run
+is still there to look at.}
+
+\subsubsection*{The pieces that exist so nothing goes quietly wrong}
+
+\textbf{ECR} stores our container images and keeps the last three, so a
+rollback of the \emph{code} is as cheap as a rollback of the results.
+
+\textbf{Secrets Manager} holds the assistant's key. \emph{Why:} so the key is
+never in the code, never in the image, and never in the repository. This project
+has already had one key exposure in an inherited file, which is exactly the
+failure this box prevents.
+
+\textbf{IAM, read-only.} The serving side is granted read-only rights on the
+results bucket. \textbf{This is the strongest sentence in the cloud design}: the
+trust boundary is enforced by Amazon, not by our own code being well-behaved.
+Our code could contain a bug that tries to write, and the write would still be
+refused.
+
+\textbf{CloudWatch} collects the logs and raises alarms. \emph{What breaks
+without it:} you find out the pipeline has been failing for a week when a user
+tells you the dates look old.
+
+\textbf{The budget alarm} is switched on from day one. \emph{What breaks
+without it:} a stuck job or a runaway assistant loop spends real money for days
+before anybody notices. This is a student project; that is not a hypothetical
+risk.
+
+\aloud{The public side is given read-only rights to the results. So that
+boundary I showed you isn't just our own code being polite --- Amazon enforces
+it.}
 
 \subsection{Half 2 --- the part that only exists while it runs}
 
-\begin{longtable}{@{}p{4.3cm}p{11.2cm}@{}}
-\toprule
-\textbf{Piece} & \textbf{What it is} \\
-\midrule
-\endhead
-\textbf{EventBridge} & An alarm clock. ``Every night at 2am'' it starts the
-pipeline. If the job fails, SNS sends an alert. \\
-\textbf{Spot GPU job} & A rented graphics computer at about 70\% off. It reads the
-data, trains, scores, groups, explains, writes the results,
-\textbf{and then shuts itself down}. \\
-\textbf{The upward arrow} & The only link between the halves: the nightly job
-\emph{writes} new results into the storage that the website \emph{reads}. There
-is no path in the other direction. \\
-\bottomrule
-\end{longtable}
+\textbf{EventBridge} is an alarm clock: every night, or every week, it starts
+the pipeline. If the job fails, an alert goes out.
+
+\textbf{The spot GPU job} rents a graphics computer at roughly 70\% off the
+normal price, then reads the data, trains, scores, groups, explains, writes the
+results \textbf{and shuts itself down}.
+
+\textbf{Why spot pricing is safe here, when it usually is not.} Spot machines
+can be taken away with little warning, which is unacceptable for anything
+serving live requests. This job serves nothing. If it is interrupted, the
+website carries on showing yesterday's results, an alarm fires, and the job runs
+again tonight. Nothing was overwritten in place, so a half-finished run cannot
+corrupt a good one. The workload's tolerance for interruption is exactly what
+earns the discount.
+
+\textbf{The upward arrow} is the only connection between the two halves: the
+nightly job \emph{writes} new results into the storage the website
+\emph{reads}. There is no arrow coming back down, and that absence is the
+design.
+
+\textbf{What breaks if you merge the halves.} You would be paying for a
+graphics machine around the clock in order to serve requests that need no
+graphics machine at all --- and it is the largest line on the bill, so that is
+where nearly all of the cost difference between the tiers comes from. You would
+also have put the trainable component inside the process the internet can
+reach, which is the exact thing Section~\ref{sec:arch} spends a page avoiding.
 
 \begin{keybox}
 \textbf{Why this shape saves most of the money.}
@@ -2103,6 +2460,11 @@ always-on part is a tiny cheap service. That is why the demo version costs about
 \$10 a month, and effectively nothing once standard free student credits are
 applied.
 \end{keybox}
+
+\aloud{There's an alarm clock. It rents a graphics computer at about seventy
+percent off, trains, writes the results, and then shuts itself down. And follow
+that arrow going up --- it's the only link between the two halves, and there's
+nothing coming back down.}
 
 \subsection{What it would cost}
 
@@ -2123,9 +2485,40 @@ about \$90--183 \\
 \end{tabular}
 \end{center}
 
+\textbf{What you are actually buying as you move up the tiers.} Nothing about
+the machine learning changes between them --- the same pipeline produces the
+same results at every level. What increases is \emph{tolerance for things going
+wrong}. Tier 1 assumes one machine is enough and somebody will notice if it
+stops. Tier 2 buys pricing that follows real usage and a training machine that
+runs itself. Tier 3 buys survival of a data-centre failure and enough capacity
+for a team rather than a demonstration.
+
+\textbf{Where the money actually goes, and the one line to watch.} The
+graphics machine is the largest single cost and it is bounded, because it exists
+for a few hours a week and then stops. The unbounded line is the assistant: it
+is charged per unit of text and driven by humans, not by us. That is why the
+budget alarm is on from day one and why the assistant is capped in how many
+lookups it may make per question.
+
+\aloud{About ten dollars a month for the demo version, and effectively nothing
+once the standard credits are applied. It's that cheap because the expensive
+hardware only exists for two hours a night and then disappears.}
+
 % =====================================================================
 \section{The Dashboard --- Every Screen Explained}
 \label{sec:dashboard}
+
+There is a \textbf{spoken script} for this dashboard:
+\code{docs/presentation\_script\_dashboard.md}. It gives the words to say out
+loud for every screen and every control, in order, with timings and with the
+questions evaluators actually ask. This section is the reference version; that
+file is the performance version.
+
+Each screen below is explained the same way as the architecture stages: what it
+is, why it exists, what would break without it, and the sentence you would say
+out loud about it. Where a design choice was forced by something we measured or
+got wrong, that is stated rather than smoothed over --- those are the parts an
+examiner probes.
 
 \subsection{Starting it}
 
@@ -2309,43 +2702,125 @@ than show that.''
 
 \subsection{On every screen}
 
-\begin{itemize}
-  \item \textbf{The domain switch} --- reads \textbf{Financial · AML} and
-        \textbf{Procurement · bid rigging}, so the actual crime is named rather
-        than implied. (Until 2026-07-25 it said only ``Financial'' and
-        ``Procurement''; the letters AML appeared nowhere on the console outside
-        two buried lines in the About page, so a visitor could not tell what the
-        financial side was screening \emph{for}. The Overview headline now says
-        it too, and hovering either pill gives the one-sentence definition.)
-        The accent colour follows the switch.
-  \item \textbf{The dataset picker} --- two datasets per side.
-  \item \textbf{Six tabs}, each with its own fixed colour and icon.
-  \item \textbf{The ethics line}, in the footer, always, on every screen.
-  \item \textbf{The assistant}, openable from anywhere.
-\end{itemize}
+Five things never leave the frame, and each is there for a reason worth stating.
+
+\subsubsection*{The domain switch}
+
+\textbf{What it is.} Two pills, top right, reading \textbf{Financial · AML} and
+\textbf{Procurement · bid rigging}. Flipping it changes the colour scheme, the
+available datasets and the alerts --- and changes nothing underneath.
+
+\textbf{Why it exists.} It is the two-worlds thesis made operable in one
+control. It is also the honest demonstration that this is one system rather
+than two: the same reader, the same scoring, the same grouping, the same
+evidence rules serve both sides.
+
+\textbf{Why the crime is named on the pill.} Until 2026-07-25 the pills said
+only ``Financial'' and ``Procurement''. An audit then found the letters AML
+appeared nowhere on the console except two buried lines in the About page --- so
+a visitor could not tell what the financial side was screening \emph{for}. Naming
+it costs four characters. The Overview headline now says it too, and hovering
+either pill gives a one-sentence definition.
+
+\aloud{This switch is the whole two-worlds idea in one control. Watch the
+colours, the datasets and the alerts change --- and nothing underneath change at
+all.}
+
+\subsubsection*{The dataset picker}
+
+\textbf{What it is.} Two datasets per side, four in total, each a real public
+dataset with a finished scored run behind it.
+
+\textbf{Why two per side rather than one.} Because one dataset per domain
+invites the reasonable suspicion that the result is a property of that dataset.
+On the financial side the two are the \emph{same} Bitcoin world at different
+zoom levels --- individual payments, and wallets --- which is a genuine test of
+whether the approach survives a change of granularity.
+
+\textbf{What breaks without it.} Nothing technically. What you lose is the
+answer to ``does this work anywhere else?'' at demonstration time, and that is
+the second question every evaluator asks.
+
+\subsubsection*{The six tabs}
+
+\textbf{What they are.} Overview, Alert Queue, Graph Explorer, Case Detail,
+Model Lab, About --- each with a fixed colour and icon that never change.
+
+\textbf{Why fixed colours.} They are a navigation aid, not decoration: after a
+minute of use you locate a screen by its colour before you read its name. The
+one colour deliberately \emph{not} used for any tab is coral, which means
+``flagged'' and nothing else anywhere in the product.
+
+\subsubsection*{The ethics line in the footer}
+
+\textbf{What it is.} A single fixed sentence, on every screen, stating that the
+system produces screening signals and not determinations of wrongdoing.
+
+\textbf{Why it is in the footer and not in a dialog.} A dialog is dismissed once
+and then forgotten. This has to be visible at the moment somebody is looking at
+a named entity with a high score, because that is the moment the mistake gets
+made.
+
+\textbf{What breaks without it.} Nothing visible, and that is the danger. A
+screening tool whose caveat lives only in its documentation will eventually be
+quoted without it. The same sentence is attached to every API response too, so
+it survives being read by a machine.
+
+\subsubsection*{The assistant}
+
+Openable from any screen, and covered in its own subsection below.
 
 \subsection{Screen 1 --- Overview}
 
-\begin{longtable}{@{}p{4.3cm}p{11.2cm}@{}}
-\toprule
-\textbf{What you see} & \textbf{What it means} \\
-\midrule
-\endhead
-\textbf{Alerts in queue} & How many suspicious groups were found in this
-dataset. \\
-\textbf{High-band alerts} & How many are in the top risk band. \\
-\textbf{The budget slider} & \emph{The most important control on the page.} How
-many cases you can review. Everything re-ranks as you drag it. \\
-\textbf{The precision readout} & The measured share of your top picks that are
-real. It updates live as you drag the slider, which makes the project's central
-number something you can feel. \\
-\textbf{The constellation} & The big picture. Each dot is an alert. Bigger means
-more members. Colour is the risk band. The layout is decorative but
-\emph{the rankings are real}. \\
-\textbf{Top groups list} & The leaderboard: rank, risk score, member count, and a
-jump arrow. \\
-\bottomrule
-\end{longtable}
+\textbf{What the screen is for.} It answers, in one glance, the four questions a
+manager asks before any of the detail matters. How much came out. How much of
+it is urgent. How much work have we signed up for. And how much data is behind
+it.
+
+\subsubsection*{The four tiles}
+
+\textbf{Alerts in queue} is how many suspicious groups this dataset produced ---
+254 on the Bitcoin payments data, 223 on the European contracts data.
+\textbf{High-band alerts} is how many of those sit in the top risk band.
+\textbf{Cases to review} is the number of cases the team has said it can get
+through. \textbf{Datasets} is how many are loaded on this side of the domain
+switch.
+
+\textbf{Why the third tile is the important one.} Everything else on the console
+is measured \emph{at} that number. A screening system without a stated workload
+has no meaningful accuracy at all, because you can catch everything if you are
+willing to review everything. Putting the workload on the opening screen, next
+to the alert count, is the argument for Precision@k as this project's headline
+metric rather than accuracy or ROC-AUC.
+
+\textbf{What breaks without it.} You would report one number per model and
+invite exactly the comparison this domain cannot support --- ``model A is 0.47,
+model B is 0.44'' --- with no statement of what either costs an analyst.
+
+\aloud{Four numbers, and the third is the one people skip. This system doesn't
+hand you a pile of work and wish you luck. You tell it what your team can get
+through, and every number on the screen is measured at exactly that workload.}
+
+\subsubsection*{The constellation}
+
+\textbf{What it is.} Every alert as one dot. Size is group size, colour is risk
+band, and any dot can be clicked straight into.
+
+\textbf{What is real and what is not.} The dots, their sizes, their colours and
+their ranks are real, taken live from the served queue. \textbf{The arrangement
+is decorative.} Position carries no meaning, and saying so out loud is worth
+more than the panel is: an evaluator who works that out unaided will start
+wondering what else is decorative.
+
+\textbf{Why it earns its space anyway.} It shows the \emph{shape} of the
+problem in a way a table cannot --- a handful of hot cases and a long quiet
+tail. That shape is the reason the review number matters.
+
+\subsubsection*{The leaderboard}
+
+Rank, risk score, member count, pattern name if there is one, and a jump arrow.
+It is the shortest useful summary in the product, and the natural bridge into
+the Alert Queue, which is the same information without the styling.
 
 \subsection{Screen 2 --- Alert Queue}
 
@@ -2423,24 +2898,55 @@ match the published protocol.
 
 \subsection{Screen 3 --- Graph Explorer}
 
-Draws the alert's network.
+\textbf{What the screen is for.} It is the moment the argument becomes visible.
+Every claim in this project rests on the idea that coordination has a geometry;
+this screen is where somebody can look at that geometry rather than take our
+word for it.
 
-\begin{longtable}{@{}p{4.3cm}p{11.2cm}@{}}
-\toprule
-\textbf{What you see} & \textbf{What it means} \\
-\midrule
-\endhead
-\textbf{Coral dots} & The flagged members. Coral is used for nothing else anywhere
-in the product. \\
-\textbf{Grey dots} & Context --- neighbours shown so the group makes sense. \\
-\textbf{Lit lines} & Connections currently revealed by the replay. \\
-\textbf{The replay control} & Animates the network building up. There are two
-honest modes: \textbf{replay by time}, when the lines carry different dates, and
-\textbf{replay by order}, when they do not. The label tells you which you are
-watching. \\
-\textbf{Clicking a dot} & Expands its neighbours. \\
-\bottomrule
-\end{longtable}
+\subsubsection*{What you are looking at}
+
+\textbf{Coral dots} are the flagged members of this group. Coral means
+``flagged'' throughout the entire product and is used for nothing else, so it
+never has to be explained twice. \textbf{Grey dots} are context: neighbours drawn
+in so the group sits in a world rather than floating in space. \textbf{Lines}
+are connections, and clicking a dot expands its own neighbours.
+
+\textbf{Why context nodes are drawn at all.} Without them a flagged group looks
+equally suspicious in every case, because you cannot see what it is
+\emph{unusually} connected to. The contrast is the information.
+
+\textbf{Why the network is trimmed, and why we say so.} The server windows the
+network to the alert's own members plus one hop, inside the alert's time range,
+before sending. A browser cannot draw a million connections, and a silently
+cropped picture is worse than a small one because the viewer assumes it is
+complete. When trimming happens, the screen says so.
+
+\aloud{Coral is flagged. Grey is context, so the group sits in a world instead
+of floating. And if we've had to trim the picture to keep it readable, it says
+so on screen rather than quietly showing you a slice.}
+
+\subsubsection*{The replay control, and the bug that produced it}
+
+\textbf{What it does.} Plays the group's connections in order, so you watch the
+case assemble itself. There are two honest modes and the button label tells you
+which one you are in: \textbf{replay flow} when the connections carry genuinely
+different dates, and \textbf{replay order} when they do not.
+
+\textbf{Why two modes exist.} Because of a real fault found on 2026-07-20.
+Bitcoin connections inside one alert often all sit at a \emph{single} time step
+--- we measured the top alert's 101 connections all at one moment. The original
+replay animated strictly by date, so with every date identical the playhead
+moved and nothing on screen changed. It looked broken, and the stakeholder
+reported it as ``the replay does nothing''.
+
+\textbf{Why we did not fix it by spreading the dates out.} That would have
+invented data. The animation would have looked better and meant less. Instead
+the code detects that timestamps do not vary, falls back to sequence order, and
+renames the control so the viewer knows which thing they are watching.
+
+\aloud{Watch the label on the button. Sometimes it replays real time passing.
+Sometimes every connection in the group happened in the same window, so what
+you're watching is sequence, not time --- and it says which.}
 
 \begin{plain}
 \textbf{Why there are two replay modes} --- a real bug we found and fixed. Bitcoin
@@ -2453,26 +2959,49 @@ situation, switch to order, and \emph{say so on the screen}.
 
 \subsection{Screen 4 --- Case Detail}
 
-Where an investigator decides. It contains:
+\textbf{What the screen is for.} It is where a person decides. Everything before
+it narrows the list; this screen has to carry enough for somebody to justify
+opening an investigation --- or, just as often, to justify closing one.
 
-\begin{itemize}
-  \item \textbf{A drawing of the shape} that was detected.
-  \item \textbf{The few lines} the explainer says actually caused the score.
-  \item \textbf{Evidence} --- amounts and fees where the dataset has them,
-        structural and timing evidence where it does not. \emph{We never invent a
-        field the data cannot support.}
-  \item \textbf{Warning-sign cards} quoting the official indicator text, each with
-        \emph{why it matched}.
-  \item \textbf{Source labels} --- each piece marked as coming from the learned
-        model, the plain rules, or the statistical checks. This stops anyone
-        assuming one method explains everything.
-  \item \textbf{Attribution quality} --- two plain questions, explained below.
-  \item \textbf{Export} --- download the alert as a file.
-  \item \textbf{The fixed ethics wording}, which the code physically refuses to
-        let anyone alter.
-\end{itemize}
+\subsubsection*{The four panels, and what each is doing}
 
-\subsubsection*{Reading ``Attribution quality'' --- the two fidelity questions}
+\textbf{Detected pattern.} A drawing of the shape that matched, if one did, plus
+how many instances of it were found. \emph{Why a drawing:} the nine shapes are
+geometric, and a picture of a rotation or a pass-through is understood
+instantly where a definition is not.
+
+\textbf{Red flags.} Cards quoting the official indicator text, each stamped with
+its source and each showing why it matched \emph{here}. \emph{Why this panel is
+the one to defend:} it is produced by hand-written rules, not by the learned
+model, and the indicator wording is quoted from a fixed reference file. An
+investigator who distrusts the neural network entirely can discard every other
+panel and this one still stands.
+
+\textbf{Evidence.} The facts themselves --- group size, connections between
+members, time window, and amounts and fees where the dataset records them. Each
+fact is labelled with where it came from. \emph{Why the source labels matter:}
+without them a reader assumes one method produced everything, and the mixture
+of learned scores, plain rules and statistical checks is precisely what makes
+the case defensible. \emph{And if a fact is missing it is genuinely missing} ---
+we never impute a value to fill a row, so on a dataset without amounts the
+amounts row simply is not there.
+
+\textbf{How solid is this?} Two plain questions about the evidence, answered Yes
+or No, explained immediately below.
+
+\textbf{Underneath all four:} a collapsible section holding every raw value in
+the case file, an export button, and the fixed ethics wording. \emph{Why the raw
+section exists:} the rule we set ourselves is that the presented version can
+never contain less than the underlying file. Any field the dossier does not have
+a designed panel for still appears there, by construction --- so a new field can
+never be silently swallowed.
+
+\aloud{Four panels. The shape, if we can prove one. The official warning signs,
+which come from hand-written rules and not from the neural network. The facts,
+each tagged with where it came from. And then the system marking its own
+homework.}
+
+\subsubsection*{Reading ``How solid is this?'' --- the two fidelity questions}
 
 \begin{plain}
 The panel asks two questions and answers each Yes or No:
@@ -2535,32 +3064,85 @@ the matcher only names the nine shapes it can actually prove, and many real
 communities do not contain a textbook shape. On the Mendeley queue the top
 alerts are two-firm groups, which are too small to contain any shape at all.
 
-In that case the dossier now shows \textbf{what the model did key on} --- the size
-of the minimal sub-network the explainer kept, the strongest single incoming
-link, and the community size --- so the alert is still defensible. Before
-2026-07-25 that evidence sat collapsed inside a technical appendix, which made
-those dossiers look empty on exactly the alerts a reviewer most needs to
-justify.
+In that case the dossier now describes the \emph{situation} in plain sentences,
+built only from measured facts. How many are in the group. What arrangement
+their connections are in. Whether it all happened in one stretch of time. And
+which handful of them carries most of the case. Before 2026-07-25 that evidence
+sat collapsed inside a technical appendix, which made those dossiers look empty
+on exactly the alerts a reviewer most needs to justify.
+
+\begin{warnbox}
+\textbf{Three attempts at this wording, and what the last one changed.} The
+first version read like a research paper and was rejected. The second passed a
+14-term jargon test and was \emph{still} rejected --- a professional reviewer
+said the language ``is not at all used in industry''.
+
+The diagnosis on the third attempt was not vocabulary but \textbf{subject}.
+Attempt two described \emph{the system}: ``we asked the computer which parts
+actually made it suspicious''. Attempt three describes \emph{the situation}:
+``the money went through all of them in one go, one after another''. Same
+facts, same honesty rules, no mention of the machine at all.
+
+The tests in \code{frontend/src/lib/plainReason.test.ts} now pin both bans ---
+no machine-learning terms \emph{and} no words about the machine --- and cap
+every sentence at 20 words.
+\end{warnbox}
 
 \subsection{Screen 5 --- Model Lab}
 
-The chart factory. It is laid out so you can present from it top to bottom:
+\textbf{What the screen is for.} It is where the claims live, and it is
+deliberately ordered for presenting rather than for browsing: results first,
+then the evidence that the results are trustworthy.
 
-\begin{enumerate}
-  \item \textbf{Rigour and uncertainty} (first, because it frames everything
-        else): the spread across our five attempts, transfer matrices,
-        significance tests and robustness curves.
-  \item \textbf{Per run, a headline block:} the AUC-PR score, the blind-guessing
-        level it must be read against, and the resulting ``$N\times$ better than
-        guessing''. Underneath, the size of the labelled test set.
-  \item \textbf{Per run, one budget table:} for each review budget, the
-        precision, recall and false-positive rate. One row per budget.
-  \item \textbf{Then the charts:} score by time step (this is where the
-        step-43 regime change is visible), precision against budget with a live
-        marker, and queue precision.
-  \item \textbf{A collapsible tree} holding every raw number the run published,
-        for anyone who wants to check.
-\end{enumerate}
+\textbf{One rule governs the whole screen: every number on it is copied from a
+stored result file.} Nothing is computed in the browser. That is why a machine
+without a particular artefact simply does not render that panel, instead of
+rendering an estimate.
+
+\subsubsection*{Top to bottom}
+
+\textbf{1. The headline block, per run.} The overall score, the blind-guessing
+level it must be read against, and the resulting ``$N\times$ better than
+guessing'', with the size of the labelled test set underneath. \emph{Why the
+guessing level is printed next to it and not in a footnote:} 0.39 on the
+contracts data is a weaker result than 0.47 on the Bitcoin data, because their
+guessing levels are 0.358 and 0.065. Quoting either score alone misleads, and
+this is the single most common way results in this field are oversold.
+
+\textbf{2. The workload table, per run.} One row per review size: precision,
+recall and false-positive rate. \emph{Why it exists:} it is the table you take
+to whoever signs off headcount, because it turns a research score into a
+staffing decision. Only measured review sizes appear --- the table never
+interpolates a row that was not evaluated.
+
+\textbf{3. The charts.} Score by time period against the guessing line, with the
+step-43 collapse visible; precision against workload with a live marker at
+wherever the slider sits; and queue precision after near-duplicates are merged.
+\emph{Why the collapse is not cropped out:} it is a real event in the data --- a
+large market shut down and behaviour changed underneath the model --- and it is
+one of our findings. It is also why the model is tested strictly forward in
+time and why our validation scores are reported as an untrustworthy guide under
+that kind of shift.
+
+\textbf{4. The full tree,} collapsed: every raw number the run published, for
+anyone who wants to check one.
+
+\textbf{5. Rigour and uncertainty,} collapsed, at the bottom. Repeat runs with
+their spread, the ``is the difference real or luck'' comparisons, the transfer
+matrices, the label-noise curve and the protocol sweeps.
+
+\begin{plain}
+\textbf{Why rigour moved to the bottom.} It used to open the screen. A presenter
+therefore hit seven repeat-run rows and a statistical readout before reaching a
+single headline number, which is the wrong order for a talk: ``can I trust
+this?'' is a follow-up question, not an opening one. It is collapsed rather than
+removed, and it is one click away, because when somebody does ask it the answer
+has to be immediate.
+\end{plain}
+
+\aloud{Every number on this screen comes out of a stored file --- nothing here is
+worked out in the browser. And no score ever appears on its own. It always sits
+next to what blind guessing would have got you on the same data.}
 
 \begin{warnbox}
 \textbf{A clutter bug fixed on 2026-07-25.} This screen used to dump
@@ -2579,8 +3161,33 @@ Everything exports as an image for papers and slides.
 
 \subsection{Screen 6 --- About}
 
-A scrolling explanation of the ``two ledgers, one shape'' idea, with the shape
-table animated. Doubles as the opening of a demo.
+\textbf{What the screen is for.} It is the argument in one page, and it is the
+screen to leave up if a demonstration runs out of time.
+
+\textbf{What is on it.} The ``two ledgers, one shape'' thesis. Then the nine
+shapes, each with its own diagram, drawing themselves as you scroll --- four
+financial, four procurement, and one that belongs to both worlds: hidden common
+ownership. Then the four-step pipeline in one line each: read the data, learn,
+rank, explain. Then a short paragraph on how the evaluation is kept honest.
+Then the scope boundary, in its own panel.
+
+\textbf{Why the nine shapes get a whole section here.} They are the part of the
+system that is not ours. They are curated from the FATF money-laundering
+indicators and the OECD bid-rigging checklist, and saying that out loud changes
+how the rest of the screen is read: the system is not inventing its own idea of
+what collusion looks like.
+
+\textbf{Why the honesty paragraph is on the public-facing screen and not only in
+this report.} It states four rules. Learn from the past and test on the future.
+Use only facts that were known at the time. Hold a country out completely when
+testing on it. And show every score next to what guessing would have achieved.
+Those four are the difference between this and a leaderboard result. If they
+live only in a document nobody opens, the demonstration is quietly claiming
+more than it earned.
+
+\aloud{Two ledgers, one shape. Nine patterns, and they're not ours --- they come
+from the international standards bodies. And at the bottom, the boundary:
+screening signals for human investigators, never a substitute for due process.}
 
 \subsection{The assistant, and the knowledge base behind it}
 
