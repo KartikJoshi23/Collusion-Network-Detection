@@ -1,0 +1,738 @@
+\documentclass[11pt]{article}
+\usepackage{scriptstyle}
+
+\begin{document}
+
+\begin{center}
+{\LARGE\bfseries CollusionGraph --- Presentation Script}\\[4pt]
+{\large The Architecture Page}\\[8pt]
+{\small Total running time: \textbf{about 16 minutes}\quad\textbar\quad
+19 slides\quad\textbar\quad Runs \emph{after} the dashboard script.}
+\end{center}
+
+\vspace{6pt}
+\begin{tcolorbox}[colback=metagrey!6,colframe=metagrey!45,boxrule=0.6pt,arc=1pt]
+\textbf{Set-up.} Open \texttt{docs/architecture.html} in any browser. It needs
+no internet and no server. Use the \textbf{light} theme --- it projects better.
+Scroll to the top of the system flowchart before you start.
+
+Same three boxes as the dashboard script. ``\bt'' is a breath.
+\do{square brackets} are things you do, not words you say.
+
+\textbf{The one sentence this whole talk hangs on:} the top half of the diagram
+\emph{builds} results and then stops running; the bottom half can only
+\emph{read} them.
+\end{tcolorbox}
+
+% ===========================================================================
+\part{Part 1 --- Opening (1 minute 15)}
+
+\slide{Slide 1 --- Handing Over --- From The Product To The Machine}{Medium (6/10)}{$\approx$ 35 seconds}
+
+\begin{saythis}
+So you've seen what the system does. Now I'll show you how it's actually built,
+and I'm \blank.
+
+This is one page. It reads top to bottom like a production line, and everything
+you just saw on the console comes out of the bottom of it.
+
+I'll take you down the pipeline first. Then I'll stop at one line in the
+middle, which I'd argue is the most important design decision we made. And then
+I'll show you what this looks like hosted properly as a real product, with the
+bill.
+\end{saythis}
+
+\begin{meaning}
+This is a handover slide. Its only job is to connect the finished product the
+room just saw to the machinery about to appear, and to promise a structure.
+
+Naming the trust boundary as ``the most important decision'' up front makes the
+room wait for it, which means they are paying attention when it arrives.
+\end{meaning}
+
+% ---------------------------------------------------------------------------
+\slide{Slide 2 --- Two Boxes And A Line}{HIGH (8/10)}{$\approx$ 40 seconds}
+
+\begin{saythis}
+Before any detail, look at the overall shape. Two big boxes and a line between
+them.
+
+The green box at the top is the deep-learning pipeline. It runs, it does its
+work, it writes its answers into files, and then it shuts down. It is not
+running right now.
+
+The blue box underneath is the live product \bt the website, the service behind
+it, the assistant. That part is always on, and it can only \emph{read} what the
+green part wrote.
+
+Between them, that dashed line labelled trust boundary. Hold that thought,
+because I'm coming back to it.
+\end{saythis}
+
+\begin{meaning}
+Get the room to see the shape before any of the boxes. If they leave with only
+one thing from this section, it should be ``it trains, then stops, and the
+website can only read.''
+
+Everything else on the page --- the security story, the cost story, the fact
+that the whole thing demonstrates on a laptop with the wifi off --- follows
+from that split.
+\end{meaning}
+
+% ===========================================================================
+\part{Part 2 --- Down the pipeline (5 minutes)}
+
+\slide{Slide 3 --- Boxes 1 and 2 --- Making Two Worlds Look The Same}{HIGH (8/10)}{$\approx$ 1 minute}
+
+\begin{saythis}
+Box one, the readers. Six datasets, six readers, one each. And each reader
+checks the file's fingerprint before it touches anything. If a download was
+cut short, or somebody swapped a file, it stops rather than quietly training on
+the wrong data.
+
+Box two is the one I'd underline on the whole page.
+
+Everything gets converted into one common format. Things, connections between
+things, and where we have them, answers. And the time-splitting rules get
+applied right here.
+
+Here's why box two is the trick of the entire project. After that box, the
+system genuinely doesn't know which crime it's looking at. A bank account and a
+construction company arrive as the same kind of object.
+
+That's what lets one system handle both worlds. And it's the only reason we
+could even \emph{ask} whether knowledge of one crime transfers to the other.
+\end{saythis}
+
+\begin{meaning}
+\textbf{The everyday version.} Two countries with different plug sockets. You
+could build two of every appliance --- or you could build one adapter. Box two
+is the adapter, and everything downstream is built once instead of twice.
+
+\textbf{The research point.} You cannot ask ``does money-laundering knowledge
+transfer to bid rigging?'' unless both are written in the same language. The
+shared format is what makes the question askable. Say that --- it turns a
+plumbing box into a research contribution.
+
+\textbf{The fingerprint check} is called a checksum. It is one line of code and
+it is the difference between ``our numbers are wrong'' and ``the pipeline
+refused to start''.
+\end{meaning}
+
+\begin{asked}
+\q{Don't you lose information flattening two domains into one format?} You lose
+nothing you cared about --- domain-specific facts survive as extra attributes.
+What you gain is that everything after that point is written once and audited
+once, instead of twice with two sets of bugs.
+\end{asked}
+
+% ---------------------------------------------------------------------------
+\slide{Slide 4 --- Box 3 --- Four Opinions At The Same Time}{VERY HIGH (9/10)}{$\approx$ 1 minute 20}
+
+\begin{saythis}
+Box three is four boxes side by side, and they're side by side because they
+genuinely run at the same time on the same network. Four different opinions
+about the same accounts.
+
+The first group learns from examples where somebody already knew the answer.
+Three designs, and each one cares about something different. One works
+out which of your connections matter most and listens hardest to those. One
+treats money coming in differently from money going out. One handles different
+\emph{kinds} of relationship separately \bt winning a contract isn't the same
+as buying from someone.
+
+The second group needs no answers at all. It learns what normal looks like, and
+flags whatever it can't rebuild. Hold on to that one, because I'll come back to
+it and it's the most interesting result we have.
+
+The third group is hand-computed measurements. How many connections does this
+thing have. What shapes is it sitting inside. And for contracts, the classic
+warning signs \bt the same firms always bidding together, prices sitting
+suspiciously close.
+
+And the fourth is the honesty group. The strongest old-fashioned method we
+could field, plus the planted-cartel tests, plus the automated test suite. It's
+there so nobody can accuse us of only racing against ourselves.
+\end{saythis}
+
+\begin{meaning}
+Four arms, four different failure modes, and they don't overlap. That is the
+argument for having four.
+
+\textbf{Learning without answers, in one sentence.} It studies the ordinary
+traffic until it can reproduce it from memory; anything it can't reproduce is
+unusual. No answer key required.
+
+\textbf{Why the honesty arm matters to a marker.} A deep-learning result with
+no strong classical comparison is a demonstration, not a result. Arm four is
+also why you're able to admit, later and without flinching, that on one dataset
+the old-fashioned method wins.
+\end{meaning}
+
+\begin{asked}
+\q{Why keep the no-answers arm if it scores worst?} Because it's the only arm
+that works where there is no answer key --- which is the realistic deployment
+case. I'll show you the number in two slides, and it's the strongest
+deep-learning result in the project.
+\end{asked}
+
+% ---------------------------------------------------------------------------
+\slide{Slide 5 --- The No-Answers Arm --- Our Best Result}{VERY HIGH (9/10)}{$\approx$ 1 minute}
+
+\begin{saythis}
+Let me pay off that promise now, because it's the experiment I'd want you to
+remember.
+
+We took a real national contracts database \bt about a hundred and sixty
+thousand entities \bt and we planted a hundred fake cartels inside it. Nine
+hundred and forty companies, five different ways of cheating. And critically,
+we gave the detectors \emph{no answer key at all}.
+
+Then we asked: reviewing about one in eighty of that network, how many do you
+find?
+
+The result splits cleanly, and both halves are useful. Cartels that physically
+bid together \bt so they leave a visible web of connections \bt we find about
+nine times in ten. Cartels that just take turns winning, and never appear
+together anywhere, escape almost completely.
+
+And here's the part that matters for this project. In that experiment the
+old-fashioned method can't even take part, because there's nothing to train it
+on. The simple non-learning baseline scores about one in eight. The deep model
+scores about nine in ten.
+
+That's deep learning doing something nothing else in the toolbox can do.
+\end{saythis}
+
+\begin{meaning}
+This is your answer to the single hardest question in the project --- ``your
+XGBoost beats your neural network, so why bother?'' --- and it is much stronger
+delivered proactively here than defensively later.
+
+\textbf{Why knowing what it \emph{misses} is a feature.} A deployment team
+would far rather hear ``this catches bid-together cartels and is blind to
+take-turns cartels'' than ``it is eighty-two percent accurate''. The first
+tells them what to do next; the second tells them nothing.
+
+\textbf{The honest framing to use.} If the cheats leave a visible web between
+them, we find them. If they simply agree to take turns and never appear
+together, shape alone cannot see it --- you would need prices and dates.
+\end{meaning}
+
+\begin{asked}
+\q{Aren't planted cartels easier than real ones?} They're generated from the
+published descriptions of how these cartels actually operate, and three of the
+five kinds escape us completely --- which is not what you'd see if we'd made
+them easy.
+
+\q{Why not just use real labelled cartels?} There are almost none. Confirmed
+cartels are rare, and that scarcity is the whole reason the no-answers arm has
+to exist.
+\end{asked}
+
+% ---------------------------------------------------------------------------
+\slide{Slide 6 --- Box 4 --- Why The Word ``First'' Is Doing All The Work}{VERY HIGH (9/10)}{$\approx$ 1 minute}
+
+\begin{saythis}
+Box four merges those four opinions into one number per account. And the word
+``first'' in that box is doing enormous work.
+
+Here's the problem. Two models can both be excellent at ranking and still be on
+completely different scales. One says nought point nine when it's fairly
+confident. The other says nought point one when it's absolutely certain.
+Average those raw, and the loud one flattens the quiet one, regardless of which
+one was right.
+
+So we translate each model onto a proper scale first, checked against held-out
+data, and only then combine them.
+
+And we didn't take that on faith \bt we ran it both ways. Skip the translation
+step and the combined result collapses to roughly what blind guessing gets you.
+Do it properly and it's about nine times better.
+
+Same models. Same data. That single decision about \emph{ordering} was worth
+more than any model we trained.
+\end{saythis}
+
+\begin{meaning}
+\textbf{The everyday version.} Three judges scoring a competition. One marks
+everything between six and seven. One uses the full range. Average their raw
+scores and the cautious judge is silently ignored. You normalise them first.
+
+\textbf{Why this slide is worth a full minute.} It is a genuine measured
+finding, it is easy to understand, and it is the kind of engineering detail
+that separates a project that ran experiments from a project that ran a
+tutorial.
+
+The technical name is \emph{calibration}. Say it only if asked.
+\end{meaning}
+
+\begin{asked}
+\q{Why combine at all instead of using the best single model?} On one dataset
+we do report the best single model, and it's the old-fashioned one. The
+combination is what protects you when one member is weak --- and we measured
+that combining badly is far worse than not combining at all.
+\end{asked}
+
+% ---------------------------------------------------------------------------
+\slide{Slide 7 --- Box 5 --- Turning Scores Into Somebody's Morning}{HIGH (8/10)}{$\approx$ 50 seconds}
+
+\begin{saythis}
+Box five is where research turns into a product.
+
+Up to here we've got a score on every single account. Sixty-seven thousand of
+them on the money side. That's useless to a human being.
+
+So we find the clusters. We rank them. We throw away near-duplicates so nobody
+opens the same case twice. And we cut the list at whatever number of cases the
+team can actually review.
+
+Two hundred and fifty-four cases on the money side. Two hundred and twenty-three
+on the contracts side. That's a morning's work, not a research output.
+
+And notice what this step does \emph{not} use. The answers. It runs on
+structure alone \bt which is exactly why the identical step also runs on the
+data where no answers exist.
+\end{saythis}
+
+\begin{meaning}
+This box is the bridge back to the console the room already saw, so gesture at
+the numbers they recognise --- 254 and 223 were on the Overview screen.
+
+The ``it never uses the answers'' point is what makes the planted-cartel study
+possible at all, so it is worth ten seconds even though it sounds like a
+technicality.
+\end{meaning}
+
+% ---------------------------------------------------------------------------
+\slide{Slide 8 --- Box 6 --- Why An Alert Alone Isn't Enough}{HIGH (8/10)}{$\approx$ 1 minute}
+
+\begin{saythis}
+Box six. Three things happen to every case at the top of the list.
+
+First, the explainer picks out the handful of connections the decision actually
+depended on \bt out of a group of eighty-five accounts, maybe three of them and
+four payments. And then we check that, by re-running the case with only those
+connections, and again with them taken away.
+
+Second, a set of hand-written rules checks the case against nine known shapes
+and puts a name on it \bt but only when it can actually prove the shape.
+
+Third, when a shape matches, we attach the official warning sign it corresponds
+to. Quoted, with the source stamped on it.
+
+And those three are deliberately independent. The explainer is learned and can
+be wrong. The rules are fixed and cannot invent anything. So an investigator
+who distrusts the neural network entirely can throw the first one away, and the
+other two still stand.
+\end{saythis}
+
+\begin{meaning}
+\textbf{Define ``the handful of connections'' before you use it.} That phrase
+was a real failure in our own report --- it appeared before it was ever
+defined, so the whole explanation collapsed for the reader. The definition is:
+out of everything in the group, the specific few connections the system says
+its decision depended on.
+
+\textbf{The everyday version of the check.} Someone says two exam questions
+made them fail. Show them only those two --- do they still fail? Delete those
+two --- do they now pass? Both yes means those questions really were the
+reason.
+
+The numbers, if pushed: this check used to fail on thirty-eight of our fifty
+published explanations. We replaced the explanation method and now it fails on
+one.
+\end{meaning}
+
+\begin{asked}
+\q{How do you know the explanation is honest and not a story?} Because it's
+tested rather than asserted, by those two re-runs. And when the two answers
+contradict each other, we put a warning on the case file instead of hiding it.
+\end{asked}
+
+% ---------------------------------------------------------------------------
+\slide{Slide 9 --- Box 7 --- Just Files}{Medium (5/10)}{$\approx$ 30 seconds}
+
+\begin{saythis}
+Box seven. Everything the pipeline produced goes into ordinary files in a
+folder. Not a database. Not a running service. Files.
+
+That sounds unambitious, and it's one of the better decisions in the project.
+Files can be copied, fingerprinted, versioned, handed to an examiner on a
+memory stick, and undone by pointing at a different folder.
+
+And a file opened read-only cannot be changed by the thing reading it \bt
+which is exactly what the next slide is about.
+\end{saythis}
+
+\begin{meaning}
+This is the set-up for the trust boundary. Deliver the last line and pause
+before moving on.
+\end{meaning}
+
+% ===========================================================================
+\part{Part 3 --- The most important line on the page (1 minute 15)}
+
+\slide{Slide 10 --- The Trust Boundary}{VERY HIGH (10/10)}{$\approx$ 1 minute 15}
+
+\begin{saythis}
+Here it is. This is the line I said I'd come back to.
+
+Above it: the part that trains. That part is powerful, because it can change
+what the system believes about a person. Below it: the part the outside world
+can actually reach. That part is attackable, because anything on the internet
+is.
+
+Powerful and attackable must never be the same process. So we cut them
+completely apart. The top half writes files and exits. The bottom half opens
+those files read-only. There is no route back upwards.
+
+Now think about what that means if somebody breaks into our website tomorrow.
+
+They can read published results. They cannot retrain a model. They cannot
+change anybody's score. They cannot plant evidence in a case file.
+
+And that's the attack that would actually matter here. Not stealing the data
+\bt quietly changing who looks suspicious. That's much harder to notice and far
+worse in its consequences.
+
+There's a bonus too. Because the serving side never trains anything, it needs
+no expensive hardware. It starts instantly, runs on the cheapest machine on the
+price list, and demonstrates on a laptop with the wifi switched off.
+
+The security argument and the cost argument turn out to be the same argument.
+\end{saythis}
+
+\begin{meaning}
+This is the highest-value slide in the architecture talk. Rehearse it until it
+is smooth, and do not rush the ``quietly changing who looks suspicious'' line
+--- that is the sentence that shows you thought about the domain and not just
+the code.
+
+\textbf{The strongest version of the claim,} if someone pushes: in the cloud
+design this is enforced by the cloud provider's own permission system, not by
+our code being well-behaved. Our code could contain a bug that tries to write,
+and the write would still be refused.
+\end{meaning}
+
+\begin{asked}
+\q{Isn't that just a deployment detail?} In a system whose output decides who
+gets investigated, ``an attacker cannot alter a score'' isn't a deployment
+detail, it's an integrity property. It's also why the service has no write
+function at all --- there's nothing to abuse, because none exists.
+
+\q{What if the attacker gets into the training side instead?} Then they have a
+problem worth having, because that side isn't running. It exists for a couple
+of hours when a scheduled job starts it, and it isn't reachable from the
+internet at all.
+\end{asked}
+
+% ===========================================================================
+\part{Part 4 --- Below the line (1 minute 20)}
+
+\slide{Slide 11 --- Box 8 --- The Doorway, And Where The Assistant Sits}{HIGH (7/10)}{$\approx$ 50 seconds}
+
+\begin{saythis}
+Below the line, box eight. A small read-only service that hands out those
+files. Ask it for a case, it gives you the case. Ask it for a network, and it
+trims that network down to a sensible size \emph{on the server} before sending,
+so your browser never receives a million connections.
+
+Every single response carries the ethics wording. Not just the pretty pages
+\bt the raw data too.
+
+And beside it, in its own box, the assistant. Notice it sits \emph{beside} the
+doorway rather than behind it, and both arrows point in and out of that same
+read-only service. It has no private access to anything. It reads exactly what
+a person looking at the dashboard could read.
+\end{saythis}
+
+\begin{meaning}
+The placement on the diagram is the argument. If the assistant had its own line
+into the data store, everything you said about guardrails would rest on trust.
+Because it goes through the same read-only doorway, it rests on architecture.
+\end{meaning}
+
+% ---------------------------------------------------------------------------
+\slide{Slide 12 --- Boxes 9 and 10 --- The Console, And The Person}{HIGH (7/10)}{$\approx$ 30 seconds}
+
+\begin{saythis}
+Box nine is the console you've already seen.
+
+Box ten is a person. And it's drawn on the architecture diagram on purpose.
+
+The system produces a ranked list and the evidence behind it. A human decides
+what happens next, inside a fixed number of cases a week.
+
+That's not modesty about how good the model is. If a screening tool made the
+escalation decision, you'd have automated an accusation.
+\end{saythis}
+
+\begin{meaning}
+Putting a human on an architecture diagram is unusual, and that is exactly why
+it works. It makes the human-in-the-loop constraint structural rather than
+aspirational.
+
+``You'd have automated an accusation'' is the line to land. Then move on.
+\end{meaning}
+
+% ===========================================================================
+\part{Part 5 --- The method cards (1 minute 30)}
+
+\slide{Slide 13 --- The Cards Below The Flowchart}{Medium (6/10)}{$\approx$ 1 minute 30}
+
+\begin{saythis}
+Scroll past the flowchart and every box gets a card explaining what it does and
+how it works. I won't read twelve cards at you. Three are worth pausing on.
+
+The graph networks. Ordinary machine learning looks at a thing's own details.
+These look at \emph{who it deals with}. Each account starts with a profile of
+numbers, and then in a few rounds every account blends in its neighbours'
+profiles. After a couple of rounds, an account sitting inside a laundering ring
+looks measurably different from a normal one \bt even if its own details looked
+perfectly ordinary.
+
+The rare-crime problem. Only about one in fifty of these things is a real case.
+A lazy model calls everything innocent, is right ninety-eight percent of the
+time, and is completely useless. So we change what the training rewards. Easy
+correct answers earn almost nothing, and the effort goes where the rare cases
+are.
+
+And the old-fashioned yardstick. Hundreds of small decision trees, each
+correcting the last. On the Bitcoin data they still beat our neural networks,
+and we publish that with a proper statistical test rather than burying it.
+\end{saythis}
+
+\begin{meaning}
+\textbf{The everyday version of a graph network.} Deciding whether a new pupil
+is trouble. You could read their file. Or you could notice who they eat lunch
+with every day. After a few days of watching, the lunch table tells you more
+than the file.
+
+\textbf{The rare-crime fix} is called focal loss. Only name it if asked.
+
+\textbf{Volunteering that the trees win} is a strength. It reads as confidence,
+and it sets up the answer you already gave on slide 5 --- the trees cannot
+enter the experiment that matters most.
+\end{meaning}
+
+\begin{asked}
+\q{The trees beat your deep models --- doesn't that sink the project?} On that
+one dataset, yes, and we say so. That dataset already ships hand-built
+neighbour summaries as ordinary columns, so the trees get the network
+information for free. Take the answer key away, as in the planted-cartel study,
+and they can't run at all.
+\end{asked}
+
+% ===========================================================================
+\part{Part 6 --- The cloud, and the bill (3 minutes 30)}
+
+\slide{Slide 14 --- The Always-On Half}{HIGH (8/10)}{$\approx$ 1 minute 10}
+
+\begin{saythis}
+Second diagram. What this looks like hosted properly. Same two halves, same
+line between them.
+
+Top half is always on. Users need a browser and nothing else.
+
+Three things happen before anything of ours runs. An address service turns our
+web address into a real machine. A delivery network keeps copies of the site
+around the world, so it loads from somewhere near you rather than from one
+machine on one continent. And a filter in front of everything blocks the
+well-known attacks.
+
+The dashboard itself is just files in cheap storage, in a private area only the
+delivery network is allowed to read.
+
+The results live in their own storage, and this is the box I'd point at. Every
+run writes into its own dated folder. Nothing is ever overwritten.
+
+Which means undoing a bad model is pointing at yesterday's folder. Seconds. No
+retraining, no panic \bt and the bad run is still sitting there to be
+investigated rather than destroyed.
+\end{saythis}
+
+\begin{meaning}
+The versioned-folder point is the one an examiner with industry experience will
+respond to, because rollback is the operational problem everybody has actually
+lived through.
+
+\textbf{Why the site bucket is private.} A public bucket is one
+misconfiguration away from being writable by somebody else, and it lets people
+bypass the protective filter. Making the delivery network the only reader means
+every visitor goes through the filter without exception.
+\end{meaning}
+
+\begin{asked}
+\q{Why not use a proper database for the results?} Because we don't need one.
+The results are written once and read many times, never edited. Files give us
+versioning, checksums and rollback for free --- and a file opened read-only
+cannot be modified by the website reading it, which is the trust boundary
+again.
+\end{asked}
+
+% ---------------------------------------------------------------------------
+\slide{Slide 15 --- The Pieces That Exist So Nothing Goes Quietly Wrong}{Medium (6/10)}{$\approx$ 50 seconds}
+
+\begin{saythis}
+Along the bottom of that box, four small pieces that aren't glamorous and all
+of them earn their place.
+
+The assistant's key lives in a secrets store, so it's never in the code and
+never in the repository.
+
+The public side is granted \emph{read-only} rights on the results. And that's
+the strongest sentence in this diagram \bt the boundary I showed you isn't just
+our own code being polite. Amazon enforces it. Our code could have a bug that
+tries to write, and the write would still be refused.
+
+Logs and alarms, so you find out something broke before a user tells you.
+
+And a spending alarm, switched on from day one, so a stuck job can't quietly
+cost a fortune while nobody's looking.
+\end{saythis}
+
+\begin{meaning}
+Say the read-only permissions line slowly. It converts a claim into a
+guarantee, and it is the single most defensible thing on the cloud diagram.
+
+The spending alarm sounds like a joke until you mention it is a student
+project. Then it sounds like judgement.
+\end{meaning}
+
+% ---------------------------------------------------------------------------
+\slide{Slide 16 --- The Half That Only Exists While It Runs}{HIGH (8/10)}{$\approx$ 55 seconds}
+
+\begin{saythis}
+Bottom half, and this is the money-saving idea.
+
+There's an alarm clock. Every night, or every week, it starts the pipeline.
+That job rents a graphics computer at about seventy percent off, reads the
+data, trains, scores, groups, explains, writes the results \bt and then shuts
+itself down.
+
+Now, renting at seventy percent off means the machine can be taken away from
+you with almost no warning. That would be unacceptable for anything serving
+live traffic. But this job serves nothing. If it gets interrupted, the website
+carries on showing yesterday's results, an alarm fires, and it runs again
+tonight.
+
+The fact that this job can be interrupted safely is exactly what earns the
+discount.
+
+And follow that arrow going up. It's the only connection between the two
+halves. The nightly job \emph{writes} into the storage the website
+\emph{reads}. There's nothing coming back down.
+\end{saythis}
+
+\begin{meaning}
+The spot-pricing justification is the good bit. Anyone can say ``we use cheap
+machines''. Explaining \emph{why this workload is the one that can tolerate
+cheap machines} is engineering judgement.
+
+The upward arrow is the trust boundary again, drawn in cloud services. Point at
+it and say so --- repetition of the central idea across two diagrams is a
+feature.
+\end{meaning}
+
+\begin{asked}
+\q{What if it gets taken away halfway through?} The website keeps serving
+yesterday's results, because nothing was overwritten in place. A half-finished
+run just produces an incomplete folder that nobody is pointing at.
+\end{asked}
+
+% ---------------------------------------------------------------------------
+\slide{Slide 17 --- What It Costs}{HIGH (7/10)}{$\approx$ 55 seconds}
+
+\begin{saythis}
+Three levels, real list prices.
+
+A university demo: website hosting, one small always-on machine, a web address,
+and the training done on your own computer or free Colab. About ten dollars a
+month \bt and effectively nothing, because standard new-account credits cover
+it.
+
+A real launch: a pay-per-use doorway good for about a million requests,
+storage, a rented graphics machine roughly four hours a week, pay-per-use
+assistant, monitoring. Somewhere between about fifteen and fifty dollars a
+month.
+
+A growing product: add containers across two data centres, a load balancer, a
+firewall, a nightly graphics machine, team-scale assistant usage. Roughly
+ninety to a hundred and eighty.
+
+And notice what actually changes between those three. The machine learning
+doesn't. Same pipeline, same results, every level. What you're buying as you go
+up is tolerance for things going wrong.
+\end{saythis}
+
+\begin{meaning}
+That last paragraph is the insight, and most groups miss it. The tiers are not
+``more model'' --- they are more resilience. Tier one assumes somebody will
+notice if it stops. Tier three survives a data centre failure.
+
+\textbf{If asked what the risky line is:} the assistant, because it is charged
+per unit of text and driven by humans rather than by us. The graphics machine
+is the biggest cost but it is bounded --- it runs for a few hours and stops.
+\end{meaning}
+
+\begin{asked}
+\q{Could you actually afford to run this?} Yes, and that's a consequence of the
+architecture rather than luck. The expensive hardware exists for two hours a
+night and then disappears. Showing results needs none of it.
+\end{asked}
+
+% ===========================================================================
+\part{Part 7 --- Close (35 seconds)}
+
+\slide{Slide 18 --- The Close}{HIGH (8/10)}{$\approx$ 35 seconds}
+
+\begin{saythis}
+So: one page, two halves, one line between them.
+
+Above the line we train, and then we stop. Below the line we show people
+things, and we can't change anything. That single decision gave us the security
+property, the cost profile, and the ability to demonstrate this on a laptop
+with no internet \bt all three from the same choice.
+
+And at the very bottom of the diagram, a person still decides.
+\end{saythis}
+
+\begin{meaning}
+Mirror the dashboard script's close. Two talks, same final note, delivered by
+different people --- that reads as a group that actually planned together.
+\end{meaning}
+
+% ---------------------------------------------------------------------------
+\slide{Slide 19 --- Appendix --- The Four Minute Version}{---}{$\approx$ 4 minutes}
+
+If you are cut short, run slides \textbf{2, 4, 5, 10, 16, 18}.
+
+That is: the shape, the four arms, the result that only deep learning can
+produce, the trust boundary, the cloud version of the boundary, and the close.
+
+\vspace{8pt}
+\textbf{Never read a decimal aloud on this page:}
+
+\begin{center}\small
+\begin{tabular}{@{}p{6.2cm}p{8.4cm}@{}}
+\hline
+\textbf{On the page} & \textbf{Say} \\
+\hline
+Combined 0.4434 vs raw 0.0511 & ``about nine times better, same models, same
+data'' \\
+Guessing level 0.065 & ``blind guessing gets about six in a hundred'' \\
+About 2\% positives & ``about one in fifty is a real case'' \\
+Planted study, 0.92 vs 0.12 & ``about nine in ten, against about one in eight
+for the simple baseline'' \\
+Explanation check 38/50 $\to$ 1/50 & ``it used to fail on most of them, now it
+fails on one'' \\
+24 of 24 exam questions & ``a twenty-four question exam, and all of them have
+to pass'' \\
+Tier 1 about \$10 & ``about ten dollars a month'' \\
+Spot discount $\approx$ 70\% & ``about seventy percent off'' \\
+\hline
+\end{tabular}
+\end{center}
+
+\end{document}

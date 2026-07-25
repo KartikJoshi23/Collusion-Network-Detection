@@ -161,7 +161,12 @@ STRIP = ".,;:!?()[]\"“”—-–’'s"
 
 
 def say_this_blocks(text: str):
-    """Yield (line_no, block_text) for every `> **SAY THIS**` blockquote."""
+    r"""Yield (line_no, block_text) for every spoken block.
+
+    Two shapes, because the scripts moved from Markdown to LaTeX on
+    2026-07-25 when the stakeholder asked for the reference slide format:
+    a `> **SAY THIS**` blockquote, or a `\begin{saythis}` environment.
+    """
     lines = text.splitlines()
     i = 0
     while i < len(lines):
@@ -172,14 +177,39 @@ def say_this_blocks(text: str):
                 body.append(re.sub(r"^\s*>\s?", "", lines[i]))
                 i += 1
             yield start, "\n".join(body)
+        elif re.match(r"^\s*\\begin\{saythis\}", lines[i]):
+            start, body = i + 1, []
+            i += 1
+            while i < len(lines) and not re.match(r"^\s*\\end\{saythis\}", lines[i]):
+                body.append(lines[i])
+                i += 1
+            yield start, strip_tex("\n".join(body))
         else:
             i += 1
 
 
+def strip_tex(s: str) -> str:
+    r"""Reduce a LaTeX spoken block to the words that are actually said.
+
+    Stage directions (\do{...}) are removed entirely — they are things the
+    speaker DOES, not words. Everything else keeps its argument text.
+    """
+    s = re.sub(r"\\do\{[^{}]*\}", "", s)  # [click the switch]
+    s = re.sub(r"\\bt\b", " ", s)  # breath marker
+    s = re.sub(r"\\blank\b", "NAME", s)  # the fill-in-your-name rule
+    s = re.sub(r"\\textbullet\b", "", s)
+    s = re.sub(r"\\[a-zA-Z]+\*?\{([^{}]*)\}", r"\1", s)  # \emph{x} -> x
+    s = re.sub(r"\\[a-zA-Z]+\*?", "", s)  # bare macros
+    s = s.replace("---", "—").replace("``", '"').replace("''", '"')
+    return re.sub(r"[{}]", "", s)
+
+
 def script_pass() -> int:
-    files = sorted(DOCS.glob("presentation_script_*.md"))
+    files = sorted(DOCS.glob("presentation_script_*.md")) + sorted(
+        (DOCS / "presentation_scripts").glob("*.tex")
+    )
     if not files:
-        print("\nno docs/presentation_script_*.md found — spoken pass skipped")
+        print("\nno presentation scripts found — spoken pass skipped")
         return 0
 
     violations = 0

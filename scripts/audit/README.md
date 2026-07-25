@@ -12,7 +12,7 @@ uv run python scripts/audit/ui_jargon.py
 | Script | What it checks | Last measured |
 |---|---|---|
 | `ui_jargon.py` **pass 1** | Machine-learning jargon in strings a **user actually reads** on screen (JSX text, `title=`, `label=` — never comments or identifiers). | 24 → 5 → **7 accepted** (6 chart/metric labels where the metric's real name belongs, 1 JSON export key) |
-| `ui_jargon.py` **pass 2** | The `> **SAY THIS**` blocks of `docs/presentation_script_*.md` — text read **aloud**. Stricter than the screen: pass-1 jargon plus the brief's §4 list, no printed decimals ("about a third", never `0.32`), no bullet lists, no sentence over 30 words. Exits non-zero on any violation. | 42 blocks, **0 violations** |
+| `ui_jargon.py` **pass 2** | The spoken blocks of the presentation scripts — `\begin{saythis}` in `docs/presentation_scripts/*.tex` (and legacy `> **SAY THIS**` markdown). Stricter than the screen: pass-1 jargon plus the brief's §4 list, no printed decimals ("about a third", never `0.32`), no bullet lists, no sentence over 30 words. Stage directions `\do{...}` are stripped before checking — they are done, not said. Exits non-zero on any violation. | 48 blocks, **0 violations** |
 | `readability.py` | Long sentences, stacked clauses and jargon density in the LaTeX report. | 33 of 787 (4.2%) → **47 of 1196 (3.9%)** after the architecture/cloud/dashboard rewrite |
 | `jargon_audit.py` | Terms used in the report but never defined in its glossary. | 59 → **31**, all false positives |
 | `why_audit.py` | Bare parameter values (`2 layers`, `0.5 threshold`) with no justification nearby — the "why that number?" an evaluator asks. | all now answered |

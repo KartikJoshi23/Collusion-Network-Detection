@@ -1,0 +1,98 @@
+% ============================================================================
+%  scriptstyle.sty — the house style for CollusionGraph presentation scripts.
+%
+%  Cloned from the reference format the stakeholder supplied on 2026-07-25:
+%  a slide heading carrying an IMPORTANCE rating and a SUGGESTED TIME, then a
+%  blue "Say this" box of spoken words, then a green "What this actually means"
+%  box for the presenter, then an amber "If the evaluator asks" box.
+%
+%  Usage:  \usepackage{scriptstyle}   (keep this file next to the .tex)
+% ============================================================================
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{scriptstyle}[2026/07/25 CollusionGraph presentation scripts]
+
+\RequirePackage[T1]{fontenc}
+\RequirePackage[utf8]{inputenc}
+\RequirePackage{lmodern}
+\RequirePackage[a4paper,margin=2.2cm]{geometry}
+\RequirePackage{xcolor}
+\RequirePackage[most]{tcolorbox}
+\RequirePackage{enumitem}
+\RequirePackage{fancyhdr}
+\RequirePackage{titlesec}
+\RequirePackage[hidelinks]{hyperref}
+
+% ---- palette (matched to the reference images) -----------------------------
+\definecolor{sayframe}{HTML}{1F4E79}   % dark blue rule + title bar
+\definecolor{saytext}{HTML}{2A5C8F}    % blue body text
+\definecolor{meanframe}{HTML}{1D6F42}  % dark green rule + title bar
+\definecolor{meantext}{HTML}{1D6F42}   % green body text
+\definecolor{askframe}{HTML}{8A5A0B}   % amber rule + title bar
+\definecolor{asktext}{HTML}{7A4E08}    % amber body text
+\definecolor{metagrey}{HTML}{444444}
+
+% ---- page furniture --------------------------------------------------------
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\small\textcolor{metagrey}{CollusionGraph — presentation script}}
+\rhead{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+\setlist[itemize]{topsep=3pt,itemsep=2pt,parsep=0pt,leftmargin=1.4em}
+\setlist[enumerate]{topsep=3pt,itemsep=2pt,parsep=0pt,leftmargin=1.6em}
+
+% ---- the slide heading -----------------------------------------------------
+% \slide{Slide 1 — Title — ...}{Medium (6/10)}{≈ 45 seconds}
+\newcommand{\slide}[3]{%
+  \bigskip
+  {\large\bfseries #1}\par
+  \vspace{2pt}\hrule\vspace{5pt}
+  {\small\textbf{Importance:} #2 \quad\textcolor{metagrey}{\textbar}\quad
+   \textbf{Suggested time:} #3}\par
+  \vspace{4pt}
+}
+
+% Section divider for a run of slides that belong to one screen / one part.
+\newcommand{\part}[1]{%
+  \clearpage
+  \begin{tcolorbox}[colback=metagrey!8,colframe=metagrey!55,boxrule=0.6pt,
+    arc=1pt,left=8pt,right=8pt,top=5pt,bottom=5pt]
+    \centering\large\bfseries #1
+  \end{tcolorbox}
+}
+
+% ---- the three boxes -------------------------------------------------------
+\newtcolorbox{saythis}{%
+  enhanced, breakable,
+  colback=white, colframe=sayframe, boxrule=0.9pt, arc=1pt,
+  title={\bfseries Say this}, coltitle=white, colbacktitle=sayframe,
+  fonttitle=\small, coltext=saytext,
+  left=8pt, right=8pt, top=6pt, bottom=6pt}
+
+\newtcolorbox{meaning}{%
+  enhanced, breakable,
+  colback=white, colframe=meanframe, boxrule=0.9pt, arc=1pt,
+  title={\bfseries What this actually means (plain English)},
+  coltitle=white, colbacktitle=meanframe,
+  fonttitle=\small, coltext=meantext,
+  left=8pt, right=8pt, top=6pt, bottom=6pt}
+
+\newtcolorbox{asked}{%
+  enhanced, breakable,
+  colback=white, colframe=askframe, boxrule=0.9pt, arc=1pt,
+  title={\bfseries If the evaluator asks}, coltitle=white, colbacktitle=askframe,
+  fonttitle=\small, coltext=asktext,
+  left=8pt, right=8pt, top=6pt, bottom=6pt}
+
+% ---- inline helpers --------------------------------------------------------
+% A beat: where to pause for breath mid-sentence. Reads as " / " on the page.
+\newcommand{\bt}{\,\textcolor{metagrey}{/}\,}
+% A blank for a name the speaker fills in.
+\newcommand{\blank}{\underline{\hspace{2.4cm}}}
+% A stage direction — something you DO, not something you say.
+\newcommand{\do}[1]{\textcolor{metagrey}{\textit{[#1]}}}
+% A question inside the amber box.
+\newcommand{\q}[1]{\textit{``#1''}\ ---\ }
+
+\endinput

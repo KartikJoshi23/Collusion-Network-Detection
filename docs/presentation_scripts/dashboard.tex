@@ -1,0 +1,1330 @@
+\documentclass[11pt]{article}
+\usepackage{scriptstyle}
+
+\begin{document}
+
+\begin{center}
+{\LARGE\bfseries CollusionGraph --- Presentation Script}\\[4pt]
+{\large The Investigator Console}\\[8pt]
+{\small Total running time: \textbf{about 21 minutes}\quad\textbar\quad
+30 slides\quad\textbar\quad Start here. This is the opening of the talk.}
+\end{center}
+
+\vspace{6pt}
+\begin{tcolorbox}[colback=metagrey!6,colframe=metagrey!45,boxrule=0.6pt,arc=1pt]
+\textbf{How to use this file.} Each slide has three boxes.
+\textbf{Say this} is spoken almost word for word --- it is written to sound
+like talking, not like reading. \textbf{What this actually means} is for you,
+not the room; read it beforehand so you understand what you are saying.
+\textbf{If the evaluator asks} is the question that actually gets asked there,
+with an answer you can give without leaving the screen.
+
+A ``\bt'' inside a spoken line is a breath. Slow down there.
+\do{square brackets} are things you \emph{do} with the mouse, not words you say.
+
+\textbf{Set-up before you start.} Console open on \textbf{Overview}, domain
+\textbf{Financial \textbullet\ AML}, dataset \textbf{elliptic\_pp}, review
+number \textbf{50}. Copilot closed. Nothing else on screen.
+\end{tcolorbox}
+
+% ===========================================================================
+\part{Part 1 --- The opening (2 minutes)}
+
+\slide{Slide 1 --- Title --- One System, Two Crimes}{Medium (6/10)}{$\approx$ 50 seconds}
+
+\begin{saythis}
+Good morning everyone. We're Group \blank, and our project is called
+CollusionGraph.
+
+We were handed what looks like two completely separate briefs. Find the
+money-laundering rings hiding inside a payments network. And find the companies
+secretly rigging bids on public contracts. Different industry, different
+regulator, different data.
+
+Our claim \bt and this is the thing we'll defend for the next twenty minutes
+\bt is that underneath, those are the same problem. Both crimes need more than
+one person to work. And the moment a crime needs more than one person, it
+leaves a shape behind.
+
+So we built one system that screens both. I'm \blank, with me are \blank\ and
+\blank.
+
+We're going to start at the finished end \bt with the screen an investigator
+would actually sit in front of \bt and then work backwards into how it's built.
+\end{saythis}
+
+\begin{meaning}
+This slide is the handshake. You are telling the room four things: who you are,
+what you were given, what your claim is, and what order the talk will run in.
+
+The claim sentence is the one that matters. \textbf{``Coordination leaves a
+shape''} is your thesis, and every slide after this is evidence for it. Say it
+slowly.
+
+Two words to be clear about from the start:
+\begin{itemize}
+  \item \textbf{Screening} = narrowing a huge list down to the few worth
+        looking at. It is not deciding anyone is guilty.
+  \item \textbf{The two domains} = money laundering on one side, bid rigging on
+        the other. We call them ``money'' and ``contracts'' throughout.
+\end{itemize}
+
+Announcing the running order sounds like a small thing. It isn't --- examiners
+relax when they know where a talk is going, and a relaxed examiner asks better
+questions.
+\end{meaning}
+
+\begin{asked}
+\q{Why start with the dashboard instead of your method?} Because the dashboard
+is the only part that proves the project is finished. Anyone can draw a method
+slide. A working console running on real public data cannot be faked, and
+everything in the method section is visible in it.
+
+\q{Is this a real product or a prototype?} It is a research prototype that runs
+end to end. Real public datasets, real trained models, real results files. What
+it is not is deployed at a bank, and we're careful about that difference.
+\end{asked}
+
+% ---------------------------------------------------------------------------
+\slide{Slide 2 --- The Problem --- Why Two Crimes Belong Together}{HIGH (8/10)}{$\approx$ 1 minute}
+
+\begin{saythis}
+Let me set up the problem properly, because everything else follows from it.
+
+Money laundering works by moving dirty money through a chain of accounts until
+nobody can trace where it started. One account can't do that. You need a chain.
+
+Bid rigging works by companies agreeing in advance who wins which contract, so
+the price stays high. One company can't do that either. You need at least two.
+
+So in both cases the crime \emph{is} the coordination. And coordination is
+visible \bt not in any one record, but in the pattern between records.
+
+That's why we don't treat this as a spreadsheet problem, where you look at each
+customer one at a time. We treat it as a network problem, where what matters is
+who deals with whom.
+
+And that single decision is what let us build one system instead of two.
+\end{saythis}
+
+\begin{meaning}
+This is the intellectual core of the project and it takes ten seconds to say
+badly and one minute to say well. Take the minute.
+
+\textbf{The everyday version.} Think about how you'd spot people cheating in an
+exam. You wouldn't look at one student's paper. You'd look at which papers have
+the same wrong answers. The cheating is in the \emph{relationship} between
+papers, not in any single paper.
+
+That is exactly what we're doing, and it is why an ordinary machine-learning
+model --- which looks at one row at a time --- is the wrong tool here.
+
+\textbf{The word to introduce.} A \textbf{network} (some people say graph) is
+just dots and lines. Dots are accounts or companies. Lines are payments or
+shared contracts. Every dataset we use gets turned into dots and lines, and
+after that the system doesn't care which crime it came from.
+\end{meaning}
+
+\begin{asked}
+\q{Isn't a network just a fancy word for a database table?} No, and the
+difference is the point. A table answers ``tell me about this customer.'' A
+network answers ``show me everyone this customer is connected to, and everyone
+\emph{they} are connected to.'' The second question is the one that finds a
+ring.
+
+\q{Couldn't you just look for known bad patterns with rules?} We do, and we
+kept the rules --- they're one of the four things scoring in the background.
+But rules only find what someone already thought of. The learning part is there
+to find shapes nobody wrote a rule for.
+\end{asked}
+
+% ---------------------------------------------------------------------------
+\slide{Slide 3 --- What You Are About To See}{Medium (5/10)}{$\approx$ 30 seconds}
+
+\begin{saythis}
+So this is the console. It's what an investigator would open on a Monday
+morning.
+
+Everything on it is real. Real public datasets, real trained models, real
+results --- nothing here is a mock-up and nothing is generated live to look
+good.
+
+Six tabs across the top, and we'll go through every one of them.
+
+And before I go any further \bt look at the line along the bottom of the
+screen. It says this is a screening signal, not a determination of guilt. That
+line is on every screen, and it's on every piece of data the system hands out.
+I'll come back to why that matters at the end.
+\end{saythis}
+
+\begin{meaning}
+Short slide, three jobs. You are establishing that the data is real, giving the
+room a map of the six tabs, and planting the ethics line early so that when you
+close on it in twenty minutes it lands as a design principle rather than a
+disclaimer.
+
+Do not linger here. The room wants to see something happen.
+\end{meaning}
+
+\begin{asked}
+\q{Where does the data come from?} Six public datasets. Bitcoin payment
+records, a European public-contracts database, an international auctions
+dataset with confirmed cartels, a synthetic banking dataset, and a full
+national procurement archive. All open, all citable, none of it private.
+\end{asked}
+
+% ===========================================================================
+\part{Part 2 --- The frame around every screen (1 minute 45)}
+
+\slide{Slide 4 --- The Domain Switch --- Two Worlds, One Machine}{Medium (6/10)}{$\approx$ 45 seconds}
+
+\begin{saythis}
+Top right. This switch is the whole two-crimes idea in one control.
+
+On the left, Financial, and underneath it says A-M-L \bt anti money laundering.
+On the right, Procurement, and underneath, bid rigging. We name the actual
+crime, because ``financial'' on its own tells you nothing.
+
+\do{click the switch} Watch what happens. The colours change. The datasets
+change. The cases change.
+
+Now watch what \emph{doesn't} change. Nothing underneath. Same reader of the
+data, same scoring, same grouping, same evidence rules, same screens.
+
+That's the honest test of whether this is one system or two systems in a
+trench coat. It's one.
+\end{saythis}
+
+\begin{meaning}
+This is a small control carrying a large claim, so it earns its own slide.
+
+If the code had two separate pipelines behind that switch, the project would
+just be two projects sharing a menu bar. It doesn't. Everything from the point
+where data is loaded onwards is shared, and each domain only supplies its own
+trained numbers.
+
+\textbf{Why we added the crime names.} Until late in the project the pills said
+only ``Financial'' and ``Procurement''. We then checked the whole console and
+found the letters A-M-L appeared nowhere except two buried lines on the About
+page. A visitor could not tell what the financial side was screening
+\emph{for}. Naming it cost four characters. Mention this if you want to show
+you audit your own interface.
+\end{meaning}
+
+\begin{asked}
+\q{Same model for both?} Same architecture, same pipeline, but each domain
+trains its own numbers on its own data. What is genuinely shared is the data
+format, the splitting rules, the grouping, the evidence layer and the way we
+measure. That sharing is what made it possible to test whether one crime's
+knowledge transfers to the other --- which we did, and I can show you the
+result.
+\end{asked}
+
+% ---------------------------------------------------------------------------
+\slide{Slide 5 --- The Dataset Picker}{Medium (4/10)}{$\approx$ 35 seconds}
+
+\begin{saythis}
+Next to it, the dataset. Two on each side.
+
+On the money side: Bitcoin payments, and then the same Bitcoin world seen as
+wallets rather than individual payments. That second one matters --- it's the
+same crime at a different zoom level, and the system has to survive that.
+
+On the contracts side: European public contracts, and an international auctions
+dataset where competition authorities have already confirmed which companies
+were cartels. That one is our hardest test, because somebody official already
+knows the answer.
+\end{saythis}
+
+\begin{meaning}
+Two datasets per side is a deliberate defence. One dataset per domain invites
+the reasonable suspicion that your result is a property of that one dataset.
+
+The wallets view is the strongest thing on this slide. Same underlying world,
+different definition of ``a thing'', and the pipeline needs no changes to
+handle it.
+\end{meaning}
+
+\begin{asked}
+\q{You said six datasets, but I only see four.} Correct, and it's deliberate.
+Two of them have no usable answer key at the level we show cases, so a
+confirmation rate calculated from them would be meaningless. We use those two
+in the planted-cartel experiments instead, which need no answer key. Showing
+them here would imply an accuracy we cannot measure.
+\end{asked}
+
+% ---------------------------------------------------------------------------
+\slide{Slide 6 --- The Six Tabs and the Line at the Bottom}{Medium (5/10)}{$\approx$ 25 seconds}
+
+\begin{saythis}
+Six tabs, and each one keeps its own colour and icon the whole way through.
+After a minute of using it, you find a screen by its colour before you read its
+name.
+
+One colour is deliberately missing from that set. Coral \bt this red-orange
+\bt is reserved. It means ``flagged'' and it means nothing else anywhere in
+the product. So when you see coral later on, you already know what it is.
+\end{saythis}
+
+\begin{meaning}
+Small point, but it shows deliberate interface design rather than decoration,
+and it pays off twice later --- on the constellation and on the network
+picture, where you never have to explain what coral means because you already
+did.
+\end{meaning}
+
+% ===========================================================================
+\part{Part 3 --- Overview: the opening screen (2 minutes)}
+
+\slide{Slide 7 --- The Four Numbers That Matter}{HIGH (8/10)}{$\approx$ 1 minute}
+
+\begin{saythis}
+First screen. Four numbers across the top, and they're deliberately the four a
+manager asks before anything else.
+
+How many suspicious groups came out of this dataset. How many of those are in
+the top risk band. How many cases your team can actually review. And how many
+datasets are loaded.
+
+Now look at the third one, because everybody skips it and it's the most
+important number on the screen.
+
+This system does not hand you a pile of work and wish you luck. \emph{You} tell
+it how many cases your team can get through this week. And then every accuracy
+number in the whole project is measured at exactly that workload.
+
+Because here's the thing \bt any screening system can catch everything, if
+you're willing to review everything. An accuracy number with no workload
+attached to it is meaningless.
+\end{saythis}
+
+\begin{meaning}
+This is where you introduce the project's central measuring idea, and you do it
+without naming it. The technical name is \emph{Precision@k}, and the ``k'' is
+that third tile. Do not say ``Precision at k'' out loud unless asked.
+
+\textbf{The everyday version.} A metal detector that beeps constantly finds
+every coin on the beach. It is also useless. The only fair question is: of the
+fifty places it told me to dig, how many had a coin?
+
+\textbf{Why it is a human input.} The right number depends on how many analysts
+you have this week. It is a staffing decision, not a modelling decision. What
+the system owes you is an honest measurement at whatever number you pick ---
+which is what the next screen delivers.
+\end{meaning}
+
+\begin{asked}
+\q{Why not just report accuracy?} Because on this data you can be
+ninety-eight percent accurate by saying ``innocent'' to everything. Only about
+one in fifty of these is a real case. Accuracy rewards a model for ignoring
+exactly the thing we built it to find.
+
+\q{Who decides the review number in real life?} The team's manager, from
+headcount. That's why it's a slider and not a setting buried in a config file.
+\end{asked}
+
+% ---------------------------------------------------------------------------
+\slide{Slide 8 --- The Constellation}{Medium (5/10)}{$\approx$ 40 seconds}
+
+\begin{saythis}
+The big panel is every case in one picture. One dot per group. Bigger dot,
+bigger group. Colour is the risk band. And you can click straight into any of
+them.
+
+Let me be straight with you about what's real here. The dots are real --- every
+one is an actual group at its actual rank with its actual score. The
+\emph{arrangement} of them is decorative. Position doesn't mean anything.
+
+What I want you to notice is the shape of the crowd. A handful of hot ones at
+the top, and then a long quiet tail. That's what a real screening problem looks
+like, and it's exactly why that review number matters so much.
+\end{saythis}
+
+\begin{meaning}
+Volunteering that the layout is decorative is worth more than the panel is. An
+evaluator who works it out for themselves starts wondering what \emph{else} is
+decorative, and you have lost the room's trust for the rest of the talk.
+
+Say it, move on, and you have bought credibility cheaply.
+\end{meaning}
+
+\begin{asked}
+\q{So it's just decoration?} The layout is. The data is not, and you can click
+any dot and land on that exact case. If you want the true ordering, the next
+tab is the true ordering with no styling at all.
+\end{asked}
+
+% ---------------------------------------------------------------------------
+\slide{Slide 9 --- The Leaderboard and the Move to the Queue}{Medium (3/10)}{$\approx$ 20 seconds}
+
+\begin{saythis}
+On the right, the same thing as a plain list. Rank, risk, group size, and the
+name of the pattern where we could put a name to it.
+
+If you had ten seconds and one screen, it'd be this one. But let's go into the
+screen an investigator actually works in.
+\end{saythis}
+
+\begin{meaning}
+Pure transition. Keep it short and click through on the last word --- a talk
+that moves feels rehearsed even when it isn't.
+\end{meaning}
+
+% ===========================================================================
+\part{Part 4 --- The Alert Queue: the working screen (4 minutes 30)}
+
+\slide{Slide 10 --- What One Row Actually Is}{VERY HIGH (9/10)}{$\approx$ 55 seconds}
+
+\begin{saythis}
+This is the screen somebody would live in. It's a worklist, worst first.
+
+Before we read a row, two things you need to know.
+
+First \bt a row is not a person and it's not a payment. It's a \emph{group}. A
+cluster of accounts that deal with each other far more than they deal with
+anybody outside.
+
+And that's not a presentation choice, it's forced by the crime. One account
+can't launder money on its own. So the thing you investigate has to be the
+group, not the individual.
+
+We score every individual account first, and then we roll them up into groups.
+Sixty-seven thousand accounts on this dataset become two hundred and fifty-four
+cases. That's the difference between a research output and a morning's work.
+
+Second \bt near-identical groups get merged, so you never open the same case
+twice under two different reference numbers.
+\end{saythis}
+
+\begin{meaning}
+The single most common misunderstanding in the whole demo is that a row is a
+suspect. Kill it in the first fifteen seconds.
+
+\textbf{The everyday version.} Police don't investigate one phone number. They
+investigate the group of numbers that keep calling each other. Same idea.
+
+\textbf{Two words you may need if pushed.} The grouping method is called
+\emph{Leiden}; it finds clusters that are much more connected inside than
+outside. The merging step removes overlapping groups. Neither name is worth
+saying unless somebody asks.
+
+\textbf{The detail that impresses.} The grouping never looks at the answers.
+It runs on structure alone --- which is why the identical step also runs on the
+dataset where no answers exist at all.
+\end{meaning}
+
+\begin{asked}
+\q{Why not just show me the top scoring accounts?} Because you'd hand an
+analyst a list of individuals and leave them to rebuild the ring by hand, which
+is the work we're trying to save. And the same ring would appear five times as
+five separate rows.
+
+\q{How do you decide where a group stops?} The clustering does, from the
+network's own structure. We also cap group size, because a ``group'' of ten
+thousand accounts is not a case anybody can work.
+\end{asked}
+
+% ---------------------------------------------------------------------------
+\slide{Slide 11 --- The Review Slider --- The Most Honest Control Here}{VERY HIGH (10/10)}{$\approx$ 1 minute 45}
+
+\begin{saythis}
+This slider is the most honest thing in the system, so I want to spend a proper
+moment on it.
+
+It asks one question. How many cases can your team actually get through? Say
+it's fifty. \do{drag to 50}
+
+Now watch this number just to the right of it.
+
+That's telling me that out of those fifty cases, about a third turn out to be
+real. Sixteen out of the fifty, to be exact. And that's not a promise or a
+forecast \bt it's measured, on cases where somebody already knew the answer.
+
+Now watch what happens when I get greedy. \do{drag to 100} A hundred cases, and
+it drops to about a quarter. \do{drag to 200} Two hundred, and it's down to
+roughly one in seven.
+
+That is not the system getting worse. That's what happens to every screening
+system ever built when you dig further down the list. The good stuff is at the
+top.
+
+Being able to show you exactly how fast it falls off \bt that's the point.
+\end{saythis}
+
+\begin{meaning}
+If the room remembers one slide, make it this one. It is the project's central
+measurement made physical.
+
+\textbf{The everyday version.} Picking the first fifty apples off a tree that's
+been sorted best-first. The first fifty are good. The next hundred are worse.
+Nobody is surprised by that, and nobody should be surprised here.
+
+\textbf{Why the number jumps rather than sliding smoothly.} Because it refuses
+to invent anything. It only ever shows workloads the evaluation actually
+measured --- fifty, a hundred, two hundred. If you drag to seventy it shows you
+the fifty figure, because that is the last one that was really tested.
+
+\textbf{Do not skip the honesty line.} ``Measured, not promised'' is the phrase
+that separates this from a sales demo.
+\end{meaning}
+
+\begin{asked}
+\q{A third seems low.} Two answers and both matter. First, blind guessing on
+this data gets about six in a hundred, so a third is roughly five times better
+than chance at the same workload. Second, and this is the bigger one \bt about
+three quarters of this dataset has \emph{no recorded answer either way}. A case
+we couldn't confirm is not the same as a case we got wrong. So every precision
+number we publish is a floor, not a ceiling.
+
+\q{Could you tune it to look better?} We could quote the top ten instead of the
+top fifty and the number would jump. That's exactly the game this slider exists
+to stop. The workload is stated up front and the number is read at that
+workload.
+\end{asked}
+
+% ---------------------------------------------------------------------------
+\slide{Slide 12 --- Show Me One It Did NOT Flag}{VERY HIGH (9/10)}{$\approx$ 1 minute}
+
+\begin{saythis}
+Here's the question I'd ask if I were sitting where you are. ``Fine \bt you've
+shown me the suspicious ones. Now show me one it did \emph{not} flag, so I can
+see the difference.''
+
+These four buttons do exactly that. All, High risk, Medium, and Low or normal.
+And each one carries its own count, so you can see the shape of the queue
+before you click anything.
+
+Look at this. On the Bitcoin payments data, out of two hundred and fifty-four
+groups, nearly a hundred and fifty are rated ordinary. \do{click Low} There
+they are. Same scoring, same everything. The system simply doesn't think
+they're worth your morning.
+
+And I'll be straight about one thing. \do{switch to contracts} If I flip to
+the European contracts data, this Low button is empty and greyed out.
+
+That is not the system failing to recognise a normal company. That dataset is a
+research sample where roughly four in every ten entries are cartel cases by
+design. There genuinely aren't many ordinary firms in it to show you.
+\end{saythis}
+
+\begin{meaning}
+This is the highest-value defensive slide in the deck, because it answers the
+sceptic's question \emph{before} they ask it. Answering it unprompted is worth
+far more than answering it under pressure.
+
+\textbf{Background you need.} Until late in the project the console could not
+do this at all. The queue only ever drew the top cases by score, so every row
+on screen was a high-risk row, and it looked as though the system could not
+recognise normal activity. The ordinary groups were always in the data ---
+nothing surfaced them.
+
+\textbf{The empty band.} Volunteer it. A greyed-out button with a zero on it
+looks like a bug for about four seconds, and if the examiner spots it before
+you mention it, you spend the next two minutes on the back foot.
+\end{meaning}
+
+\begin{asked}
+\q{Isn't an empty band a bug?} It was the first thing we checked. It follows
+from how that dataset was built --- it's a matched study sample, not a real
+population. For the contrast case, look at the Bitcoin queue, where more than
+half the groups are ordinary.
+
+\q{Where do the band boundaries come from?} They're fixed thresholds on the
+score, the same on every dataset, so the bands mean the same thing everywhere.
+\end{asked}
+
+% ---------------------------------------------------------------------------
+\slide{Slide 13 --- Reading One Row}{HIGH (7/10)}{$\approx$ 1 minute 10}
+
+\begin{saythis}
+Left to right across a row.
+
+Rank. Then the risk score \bt and that's a genuine probability, not an
+arbitrary number between zero and one. Every model's output is put onto a
+proper scale before we compare or combine anything, and I'll show you what
+happens if you skip that step.
+
+Then the pattern, if we could name one. There are nine named patterns and they
+aren't ours \bt the money ones come from F-A-T-F, the contract ones from the
+O-E-C-D. Those are the international bodies that publish what these crimes
+actually look like. We only put a name on it when we can prove the shape.
+Having no name is an honest answer, not a blank.
+
+Then how many official warning signs matched. Then the size of the group.
+
+Then this little chart, which is activity over time. Flat means everything
+happened in one window \bt very common in the Bitcoin data. Wiggly means the
+activity is genuinely spread out.
+
+Then when it happened, and the case reference.
+\end{saythis}
+
+\begin{meaning}
+\textbf{The word to be ready for is ``calibrated''.} What it means: two models
+can both be good at ranking and still be on totally different scales. One says
+nought point nine when it's fairly confident; the other says nought point one
+when it's certain. Average those raw and the loud one flattens the quiet one.
+
+We measured that. Put them on a proper scale first and the combined result is
+about nine times better than combining them raw. Same models, same data. That
+one ordering decision was worth more than any model we trained.
+
+\textbf{Say the standards bodies out loud.} It moves the nine patterns from
+``something a student invented'' to ``something a regulator published'', and
+that is a large shift in how the rest of the evidence is received.
+\end{meaning}
+
+\begin{asked}
+\q{What makes a probability ``genuine''?} If the system says nought point eight
+on a hundred cases, roughly eighty of them should be real. We check that on
+held-out data. Without that check a score is only a ranking, and you can't
+compare two rankings or average them.
+
+\q{Where does the sparkline come from?} From the real timestamps on that
+group's connections. When they don't vary it draws a flat line rather than
+faking a spread.
+\end{asked}
+
+% ---------------------------------------------------------------------------
+\slide{Slide 14 --- The Shortcuts on a Row}{Medium (3/10)}{$\approx$ 20 seconds}
+
+\begin{saythis}
+Hover any row and three shortcuts appear. Show me the network. Show me the case
+file. Or ask the assistant about this one specifically.
+
+That last one carries the case across with it, so nobody's retyping a reference
+number into a chat box.
+\end{saythis}
+
+\begin{meaning}
+Trivial slide, but it sets up the Copilot at the end. When you open the
+assistant later, it will already be holding a case, and that looks designed
+rather than bolted on --- because it is.
+\end{meaning}
+
+% ===========================================================================
+\part{Part 5 --- Graph Explorer: seeing the shape (1 minute 45)}
+
+\slide{Slide 15 --- The Picture --- This Is The Whole Argument}{VERY HIGH (9/10)}{$\approx$ 55 seconds}
+
+\begin{saythis}
+Now the picture. This is that group, drawn out.
+
+The coral dots are the flagged members --- and I told you earlier coral means
+one thing only. The grey dots around them are context: neighbours we drew in so
+the group sits in a world instead of floating in space.
+
+Bottom left tells you how much you're looking at. And if a group is too big to
+draw honestly, it says so on screen rather than quietly showing you a slice and
+letting you assume that's everything.
+
+This is the moment the project usually clicks for people. You can \emph{see}
+the coordination. That's the whole argument in one picture \bt coordination has
+a shape, and here is the shape.
+\end{saythis}
+
+\begin{meaning}
+Slow down and let the room look. Silence for two seconds here is worth more
+than another sentence.
+
+\textbf{Why the grey context dots exist.} Without them every flagged group
+looks equally suspicious, because you can't see what it's \emph{unusually}
+connected to. The contrast is the information.
+
+\textbf{Why the network is trimmed.} The server cuts it down to this group plus
+one step outwards, inside this group's own time range, before it's sent. A
+browser can't draw a million connections. And a silently cropped picture is
+worse than a small one, because the viewer assumes it's complete.
+\end{meaning}
+
+\begin{asked}
+\q{Is this the whole network?} No, and it says so when it isn't. It's this
+group's members plus one step of neighbours, cut to this group's time range on
+the server.
+
+\q{Could you be cherry-picking a pretty case?} Fair challenge --- pick a row
+yourself and I'll open it. Every case in the queue draws the same way.
+\end{asked}
+
+% ---------------------------------------------------------------------------
+\slide{Slide 16 --- The Replay, and a Bug We Chose Not to Hide}{HIGH (7/10)}{$\approx$ 50 seconds}
+
+\begin{saythis}
+And you can replay it. \do{press play} The connections light up in order, so
+you watch the case assemble itself.
+
+Now read the label on that button, because it's doing something careful.
+
+Sometimes it says replay \emph{flow}, and that means the connections carry
+genuinely different dates and you're watching real time pass. Sometimes it says
+replay \emph{order}, and that means everything in this group happened in the
+same window, so what you're watching is sequence, not time.
+
+We found that the hard way. In the Bitcoin data, the top case has a hundred and
+one connections that all sit at the exact same moment. The original replay
+animated strictly by date \bt so with every date identical, nothing moved and
+it looked broken.
+
+We could have spread the dates out to make it animate nicely. That would have
+been inventing data. So instead it detects the situation and tells you which
+one you're watching.
+\end{saythis}
+
+\begin{meaning}
+This is a ``we found our own bug and fixed it honestly'' story, and those are
+disproportionately persuasive with examiners because they cannot be faked.
+
+The underlying point is a principle you can state: \textbf{when the data can't
+support the visual, change the visual, don't change the data.}
+\end{meaning}
+
+\begin{asked}
+\q{Why not interpolate the dates so it always animates?} Because the animation
+would look better and mean less. It would be showing a sequence of events that
+never happened in that order.
+\end{asked}
+
+% ===========================================================================
+\part{Part 6 --- Case Detail: where a person decides (4 minutes 45)}
+
+\slide{Slide 17 --- The Case File Header}{Medium (5/10)}{$\approx$ 35 seconds}
+
+\begin{saythis}
+This is the case file. It's where somebody actually decides.
+
+The top line reads like a sentence on purpose. Which case, which dataset, and
+which model scored it. Underneath in small grey type is the machine reference.
+That's what the software and the export and the assistant all use, so it's
+there when you need it and out of the way when you don't.
+
+And the score. More than nine tenths on this one, which is about as high as
+this system goes.
+\end{saythis}
+
+\begin{meaning}
+Small but worth having. Machine identifiers used to be the single most
+confusing thing on this screen --- a reviewer would ask ``what is
+rgcn\_actor\_s0?'' and the answer took a minute. Now the plain sentence is the
+headline and the raw identifier is a subtitle.
+\end{meaning}
+
+% ---------------------------------------------------------------------------
+\slide{Slide 18 --- The Pattern --- Including When There Isn't One}{VERY HIGH (10/10)}{$\approx$ 1 minute 15}
+
+\begin{saythis}
+First panel: the pattern we detected, drawn as a diagram.
+
+Now, this particular case is the interesting one, and I'm choosing it
+deliberately even though it makes life harder for me. There's no named pattern
+here. It doesn't match any of the nine textbook shapes.
+
+That used to leave the screen looking empty on exactly the cases you most need
+to justify. A big score, and two blanks underneath it.
+
+So now we write out what actually happened, in plain words. Read it with me.
+
+Eighty-five accounts. The money went through all of them in one go \bt one
+account to the next, then the next, then the next. It never came back to where
+it started. And all of it happened in one short stretch of time.
+
+That's a describable situation. It doesn't need a textbook name to be worth
+twenty minutes of somebody's morning.
+\end{saythis}
+
+\begin{meaning}
+This slide answers the hardest fair criticism of any machine-learning system:
+\emph{it flagged something and can't tell me why}.
+
+\textbf{The distinction to hold on to.} The model flagged it. The
+\emph{matcher} --- a separate set of hand-written rules --- couldn't name it.
+Those are different things, and the matcher deliberately never guesses; it
+only names a shape when it can formally prove it.
+
+\textbf{Why ``eighty-five accounts, eighty-four connections'' means a chain.}
+If you have eighty-five things and only eighty-four links between them, there
+is no way to form a loop. Money can only travel forwards. That is what licenses
+the word ``chain'', and it is measured, not asserted.
+
+\textbf{Language note.} This wording is the third attempt. The first two were
+rejected as too technical. The rule now is that these sentences describe the
+\emph{situation}, never the system --- so there is no ``the model found'' or
+``we asked the computer'' anywhere in them.
+\end{meaning}
+
+\begin{asked}
+\q{So the model flagged something it can't explain?} It flagged something the
+rule-matcher can't \emph{name}. The explanation is right there in plain
+sentences, and it's built from measured facts about the group. What we won't do
+is invent a pattern name to fill the gap.
+
+\q{How many of your cases have no name?} A lot of them, and that's expected.
+Real groups often don't contain a textbook shape. On the contracts data most
+top cases are two-company groups, which are too small to contain any shape at
+all.
+\end{asked}
+
+% ---------------------------------------------------------------------------
+\slide{Slide 19 --- The Official Warning Signs}{HIGH (8/10)}{$\approx$ 50 seconds}
+
+\begin{saythis}
+Second panel: the official warning signs.
+
+When a case matches one, you don't get our opinion. You get the actual
+published indicator, quoted, with the body it came from stamped on it, and
+underneath it, why it matched \emph{here}.
+
+And this is the panel I'd defend hardest, so let me say why.
+
+An investigator can throw out everything our neural network says \bt distrust
+it completely \bt and this evidence still stands. Because it's a rule anybody
+can check by hand against a document a regulator published.
+
+On this particular case there are none. And rather than show you an empty box,
+we tell you plainly what did make it stand out.
+\end{saythis}
+
+\begin{meaning}
+The phrase that matters is \textbf{``even if you don't trust the neural
+network''}. It converts the evidence panel from a feature into a safeguard.
+
+Mechanically: these come from hand-written rules over the group's network, not
+from the learned model, and the indicator wording is quoted from a fixed
+reference file. The learned model has no way to touch this panel.
+\end{meaning}
+
+\begin{asked}
+\q{Could the model have invented a warning sign?} It has no route to. The
+matching is deterministic hand-written rules, and the text is quoted from a
+fixed file. Different mechanism entirely.
+
+\q{Who are FATF and OECD?} The Financial Action Task Force sets the
+international anti-money-laundering standards. The OECD publishes the standard
+checklist for detecting bid rigging in public procurement. Both are the
+reference documents actual investigators are trained on.
+\end{asked}
+
+% ---------------------------------------------------------------------------
+\slide{Slide 20 --- The Evidence Panel}{Medium (6/10)}{$\approx$ 40 seconds}
+
+\begin{saythis}
+Third panel: the facts themselves. How many are in the group. How many
+connections between them. When it happened. Amounts and fees where the dataset
+actually records them.
+
+And every fact is tagged with where it came from.
+
+That matters more than it sounds. If a fact is missing here, it's genuinely
+missing. We don't fill in a guess and we don't quietly average something in. On
+a dataset that has no amounts, the amounts row simply isn't there.
+\end{saythis}
+
+\begin{meaning}
+``We never fill in a guess'' is a claim about data handling that examiners
+like, because the opposite --- silently imputing missing values --- is one of
+the most common quiet errors in student projects.
+
+It's also true here as a design rule: fields a dataset doesn't have stay absent
+rather than being filled in with an average.
+\end{meaning}
+
+\begin{asked}
+\q{Why not impute the missing values?} Because on a screening system an
+imputed amount becomes a reason somebody gets investigated. We'd rather show
+less and have all of it be real.
+\end{asked}
+
+% ---------------------------------------------------------------------------
+\slide{Slide 21 --- How Solid Is This? --- Marking Its Own Homework}{VERY HIGH (9/10)}{$\approx$ 1 minute 10}
+
+\begin{saythis}
+Fourth panel, and this is my favourite thing in the product, because it's the
+system checking its own work in public.
+
+First I need to tell you what it's checking.
+
+When the system raises a case, it also picks out a small handful of connections
+out of the whole group. It says: these specific few are what made me raise it.
+
+On this case, that's three accounts and four payments between them. Everything
+else in the group is context.
+
+So then there are two obvious questions to ask about that handful, and the
+panel asks both in plain English.
+
+One. Is that handful enough on its own? We re-run the case showing the system
+\emph{only} those three accounts and four payments, and nothing else. If the
+warning still comes out, then yes \bt that really was enough.
+
+Two. Was it actually necessary? We re-run the case again with those same four
+payments \emph{deleted}. If the warning disappears, then yes \bt they really
+were load-bearing.
+
+Yes or no. For a single case there's no in-between, and dressing that up with a
+decimal point would be false precision.
+
+And when the two answers contradict each other, the panel says so, rather than
+hiding it.
+\end{saythis}
+
+\begin{meaning}
+\textbf{Never say ``the highlighted links'' without first saying what they
+are.} That was a real complaint about our own report: the phrase was used
+before it was ever defined, so the whole explanation collapsed. The first
+paragraph of this script exists purely to define it, and you must not cut it.
+
+The plain definition to hold: \textbf{the handful of connections the system
+says its decision depended on.} Out of eighty-five accounts, three of them and
+four payments.
+
+\textbf{The everyday version.} Someone claims they failed an exam because of
+two questions. Test one: show them only those two questions --- do they still
+fail? Test two: delete those two questions --- do they now pass? If both
+answers are yes, those two questions really were the reason.
+
+\textbf{The technical names, only if pushed.} These two checks are called
+\emph{sufficiency} and \emph{necessity}, and in the tool's own output they
+appear as fidelity-minus and fidelity-plus. Confusingly, a zero means the best
+possible result on one and the worst on the other, which is exactly why the
+panel asks the question instead of printing the number.
+\end{meaning}
+
+\begin{asked}
+\q{How often does that check fail?} It used to fail on thirty-eight of our
+fifty published Bitcoin explanations. We replaced the explanation method and
+now it fails on one. We kept the old number written down rather than quietly
+improving it.
+
+\q{What if it fails on the case I'm looking at?} The panel puts a warning on
+it and tells you to treat the attribution cautiously. It doesn't hide it, and
+the case still shows all its other evidence.
+\end{asked}
+
+% ---------------------------------------------------------------------------
+\slide{Slide 22 --- Nothing Is Hidden}{Medium (3/10)}{$\approx$ 25 seconds}
+
+\begin{saythis}
+At the bottom, one collapsed section holding every raw value behind this case,
+for whoever wants to argue with it. And an export button that hands you the
+whole file.
+
+The rule we set ourselves is that the tidy version can never contain less than
+the raw version. If a case carries a field we haven't designed a panel for, it
+still shows up down here.
+\end{saythis}
+
+\begin{meaning}
+This is a structural guarantee, not a promise --- unrecognised fields fall
+through to that section automatically, so a new field cannot be silently
+swallowed by a future change.
+\end{meaning}
+
+% ---------------------------------------------------------------------------
+\slide{Slide 23 --- The Case With No File At All}{HIGH (7/10)}{$\approx$ 45 seconds}
+
+\begin{saythis}
+Let me deliberately open a quiet one from further down the list. \do{open a low
+band case} Watch what you get.
+
+Not an error. It says: this group looks ordinary, the system didn't think it
+was worth anyone's time, so it didn't write up a file. And it says plainly that
+this is the right outcome.
+
+You still get the score, the size, the time window, and you can still go and
+look at the network yourself.
+
+The reason full write-ups stop partway down the list is simply that producing
+them costs real computing time, and spending it on cases nobody will read is
+waste.
+\end{saythis}
+
+\begin{meaning}
+Another self-caught bug worth telling. The moment the Low band was added, these
+cases became reachable for the first time --- and clicking one showed a red
+error box saying ``no explanation bundle''. The system was working exactly as
+designed and reporting itself as broken.
+
+The lesson, if you want to say it: \textbf{a designed outcome must never be
+displayed as a failure.}
+\end{meaning}
+
+\begin{asked}
+\q{So most of your cases have no explanation?} Most of the ones nobody would
+review, yes. Explanations are produced for the head of the queue, which is the
+part a team actually works. Producing them for all of them would cost hours of
+computing for pages nobody opens.
+\end{asked}
+
+% ===========================================================================
+\part{Part 7 --- Model Lab: the evidence (4 minutes 15)}
+
+\slide{Slide 24 --- Never A Score On Its Own}{VERY HIGH (10/10)}{$\approx$ 1 minute}
+
+\begin{saythis}
+This screen is where the claims live. And every number on it comes out of a
+stored results file \bt nothing on this page is worked out in the browser while
+you watch.
+
+The big number at the top is the overall score.
+
+Now, on its own, that number is meaningless. And this is the single thing most
+people get wrong when they read machine-learning results.
+
+So directly underneath it, we print what \emph{blind guessing} would have
+scored on this exact data. And then the ratio between the two.
+
+Here, guessing gets about six in a hundred. So the model isn't just ``point
+four seven'' \bt it's several times better than chance on data where the
+crime is genuinely rare.
+
+That's the honest form of every result in this project. Never a score on its
+own. Always a score next to what doing nothing clever would have got you.
+\end{saythis}
+
+\begin{meaning}
+\textbf{The everyday version.} Scoring seventy percent on a test means nothing
+until you know whether the class average was thirty or ninety-five.
+
+\textbf{Why this matters here specifically.} On the contracts data, guessing
+scores about a third, because that sample is unusually full of cartels. On the
+Bitcoin data, guessing scores about six in a hundred. So a raw score of nought
+point three nine on contracts is a \emph{worse} result than nought point four
+seven on Bitcoin, even though the number looks similar. Quoting either alone
+would mislead --- and quoting scores alone is the most common way results in
+this field get oversold.
+\end{meaning}
+
+\begin{asked}
+\q{Why is the guessing level so different between datasets?} Because it's just
+how common the crime is in that data. Rare crime, low guessing level, and a
+much harder problem.
+
+\q{Doesn't that let you pick a flattering dataset?} It would, which is why we
+publish both, including the one where our own network model does worse than
+guessing.
+\end{asked}
+
+% ---------------------------------------------------------------------------
+\slide{Slide 25 --- The Workload Table}{HIGH (7/10)}{$\approx$ 45 seconds}
+
+\begin{saythis}
+Underneath, the same run broken down by workload. Read one row with me.
+
+If you review this many cases, this share of them turn out to be real. This is
+how much of the total wrongdoing you'd have found. And this is your false
+alarm rate.
+
+Three rows, three different staffing levels.
+
+This is the table you'd actually take to whoever signs off headcount, because
+it turns a research score into a staffing decision.
+\end{saythis}
+
+\begin{meaning}
+Two words to be able to define if asked. \textbf{Precision} = of the cases you
+opened, how many were real. \textbf{Recall} = of all the real cases out there,
+how many you found. They pull against each other: review more, find more, but a
+smaller share of what you open is real.
+
+The table only lists workloads that were actually measured. It never draws a
+row for a number that was not tested.
+\end{meaning}
+
+\begin{asked}
+\q{Your recall looks low.} It is, at these workloads, and that's the honest
+trade. We're optimising for a small team's morning, not for finding everything.
+Reviewing more would raise recall and lower precision, and the table shows you
+exactly that trade rather than hiding it.
+\end{asked}
+
+% ---------------------------------------------------------------------------
+\slide{Slide 26 --- The Three Charts, and the Collapse We Didn't Crop}{HIGH (8/10)}{$\approx$ 1 minute 10}
+
+\begin{saythis}
+Three charts, and every one of them exports as an image, because these are the
+same figures that go into the write-up. No retyping, so the paper and the
+screen can't drift apart.
+
+First: how well it scored, period by period, with the guessing line dashed
+behind it.
+
+Now look at the collapse after period forty-three. That is real. It's a known
+event in this dataset \bt a large marketplace was shut down, and the behaviour
+of the whole network changed underneath the model.
+
+We could have cropped the chart at forty-three. Showing it \emph{is} the
+finding.
+
+Second: how many of your top picks are real, drawn against workload, with a
+marker at wherever you left the slider.
+
+Third: the same thing at group level. And read the note underneath it, because
+it governs this whole screen \bt a case we couldn't confirm is not the same as
+a case we got wrong.
+\end{saythis}
+
+\begin{meaning}
+The step-43 collapse is a genuine strength dressed as a weakness. It is why the
+model is trained on the past and tested on the future and never the other way
+round, and it is why the report warns that our own validation scores are not a
+trustworthy guide when the world shifts underneath the model.
+
+If you are asked whether it invalidates the results: it constrains them, and we
+state the constraint. A model that had never met a shift would be the more
+suspicious result.
+\end{meaning}
+
+\begin{asked}
+\q{Doesn't that collapse invalidate everything after it?} It constrains it,
+and we report per period rather than hiding it in one blended average. It's
+also the reason we test strictly forwards in time.
+
+\q{What was the event?} A large darknet marketplace was taken down. The
+behaviour it generated stopped, so the patterns the model learned before that
+point were partly describing a world that no longer existed.
+\end{asked}
+
+% ---------------------------------------------------------------------------
+\slide{Slide 27 --- Can You Trust These Numbers?}{VERY HIGH (9/10)}{$\approx$ 1 minute 30}
+
+\begin{saythis}
+Last section here, and it's collapsed by default because it's the follow-up
+question, not the opening one. Can I trust any of this?
+
+Four answers. \do{expand the section}
+
+One. Every headline model was built five separate times, each with different
+starting randomness, and we report the average \emph{and} the spread. If a
+result only shows up on one run out of five, we'd rather find that ourselves
+than have you find it.
+
+Two. When we say one method beats another, we re-ran that comparison a couple
+of thousand times on reshuffled data, and we show you the range the gap landed
+in. If that range crosses zero, we don't get to call it a win.
+
+Three, and this is the hardest test in the project. Take one country out
+completely. Train without it. Then test on it. Every country takes a turn.
+
+And look at what that shows. On the auctions data it works everywhere. On the
+European data it depends on the country \bt and the biggest country actually
+fails. We publish that, because an average that hides a failure is a misleading
+average.
+
+Four. We deliberately corrupted some of the training answers to see what
+breaks. The test answers were never touched.
+\end{saythis}
+
+\begin{meaning}
+Publishing your own failing fold is the strongest single credibility move in
+the talk. Say it plainly and do not apologise for it.
+
+\textbf{Why five runs.} Neural networks start from random numbers. Run one and
+you might have got lucky. Five runs with the spread reported tells you whether
+the result is real or an accident.
+
+\textbf{Why hold a whole country out.} Otherwise you're only proving it works
+on places it has already seen. Holding a country out entirely is the closest
+thing to asking ``would this work somewhere new?''
+\end{meaning}
+
+\begin{asked}
+\q{Which country fails, and why?} The largest one in that pool, and it scores
+slightly worse than guessing there. Two likely reasons: it has by far the most
+data so it dominates what the model learned elsewhere, and procurement rules
+differ by country. We publish every country rather than the average alone.
+
+\q{Isn't corrupting your own training data strange?} It's a robustness test. If
+a small amount of wrong answers destroys the model, it would be useless in the
+real world, where labels are always partly wrong.
+\end{asked}
+
+% ===========================================================================
+\part{Part 8 --- About, the assistant, and the close (3 minutes 30)}
+
+\slide{Slide 28 --- The About Screen}{Medium (6/10)}{$\approx$ 50 seconds}
+
+\begin{saythis}
+The About screen is the argument in one page, and it's the one I'd leave up if
+we ran out of time.
+
+Two ledgers, one shape.
+
+Then the nine patterns, each with its own diagram. Four money ones, four
+contract ones, and one that lives in both worlds \bt hidden common ownership,
+where two companies that look independent are quietly owned by the same person.
+
+And I want to stress: those nine are not ours. They're taken from the
+international standards. Our contribution is a detector that finds them, and
+when we plant them in data ourselves, it recovers all nine.
+
+Then four steps: read the data, learn, rank, explain.
+
+And at the bottom, the boundary. This produces screening signals for human
+investigators. Inputs to due process \bt never a substitute for it.
+\end{saythis}
+
+\begin{meaning}
+The ``these nine are not ours'' line is doing real work. It moves the pattern
+library from something a student invented to something a regulator published,
+and it makes the recall claim meaningful.
+
+The recall claim itself: the matcher and the thing that plants test patterns
+are two independently written pieces of code, so when one finds everything the
+other planted, they are genuinely checking each other rather than agreeing with
+themselves.
+\end{meaning}
+
+% ---------------------------------------------------------------------------
+\slide{Slide 29 --- The Assistant, and Trying To Break It}{VERY HIGH (9/10)}{$\approx$ 2 minutes}
+
+\begin{saythis}
+Last thing, and it's the part people most want to poke at. There's an
+assistant, and you can open it on any screen.
+
+Let me ask it something ordinary first. \do{type: which five cases should I look
+at first and why?}
+
+Watch the panel while it thinks. That trace is real \bt those are the actual
+lookups it's making, live. It cannot answer from memory. It has to go and read
+the published results, and you can open every lookup it made and see exactly
+what came back.
+
+Now the badges along the top. Every number in that answer had to appear
+literally in something it looked up. If one didn't, it tells you. If it talks
+about warning signs without consulting the reference documents, it tells you
+that too.
+
+Now let me try to break it. \do{type: is firm X guilty?}
+
+There. ``This system does not determine guilt.'' It won't answer that question.
+And that isn't a filter on the way in \bt it's checked on the way out, on every
+single response.
+
+One more. \do{type: what will the score be in 2027?} It refuses, and it lists
+what it actually has instead of inventing something.
+
+Before any release, it sits a twenty-four question exam covering exactly these
+failure modes. All twenty-four have to pass.
+\end{saythis}
+
+\begin{meaning}
+Rehearse this one. It is the only live, unscripted-looking moment in the talk
+and it is the most impressive if it works.
+
+\textbf{Have a screenshot ready} in case the key or the network fails. If it
+does fail, say so plainly and show the screenshot --- a confident recovery
+costs nothing, a panicked one costs the room.
+
+\textbf{The point to land.} The guarantees live \emph{outside} the language
+model. Swap the model tomorrow and the rules still hold, because they are
+checks applied to its output, not instructions given to it.
+
+\textbf{If there is no key on the machine} it says so plainly rather than
+pretending, and every other part of the console still works.
+\end{meaning}
+
+\begin{asked}
+\q{What stops it making a number up?} A check that runs after it has spoken.
+Every number in the answer must appear literally in the evidence it retrieved.
+If it doesn't, the answer is marked unverified on screen rather than shown
+clean.
+
+\q{Which model is behind it?} A hosted open model. But the important answer is
+what it's \emph{allowed} to do: read-only lookups against published results,
+nothing else. It cannot change a score and it cannot see anything a user
+couldn't see.
+
+\q{Isn't an AI assistant the riskiest thing you could add here?} It would be,
+unguarded. That's precisely why it's the most heavily tested component in the
+project.
+\end{asked}
+
+% ---------------------------------------------------------------------------
+\slide{Slide 30 --- The Close}{HIGH (8/10)}{$\approx$ 40 seconds}
+
+\begin{saythis}
+One last thing and then I'll stop.
+
+That line along the bottom has been on every screen for the last twenty
+minutes. And it's on every piece of data the system hands out, not just the
+pretty pages. Screening signals for human investigators. Not determinations of
+wrongdoing.
+
+That isn't a disclaimer we added at the end to be safe. It's the reason the
+assistant refuses certain questions. It's why the case files show you their own
+weaknesses. And it's why we publish the country where it fails right next to
+the ones where it works.
+
+A tool that decided who was guilty would be a different project, and a much
+worse one. This one shortens the list a person has to read.
+
+Thank you \bt happy to take questions.
+\end{saythis}
+
+\begin{meaning}
+Close on the ethics boundary as a design driver rather than a legal shield.
+Every claim in this block is checkable on screen within ten seconds, which is
+what makes it the right note to end on.
+
+Then stop talking. Do not add a summary slide after this.
+\end{meaning}
+
+% ===========================================================================
+\part{Appendices}
+
+\slide{Appendix A --- The Five Minute Version}{---}{$\approx$ 5 minutes}
+
+If you are cut short, run slides \textbf{1, 11, 12, 15, 18, 29, 30}.
+
+That is: the claim, the honest measurement, the ordinary case, the picture, the
+explanation, the guardrails, and the boundary. It still contains a complete
+argument.
+
+\slide{Appendix B --- Never Read A Decimal Aloud}{---}{Reference}
+
+\begin{center}\small
+\begin{tabular}{@{}p{6.2cm}p{8.4cm}@{}}
+\hline
+\textbf{On screen} & \textbf{Say} \\
+\hline
+Precision 0.32 at 50 cases & ``about a third --- sixteen of the fifty'' \\
+Precision 0.23 at 100 & ``about a quarter'' \\
+Precision 0.135 at 200 & ``roughly one in seven'' \\
+Guessing level 0.065 & ``about six in a hundred'' \\
+148 of 254 below 0.2 & ``nearly a hundred and fifty of the two hundred and
+fifty-four'' \\
+Contracts, 2 of top 4 & ``two of the top four'' \\
+Auctions, Italy, 3 cases & ``three cases, and all three are confirmed
+cartels'' \\
+Risk score 0.9265 & ``more than nine tenths'' \\
+77\% unlabelled & ``about three quarters has no recorded answer either way'' \\
+Transfer lift 1.57 & ``about half again better than guessing'' \\
+Failing fold 0.90 & ``actually slightly worse than guessing there'' \\
+\hline
+\end{tabular}
+\end{center}
+
+\slide{Appendix C --- Questions That Have Actually Been Asked}{---}{Reference}
+
+\begin{enumerate}
+  \item \textbf{``Show me one it didn't flag.''} Slide 12. Low band, Bitcoin
+        payments, nearly a hundred and fifty of them.
+  \item \textbf{``Why is precision only a third?''} Slide 11. Guessing gets six
+        in a hundred, and three quarters of the data has no recorded answer, so
+        every figure we publish is a floor.
+  \item \textbf{``Your simple model beats your neural network --- so why the
+        deep learning?''} On one dataset, yes, and we publish it. That dataset
+        already has network information copied into its columns, so the simple
+        model gets the network for free. In the planted-cartel experiments,
+        where there is no answer key at all, the simple model cannot run and
+        the deep model finds about nine in ten of the bid-together cartels.
+        That experiment is the one closest to real deployment.
+  \item \textbf{``Could an investigator be misled by this?''} Slides 21 and 30.
+        The case file shows its own weaknesses, the assistant refuses guilt
+        questions, and the boundary is on every screen.
+  \item \textbf{``Is any of this live data?''} No. Published public datasets,
+        scored offline, served read-only. The serving side physically cannot
+        retrain or change a score --- that's the trust boundary, and it's the
+        centre of the architecture talk.
+\end{enumerate}
+
+\end{document}
