@@ -38,13 +38,26 @@ export function AlertQueue() {
   const budget = useConsole((s) => s.budget);
   const selected = useConsole((s) => s.selectedAlertId);
   const [band, setBand] = useState<BandId>("all");
-  // Looking for low-risk groups means looking PAST the budget head, so widen
-  // the fetch whenever the filter is not "all". The budget still governs the
-  // precision readout — that number must always match the published protocol.
-  const fetchK = band === "all" ? budget : Math.max(budget, 500);
-  const { data, isLoading, isError, error } = useAlerts(dataset, fetchK);
+  // Always fetch the whole queue (500 is the API's hard maximum) so the band
+  // counts are true totals rather than "whatever fell inside the budget", and
+  // switching bands needs no refetch. The BUDGET still governs what "All"
+  // shows and what the precision readout reports — that number must match the
+  // published protocol.
+  const { data, isLoading, isError, error } = useAlerts(dataset, 500);
+  const all = data?.alerts ?? [];
   const bandTest = BANDS.find((b) => b.id === band)!.test;
-  const visible = (data?.alerts ?? []).filter((a) => bandTest(a.risk_score));
+  const visible =
+    band === "all" ? all.slice(0, budget) : all.filter((a) => bandTest(a.risk_score));
+  // Counts on the buttons: on some datasets a band is genuinely EMPTY (every
+  // Mendeley group scores high, because its case-control sample is ~42% cartel
+  // by construction). Showing the count up front beats clicking into a blank
+  // table and wondering whether the filter is broken.
+  const bandCounts = Object.fromEntries(
+    BANDS.map((b) => [
+      b.id,
+      b.id === "all" ? all.length : all.filter((a) => b.test(a.risk_score)).length,
+    ]),
+  ) as Record<BandId, number>;
 
   return (
     <Glass className="flex h-full flex-col overflow-hidden">
@@ -63,6 +76,7 @@ export function AlertQueue() {
                   ? "groups the model scored as ordinary — the contrast case"
                   : undefined
               }
+              disabled={bandCounts[b.id] === 0}
               style={{
                 color: band === b.id ? "var(--text-0)" : "var(--text-2)",
                 background:
@@ -76,13 +90,16 @@ export function AlertQueue() {
               }}
             >
               {b.label}
+              <span className="mono ml-1 opacity-60">{bandCounts[b.id]}</span>
             </button>
           ))}
         </div>
         {data && (
           <span className="mono ml-auto text-xs text-text-2">
             showing <span className="text-accent">{visible.length}</span>
-            {band === "all" ? ` of top ${budget}` : ` ${band}-risk of ${data.k_effective}`}
+            {band === "all"
+              ? ` at budget ${budget} · ${all.length} in queue`
+              : ` ${band}-risk of ${all.length} in queue`}
           </span>
         )}
       </div>

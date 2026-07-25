@@ -4,9 +4,35 @@ import { useConsole } from "../state/console";
 
 // V3 §5: each domain pill carries its own two-hue ramp (§5.2 accent ramps) —
 // the toggle itself is multi-hue at rest instead of accent-dim.
-const DOMAINS: { id: Domain; label: string; from: string; to: string }[] = [
-  { id: "financial", label: "Financial", from: "var(--hue-cyan)", to: "var(--hue-teal)" },
-  { id: "procurement", label: "Procurement", from: "var(--hue-violet)", to: "var(--hue-magenta)" },
+// `sub` names the actual crime. "Financial" and "Procurement" alone never told
+// anyone that this side is anti-money-laundering screening — an audit found the
+// letters "AML" appeared nowhere in the console outside two buried About lines.
+const DOMAINS: {
+  id: Domain;
+  label: string;
+  sub: string;
+  title: string;
+  from: string;
+  to: string;
+}[] = [
+  {
+    id: "financial",
+    label: "Financial",
+    sub: "AML",
+    title:
+      "Anti-money-laundering screening — criminal funds moved through many accounts to look legitimate. Alerts cite FATF indicators.",
+    from: "var(--hue-cyan)",
+    to: "var(--hue-teal)",
+  },
+  {
+    id: "procurement",
+    label: "Procurement",
+    sub: "bid rigging",
+    title:
+      "Bid-rigging screening — firms that should compete for public contracts secretly agreeing who wins. Alerts cite OECD indicators.",
+    from: "var(--hue-violet)",
+    to: "var(--hue-magenta)",
+  },
 ];
 
 // The domain toggle recolors the whole console (§5.2): flipping it swaps the
@@ -28,6 +54,7 @@ export function DomainToggle() {
           <button
             key={d.id}
             onClick={() => setDomain(d.id)}
+            title={d.title}
             className="relative rounded-md px-3 py-1 text-xs font-medium transition-colors"
             style={{ color: active ? d.from : "var(--text-1)" }}
           >
@@ -42,7 +69,15 @@ export function DomainToggle() {
                 transition={{ type: "spring", stiffness: 550, damping: 40 }}
               />
             )}
-            <span className="relative">{d.label}</span>
+            <span className="relative inline-flex items-baseline gap-1">
+              <span>{d.label}</span>
+              <span
+                className="text-[10px] font-normal"
+                style={{ color: active ? d.to : "var(--text-2)" }}
+              >
+                · {d.sub}
+              </span>
+            </span>
           </button>
         );
       })}

@@ -48,6 +48,56 @@ class TestSqlAllowlist:
 
 
 class TestGuards:
+    def test_semantic_layer_answers_our_own_vocabulary(self) -> None:
+        """Regression pin for the live 2026-07-25 failure: "What does the risk
+        score mean?" returned generic filler because the corpus defined CRIME
+        patterns (FATF/OECD) and nothing defined the project's OWN words, so
+        retrieval had nothing to return and the answer could not be cited."""
+        from copilot.corpus import bm25_search, glossary_terms
+
+        terms = glossary_terms()
+        assert len(terms) >= 10, "semantic layer is missing"
+        ids = {t["chunk_id"] for t in terms}
+        # the vocabulary a reviewer actually reads on screen
+        for required in (
+            "CG-RISK-01",
+            "CG-BAND-01",
+            "CG-PREC-01",
+            "CG-AUCPR-01",
+            "CG-EXPL-01",
+            "CG-AML-01",
+            "CG-SCREEN-01",
+        ):
+            assert required in ids, f"glossary is missing {required}"
+
+        # every entry must be citable and non-empty
+        for t in terms:
+            assert t["chunk_id"].startswith("CG-")
+            assert len(t["text"]) > 60
+
+        # the questions that failed live must now retrieve their definition
+        for question, expected in [
+            ("What does the risk score mean?", "CG-RISK-01"),
+            ("what is AML", "CG-AML-01"),
+            ("why is there no explanation for this alert", "CG-EXPL-01"),
+            ("how do you measure precision", "CG-PREC-01"),
+        ]:
+            hits = {h["chunk_id"] for h in bm25_search(question, k=3)}
+            assert expected in hits, f"{question!r} did not retrieve {expected} (got {hits})"
+
+    def test_glossary_definitions_carry_no_driftable_numbers(self) -> None:
+        """Definitions must not hard-code measured values — numbers come from
+        the tools, meanings come from the glossary. Otherwise the numeric
+        sanity gate would be checking the corpus against itself."""
+        import re
+
+        from copilot.corpus import glossary_terms
+
+        for t in glossary_terms():
+            # allow 0/1 (probability bounds) but no measured-looking decimals
+            bad = re.findall(r"\b0\.\d{2,}\b|\b\d{3,}\b", t["text"])
+            assert not bad, f"{t['chunk_id']} hard-codes a driftable number: {bad}"
+
     def test_degenerate_output_is_caught_before_release(self) -> None:
         """Regression pin for the live 2026-07-25 failure: asking "your XGBoost
         baseline beats the GNN, is the deep learning useless?" returned 168s of

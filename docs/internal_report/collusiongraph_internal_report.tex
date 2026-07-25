@@ -836,10 +836,62 @@ slice. \\
 \textbf{Mendeley} & Within one country: learn from contracts up to 2013, test
 from 2014 onward. Across countries: LOCO (leave one country out). \\
 \textbf{García} & LOMO (leave one market out). \\
+\textbf{AMLworld} & Accounts first seen up to minute 27{,}699{,}900 train, after
+that test. \\
 \textbf{OCDS Georgia} & Test window 2020--2024. There are no answers here, so it
 is used only for the planted-cartel studies. \\
 \bottomrule
 \end{longtable}
+
+\subsubsection*{What those splits work out to as percentages}
+
+We do not pick a percentage and cut there --- we cut at a point in \emph{time}
+and the percentage is whatever falls either side. That is the honest way round:
+choosing the split to hit a round number would mean choosing it after seeing the
+data. Measured, they land close to the usual conventions anyway.
+
+\begin{center}\small
+\begin{tabular}{@{}lrrl@{}}
+\toprule
+\textbf{Dataset} & \textbf{Train} & \textbf{Test} & \textbf{Counted in} \\
+\midrule
+Elliptic++ & \textbf{66.9\%} & \textbf{33.1\%} & 136{,}265 / 67{,}504 payments \\
+Mendeley EU & \textbf{63.7\%} & \textbf{36.3\%} & 638 / 363 firms \\
+AMLworld & \textbf{52.9\%} & \textbf{47.1\%} & 272{,}661 / 242{,}427 accounts \\
+OCDS Georgia & --- & \textbf{33.3\%} & 162{,}377 of 488{,}300 in the test window \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Reading this correctly.} Elliptic++ is roughly a 2/3--1/3 split, Mendeley
+about 64/36, AMLworld close to half and half. OCDS Georgia has no train side at
+all: it carries no answer key, so its 2020--2024 window is simply the region we
+plant synthetic cartels into.
+
+\begin{keybox}
+\textbf{The percentage that actually matters is not the row count.}
+
+On Elliptic++ only about a quarter of payments carry an answer at all, and the
+proportion that are criminal \emph{changes between the two sides}:
+
+\begin{center}\small
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+ & \textbf{Labelled} & \textbf{Criminal share} & \textbf{Unknown} \\
+\midrule
+Train (steps 1--34) & 29{,}894 & 11.58\% & 78.1\% \\
+Test (steps 35--49) & 16{,}670 & \textbf{6.50\%} & 75.3\% \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Criminal cases are \emph{almost half as common} in the test period as in the
+training period. The world moved between the two halves --- which is exactly the
+shift this project is built to measure, and a large part of why validation
+scores (0.93--0.95) are so much higher than test scores (0.42--0.55). Anyone
+quoting a single train/test percentage without this table is telling less than
+half the story.
+\end{keybox}
 
 \begin{keybox}
 \textbf{Rule 2 --- hide the future connections, not just the future answers.}
@@ -1807,8 +1859,14 @@ have.''
 \subsection{On every screen}
 
 \begin{itemize}
-  \item \textbf{The domain switch} --- money side or contracts side. The accent
-        colour follows it.
+  \item \textbf{The domain switch} --- reads \textbf{Financial · AML} and
+        \textbf{Procurement · bid rigging}, so the actual crime is named rather
+        than implied. (Until 2026-07-25 it said only ``Financial'' and
+        ``Procurement''; the letters AML appeared nowhere on the console outside
+        two buried lines in the About page, so a visitor could not tell what the
+        financial side was screening \emph{for}. The Overview headline now says
+        it too, and hovering either pill gives the one-sentence definition.)
+        The accent colour follows the switch.
   \item \textbf{The dataset picker} --- two datasets per side.
   \item \textbf{Six tabs}, each with its own fixed colour and icon.
   \item \textbf{The ethics line}, in the footer, always, on every screen.
@@ -1860,21 +1918,41 @@ The ordinary groups were always there. On Elliptic, \textbf{148 of the 254
 groups score below 0.2}. Nothing surfaced them. The filter does.
 \end{keybox}
 
+Each button carries its own count, so you can see at a glance how the queue is
+distributed --- and, importantly, when a band is genuinely empty.
+
 \begin{center}\small
-\begin{tabular}{@{}lrl@{}}
+\begin{tabular}{@{}lrrr@{}}
 \toprule
-\textbf{Band} & \textbf{Groups shown} & \textbf{Top scores in band} \\
+\textbf{Dataset} & \textbf{High} & \textbf{Medium} & \textbf{Low / normal} \\
 \midrule
-All & 50 (the review budget) & 0.991, 0.981, 0.981 \ldots \\
-High risk & 49 of 254 & 0.991, 0.981, 0.981 \ldots \\
-\textbf{Low / normal} & \textbf{148 of 254} & 0.197, 0.195, 0.192 \ldots \\
+Elliptic++ payments & 49 & 57 & \textbf{148} \\
+Elliptic++ wallets & 0 & 4 & \textbf{496} \\
+García auctions & 2 & 1 & 0 \\
+\textbf{Mendeley EU} & \textbf{223} & 0 & \textbf{0} \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-Selecting any band other than All widens the fetch beyond the budget, because
-the ordinary groups sit past the budget head by definition. The precision
-readout still follows the \emph{budget}, never the filter --- that number has to
+\begin{warnbox}
+\textbf{Read the Mendeley row before a presentation --- somebody will ask.}
+Every one of its 223 groups scores high, so the Low band is empty and the button
+is greyed out with a zero on it.
+
+That is not a bug, and it is not the model failing to recognise ordinary firms.
+It follows directly from the dataset caveat in Section~\ref{sec:data}: Mendeley
+is a \emph{study sample} in which about 42\% of rows are cartel cases by
+construction. When that many entities in a pool are genuinely involved, almost
+every group containing them looks suspicious --- correctly.
+
+The honest answer if asked is: ``on that dataset there are no ordinary groups to
+show, because the dataset was not built to contain many. For the contrast case,
+look at the Bitcoin payments queue, where 148 of the 254 groups are ordinary.''
+\end{warnbox}
+
+The queue always fetches the whole list so these counts are true totals rather
+than ``whatever fell inside the budget''. The \emph{budget} still governs what
+the All view shows and what the precision readout reports --- that number has to
 match the published protocol.
 
 \subsubsection*{What each row shows}
@@ -1977,6 +2055,28 @@ question each number actually answers, colours the good answer, and keeps the
 raw value in brackets for anyone who wants it.
 \end{warnbox}
 
+\subsubsection*{When an alert has no dossier at all}
+
+Producing an explanation costs real computation, so bundles are assembled for
+the \emph{head} of the queue only. Everything below that carries a score and a
+network but no dossier. Measured across all four datasets: 980 alerts in total,
+of which 93 have a bundle and 887 do not.
+
+\begin{warnbox}
+\textbf{A fault we introduced and then fixed on 2026-07-25.} Adding the
+``Low / normal'' filter made those lower-ranked groups reachable for the first
+time --- and clicking one showed a red error box reading \emph{``No explanation
+bundle for this alert''}. The system was behaving exactly as designed and
+reporting it as a failure.
+
+The screen now explains the situation instead. For a low-scoring group it says
+plainly: \emph{``This group was scored as ordinary. The system did not consider
+it worth a reviewer's time, so no detailed evidence was assembled. That is the
+correct outcome --- it is the contrast case.''} Alongside it, everything we do
+know is listed: rank, score, band, group size and time window, with a link into
+the network view.
+\end{warnbox}
+
 \subsubsection*{When no pattern name appears}
 
 Some alerts show ``no nameable motif matched''. That is honest, not a failure:
@@ -2046,10 +2146,12 @@ look, and nothing else:
 \textbf{Source} & \textbf{What it holds} \\
 \midrule
 \endhead
-\textbf{The knowledge base} & Our own curated warning-sign library: the FATF
-(money laundering) and OECD (bid rigging) indicator tables, plus the mapping
-notes that say which shape triggers which indicator. Each entry has a citable
-id such as \code{FATF-STRUCT-01}. \\
+\textbf{The knowledge base} & Two parts. \emph{(a) The warning-sign library:} the
+FATF (money laundering) and OECD (bid rigging) indicator tables, plus the notes
+saying which shape triggers which indicator --- each with a citable id such as
+\code{FATF-STRUCT-01}. \emph{(b) The project glossary:} our own vocabulary, so
+the assistant can also explain \emph{our} words --- risk score, review budget,
+risk band, fidelity --- with ids such as \code{CG-RISK-01}. \\
 \textbf{The results database} & The stored alerts, scores and metrics ---
 queried \textbf{read-only}. The assistant physically cannot write. \\
 \textbf{The explanation bundles} & The evidence attached to whichever alert you
@@ -2079,6 +2181,39 @@ every entry has a stable id, which is exactly what the grounding check needs. An
 it is \emph{small}, so a simple word-overlap search is genuinely enough; we did
 not need a heavyweight vector database, and adding one would have been
 complexity for its own sake.
+
+\subsubsection*{The glossary layer --- why we added it}
+
+\begin{warnbox}
+\textbf{A gap the query battery exposed.} Asked \emph{``What does the risk score
+mean?''} the assistant replied with polite filler --- ``I'm ready to help with any
+questions you have'' --- and nothing else.
+
+The cause was structural, not a bug in the model. The library defined
+\textbf{crime patterns} (what a cover bid is, what structuring looks like) and
+nothing at all defined \textbf{our own words}. So when someone asked about the
+risk score there was nothing to retrieve, nothing to cite, and the grounding
+rule correctly refused to let it invent an answer. It failed safe --- but it
+failed.
+
+\textbf{Fix:} a glossary of fourteen entries covering the vocabulary a reviewer
+actually reads on screen --- risk score, risk band, review budget, precision at
+k, AUC-PR, prevalence, alert, motif, fidelity, explanation bundle, community,
+anti-money laundering, bid rigging, and the screening-not-guilt rule. Each is
+retrievable and citable exactly like an FATF or OECD indicator.
+
+Asked the same question afterwards, it now answers properly: a calibrated
+probability between 0 and 1, a screening signal and not a determination of
+guilt, with the alert record and the caveat quoted as evidence.
+\end{warnbox}
+
+\textbf{One rule these entries must follow:} a definition may never state a
+\emph{measured number}. Numbers come from the tools; meanings come from the
+glossary. If a definition hard-coded a score, the assistant could quote it and
+the numeric check would flag it as unsupported --- and worse, the number would
+silently go stale. A test enforces this: it rejects any glossary entry
+containing a measured-looking value. It caught one on the first run, in an
+example sentence we had written ourselves.
 
 \subsubsection*{What makes it safe}
 

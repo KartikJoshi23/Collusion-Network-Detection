@@ -1,0 +1,150 @@
+# SEMANTIC LAYER — the project's own vocabulary, as citable knowledge-base
+# entries (§4.6). Added 2026-07-25 after a live query battery found the Copilot
+# answering "What does the risk score mean?" with generic filler: the red-flag
+# tables define CRIME patterns, and nothing defined OUR OWN terms, so there was
+# nothing to retrieve and nothing to cite.
+#
+# Every entry is a definition the Copilot may quote by id (CG-*), exactly like
+# a FATF or OECD indicator. Keep them short, plain, and true — these are the
+# words an investigator reads on screen.
+#
+# House rule: a definition here must not state a NUMBER that could drift
+# (scores, counts, dataset sizes). Numbers come from the tools, definitions
+# come from here. That keeps the numeric-sanity gate meaningful.
+
+terms:
+  - id: CG-RISK-01
+    term: risk score
+    aliases: [risk score, calibrated risk, p value, probability, score]
+    text: >-
+      The risk score is a calibrated probability between 0 and 1 attached to an
+      alert. It answers "how likely is it that this group is worth a reviewer's
+      time?" — never "is this group guilty?". It is calibrated, meaning the
+      number is put on a real probability scale before models are combined, so
+      a score of 0.9 genuinely indicates a stronger signal than 0.5. It is a
+      screening prioritisation signal only and is never a determination of
+      wrongdoing.
+
+  - id: CG-BAND-01
+    term: risk band
+    aliases: [risk band, high risk, medium risk, low risk, normal case]
+    text: >-
+      Alerts are grouped into bands by their risk score so a reviewer can see
+      both what was flagged and what was not. High band means a strong
+      screening signal, medium an intermediate one, and low or normal means the
+      system considered the group ordinary. A low-band group is the contrast
+      case — it shows what the system does NOT consider suspicious.
+
+  - id: CG-BUDGET-01
+    term: review budget
+    aliases: [budget, review budget, top k, k]
+    text: >-
+      The review budget is how many cases a team can realistically examine.
+      All headline quality numbers are quoted at a budget, because that is the
+      operational question — of the cases you actually open, how many are real?
+
+  - id: CG-PREC-01
+    term: precision at k
+    aliases: [precision, precision at k, precision@k, hit rate]
+    text: >-
+      Precision at k is the share of the top k alerts that turn out to be real —
+      of the cases a team actually opens, the fraction that were genuine. It is
+      the number an investigator cares about most, and it is always quoted at a
+      stated review budget rather than as a single overall figure.
+
+  - id: CG-AUCPR-01
+    term: AUC-PR
+    aliases: [auc-pr, aucpr, area under the precision recall curve, auc]
+    text: >-
+      AUC-PR summarises ranking quality across every possible list length. It
+      must always be read against the prevalence baseline, which is the score
+      blind guessing would achieve. Dividing one by the other gives the plain
+      reading, "how many times better than guessing". Ordinary accuracy is
+      never used here because, when only a small fraction of cases are illicit,
+      a model that flags nothing scores extremely well and is useless.
+
+  - id: CG-PREV-01
+    term: prevalence baseline
+    aliases: [prevalence, baseline, blind guessing, random guessing, chance]
+    text: >-
+      The prevalence baseline is the fraction of cases that are actually
+      illicit, and equals the score that blind guessing would achieve. It is
+      printed beside every AUC-PR value so no score is ever read in isolation.
+
+  - id: CG-ALERT-01
+    term: alert
+    aliases: [alert, case, community alert, flagged group]
+    text: >-
+      An alert is one suspicious GROUP of connected entities — not a single
+      transaction or firm — together with its rank, risk score and explanation.
+      The system ranks groups because an investigator opens a case, not a
+      spreadsheet row.
+
+  - id: CG-MOTIF-01
+    term: motif
+    aliases: [motif, pattern, shape, coordination pattern]
+    text: >-
+      A motif is a small repeating shape in the network that carries a meaning,
+      such as money returning to its origin through intermediaries, or the same
+      firms taking turns to win. The pattern matcher only names shapes it can
+      actually prove and never invents one; an alert with no named motif leads
+      with structural and timing evidence instead.
+
+  - id: CG-FIDELITY-01
+    term: fidelity
+    aliases: [fidelity, attribution quality, fidelity plus, fidelity minus]
+    text: >-
+      Fidelity checks whether the highlighted evidence really drove the
+      decision. The model is re-run with the highlighted evidence alone, and
+      again with it removed. For a single alert each check is a yes or no
+      verdict rather than a sliding scale. Evidence that reproduces the
+      decision on its own is sufficient; evidence whose removal changes the
+      decision is necessary.
+
+  - id: CG-EXPL-01
+    term: explanation bundle
+    aliases: [explanation, bundle, evidence bundle, dossier]
+    text: >-
+      An explanation bundle is the evidence attached to an alert — the smallest
+      piece of network that triggered it, the named pattern if one matched, the
+      supporting evidence fields, any official red-flag citations, the fidelity
+      checks, and the fixed screening caveat. Explanation bundles are generated
+      for the head of the queue, because producing them costs computation;
+      lower-ranked ordinary groups may not carry one.
+
+  - id: CG-COMMUNITY-01
+    term: community
+    aliases: [community, group, cluster, leiden]
+    text: >-
+      A community is a cluster of entities much more connected to each other
+      than to the rest of the network. Communities are found with the Leiden
+      method, which guarantees the members of a group are genuinely connected
+      to one another.
+
+  - id: CG-AML-01
+    term: anti-money laundering
+    aliases: [aml, anti-money laundering, money laundering, financial domain]
+    text: >-
+      The financial side of this system is anti-money laundering screening. Money
+      laundering moves criminal funds through many accounts so the money appears
+      legitimate; no single payment looks wrong, but the pattern of payments
+      does. Financial alerts cite FATF indicators.
+
+  - id: CG-BIDRIG-01
+    term: bid rigging
+    aliases: [bid rigging, cartel, collusion, procurement domain, tender fraud]
+    text: >-
+      The procurement side of this system is bid-rigging screening. Bid rigging
+      is a secret agreement between firms that are supposed to compete for
+      public contracts, deciding in advance who wins; each bid looks normal, but
+      the pattern of who bids against whom does not. Procurement alerts cite
+      OECD indicators.
+
+  - id: CG-SCREEN-01
+    term: screening not guilt
+    aliases: [screening, guilt, determination, accusation, verdict]
+    text: >-
+      Every output of this system is a screening signal that prioritises what a
+      human reviews. Nothing it produces is, or may be presented as, a finding
+      of wrongdoing by any person or firm. A human always makes the escalation
+      decision.

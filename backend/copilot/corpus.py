@@ -15,6 +15,7 @@ import re
 from functools import lru_cache
 from pathlib import Path
 
+import yaml
 from collusiongraph.explain import load_indicators
 
 _WORD = re.compile(r"[a-z0-9]+")
@@ -25,8 +26,36 @@ def _tokens(text: str) -> list[str]:
 
 
 @lru_cache(maxsize=1)
+def glossary_terms() -> list[dict[str, str]]:
+    """The SEMANTIC LAYER: this project's own vocabulary, as citable entries.
+
+    The red-flag tables define crime patterns. Nothing defined our own words —
+    so "what does the risk score mean?" had nothing to retrieve and the Copilot
+    answered with filler (measured live, 2026-07-25). These entries close that
+    gap and are cited by id exactly like a FATF/OECD indicator.
+    """
+    path = Path(__file__).parent / "glossary.yaml"
+    if not path.is_file():
+        return []
+    data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    out: list[dict[str, str]] = []
+    for entry in data.get("terms", []):
+        aliases = [str(a) for a in entry.get("aliases", [])]
+        out.append(
+            {
+                "chunk_id": str(entry["id"]),
+                "source": "CollusionGraph glossary (project vocabulary)",
+                # aliases ride in the indexed text so BM25 matches the words a
+                # user actually types ("p value", "hit rate", "normal case")
+                "text": f"{entry['term']}. {entry['text']} " f"Also called: {', '.join(aliases)}.",
+            }
+        )
+    return out
+
+
+@lru_cache(maxsize=1)
 def corpus_chunks() -> list[dict[str, str]]:
-    chunks: list[dict[str, str]] = []
+    chunks: list[dict[str, str]] = list(glossary_terms())
     for domain in ("financial", "procurement"):
         table = load_indicators(domain)
         framework = table["framework"]

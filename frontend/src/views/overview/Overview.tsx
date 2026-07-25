@@ -34,15 +34,22 @@ export function Overview() {
   return (
     <div className="h-full min-h-0 overflow-auto p-2">
       <div className="mb-4 px-2 pt-3">
+        {/* Name the actual crime. "Financial domain" alone never told a viewer
+            this is anti-money-laundering screening — an audit found "AML"
+            appeared nowhere in the console outside two buried About lines. */}
         <div className="text-xs uppercase tracking-[0.2em] text-text-2">
-          {domain} domain · integrity screening
+          {domain === "financial"
+            ? "anti-money laundering (AML) · integrity screening"
+            : "bid-rigging / cartel detection · integrity screening"}
         </div>
         <h1 className="display mt-1 text-3xl font-semibold leading-tight">
           Network <span className="text-grad">surveillance</span> deck
         </h1>
         <p className="mt-1 max-w-xl text-sm text-text-1">
-          Ranked collusion-pattern alerts over the{" "}
-          <span className="mono text-text-0">{dataset}</span> ledger — calibrated
+          {domain === "financial"
+            ? "Ranked money-laundering alerts — groups of accounts moving funds in coordinated patterns — over the "
+            : "Ranked bid-rigging alerts — groups of firms coordinating on public contracts — over the "}
+          <span className="mono text-text-0">{dataset}</span> ledger. Calibrated
           screening probabilities, never verdicts.
         </p>
       </div>

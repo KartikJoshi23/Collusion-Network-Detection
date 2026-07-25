@@ -1,11 +1,12 @@
 import { motion } from "motion/react";
-import { useExplanation } from "../../api/hooks";
+import { useAlerts, useExplanation } from "../../api/hooks";
 import { SCREENING_CAVEAT } from "../../api/types";
 import { CopilotMark } from "../../components/copilot/CopilotMark";
 import { Glass } from "../../components/ui/Glass";
 import { MotifSchematic } from "../../components/ui/MotifSchematic";
-import { Empty, ErrorState, Loading } from "../../components/ui/States";
+import { Empty, Loading } from "../../components/ui/States";
 import { decodeAlertId } from "../../lib/alertLabel";
+import { fmtTimeWindow } from "../../lib/format";
 import { isMotifId } from "../../lib/motifs";
 import { MOTIF_HUE, UI_HUES } from "../../lib/palette";
 import { useConsole } from "../../state/console";
@@ -38,6 +39,132 @@ const KNOWN = new Set([
 
 type Bundle = Record<string, unknown>;
 
+/** Shown when an alert has no explanation bundle — which is the DESIGNED
+ *  outcome for everything below the explanation budget, not a failure. It
+ *  reads the alert row (already fetched for the queue) so the reviewer still
+ *  gets rank, score, band, size and time window, and says plainly why there is
+ *  no dossier. */
+function NoBundlePanel({ alertId }: { alertId: string }) {
+  const dataset = useConsole((s) => s.dataset);
+  const setView = useConsole((s) => s.setView);
+  // Wide fetch: these alerts live past the review budget by definition.
+  // 500 is the API's hard maximum (validated server-side) — asking for more
+  // returns a 422 and the panel silently loses its data.
+  const { data } = useAlerts(dataset, 500);
+  const row = data?.alerts.find((a) => a.alert_id === alertId);
+  const label = decodeAlertId(alertId);
+  const score = row?.risk_score;
+  const band =
+    score === undefined
+      ? undefined
+      : score >= 0.6
+        ? { name: "High", hue: "var(--risk-high)" }
+        : score >= 0.2
+          ? { name: "Medium", hue: "var(--hue-amber)" }
+          : { name: "Low / ordinary", hue: "var(--benign)" };
+
+  return (
+    <Glass className="flex h-full flex-col overflow-hidden">
+      <div className="flex flex-wrap items-center gap-3 border-b border-hairline/60 px-4 py-2.5">
+        <h2 className="display text-sm font-semibold">
+          Evidence <span className="text-grad">Dossier</span>
+        </h2>
+        <div className="flex flex-col leading-tight">
+          <span className="text-xs text-text-0">
+            {label.caseName}
+            <span className="text-text-2">
+              {" "}
+              · {label.dataset} · scored by the {label.scorer}
+              {label.attempt ? ` (${label.attempt})` : ""}
+            </span>
+          </span>
+          <span className="mono text-[10px] text-text-2">{alertId}</span>
+        </div>
+        {score !== undefined && band && (
+          <span
+            className="mono rounded-md px-2 py-0.5 text-xs"
+            style={{
+              color: band.hue,
+              background: `color-mix(in srgb, ${band.hue} 15%, transparent)`,
+            }}
+          >
+            p = {score.toFixed(3)}
+          </span>
+        )}
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-auto p-4">
+        <div className="grid gap-3 lg:grid-cols-2">
+          <Card title="Why there is no dossier" hue={UI_HUES.teal} delay={0}>
+            {band?.name === "Low / ordinary" ? (
+              <p className="text-xs leading-relaxed text-text-1">
+                <span style={{ color: "var(--benign)" }}>
+                  This group was scored as <strong>ordinary</strong>.
+                </span>{" "}
+                The system did not consider it worth a reviewer's time, so no
+                detailed evidence was assembled for it. That is the correct
+                outcome — it is the contrast case, showing what the model does{" "}
+                <em>not</em> flag.
+              </p>
+            ) : (
+              <p className="text-xs leading-relaxed text-text-1">
+                This alert sits below the explanation budget. Detailed evidence
+                is assembled for the head of the queue because producing it
+                costs real computation, so lower-ranked groups carry a score and
+                a subgraph but no dossier.
+              </p>
+            )}
+            <p className="mt-2 text-[11px] leading-snug text-text-2">
+              Nothing is hidden here: the network itself is still fully
+              inspectable in the Graph Explorer, and the score below comes from
+              the same calibrated model as every other alert.
+            </p>
+            <button
+              onClick={() => setView("explorer")}
+              className="btn-sheen mt-3 rounded-md px-3 py-1 text-xs"
+              style={{
+                color: "var(--accent)",
+                background: "var(--accent-dim)",
+                boxShadow:
+                  "inset 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent)",
+              }}
+            >
+              Inspect the network →
+            </button>
+          </Card>
+
+          <Card title="What we do know" hue={UI_HUES.cyan} delay={1}>
+            {row ? (
+              <div className="grid gap-1.5 text-xs">
+                {[
+                  ["Rank in queue", `${row.rank}`],
+                  ["Risk score", score?.toFixed(4) ?? "—"],
+                  ["Risk band", band?.name ?? "—"],
+                  ["Members in group", `${row.n_members}`],
+                  [
+                    "Time window",
+                    fmtTimeWindow(row.time_window_start, row.time_window_end),
+                  ],
+                ].map(([k, v]) => (
+                  <div key={k} className="flex justify-between gap-3">
+                    <span className="text-text-2">{k}</span>
+                    <span className="mono text-text-1">{v}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-text-2">
+                This alert is not in the currently loaded queue page.
+              </p>
+            )}
+          </Card>
+        </div>
+        <p className="mt-3 text-[11px] text-text-2">{SCREENING_CAVEAT}</p>
+      </div>
+    </Glass>
+  );
+}
+
 /** How to READ the two PyG fidelity numbers (docs/model_card.md, §7 step 27).
  *
  *  For a single alert both are hard 0/1 verdicts — PyG compares the model's
@@ -68,7 +195,7 @@ export function CaseDetail() {
   const alertId = useConsole((s) => s.selectedAlertId);
   const setView = useConsole((s) => s.setView);
   const askCopilotAbout = useConsole((s) => s.askCopilotAbout);
-  const { data, isLoading, isError, error } = useExplanation(dataset, alertId);
+  const { data, isLoading, isError } = useExplanation(dataset, alertId);
 
   if (!alertId)
     return (
@@ -78,13 +205,13 @@ export function CaseDetail() {
       />
     );
   if (isLoading) return <Loading label="Loading explanation bundle…" />;
-  if (isError)
-    return (
-      <ErrorState
-        message="No explanation bundle for this alert"
-        detail={(error as Error)?.message}
-      />
-    );
+  // A missing bundle is NORMAL, not an error. Detailed explanations are
+  // produced for the head of the queue because they cost computation, so every
+  // lower-ranked (typically ordinary) group has none. Showing a red error there
+  // told the reviewer the system was broken when it was working as designed —
+  // and it became reachable the moment the queue gained a "Low / normal"
+  // filter. Render what the alert row DOES tell us instead.
+  if (isError) return <NoBundlePanel alertId={alertId} />;
   if (!data) return null;
 
   const bundle = data.bundle as Bundle;
