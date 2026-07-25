@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { motion } from "motion/react";
 import { useAlerts, useExplanation, useMetrics, useSubgraph } from "../../api/hooks";
 import type { AlertRow } from "../../api/types";
@@ -20,11 +21,30 @@ import { useConsole } from "../../state/console";
 // header shows the run's MEASURED precision at the nearest published budget.
 const BADGE_ROWS = 20; // bundle lookups only for the queue's head
 
+/** Risk bands. "Low" is the answer to the question every evaluator asks —
+ *  "show me one it did NOT flag" — which the queue could not do before, because
+ *  it only ever rendered the top-k. Low-risk groups were always in the data
+ *  (148 of Elliptic's 254 alerts score below 0.2); nothing surfaced them. */
+const BANDS = [
+  { id: "all", label: "All", test: () => true },
+  { id: "high", label: "High risk", test: (s: number) => s >= 0.6 },
+  { id: "medium", label: "Medium", test: (s: number) => s >= 0.2 && s < 0.6 },
+  { id: "low", label: "Low / normal", test: (s: number) => s < 0.2 },
+] as const;
+type BandId = (typeof BANDS)[number]["id"];
+
 export function AlertQueue() {
   const dataset = useConsole((s) => s.dataset);
   const budget = useConsole((s) => s.budget);
   const selected = useConsole((s) => s.selectedAlertId);
-  const { data, isLoading, isError, error } = useAlerts(dataset, budget);
+  const [band, setBand] = useState<BandId>("all");
+  // Looking for low-risk groups means looking PAST the budget head, so widen
+  // the fetch whenever the filter is not "all". The budget still governs the
+  // precision readout — that number must always match the published protocol.
+  const fetchK = band === "all" ? budget : Math.max(budget, 500);
+  const { data, isLoading, isError, error } = useAlerts(dataset, fetchK);
+  const bandTest = BANDS.find((b) => b.id === band)!.test;
+  const visible = (data?.alerts ?? []).filter((a) => bandTest(a.risk_score));
 
   return (
     <Glass className="flex h-full flex-col overflow-hidden">
@@ -32,10 +52,37 @@ export function AlertQueue() {
         <h2 className="display text-sm font-semibold">Alert Queue</h2>
         <BudgetSlider />
         <PrecisionReadout dataset={dataset} budget={budget} />
+        <div className="flex items-center gap-1">
+          {BANDS.map((b) => (
+            <button
+              key={b.id}
+              onClick={() => setBand(b.id)}
+              className="chip-bloom rounded-md px-2 py-0.5 text-[11px] transition-colors"
+              title={
+                b.id === "low"
+                  ? "groups the model scored as ordinary — the contrast case"
+                  : undefined
+              }
+              style={{
+                color: band === b.id ? "var(--text-0)" : "var(--text-2)",
+                background:
+                  band === b.id
+                    ? "color-mix(in srgb, var(--accent) 18%, transparent)"
+                    : "transparent",
+                boxShadow:
+                  band === b.id
+                    ? "inset 0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent)"
+                    : "inset 0 0 0 1px var(--hairline)",
+              }}
+            >
+              {b.label}
+            </button>
+          ))}
+        </div>
         {data && (
           <span className="mono ml-auto text-xs text-text-2">
-            showing <span className="text-accent">{data.k_effective}</span> of
-            top {budget}
+            showing <span className="text-accent">{visible.length}</span>
+            {band === "all" ? ` of top ${budget}` : ` ${band}-risk of ${data.k_effective}`}
           </span>
         )}
       </div>
@@ -50,10 +97,14 @@ export function AlertQueue() {
             message="No alert queue published for this dataset"
             detail={(error as Error)?.message}
           />
-        ) : !data || data.alerts.length === 0 ? (
+        ) : !data || visible.length === 0 ? (
           <Empty
-            title="Queue is empty"
-            hint="Run `collusiongraph score` for this dataset and point serving.json at the output."
+            title={band === "all" ? "Queue is empty" : `No ${band}-risk groups in this queue`}
+            hint={
+              band === "all"
+                ? "Run `collusiongraph score` for this dataset and point serving.json at the output."
+                : "Every group this dataset produced sits in a different risk band — try All."
+            }
           />
         ) : (
           <table className="w-full border-collapse text-sm">
@@ -75,7 +126,7 @@ export function AlertQueue() {
               </tr>
             </thead>
             <tbody>
-              {data.alerts.map((a, i) => (
+              {visible.map((a, i) => (
                 <Row
                   key={a.alert_id}
                   alert={a}

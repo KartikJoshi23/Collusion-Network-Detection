@@ -151,9 +151,23 @@ def run_baselines(config: dict[str, Any] | str | Path) -> dict[str, Any]:
     train_labels = resolve_train_labels(
         cfg.get("train_label_policy", "static"), labels, edges, split_cfg["train_end"]
     )
+    # `node_type` is a node-id PREFIX, and on most datasets it differs from the
+    # nodes.node_type column value (amlworld `acct:` vs "account"; elliptic
+    # `tx:` vs "transaction"). Writing the column value selects zero nodes and
+    # used to surface as the misleading "lacks both classes" below.
+    if node_type and train_ids.len() == 0:
+        available = sorted({str(i).split(":", 1)[0] for i in nodes["node_id"].head(5000)})
+        raise ValueError(
+            f"node_type={node_type!r} matched no nodes — it is used as a node-id "
+            f"PREFIX, not the nodes.node_type column. Prefixes present: {available}"
+        )
     train_labeled = train_features.join(_binary_labels(train_labels), on="node_id", how="inner")
     if train_labeled["y"].n_unique() < 2:
-        raise ValueError("training split lacks both classes — check the split boundaries")
+        raise ValueError(
+            "training split lacks both classes — check the split boundaries "
+            f"(train_end={split_cfg['train_end']}, "
+            f"{train_labeled.height} labeled training nodes)"
+        )
 
     def matrix(frame: pl.DataFrame, cols: list[str]) -> Any:
         return frame.select(cols).cast(pl.Float64).to_numpy()

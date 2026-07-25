@@ -36,6 +36,7 @@ auto-dispatches on config shape). Outputs land in the gitignored
 | Config (`configs/experiment/`) | Produces |
 |---|---|
 | `baselines_elliptic_pp.yaml` | B1 0.0576 / B2 0.8076 / B3 0.8104 AUC-PR (trees byte-reproduce cross-machine) |
+| `baselines_amlworld.yaml` | AMLworld HI-Small tree baselines at 5M-edge scale (added 2026-07-25 to settle whether this machine can train on it at all — see the ledger entry; B1 omitted, no agreed rule thresholds) |
 | `gnn_elliptic_pp_gatv2_focal.yaml` | headline GATv2-focal single-seed run (seed-0 0.5492 on the master class) |
 | `gnn_elliptic_pp_gatv2_focal_multiseed.yaml` | the paper number: **0.4729 ± 0.0525** (5 seeds) |
 | `gnn_elliptic_pp_gatv2_wce.yaml` / `gnn_elliptic_pp_gatv2_wce_multiseed.yaml` | −focal ablation: 0.4869 seed-0; **0.4435 ± 0.0615** — second-order |

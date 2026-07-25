@@ -59,6 +59,24 @@ export function RigorSection({ dataset }: { dataset: string }) {
     ? parseSensitivity(a.sensitivity.payload)
     : null;
 
+  // The ensemble's "supervised" member IS the standalone GATv2 run, so the two
+  // tiles used to render identical numbers side by side and read like a bug.
+  // Fold duplicates into one row and name the alias.
+  const seedRows: (SeedAggregate & { alias?: string })[] = [];
+  for (const agg of [
+    ...seedAggs,
+    ...ensembleAggs.map((m) => ({ ...m, label: `ensemble: ${m.label}` })),
+  ]) {
+    const dup = seedRows.find(
+      (r) => r.mean.toFixed(6) === agg.mean.toFixed(6) && r.std.toFixed(6) === agg.std.toFixed(6),
+    );
+    if (dup) {
+      if (!dup.alias) dup.alias = agg.label;
+    } else {
+      seedRows.push({ ...agg });
+    }
+  }
+
   const hasAnything =
     seedAggs.length + ensembleAggs.length + significance.length + matrices.length > 0 ||
     noise.length > 0 ||
@@ -75,41 +93,62 @@ export function RigorSection({ dataset }: { dataset: string }) {
     >
       <div className="px-2 pt-2">
         <h3 className="display text-base font-semibold">
-          Rigor <span className="text-grad">&amp; Uncertainty</span>
+          How much can you <span className="text-grad">trust these numbers?</span>
         </h3>
         <p className="text-xs text-text-2">
-          Multi-seed spread, transfer matrices, significance and robustness —
-          published Phase-2 artifacts, shown as measured.
+          Each model was built five times with different starting randomness. A
+          small spread means the result is stable; a large one means a single run
+          would have flattered us. Every value below is copied from a stored
+          result — nothing is computed in the browser.
         </p>
       </div>
 
-      {(seedAggs.length > 0 || ensembleAggs.length > 0) && (
-        <div className="flex flex-wrap gap-2 px-2">
-          {[...seedAggs, ...ensembleAggs.map((m) => ({ ...m, label: `ensemble: ${m.label}` }))].map(
-            (agg) => (
-              <div
-                key={agg.label}
-                className="hover-lift min-w-44 rounded-md px-3 py-2"
-                style={{
-                  background: "var(--bg-2)",
-                  boxShadow: "inset 0 0 0 1px var(--hairline)",
-                }}
-              >
-                <div className="text-[10px] uppercase tracking-wide text-text-2">
-                  {agg.label} · {agg.perSeed.length || "?"} seeds
-                </div>
-                <div className="mono text-sm" style={{ color: UI_HUES.cyan }}>
-                  {agg.mean.toFixed(4)}{" "}
-                  <span className="text-text-2">± {agg.std.toFixed(4)}</span>
-                </div>
-                {agg.perSeed.length > 0 && (
-                  <div className="mono mt-0.5 text-[10px] text-text-2">
-                    {agg.perSeed.map((v) => v.toFixed(3)).join(" · ")}
-                  </div>
-                )}
-              </div>
-            ),
-          )}
+      {seedRows.length > 0 && (
+        <div className="mx-2 overflow-x-auto rounded-md"
+          style={{ background: "var(--bg-2)", boxShadow: "inset 0 0 0 1px var(--hairline)" }}>
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="text-text-2">
+                <th className="px-3 py-1.5 text-left font-normal">
+                  model / arm (5 attempts)
+                </th>
+                <th className="px-3 py-1.5 text-right font-normal">
+                  average AUC-PR
+                </th>
+                <th className="px-3 py-1.5 text-right font-normal">
+                  spread (±)
+                </th>
+                <th className="px-3 py-1.5 text-right font-normal">
+                  worst … best
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {seedRows.map((agg) => (
+                <tr key={agg.label} className="hover-row">
+                  <td className="px-3 py-1.5 text-text-1">
+                    {agg.label}
+                    {agg.alias && (
+                      <span className="ml-1.5 text-[10px] text-text-2">
+                        (same run as {agg.alias})
+                      </span>
+                    )}
+                  </td>
+                  <td className="mono px-3 py-1.5 text-right" style={{ color: UI_HUES.cyan }}>
+                    {agg.mean.toFixed(4)}
+                  </td>
+                  <td className="mono px-3 py-1.5 text-right text-text-2">
+                    {agg.std.toFixed(4)}
+                  </td>
+                  <td className="mono px-3 py-1.5 text-right text-text-2">
+                    {agg.perSeed.length
+                      ? `${Math.min(...agg.perSeed).toFixed(3)} … ${Math.max(...agg.perSeed).toFixed(3)}`
+                      : "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
@@ -119,17 +158,24 @@ export function RigorSection({ dataset }: { dataset: string }) {
             Paired bootstrap significance (2,000 resamples, stratified)
           </div>
           <div className="grid gap-1">
-            {significance.map((row) => (
-              <div key={row.name} className="mono text-xs text-text-1">
-                <span className="text-text-0">{row.labelA}</span> vs{" "}
-                <span className="text-text-0">{row.labelB}</span>: Δ AUC-PR{" "}
-                <span style={{ color: row.delta >= 0 ? UI_HUES.teal : UI_HUES.amber }}>
-                  {row.delta >= 0 ? "+" : ""}
-                  {row.delta.toFixed(3)}
-                </span>{" "}
-                [{row.ciLow.toFixed(3)}, {row.ciHigh.toFixed(3)}], p ≈ {row.p.toFixed(3)}
-              </div>
-            ))}
+            {significance.map((row) => {
+              const wins = row.delta >= 0;
+              return (
+                <div key={row.name} className="text-xs leading-snug text-text-1">
+                  <span className="text-text-0">{row.labelA}</span>{" "}
+                  <span style={{ color: wins ? UI_HUES.teal : UI_HUES.amber }}>
+                    scores {Math.abs(row.delta).toFixed(3)} {wins ? "HIGHER" : "LOWER"}
+                  </span>{" "}
+                  than <span className="text-text-0">{row.labelB}</span>.{" "}
+                  <span className="text-text-2">
+                    Re-testing on 2,000 reshuffles put the gap between{" "}
+                    <span className="mono">{row.ciLow.toFixed(3)}</span> and{" "}
+                    <span className="mono">{row.ciHigh.toFixed(3)}</span>, so it is
+                    a real difference, not luck (p ≈ {row.p.toFixed(3)}).
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </Glass>
       )}

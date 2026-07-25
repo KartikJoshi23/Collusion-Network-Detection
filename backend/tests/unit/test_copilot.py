@@ -10,7 +10,12 @@ from types import SimpleNamespace
 import polars as pl
 import pytest
 from collusiongraph import SCREENING_CAVEAT
-from copilot.guard import RED_FLAG_LEXICON, apply_guilt_guard, numeric_sanity_gate
+from copilot.guard import (
+    RED_FLAG_LEXICON,
+    apply_guilt_guard,
+    degenerate_output_gate,
+    numeric_sanity_gate,
+)
 from copilot.sql_tools import guard_query
 
 
@@ -43,6 +48,35 @@ class TestSqlAllowlist:
 
 
 class TestGuards:
+    def test_degenerate_output_is_caught_before_release(self) -> None:
+        """Regression pin for the live 2026-07-25 failure: asking "your XGBoost
+        baseline beats the GNN, is the deep learning useless?" returned 168s of
+        "<unk><unk>…". Token soup must never reach an investigator."""
+        collapsed = "We have four datasets:" + "<unk>" * 80
+        bad, why = degenerate_output_gate(collapsed)
+        assert bad and why
+
+        for junk in (
+            "",
+            "   ",
+            "<|end|>" * 12,
+            "abcabcabc" * 40,
+            "!" * 400,
+        ):
+            assert degenerate_output_gate(junk)[0], f"missed degenerate case: {junk[:24]!r}"
+
+    def test_degenerate_gate_passes_real_answers(self) -> None:
+        """The gate must not eat legitimate answers — including short ones and
+        ones with repeated markdown structure (tables, bullet lists)."""
+        for good in (
+            "The alerts table shows 254 alerts for elliptic_pp.",
+            "Yes.",
+            "| a | b |\n|---|---|\n| 1 | 2 |\n| 3 | 4 |\n| 5 | 6 |",
+            "- one\n- two\n- three\n- four\n- five\n- six\n- seven",
+            "This system does not determine guilt.",
+        ):
+            assert not degenerate_output_gate(good)[0], f"false positive on {good[:40]!r}"
+
     def test_guilt_language_rewritten_and_caveat_appended(self) -> None:
         answer, rewrites = apply_guilt_guard(
             "Account X is guilty of money laundering and committed fraud."

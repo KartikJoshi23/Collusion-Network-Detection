@@ -70,6 +70,42 @@ def grounding_gate(question: str, trace: list[str]) -> tuple[bool, list[str]]:
     return searched, terms
 
 
+# A decoder that falls apart emits the same token forever. Measured live
+# 2026-07-25: the question "your XGBoost baseline beats the graph neural
+# network, does that mean the deep learning part is useless?" produced 168
+# seconds of "<unk><unk><unk>…". Releasing that to an investigator is worse
+# than releasing nothing, so it is caught before the answer leaves the agent.
+_DEGENERATE_PATTERNS = (
+    re.compile(r"(?:<unk>\s*){8,}", re.I),
+    re.compile(r"(?:<\|[^|>]*\|>\s*){8,}"),
+    re.compile(r"(.{1,24}?)\1{15,}", re.S),  # any short chunk repeated 16x+
+)
+
+DEGENERATE_FALLBACK = (
+    "I could not produce a reliable answer to that question — the model's "
+    "response failed a quality check before release, so it was withheld rather "
+    "than shown. Please ask again, ideally more specifically."
+)
+
+
+def degenerate_output_gate(answer: str) -> tuple[bool, str | None]:
+    """True when the model's own output is broken (token-repetition collapse).
+
+    Returns (is_degenerate, matched_pattern). A degenerate answer must never be
+    released: it cannot be grounded, cannot be checked, and reads as a crash.
+    """
+    probe = answer.strip()
+    if not probe:
+        return True, "empty answer"
+    for pattern in _DEGENERATE_PATTERNS:
+        if pattern.search(probe):
+            return True, pattern.pattern
+    # a wall of one repeated character with almost no variety
+    if len(probe) > 200 and len(set(probe)) <= 6:
+        return True, "near-zero character variety"
+    return False, None
+
+
 def apply_guilt_guard(answer: str) -> tuple[str, list[str]]:
     """Rewrite guilt-asserting phrasings and append the screening caveat.
     Returns (safe_answer, list of rewrites applied)."""

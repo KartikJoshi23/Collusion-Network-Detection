@@ -5,6 +5,7 @@ import { CopilotMark } from "../../components/copilot/CopilotMark";
 import { Glass } from "../../components/ui/Glass";
 import { MotifSchematic } from "../../components/ui/MotifSchematic";
 import { Empty, ErrorState, Loading } from "../../components/ui/States";
+import { decodeAlertId } from "../../lib/alertLabel";
 import { isMotifId } from "../../lib/motifs";
 import { MOTIF_HUE, UI_HUES } from "../../lib/palette";
 import { useConsole } from "../../state/console";
@@ -101,6 +102,7 @@ export function CaseDetail() {
   };
   const minimalNodes = minimal.nodes?.length ?? 0;
   const minimalEdges = minimal.edges?.length ?? 0;
+  const label = decodeAlertId(alertId ?? "");
   const unknownKeys = Object.keys(bundle).filter((k) => !KNOWN.has(k));
 
   const exportJson = () => {
@@ -121,7 +123,22 @@ export function CaseDetail() {
         <h2 className="display text-sm font-semibold">
           Evidence <span className="text-grad">Dossier</span>
         </h2>
-        <span className="mono text-xs text-text-2">{alertId}</span>
+        <div className="flex flex-col leading-tight">
+          <span className="text-xs text-text-0">
+            {label.caseName}
+            <span className="text-text-2">
+              {" "}
+              · {label.dataset} · scored by the {label.scorer}
+              {label.attempt ? ` (${label.attempt})` : ""}
+            </span>
+          </span>
+          <span
+            className="mono text-[10px] text-text-2"
+            title="the machine id — used by the API, the exported JSON and the Copilot"
+          >
+            {alertId}
+          </span>
+        </div>
         {typeof bundle.risk_score === "number" && (
           <span
             className="mono rounded-md px-2 py-0.5 text-xs"

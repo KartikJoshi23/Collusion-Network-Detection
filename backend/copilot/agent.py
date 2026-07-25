@@ -15,7 +15,13 @@ from typing import Any
 from .alert_tools import ALERT_TOOL_DISPATCH, ALERT_TOOL_SCHEMAS
 from .config import get_settings
 from .corpus import CORPUS_TOOL_DISPATCH, CORPUS_TOOL_SCHEMAS
-from .guard import apply_guilt_guard, grounding_gate, numeric_sanity_gate
+from .guard import (
+    DEGENERATE_FALLBACK,
+    apply_guilt_guard,
+    degenerate_output_gate,
+    grounding_gate,
+    numeric_sanity_gate,
+)
 from .sql_tools import SQL_TOOL_DISPATCH, SQL_TOOL_SCHEMAS
 
 SYSTEM_PROMPT = """You are the CollusionGraph Investigator Copilot — the \
@@ -129,6 +135,29 @@ def answer_question_events(
         )
         trace.append("EXHAUSTED iteration budget")
         yield ("trace", "EXHAUSTED iteration budget")
+
+    # A collapsed decoder must never reach the investigator — it cannot be
+    # grounded, cannot be checked, and reads as a crash. Caught FIRST, because
+    # running the other gates over token soup is meaningless.
+    degenerate, why = degenerate_output_gate(draft)
+    if degenerate:
+        trace.append(f"DEGENERATE model output suppressed ({why})")
+        yield ("trace", f"DEGENERATE model output suppressed ({why})")
+        answer, rewrites = apply_guilt_guard(DEGENERATE_FALLBACK)
+        yield (
+            "final",
+            {
+                "answer": answer,
+                "confidence": 0.0,
+                "numbers_grounded": False,
+                "corpus_grounded": False,
+                "guard_rewrites": rewrites,
+                "evidence": evidence,
+                "trace": trace,
+                "model": settings.model,
+            },
+        )
+        return
 
     evidence_text = "\n".join(e["result"] for e in evidence)
     numbers_ok, unsupported = numeric_sanity_gate(draft, evidence_text)

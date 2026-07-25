@@ -1,0 +1,43 @@
+# AMLworld HI-Small baselines (B1 rules / B2 XGBoost / B3 XGBoost+graph).
+#
+# Added 2026-07-25 to SETTLE a claim rather than assert it. The ledger had said
+# AMLworld was blocked on Kaggle credentials + GPU; an audit found the
+# credentials are present in .env, the raw data is downloaded, and the IR store
+# is already built (515,088 accounts / 5,078,345 pays edges). So the only real
+# question was whether this machine can actually train at that scale.
+#
+# Trees first because they are the cheap, honest probe: if the feature +
+# evaluation path survives 5M edges on CPU, a GNN run is a scheduling question;
+# if it does not, we have a measured reason instead of a guess.
+#
+# Split: AMLworld timestamps are epoch minutes. Accounts are heavily
+# front-loaded — 90% of nodes first appear inside the first ~2,000 minutes,
+# while edges run on to 27,725,298 — so an 80th-percentile EDGE cut leaves the
+# test side with almost no illicit accounts. Cutting on node first-seen at
+# 27,699,900 splits it properly (measured):
+#     train 272,661 accounts,  3,841 illicit
+#     test  242,427 accounts,  2,516 illicit  (prevalence 1.04%)
+# Strict-inductive per §4.5: training message passing sees train-period
+# structure only.
+dataset: amlworld_hi_small
+domain: financial
+store_root: data/interim
+output_dir: eval_outputs/amlworld_hi_small/baselines
+# NOTE: `node_type` here is matched as a NODE-ID PREFIX, not against the
+# nodes.node_type column. AMLworld ids look like `acct:10057:801FB1090` while
+# the column says "account" — writing "account" here silently selects zero
+# nodes. Same trap on elliptic_pp (`tx:` vs "transaction").
+node_type: acct
+seed: 0
+
+split:
+  train_end: 27699900
+  test_start: 27699901
+
+# B1 is omitted: the rules engine needs a hand-written `rules:` block, and no
+# AMLworld red-flag thresholds have been agreed. The tree pair is what answers
+# the question this config exists for — does the feature + evaluation path
+# survive 5M edges on this machine?
+baselines: [b2_xgb, b3_xgb_graph]
+
+budgets: [50, 100, 200]

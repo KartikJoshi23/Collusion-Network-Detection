@@ -160,7 +160,9 @@ export function ModelLab() {
       </div>
 
       <div className="grid gap-4">
-        <RigorSection dataset={dataset} />
+        {/* Results FIRST, rigour after. The rigour block used to open the page,
+            so a presenter hit seven multi-seed rows and a bootstrap readout
+            before reaching a single headline number. */}
         {data.runs.map((run, i) => {
           const m = run.metrics as Record<string, Record<string, unknown>>;
           const steps = parsePerTimeStep(m.node_level);
@@ -243,6 +245,20 @@ export function ModelLab() {
             </motion.div>
           );
         })}
+
+        {/* Statistical rigour, collapsed. It is the answer to "can I trust
+            this?", which is a follow-up question — not the opening slide. */}
+        <Glass className="mx-0 p-0">
+          <details>
+            <summary className="cursor-pointer px-3 py-2 text-xs text-text-1 transition-colors hover:text-accent">
+              Statistical rigour — multi-seed spread, significance, transfer
+              matrices, robustness curves
+            </summary>
+            <div className="pb-2">
+              <RigorSection dataset={dataset} />
+            </div>
+          </details>
+        </Glass>
       </div>
     </div>
   );
