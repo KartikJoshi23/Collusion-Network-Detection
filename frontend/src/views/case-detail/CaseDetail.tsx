@@ -9,6 +9,7 @@ import { decodeAlertId } from "../../lib/alertLabel";
 import { fmtTimeWindow } from "../../lib/format";
 import { isMotifId } from "../../lib/motifs";
 import { MOTIF_HUE, UI_HUES } from "../../lib/palette";
+import { plainReason } from "../../lib/plainReason";
 import { useConsole } from "../../state/console";
 
 // The RQ3 surface (§5.3 view 4). V2: the bundle renders as DESIGNED evidence
@@ -230,6 +231,18 @@ export function CaseDetail() {
   const minimalNodes = minimal.nodes?.length ?? 0;
   const minimalEdges = minimal.edges?.length ?? 0;
   const label = decodeAlertId(alertId ?? "");
+  const win = (evidence.time_window ?? []) as unknown[];
+  const reason = plainReason({
+    riskScore: bundle.risk_score as number | undefined,
+    nMembers: evidence.n_members as number | undefined,
+    nMemberEdges: evidence.n_member_edges as number | undefined,
+    windowStart: win[0] as number | undefined,
+    windowEnd: win[1] as number | undefined,
+    minimalNodes,
+    minimalEdges,
+    maxAttention: attention?.max_incoming_attention as number | undefined,
+    domain: bundle.domain as string | undefined,
+  });
   const unknownKeys = Object.keys(bundle).filter((k) => !KNOWN.has(k));
 
   const exportJson = () => {
@@ -346,10 +359,19 @@ export function CaseDetail() {
                  the dossier LOOK empty on exactly the alerts a reviewer most
                  needs to justify. Surface it here instead. */
               <div className="py-2">
+                {reason && (
+                  <p
+                    className="mb-2 text-sm font-medium"
+                    style={{ color: "var(--text-0)" }}
+                  >
+                    {reason.headline}
+                  </p>
+                )}
                 <p className="mb-2 text-xs leading-snug text-text-2">
                   No nameable motif matched. The matcher only names the nine
-                  shapes it can prove; it never invents one. What the model
-                  actually keyed on is below.
+                  shapes it can prove; it never invents one. The plain-English
+                  reasons are in the Red flags card; the raw measurements are
+                  below.
                 </p>
                 <div className="grid gap-1.5 text-xs">
                   {minimalNodes > 0 && (
@@ -358,7 +380,8 @@ export function CaseDetail() {
                         Minimal sub-network the explainer kept
                       </span>
                       <span className="mono text-text-1">
-                        {minimalNodes} nodes · {minimalEdges} links
+                        {minimalNodes} {minimalNodes === 1 ? "node" : "nodes"} ·{" "}
+                        {minimalEdges} {minimalEdges === 1 ? "link" : "links"}
                       </span>
                     </div>
                   )}
@@ -393,9 +416,31 @@ export function CaseDetail() {
           {/* red flags — indicator citations */}
           <Card title={`Red flags (${flags.length})`} hue={UI_HUES.amber} delay={1}>
             {flags.length === 0 ? (
-              <p className="py-6 text-center text-xs text-text-2">
-                No indicator citations for this alert.
-              </p>
+              /* An alert can score 0.93 and still cite nothing, because the
+                 matcher only names shapes it can formally prove. Showing "no
+                 citations" and stopping left a reviewer staring at a high score
+                 with no reason. The bundle already holds the facts — say them
+                 in plain words instead of leaving the card blank. */
+              reason ? (
+                <div>
+                  <p className="mb-2 text-xs text-text-2">
+                    This group matches no official indicator by name. Here is
+                    what the model reacted to, in plain terms:
+                  </p>
+                  <ul className="grid list-disc gap-1.5 pl-4 text-xs leading-relaxed text-text-1">
+                    {reason.points.map((p, i) => (
+                      <li key={i}>{p}</li>
+                    ))}
+                  </ul>
+                  <p className="mt-2 text-[11px] leading-snug text-text-2">
+                    {reason.caveat}
+                  </p>
+                </div>
+              ) : (
+                <p className="py-6 text-center text-xs text-text-2">
+                  No indicator citations for this alert.
+                </p>
+              )
             ) : (
               <div className="grid gap-2">
                 {flags.map((f, i) => (

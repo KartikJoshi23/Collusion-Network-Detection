@@ -347,10 +347,15 @@ labelled examples, and somebody has already copied the network information into
 the spreadsheet for you, a tree model sorts individual items better than our
 graph model does. That happened on two datasets and we publish both.
 
-\textbf{Where deep learning is the only thing that works:} finding cartels with
-no labels at all (the 163{,}000-node study), moving to a country with no
-labelled history, moving between crime types, and producing a sub-network an
-investigator can actually look at. XGBoost cannot attempt any of these.
+\textbf{Where deep learning is the only thing that works:} four jobs, and
+XGBoost cannot attempt any of them.
+
+\begin{itemize}
+  \item Finding cartels with no answer key at all --- the 163{,}000-node study.
+  \item Working in a country where we have never seen a labelled cartel.
+  \item Carrying what was learned about one crime across to the other.
+  \item Producing a small sub-network an investigator can actually look at.
+\end{itemize}
 
 \textbf{So:} the project is a deep learning project whose deep models power
 everything that ships, and which is honest enough to publish the one axis where a
@@ -856,10 +861,15 @@ the central difficulty of the whole project.
   \item The usual scoring numbers look excellent while the system is useless.
 \end{itemize}
 
-We answer this four ways: focal loss; budget-based measuring instead of
-accuracy; always printing the guessing level beside every score; and planting
-extra known-fake cases so the model gets more examples without us distorting the
-real data.
+We answer it four ways:
+
+\begin{enumerate}
+  \item \textbf{Focal loss} --- makes the model pay attention to the rare cases.
+  \item \textbf{Budget-based measuring} instead of accuracy.
+  \item \textbf{The guessing level printed beside every score}, always.
+  \item \textbf{Planting extra known-fake cases}, so the model sees more
+        examples without us distorting the real data.
+\end{enumerate}
 
 \begin{keybox}
 \textbf{How does focal loss actually help? (The follow-up question, answered.)}
@@ -944,13 +954,15 @@ plant synthetic cartels into.
 This is the first question people ask, and it deserves a measured answer rather
 than an appeal to convention. We tested it.
 
-\textbf{First, where 80/20 comes from.} The 80/20 rule is advice for
-\emph{randomly shuffled, independent} data --- a pile of photos, a table of
-customers --- where any row is as good as any other and you just need a big
-enough test sample. Our data is not that. It is one connected network moving
-through time. You cannot shuffle it without letting the future leak into the
-past (Rule 1 above), so the split point must be a \emph{moment}, and the
-percentage is simply whatever happens to fall either side of that moment.
+\textbf{First, where 80/20 comes from.} It is advice for data you can shuffle:
+a pile of photos, a table of customers. Any row is as good as any other, so you
+just need a big enough test sample.
+
+Our data is not like that. It is one connected network moving through time.
+Shuffling it would let the future leak into the past, which Rule 1 forbids.
+
+So the split has to be a \emph{moment} in time --- and the percentage is
+whatever happens to fall either side of that moment.
 
 \textbf{Second, what 80/20 would actually cost.} We computed every possible
 temporal cut on Elliptic++. The cut closest to 80/20 is after time step 40.
@@ -1261,12 +1273,13 @@ Averaging raw rankings gives all five an equal vote. Four of the five voters are
 no better than random, so their noise simply outvotes the one member that knows
 anything, and the combined ranking ends up close to random too.
 
-Calibration fixes this without anyone choosing weights by hand. Once each
-member's output is converted to a genuine probability, the weak members'
-predictions cluster tightly around the base rate --- they end up saying
-``about 5\% for everything'', which barely moves the ranking --- while the strong
-member's confident scores spread out and dominate. \emph{Being uninformative
-becomes self-silencing.}
+Converting each member's output into a real probability changes that. The weak
+members end up saying ``about 5\% for everything'', because that is genuinely
+all they know. Saying the same thing about everything barely moves a ranking.
+Meanwhile the strong member's scores spread out and take over.
+
+\emph{Being uninformative becomes self-silencing} --- and nobody had to pick
+weights by hand.
 
 \textbf{So why keep the weak members at all?} Because on data with no answer key
 they are the only thing that works --- the entire 163{,}000-node study runs on
@@ -1333,13 +1346,16 @@ random and ask where it came from. Here is every one that matters.
 Not for our models and not for the XGBoost measuring stick. Values below are
 either standard published defaults or forced by the data.
 
-Why admit that? Because the alternative is worse. If we had tuned our models and
-not the baseline, every comparison would be rigged in our favour and worthless.
-Tuning both properly was beyond the compute we had. So we tuned neither, which
-is the only remaining honest option --- and note which way it cuts:
-\textbf{the baseline wins every comparison it enters}, so an untuned baseline
-works \emph{against} us, not for us. Any tuning we later did would most likely
-widen our reported gap, not close it.
+Why admit that? Because the alternative is worse.
+
+If we had tuned our models but not the baseline, every comparison would be
+rigged in our favour and therefore worthless. Tuning both properly was beyond
+the computing time we had. Tuning neither is the only remaining honest option.
+
+And note which way it cuts. \textbf{The baseline wins every comparison it
+enters.} So leaving it untuned works \emph{against} us, not for us. If we ever
+do tune both, the most likely result is that our reported gap gets wider, not
+narrower.
 \end{warnbox}
 
 \begin{longtable}{@{}p{3.5cm}p{1.6cm}p{9.9cm}@{}}
@@ -2186,35 +2202,109 @@ XGBoost + neighbour info & 0.0062 & \textbf{0.60$\times$} --- worse than guessin
 \end{center}
 
 \begin{keybox}
-\textbf{Why it fails, and why that is interesting rather than embarrassing.}
+\textbf{Why it fails --- diagnosed, not guessed.}
 
-AMLworld marks \emph{which payments} are laundering, not which accounts. To get
-an account-level answer we mark an account bad if \emph{any} of its payments was
-bad. But a busy account can make thousands of payments; one bad payment among
-them does not make the account look unusual in any way our features can see.
+Two things go wrong together.
 
-\pw{You are told which phone \emph{calls} were criminal, and asked to find the
+\textbf{(1) The answer key is on the wrong thing.} AMLworld marks \emph{which
+payments} launder, not which accounts. To get an account-level answer we mark an
+account bad if \emph{any} of its payments was bad.
+
+\pw{You are told which phone \emph{calls} were criminal and asked to find the
 criminal \emph{people}. Someone who makes 5{,}000 calls a year, one of which was
 criminal, looks exactly like everyone else.}
 
-This is precisely why the published benchmark for this dataset scores
-\emph{payments} rather than accounts, using models that pass information along
-the payment itself. Our stack is built to rank \emph{groups of accounts}, so it
-is aimed at the wrong unit here.
+\textbf{(2) The test half has almost nothing to look at.} Splitting by when an
+account first appears puts \emph{brand-new} accounts in the test half. We
+measured what they look like:
 
-\textbf{So the real blocker was never credentials and never hardware --- it is
-method.} And a queue built from a model scoring 0.60$\times$ guessing would be
-worse than useless on screen, which is why it stays off the dashboard until an
-edge-level model exists. That is a sharper and more defensible sentence than the
-one it replaced, and it cost 52 seconds to establish.
+\begin{center}\small
+\begin{tabular}{@{}lrr@{}}
+\toprule
+ & \textbf{Train half} & \textbf{Test half} \\
+\midrule
+Typical number of connections & 13 & \textbf{3} \\
+\ \ …for the criminal accounts & 25 & 18 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+A typical test account has \textbf{three} connections. There is barely any
+network there to judge, so a method that works by looking at company kept has
+almost nothing to work with --- and it lands below blind guessing.
+
+\textbf{So the blocker was never credentials and never hardware. It is that we
+are asking the wrong question of this dataset,} and a queue built from a model
+at 0.60$\times$ guessing would mislead anyone who opened it. That is why it stays
+off the queue screens --- and it cost 52 seconds to establish rather than being
+asserted.
 \end{keybox}
 
+\subsubsection*{So what \emph{is} AMLworld used for? (And what it just told us)}
+
+The plan always gave it a different job: \emph{``validating that the detector
+recovers known injected patterns''}. That job needs no answer key, so neither
+problem above applies --- and it is the one thing a 5-million-payment real
+financial network is uniquely good for.
+
+So we planted 100 laundering rings of known shape (640 accounts in total) into
+the real network and measured how many we could find while reviewing only the
+top 2{,}000 of 262{,}921 accounts --- that is 0.76\% of the network.
+
+\begin{center}\small
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+\textbf{Planted shape} & \textbf{Simple scorer} & \textbf{Autoencoder A} &
+\textbf{Autoencoder B} & \textbf{Combined} \\
+\midrule
+Hidden common owner & \textbf{0.5625} & 0.1000 & 0.0375 & 0.1375 \\
+Money going in a circle & 0.0000 & 0.0000 & 0.0000 & 0.0000 \\
+Funnelling in & 0.0000 & 0.0000 & 0.0000 & 0.0000 \\
+Spraying out & 0.0000 & 0.0000 & 0.0000 & 0.0000 \\
+Pass-through chain & 0.0000 & 0.0000 & 0.0000 & 0.0000 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{keybox}
+\textbf{This is the same finding as the procurement side, on a completely
+different dataset --- which is what makes it worth having.}
+
+Only \textbf{hidden common ownership} is catchable by shape alone, and the
+\emph{simplest possible scorer} catches it best (0.56, beating both deep
+autoencoders). Accounts secretly sharing an owner form a tight cluster, and a
+tight cluster is easy to spot.
+
+The four \emph{flow} patterns --- circling, funnelling, spraying, passing
+through --- \textbf{escape completely}. Every one scores zero.
+
+\pw{If the criminals leave a visible web of connections between them, we find
+them. If they merely move money along in a particular pattern, the shape of the
+network alone cannot see it. You would need the amounts and the timings.}
+
+We now have this result three times over: on Bitcoin, on Georgian contracts, and
+now on 5 million synthetic bank payments. A finding that repeats on three
+unrelated datasets is worth far more than a good score on one.
+\end{keybox}
+
+\textbf{And it tells a deployment team exactly what to expect.} This tool will
+surface shell-company structures. It will not, on its own, surface layering.
+That is a sentence worth more than a headline number, and it is why AMLworld
+earns its place in the project even without appearing on the queue screens.
+
 \begin{plain}
-\textbf{The short version for a presentation:} ``Four of the six datasets have a
-trained ranking model, so those four appear in the console. The fifth is
-deliberately unlabelled --- it is where we plant synthetic cartels to measure what
-we can recover without any answer key --- and the sixth needs hardware we do not
-have.''
+\textbf{The short version for a presentation:}
+
+``Four of the six have a trained ranking model, so those four appear in the
+console.
+
+The fifth, the Georgian contract data, is deliberately unlabelled. It is where
+we plant fake cartels and measure how many we find.
+
+The sixth, AMLworld, we use for the same kind of test. It has no ranked queue
+because its answer key marks payments rather than accounts, so account-level
+scoring performs worse than guessing on it --- and we would rather show nothing
+than show that.''
 \end{plain}
 
 \subsection{On every screen}
@@ -2557,11 +2647,14 @@ risk score there was nothing to retrieve, nothing to cite, and the grounding
 rule correctly refused to let it invent an answer. It failed safe --- but it
 failed.
 
-\textbf{Fix:} a glossary of fourteen entries covering the vocabulary a reviewer
-actually reads on screen --- risk score, risk band, review budget, precision at
-k, AUC-PR, prevalence, alert, motif, fidelity, explanation bundle, community,
-anti-money laundering, bid rigging, and the screening-not-guilt rule. Each is
-retrievable and citable exactly like an FATF or OECD indicator.
+\textbf{Fix:} we wrote a glossary of our own terms and added it to the library.
+It covers the words a reviewer actually sees on screen: risk score, risk band,
+review budget, precision, AUC-PR, prevalence, alert, motif, fidelity,
+explanation bundle, community, anti-money laundering, bid rigging, the four
+outcomes (TP/TN/FP/FN), and the screening-not-guilt rule.
+
+Each one can be looked up and quoted by name, exactly like an official
+indicator.
 
 Asked the same question afterwards, it now answers properly: a calibrated
 probability between 0 and 1, a screening signal and not a determination of

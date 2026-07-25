@@ -36,7 +36,8 @@ auto-dispatches on config shape). Outputs land in the gitignored
 | Config (`configs/experiment/`) | Produces |
 |---|---|
 | `baselines_elliptic_pp.yaml` | B1 0.0576 / B2 0.8076 / B3 0.8104 AUC-PR (trees byte-reproduce cross-machine) |
-| `baselines_amlworld.yaml` | AMLworld HI-Small tree baselines at 5M-edge scale (added 2026-07-25 to settle whether this machine can train on it at all — see the ledger entry; B1 omitted, no agreed rule thresholds) |
+| `baselines_amlworld.yaml` | AMLworld HI-Small tree baselines at 5M-edge scale (added 2026-07-25 to settle whether this machine can train on it at all — it can, in 52 s on CPU). **Honest negative: B2 0.0064 / B3 0.0062 against prevalence 0.0104 — below chance.** Diagnosed: AMLworld's ground truth is edge-level, and a node-first-seen split leaves test accounts with median degree 3 vs 13 in train, so there is almost no structure to score. B1 omitted (no agreed rule thresholds) |
+| `injection_recovery_amlworld.yaml` | AMLworld in its DESIGNED role (§4.3 D2, "validating that the detector recovers known injected patterns") — five financial motif families planted into the real 5M-edge graph, no labels needed, giving the RQ2 finding a financial counterpart to the OCDS procurement study |
 | `gnn_elliptic_pp_gatv2_focal.yaml` | headline GATv2-focal single-seed run (seed-0 0.5492 on the master class) |
 | `gnn_elliptic_pp_gatv2_focal_multiseed.yaml` | the paper number: **0.4729 ± 0.0525** (5 seeds) |
 | `gnn_elliptic_pp_gatv2_wce.yaml` / `gnn_elliptic_pp_gatv2_wce_multiseed.yaml` | −focal ablation: 0.4869 seed-0; **0.4435 ± 0.0615** — second-order |
