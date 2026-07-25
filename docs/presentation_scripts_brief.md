@@ -1,6 +1,14 @@
 # BRIEF — Presentation scripts + "explain, don't define" rewrite
 
-**Status: NOT STARTED. This is the top priority and the whole of the next session.**
+**Status: DELIVERED [master, 2026-07-25]. All four items built and measured.**
+`docs/presentation_script_dashboard.md` (27 units) ·
+`docs/presentation_script_architecture.md` (15 units) · report `sec:arch` /
+`sec:cloud` / `sec:dashboard` rebuilt · `plainReason` attempt three.
+Measured: 42 SAY THIS blocks, **0 violations** under `ui_jargon.py` pass 2;
+report readability 4.2% → 3.9% hard; numbers 46/46; backend 381/381, frontend
+46/46. **This file is kept as the specification and the rejection history** —
+read it before touching either script, because the format below is the thing
+the stakeholder asked for explicitly.
 
 Written 2026-07-25 after a stakeholder review. Read this whole file before
 writing a line — it contains six rounds of rejection history, and repeating any
@@ -195,6 +203,13 @@ Run from the repo root, e.g. `uv run python scripts/audit/ui_jargon.py`.
 
 **Apply the same discipline to the new script files:** extend `ui_jargon.py`'s
 word list at the `SAY THIS` blocks and drive the count to zero.
+
+**Done — and it caught the checker itself.** `ui_jargon.py` now runs two
+passes; pass 2 scans every `> **SAY THIS**` block for jargon, printed decimals,
+bullet lists and over-long sentences, and exits non-zero on any hit. While
+wiring it up, pass 1 turned out to have been under-reporting: its JSX-text rule
+required a capital letter and 14+ characters, so the alert queue's `budget k`
+slider label was invisible to it. Three real defects were hiding there.
 
 ---
 
