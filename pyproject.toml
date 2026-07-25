@@ -101,6 +101,13 @@ select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF"]
 # Typographic dashes/§-references are project style (they mirror the plan documents).
 ignore = ["RUF001", "RUF002", "RUF003"]
 
+[tool.ruff.lint.per-file-ignores]
+# scripts/audit/* are one-off diagnostic checkers (see their README). They carry
+# long literal strings by nature — the exact question text fired at the Copilot,
+# full artifact paths, banned-vocabulary lists — and wrapping those to 100 cols
+# would obscure the very thing being checked. Formatting is still enforced.
+"scripts/audit/*" = ["E501", "E731"]
+
 [tool.black]
 line-length = 100
 target-version = ["py311"]

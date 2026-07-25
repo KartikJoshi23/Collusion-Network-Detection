@@ -9,6 +9,19 @@
 
 ## Current milestone
 
+> 🔴 **NEXT SESSION STARTS AT "Next actions" ITEM 0 — PRESENTATION SCRIPTS.**
+> Brief: [`docs/presentation_scripts_brief.md`](docs/presentation_scripts_brief.md)
+> (read it in full first). The stakeholder rejected the report AND the dashboard
+> on 2026-07-25 for the same reason: **they give definitions, not explanations**
+> — *"there is no point reading it from the report, it made the work harder
+> rather than simpler"*. Deliver (a) a spoken script for every dashboard tab,
+> (b) a spoken script for `docs/architecture.html`, (c) real explanations in the
+> report's architecture / cloud / dashboard sections, (d) a third pass on the
+> Case-Detail wording. Format is mandatory and specified in the brief: a
+> **SAY THIS** block that sounds natural read aloud, then **WHAT THIS MEANS**,
+> then **IF THEY ASK…**. Everything else below is done and green
+> (381 backend / 43 frontend / 46-of-46 numbers verified, last commit 24a5116).
+
 > ✅ **FRONTEND OVERHAUL DELIVERED [laptop-C, 2026-07-18]** per
 > [`docs/frontend_overhaul.md`](docs/frontend_overhaul.md): animated network-canvas backdrop with
 > coral flagged pulses, Motion throughout (view transitions, nav/domain sliding pills, KPI
@@ -168,6 +181,80 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-25 · **PLAIN-ENGLISH PASS over every user-facing string + the audit
+  tooling that measured it.** A professional reviewer said the Case-Detail
+  wording was "not at all used in industry". Wrote `scripts/audit/ui_jargon.py`
+  — it extracts only text a USER READS (JSX text, `title=`, `label=`; not
+  comments, not identifiers) and checks it against an ML-jargon list. **Found 24
+  offending strings across 7 screens; now 5**, of which 3 are chart axis labels
+  where the metric's real name belongs, 1 is a JSON export key, 1 a heading.
+  Rewrote: "Budget k"→"Cases to review"; "Attribution quality"→"How solid is
+  this?"; "Minimal sub-network the explainer kept"→"The few connections that
+  mattered most"; "3 nodes · 4 links"→"3 of them · 4 connections"; "N MEMBER
+  EDGES"/"TIME WINDOW"→"Connections between them"/"When it happened";
+  "deduplicated community alerts; unconfirmed ≠ false"→plain sentence;
+  "Paired bootstrap significance (2,000 resamples, stratified)"→"Is the
+  difference real, or luck?"; About's leakage paragraph→four plain sentences.
+  **My own guilt-vocabulary test caught a real defect in my own rewrite:** the
+  draft said "Criminals move money this way", which a reader can take as calling
+  those specific accounts criminals — changed to "This is one of the ways money
+  gets moved when someone wants it to be hard to trace". `plainReason.test.ts`
+  hardened to assert NO ML word appears (14 terms) and no sentence exceeds 26
+  words. Frontend 43/43 · 24a5116 · [master]
+- 2026-07-25 · **AMLworld put to work — the "why can't I see it" question
+  settled with measurements, and it produced a real finding.** Three prior
+  claims of mine were wrong and are corrected: credentials ARE present (.env),
+  data IS downloaded (475 MB) and ingested (515,088 accounts / 5,078,345 edges),
+  and it **trains here on CPU in 52 seconds** — never a hardware problem.
+  *Supervised route, honest negative:* B2 0.0064 / B3 0.0062 against prevalence
+  0.0104 — **below chance**. Diagnosed rather than asserted: ground truth is
+  EDGE-level, and a node-first-seen split leaves test accounts with **median
+  degree 3 vs 13** in train, so there is almost no network left to judge. A
+  queue from that would mislead, so it stays off the dashboard.
+  *Designed role (§4.3 D2), which needs no labels:* planted 100 laundering rings
+  (640 accounts) into the real graph, reviewed top 2000 of **262,921** →
+  **common_control floor 0.5625, and cycle / fan_in / fan_out / pass_through all
+  0.0000**. **This replicates the Elliptic and OCDS verdict on a third,
+  unrelated dataset:** only clique-type coordination is catchable by structure
+  alone, and the simplest scorer catches it best. Trap found and documented: the
+  injection window selects accounts by FIRST APPEARANCE, not activity — a late
+  window gave population 1,832 where budget 2000 covered everything and every
+  recall came back a meaningless 1.0000. Verifier extended to 46 numbers ·
+  992e156 · [master]
+- 2026-07-25 · **Case Detail: plain-language reasons on alerts that match no
+  motif.** Complaint: an alert scoring 0.9265 showed "no motif matched" and "red
+  flags (0)" and nothing else. The facts were already in the bundle — 85
+  accounts, 84 links, one time window — never put into words. 85 nodes with 84
+  links is a TREE, i.e. a chain, which is describable. New
+  `frontend/src/lib/plainReason.ts` renders measured facts as sentences, adapts
+  wording per domain, and returns null rather than guessing when facts are
+  absent. **Still judged too hard on re-review — third pass is Next action 0(d).**
+  · 992e156 · [master]
+- 2026-07-25 · **Report: the why-chains answered.** *"Reading the answers, a
+  why? question comes which remains unanswered — those are the parts evaluators
+  catch."* **80/20:** computed every possible temporal cut and showed an 80/20
+  split would **discard 52% of the positives** (524 vs 1,083 criminal test
+  items) and land inside the post-step-43 collapse where two periods hold 5 and
+  2 criminal items; cut-34 is also the published convention. **TP/TN/FP/FN:**
+  new foundational section with the cost of each error named and the caveat that
+  with ~76% unlabelled, "false positive" means "flagged and unconfirmed", so
+  reported precision is a LOWER BOUND. **Every parameter choice** justified in a
+  new section, opening with the uncomfortable one — *no hyperparameter search
+  was run on either side*, and which way that cuts. Mechanism gaps closed for
+  calibration-collapse and focal loss · 7f72993 · [master]
+- 2026-07-25 · **Copilot semantic layer + crash guard.** Live query battery
+  (11 questions, simple→adversarial) found two defects. *(1)* "What does the
+  risk score mean?" returned filler — the corpus defined CRIME patterns and
+  nothing defined the project's OWN words, so retrieval had nothing to return.
+  Added `backend/copilot/glossary.yaml`, 15 citable `CG-*` entries incl.
+  TP/TN/FP/FN; verified live, now answers with citations. Test forbids a
+  glossary entry containing a measured number (it caught one immediately).
+  *(2)* "Your XGBoost beats the GNN — is the deep learning useless?" returned
+  **168 seconds of `<unk><unk>…`** and displayed it. `degenerate_output_gate()`
+  now runs FIRST and withholds token soup at confidence 0.0; measured firing
+  rate 0/8 on good questions. **Guard held on the dangerous ones:** "Is firm X
+  guilty?" → "This system does not determine guilt"; "AUC-PR in 2027?" → refuses
+  and lists what exists · 80b3b29 · [master]
 - 2026-07-25 · **INTERNAL TEAM REPORT (LaTeX) — the whole project in plain words**
   (`docs/internal_report/collusiongraph_internal_report.tex`, ~1650 lines,
   self-contained, standard packages only). Written so a non-ML reader can follow it
@@ -1142,6 +1229,64 @@ still public 2026-07-15 — anonymous clone succeeded).
 - AMLworld raw data is absent on laptop-B (Kaggle credentials are per-machine; script reports `blocked` as designed). Financial pack is untested at AMLworld scale (5M edges) — see Next action 5.
 
 ## Next actions (ordered, self-contained)
+
+0. 🔴 **START HERE — PRESENTATION SCRIPTS + "EXPLAIN, DON'T DEFINE" REWRITE.**
+   **This is the entire next session. Read
+   [`docs/presentation_scripts_brief.md`](docs/presentation_scripts_brief.md)
+   first, all of it, before writing anything.**
+
+   *Why this is top priority:* the stakeholder reviewed the report and dashboard
+   on 2026-07-25 and rejected both on the same grounds — **they give
+   definitions, not explanations.** Verbatim: *"in system architecture and cloud
+   architecture, everything is just a single or two-three lines of meaning, no
+   proper explanations… there is no point reading it from the report, it made
+   the work harder rather than simpler. Same for the dashboard screens."* And on
+   the dossier: *"Case 16 still uses extremely tough language. I showed it to a
+   professional and he said such difficult language is not at all used in
+   industry."*
+
+   **Build four things:**
+
+   a. **`docs/presentation_script_dashboard.md`** (new) — a spoken script for
+      EVERY tab and control: Overview, Alert Queue, Graph Explorer, Case Detail,
+      Model Lab, About, the Copilot dock, domain toggle, dataset picker, budget
+      slider, risk-band filter. Nothing on screen may be missing.
+
+   b. **`docs/presentation_script_architecture.md`** (new) — same for
+      `docs/architecture.html`: the ten numbered stages, the trust boundary, the
+      algorithm cards, both AWS planes, the three cost tiers.
+
+   c. **Report sections `sec:arch`, `sec:cloud`, `sec:dashboard`** in
+      `docs/internal_report/collusiongraph_internal_report.tex` — replace the
+      one-line-per-component tables with real explanations: what it is, why it
+      exists, what breaks without it, and the sentence you would say out loud.
+
+   d. **`frontend/src/lib/plainReason.ts`** — third attempt at the dossier
+      wording. It already passes a 14-term banned-word test and was STILL judged
+      too hard. The brief's §5 diagnoses why: it describes *the system* when it
+      should describe *the situation*. Verify on
+      `elliptic_pp:gatv2_multi_s0:16` and `mendeley_eu:sage_struct_s0:1`.
+
+   **Mandatory format for both script files** (the stakeholder asked for this
+   explicitly): each unit is a `> **SAY THIS**` block of natural spoken English
+   — contractions, short sentences, no bullet lists, mouse signposting, spoken
+   numbers ("about a third", never "0.3245") — followed by a **WHAT THIS MEANS**
+   paragraph explaining it to the presenter, and an **IF THEY ASK…** rebuttal
+   where an evaluator is likely to push. It must sound natural read aloud, so
+   nobody can tell it is a script. Mark timings and give a total.
+
+   **Banned vocabulary in SAY THIS blocks** — the full list is in the brief §4;
+   it is the same list `scripts/audit/ui_jargon.py` already enforces on the UI.
+
+   **Verify, don't guess.** `scripts/audit/` now holds every checker used this
+   round (jargon, readability, LaTeX structure, number verification, API sweep,
+   Copilot battery). Extend `ui_jargon.py` to scan the new SAY THIS blocks and
+   drive its count to zero. State measured before/after numbers in the commit.
+
+   **Do NOT** assume the previous language fix was nearly right — that
+   assumption has now cost two rounds. The brief's §6 lists all six rejections
+   and their lessons.
+
 1. **[user/stakeholder] REVIEW the V4 theme (review #6) on the multi-dataset console.**
    V4 answered review #5's "still blue dominated / not industry grade" — chrome is now
    neutral black and hue is reserved for meaning (see Completed for the measured
