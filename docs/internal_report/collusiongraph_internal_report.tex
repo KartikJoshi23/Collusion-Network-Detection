@@ -1,0 +1,1914 @@
+% =====================================================================
+%  CollusionGraph — Internal Team Report
+%  Plain-language, complete walkthrough of the whole project.
+%
+%  Build:  pdflatex collusiongraph_internal_report.tex   (run twice for
+%          the table of contents and cross-references), or
+%          latexmk -pdf collusiongraph_internal_report.tex
+%
+%  Only standard TeX Live / MiKTeX packages are used — no downloads.
+%
+%  HOUSE RULE: every number in this report is copied from a measured
+%  artifact recorded in PROGRESS.md, docs/model_card.md or
+%  docs/reproducibility.md. Nothing here is estimated or remembered.
+% =====================================================================
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=2.4cm]{geometry}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{enumitem}
+\usepackage{tcolorbox}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage[hidelinks,bookmarks=true]{hyperref}
+
+\definecolor{ink}{HTML}{1A1C20}
+\definecolor{accent}{HTML}{0E7490}
+\definecolor{soft}{HTML}{F4F5F7}
+\definecolor{rule}{HTML}{D9DCE1}
+\definecolor{warn}{HTML}{B45309}
+
+\hypersetup{colorlinks=true,linkcolor=accent,urlcolor=accent}
+
+\titleformat{\section}{\Large\bfseries\color{ink}}{\thesection}{0.7em}{}
+\titleformat{\subsection}{\large\bfseries\color{ink}}{\thesubsection}{0.6em}{}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\small\textcolor{ink}{CollusionGraph — Internal Team Report}}
+\rhead{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% --- helper boxes -----------------------------------------------------
+\newtcolorbox{plain}[1][]{
+  colback=soft, colframe=rule, boxrule=0.5pt, arc=2pt,
+  left=8pt, right=8pt, top=6pt, bottom=6pt, #1}
+
+\newtcolorbox{keybox}[1][]{
+  colback=white, colframe=accent, boxrule=1pt, arc=2pt,
+  left=8pt, right=8pt, top=6pt, bottom=6pt, #1}
+
+\newtcolorbox{warnbox}[1][]{
+  colback=white, colframe=warn, boxrule=1pt, arc=2pt,
+  left=8pt, right=8pt, top=6pt, bottom=6pt, #1}
+
+% "in plain words" lead-in
+\newcommand{\pw}[1]{\textit{\textcolor{accent}{In plain words:}} #1}
+\newcommand{\code}[1]{\texttt{\small #1}}
+
+\setlist[itemize]{topsep=3pt,itemsep=2pt,parsep=0pt,leftmargin=1.4em}
+\setlist[enumerate]{topsep=3pt,itemsep=2pt,parsep=0pt,leftmargin=1.6em}
+
+% =====================================================================
+\begin{document}
+
+\begin{titlepage}
+\centering
+\vspace*{2.5cm}
+{\Huge\bfseries CollusionGraph\par}
+\vspace{0.6cm}
+{\LARGE Finding Hidden Groups That Cheat Together\par}
+\vspace{1.4cm}
+{\Large\bfseries Internal Team Report\par}
+\vspace{0.4cm}
+{\large A complete, plain-language walkthrough of the whole project\par}
+\vspace{2.2cm}
+
+\begin{plain}
+\raggedright
+\textbf{Who this is for.} Everyone on the team — including people who have
+never trained a model. It also answers the questions an experienced AI
+researcher or examiner would ask.
+
+\vspace{4pt}
+\textbf{How it is written.} Ordinary English first, technical name second.
+Every specialised word is defined in the Glossary (Section~\ref{sec:glossary}).
+If you read only one section, read Section~\ref{sec:story}.
+
+\vspace{4pt}
+\textbf{Honesty rule.} Every number here was measured by our own test harness
+and is recorded in the project ledger (\code{PROGRESS.md}), the model card
+(\code{docs/model\_card.md}) or the reproducibility map
+(\code{docs/reproducibility.md}). Results that make the project look
+\emph{worse} are included, because a report that hides them is useless.
+\end{plain}
+
+\vfill
+{\small Capstone project · Research prototype (TRL 3--4) · Not a production system\par}
+{\small Screening signal only --- never a determination of guilt\par}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% =====================================================================
+\section{The Project in One Page}
+\label{sec:story}
+
+\subsection{The problem}
+
+Two very different crimes have the same hidden shape.
+
+\begin{itemize}
+  \item \textbf{Money laundering.} Criminals move dirty money through many
+        bank accounts or crypto wallets so it looks clean. No single payment
+        looks wrong. The \emph{pattern of payments} is what is wrong.
+  \item \textbf{Bid rigging (cartels).} Companies that are supposed to compete
+        for government contracts secretly agree who wins. Each bid looks
+        normal. The \emph{pattern of who bids against whom, and who wins in
+        turn}, is what is wrong.
+\end{itemize}
+
+\begin{keybox}
+\textbf{The core idea of this project.} In both crimes the guilty parties are
+not lone individuals --- they are a \emph{group} connected to each other.
+If you draw the data as a network of dots and lines, the crime shows up as a
+\emph{shape} in the network. So instead of asking ``is this one payment
+suspicious?'' we ask ``is this whole group of connected entities behaving like
+a coordinated ring?''
+\end{keybox}
+
+\subsection{What we built}
+
+One machine-learning system that reads both kinds of data, turns them into the
+same internal format, and produces a short, ranked list of suspicious
+\emph{groups} --- each with an explanation of \emph{why} it was flagged. On top
+of that sits a web dashboard where an investigator can look through the list,
+inspect the network, read the evidence, and ask an AI assistant questions.
+
+\subsection{The five things that make it different}
+
+\begin{enumerate}
+  \item \textbf{One system, two crimes.} About 70\% of the code is shared;
+        only the data readers and the red-flag vocabularies differ.
+  \item \textbf{It ranks groups, not single items.} The output is a queue of
+        communities, because that is what an investigator actually opens.
+  \item \textbf{Every alert carries an explanation} --- the exact sub-network
+        that triggered it, the pattern name, and a citation to an official
+        red-flag list (FATF for money laundering, OECD for bid rigging).
+  \item \textbf{Fixed review budget.} We never report ``accuracy''. We report
+        ``if your team can review 100 cases this week, how many of those 100
+        are real?'' That is the number that matters operationally.
+  \item \textbf{Honest reporting.} Where a simple method beats our deep-learning
+        model, we say so and publish the gap (see Section~\ref{sec:results}).
+\end{enumerate}
+
+% =====================================================================
+\section{Glossary --- Every Term We Use}
+\label{sec:glossary}
+
+Read this once and the rest of the report will be easy. Terms are grouped, and
+within each group the simplest come first.
+
+\subsection{Network / graph words}
+
+\begin{longtable}{@{}p{4.1cm}p{11.4cm}@{}}
+\toprule
+\textbf{Term} & \textbf{Meaning in plain words} \\
+\midrule
+\endhead
+\textbf{Graph} (network) & A picture made of dots joined by lines. Dots =
+things, lines = relationships. Everything in this project is a graph. \\
+\textbf{Node} (vertex) & One dot. A bank account, a transaction, a company, a
+tender. \\
+\textbf{Edge} & One line joining two dots. A payment, an award, a bid. \\
+\textbf{Directed edge} & A line with an arrow. Money goes \emph{from} A
+\emph{to} B --- the direction matters, because money flowing in is a different
+crime from money flowing out. \\
+\textbf{Degree} & How many lines touch a dot. ``In-degree'' = arrows coming in,
+``out-degree'' = arrows going out. A shop has high in-degree; a payroll account
+has high out-degree. \\
+\textbf{Neighbour} & A dot directly joined to another dot by one line. \\
+\textbf{Subgraph} & A small piece cut out of a big graph --- e.g.\ one
+suspicious group and the lines between them. \\
+\textbf{Ego-network} & The subgraph made of one chosen dot plus everything
+within a few steps of it. What you see in the Graph Explorer screen. \\
+\textbf{Motif} & A small, repeating \emph{shape} in the network that has a
+meaning. Our nine motifs are listed in Table~\ref{tab:motifs}. \\
+\textbf{Community} & A cluster of dots that are much more connected to each
+other than to the rest of the network. Our alerts are communities. \\
+\textbf{Clique} & A group where \emph{everyone} is connected to
+\emph{everyone else} --- the densest possible community. \\
+\textbf{k-core} & A measure of how deep inside a dense region a dot sits. High
+k-core means ``buried in a tight cluster''. \\
+\textbf{Clustering coefficient} & How often your neighbours are also each
+other's neighbours. High = your contacts all know each other (cliquey). \\
+\textbf{Bipartite graph} & A graph with two kinds of dots where lines only go
+between kinds, never within. Firms and tenders: a firm bids on a tender, but a
+firm never ``bids on'' another firm. \\
+\textbf{Projection} & Collapsing a bipartite graph into one kind of dot. From
+``firms bid on tenders'' we make ``firm A and firm B bid on the same tender'' ---
+a firm-to-firm graph. This is how we get \textbf{co-bid} links. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Machine-learning words}
+
+\begin{longtable}{@{}p{4.1cm}p{11.4cm}@{}}
+\toprule
+\textbf{Term} & \textbf{Meaning in plain words} \\
+\midrule
+\endhead
+\textbf{Model} & A program that learns patterns from examples instead of being
+given fixed rules. \\
+\textbf{Feature} & One measurable fact about a node, written as a number.
+``In-degree = 14'' is a feature. Models only eat numbers. \\
+\textbf{Label} & The right answer for an example: illicit, licit, or unknown. \\
+\textbf{Training} & Showing the model labelled examples so it adjusts itself to
+predict better. \\
+\textbf{Validation} & A held-back slice used \emph{during} development to decide
+when to stop training and which settings to keep. \\
+\textbf{Test} & A slice the model never sees until the very end. The only
+honest measure of quality. \\
+\textbf{Supervised} & Learning from labelled examples (``these were cartels''). \\
+\textbf{Unsupervised} & Learning with \emph{no} labels --- the model just learns
+what ``normal'' looks like and flags whatever does not fit. \\
+\textbf{Epoch} & One full pass through the training data. \\
+\textbf{Early stopping} & Stop training when the validation score stops
+improving, so the model does not over-memorise. \\
+\textbf{Overfitting} & When a model memorises the training data instead of
+learning the general pattern --- great on training, useless on new data. \\
+\textbf{Seed} & The starting random number. Different seeds give slightly
+different models. We always run 5 seeds and report the average \emph{and} the
+spread, because a single seed can flatter you. \\
+\textbf{Hyperparameter} & A setting you choose rather than learn: how many
+layers, the learning rate, the loss function. \\
+\textbf{Embedding} & A list of numbers that summarises a node's position and
+behaviour in the network, produced by the model. \\
+\textbf{Inference / scoring} & Using a trained model to produce scores for new
+data. \\
+\textbf{Ablation} & Deliberately removing one part of the system to measure how
+much that part actually contributed. \\
+\textbf{Baseline} & A deliberately simple method used as a yardstick. If the
+complicated model cannot beat it, the complication is not earning its place. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Words specific to this project}
+
+\begin{longtable}{@{}p{4.1cm}p{11.4cm}@{}}
+\toprule
+\textbf{Term} & \textbf{Meaning in plain words} \\
+\midrule
+\endhead
+\textbf{IR} (Intermediate Representation) & Our one common data format. Every
+dataset, financial or procurement, is converted into the same four files, so
+everything downstream works on both domains without changes. \\
+\textbf{Adapter} & The small piece of code that converts one raw dataset into
+the IR. \\
+\textbf{Alert} & One suspicious \emph{community}, with a rank, a risk score, and
+an explanation bundle. The unit an investigator reviews. \\
+\textbf{Alert queue} & The ranked list of alerts, cut at a review budget. \\
+\textbf{Budget (k)} & How many cases the team can actually review. All our
+headline numbers are stated at a budget. \\
+\textbf{Explanation bundle} & A structured JSON file attached to every alert:
+the minimal sub-network, the motif name, the evidence, the red-flag citation,
+fidelity scores, and the locked ethics caveat. \\
+\textbf{Motif matcher} & Transparent, rule-based code that names the shape it
+finds (cycle, rotation, cover bid \ldots). It does not use the neural network,
+so it is an independent check on it. \\
+\textbf{Red flag} & An officially published warning sign. We cite FATF
+indicators (money laundering) and OECD indicators (bid rigging). \\
+\textbf{Floor} & The simplest possible scorer (structural z-scores). It exists
+so we always know what ``no cleverness at all'' achieves. \\
+\textbf{Calibration} & Rescaling each model's raw output so the numbers mean the
+same thing before we combine them. Without this, combining models destroys
+their quality (we measured it --- Section~\ref{sec:results}). \\
+\textbf{Ensemble / fusion} & Combining several models' scores into one. \\
+\textbf{Roll-up} & Turning per-node scores into a per-community score. \\
+\textbf{NMS} (non-maximum suppression) & Removing near-duplicate alerts, so one
+big group does not fill the whole queue in ten slightly different versions. \\
+\textbf{Leakage} & When information from the test period accidentally reaches
+the model during training. It inflates scores and invalidates results. We have
+a dedicated test suite that runs in CI to prevent it. \\
+\textbf{Strict-inductive split} & Our anti-leakage rule: at training time the
+model may not even \emph{see the connections} that belong to the test period,
+not just the labels. \\
+\textbf{As-of discipline} & Every feature is computed using only information
+that existed at that moment in time --- never the future. \\
+\textbf{Injection study} & We plant synthetic, known-fake cartels into a real
+network and measure how many we can recover. Because we planted them, we know
+the perfect answer. \\
+\textbf{Copilot} & The AI chat assistant inside the dashboard. \\
+\textbf{Grounding} & The rule that the Copilot may only state numbers that
+actually appear in the data it retrieved. \\
+\textbf{Artifact} & An output file produced by a run (scores, alerts,
+explanations, metrics). The website only ever reads artifacts. \\
+\textbf{Trust boundary} & The line between the part that can change results
+(training) and the part that only reads them (the website). \\
+\bottomrule
+\end{longtable}
+
+\subsection{Measurement words}
+
+\begin{longtable}{@{}p{4.1cm}p{11.4cm}@{}}
+\toprule
+\textbf{Term} & \textbf{Meaning in plain words} \\
+\midrule
+\endhead
+\textbf{Prevalence} & How common the bad thing is. If 2\% of transactions are
+illicit, prevalence is 0.02. This is the ``do nothing clever'' score. \\
+\textbf{Precision@k} & Out of the top $k$ alerts, what fraction are real? If
+Precision@100 = 0.81, then 81 of your 100 reviewed cases were genuine. \\
+\textbf{Recall@k} & Out of all the bad things that exist, what fraction did the
+top $k$ catch? \\
+\textbf{AUC-PR} & A single summary score for ranking quality across all
+budgets. \textbf{Crucially, its ``random guessing'' value equals the
+prevalence}, so AUC-PR $=0.47$ at prevalence $0.065$ means roughly
+7$\times$ better than chance. We always quote prevalence beside it. \\
+\textbf{Lift} & Score divided by prevalence. ``How many times better than
+guessing.'' \\
+\textbf{Why not accuracy?} & At 2\% prevalence, a model that says ``nothing is
+ever bad'' is 98\% accurate and completely useless. We never headline accuracy. \\
+\textbf{Mean $\pm$ std} & Average across 5 seeds, plus the spread. A big spread
+means the result is unstable and must not be quoted as a single number. \\
+\textbf{Confidence interval (CI)} & A range we are 95\% sure the true value sits
+in. \\
+\textbf{Paired bootstrap} & A statistical test: re-sample the same test cases
+thousands of times and see whether model A really beats model B, or whether the
+gap is just luck. \\
+\textbf{Fidelity} & Does the explanation actually matter? Remove the highlighted
+sub-network --- if the model's score collapses, the explanation was real. \\
+\bottomrule
+\end{longtable}
+
+% =====================================================================
+\section{The Nine Patterns We Look For}
+
+Every alert is named with one of these shapes. Five come from the money-crime
+side, five from the procurement side, and \emph{hidden common control} appears
+in both --- which is one of the project's nicest findings: the same shape means
+the same thing in both worlds.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{@{}p{2.6cm}p{5.9cm}p{5.9cm}@{}}
+\toprule
+\textbf{Shape} & \textbf{In money laundering} & \textbf{In bid rigging} \\
+\midrule
+Circular & \textbf{cycle} --- money leaves an account and comes back through
+intermediaries (round-tripping). &
+\textbf{rotation} --- the same firms take turns winning. \\
+\addlinespace
+Converging & \textbf{fan\_in} --- many small deposits, all just under the
+reporting threshold, land in one account (``smurfing''). &
+\textbf{cover\_bid} --- losing bids sit implausibly just above the winner, to
+make a fixed price look competitive. \\
+\addlinespace
+Spreading out & \textbf{fan\_out} --- money is sprayed to many accounts at once
+to break the trail (``layering''). &
+\textbf{partition} --- firms carve up the market: you take this region, I take
+that one, and we never bid against each other. \\
+\addlinespace
+Hidden control & \textbf{common\_control} --- accounts that look unrelated share
+an owner, agent or address. &
+\textbf{common\_control} --- ``rival'' firms share directors or addresses. \\
+\addlinespace
+Tight cluster & \textbf{pass\_through} --- chains where money arrives and leaves
+almost immediately, keeping nothing. &
+\textbf{clique} (coordinated cluster) --- the same firms always bid together,
+with suspiciously similar prices. \\
+\bottomrule
+\end{tabular}
+\caption{The nine motif families. \code{common\_control} is shared, so the
+system genuinely spans both domains.}
+\label{tab:motifs}
+\end{table}
+
+\begin{plain}
+\pw{A cycle is money doing a lap and coming home. A fan-in is a funnel. A
+fan-out is a sprinkler. Common control is two ``strangers'' who share a phone
+number. A clique is a group where everybody knows everybody.}
+\end{plain}
+
+% =====================================================================
+\section{The Data}
+\label{sec:data}
+
+\subsection{Which datasets, and why each one}
+
+We use six public datasets. Nothing private, nothing personal, nothing from any
+UAE institution. Raw data is \emph{never} committed to the repository; we ship
+download scripts plus checksums so anyone can fetch and verify the exact same
+files.
+
+\begin{longtable}{@{}p{1.1cm}p{3.5cm}p{4.2cm}p{5.8cm}@{}}
+\toprule
+\textbf{ID} & \textbf{Dataset} & \textbf{What it is} & \textbf{Why we need it} \\
+\midrule
+\endhead
+D1 & Elliptic / Elliptic++ & Real Bitcoin transactions, labelled illicit/licit &
+Our main \emph{financial} dataset. Real crime, real labels, hard imbalance. \\
+D2 & IBM AMLworld HI-Small & Synthetic bank transactions with perfect ground
+truth for 8 laundering patterns & Lets us check the detector on patterns whose
+answer we know exactly; gives real money amounts. \\
+D3 & García Rodríguez et al. & Auctions from Brazil, Italy, Japan,
+Switzerland, USA --- collusive vs.\ competitive & Has \emph{losing} bids, so
+real co-bid networks and price screens work. Used for cross-market transfer. \\
+D4 & Mendeley EU cartel & EU public contracts with 73 confirmed cartel cases &
+Our main \emph{procurement} dataset with real labels. \\
+D5 & OCDS --- Georgia OpenTender & 451{,}346 real public-tender records,
+\emph{no labels} & The large realistic playground where we plant synthetic
+cartels and measure recovery at scale. \\
+\bottomrule
+\end{longtable}
+
+\subsection{The spread of the data --- exact measured numbers}
+
+These were verified by our own exploratory analysis, not copied from papers.
+
+\begin{longtable}{@{}p{4.3cm}p{11.2cm}@{}}
+\toprule
+\textbf{Dataset} & \textbf{Measured shape} \\
+\midrule
+\endhead
+\textbf{Elliptic (base)} &
+203{,}769 transaction nodes; 234{,}355 directed edges; 49 time steps;
+166 features per node.
+Labels: 4{,}545 illicit ($\approx$2\%), 42{,}019 licit ($\approx$21\%),
+\textbf{the remaining $\approx$77\% unknown}. \\
+\addlinespace
+\textbf{Elliptic++ (extension)} &
+Adds $\approx$822{,}942 wallet/actor nodes with 56 named features and 1.27M+
+temporal interactions. 183 features on the transaction view. \\
+\addlinespace
+\textbf{AMLworld HI-Small} &
+515{,}088 accounts; 5{,}078{,}345 payment edges with real amounts; complete
+ground truth for 8 pattern types. \\
+\addlinespace
+\textbf{Mendeley EU} &
+15{,}616 contract rows; \textbf{73 distinct cartel cases} (matches the source
+exactly); \code{is\_cartel=1} on 6{,}548 rows (41.9\%);
+7 anonymised countries; 2004--2021.
+Per-country rows range 162 to 7{,}860 and per-country cartel share ranges
+\textbf{9.9\% to 59.6\%} --- the countries are very unequal, which matters for
+transfer tests.
+Graph: 14{,}555 nodes / 24{,}251 edges. \\
+\addlinespace
+\textbf{García Rodríguez} &
+77{,}007 nodes / 111{,}046 edges; firm identities available on 4 of 6 markets
+(Japan, Italy, Brazil, USA carry competitor lists; the two Swiss markets do
+not). \\
+\addlinespace
+\textbf{OCDS Georgia} &
+451{,}346 compiled releases (2010--2025) $\rightarrow$
+\textbf{488{,}300 nodes / 1{,}449{,}077 edges}, including
+\textbf{687{,}336 \code{bids\_on} edges with identified losing bidders}.
+Roughly 50$\times$ the node count of Mendeley. Zero undated releases, zero
+id-less bids. \\
+\bottomrule
+\end{longtable}
+
+\begin{warnbox}
+\textbf{A caveat we must never hide (and an examiner will ask about).}
+The Mendeley dataset is a \textbf{case-control sample}, not a population sample.
+Its 41.9\% cartel rate is an artifact of how the researchers assembled it --- the
+real world is nowhere near 42\% cartels. Therefore \emph{absolute} precision
+numbers on Mendeley are not real-world rates; only \emph{lift-style} comparisons
+(``how much better than the 0.358 prevalence baseline'') are meaningful, and only
+comparisons within the same fold are fair. This is stated in the dataset
+datasheet, the model card and the paper.
+\end{warnbox}
+
+\subsection{The class-imbalance problem}
+
+In Elliptic, about 2\% of transactions are illicit. This is the central
+technical difficulty:
+
+\begin{itemize}
+  \item A model can score 98\% ``accuracy'' by never flagging anything.
+  \item The model sees 50 normal examples for every bad one, so it is tempted to
+        ignore the bad class entirely.
+  \item Ordinary metrics (accuracy, ROC-AUC) look great while the system is
+        useless.
+\end{itemize}
+
+Our four answers: (1) \textbf{focal loss}, which makes the model pay more
+attention to the rare, hard examples; (2) \textbf{budget-first metrics}
+(Precision@k) instead of accuracy; (3) \textbf{AUC-PR always quoted against
+prevalence}; (4) \textbf{synthetic injection} to create extra known-bad
+sub-networks without distorting the real ones.
+
+\subsection{How the data is split for training and testing}
+
+This is the part that protects the credibility of every number in this report.
+
+\begin{keybox}
+\textbf{Rule 1 --- split by time, never randomly.} Crime data is a timeline.
+If you shuffle it randomly, the model learns from the future to predict the
+past, which is impossible in real life and inflates every score.
+\end{keybox}
+
+\begin{longtable}{@{}p{3.4cm}p{12.1cm}@{}}
+\toprule
+\textbf{Dataset} & \textbf{Split actually used} \\
+\midrule
+\endhead
+\textbf{Elliptic++} & Train on time steps 1--34, test on 35--49 (the standard
+convention in the literature, so our numbers are comparable). Validation is a
+\emph{temporal tail} of the training period --- never a random slice. \\
+\textbf{Mendeley} & Within-country: train on contracts up to 2013, test from
+2014 onwards. Across countries: \textbf{LOCO}. \\
+\textbf{García} & \textbf{LOMO} --- leave one market out. \\
+\textbf{OCDS Georgia} & Test window 2020--2024; no labels exist, so this is
+used for injection studies only. \\
+\bottomrule
+\end{longtable}
+
+\textbf{LOCO / LOMO} mean \emph{leave-one-country-out} / \emph{leave-one-market-out}:
+train on six countries, test on the seventh, then rotate. It answers the
+question a buyer actually cares about --- ``will this work in a country where you
+have never seen a single labelled cartel?''
+
+\begin{keybox}
+\textbf{Rule 2 --- strict-inductive splitting.} It is not enough to hide the
+test \emph{labels}. We hide the test-period \emph{connections} too. During
+training the model literally cannot see edges that belong to the test period.
+
+\pw{If you are predicting who will be friends next year, it is cheating to
+already look at next year's friendship lines --- even if you cover up the names.}
+Recent published work shows a gap of about 39.5 F1 points comes purely from this
+kind of exposure. We verified our splitter withholds exactly 77{,}512
+test-period edges on Elliptic++.
+\end{keybox}
+
+\begin{keybox}
+\textbf{Rule 3 --- as-of features.} Every feature is computed using only data
+that existed at that time. Verified on real data: the ``as-of step 34'' view
+shows 136{,}265 nodes and is \emph{exactly equal} to the truncated graph.
+\end{keybox}
+
+\begin{keybox}
+\textbf{Rule 4 --- leakage tests run automatically.} A 25-test suite with
+negative controls runs on every push. Any change that reintroduces leakage
+fails the build.
+\end{keybox}
+
+\subsection{Data cleaning and preparation}
+
+We deliberately did \textbf{not} ``clean'' the data in the usual sense --- no
+dropping of awkward rows, no filling in of missing values with averages. In
+fraud detection the weird rows are often the interesting ones, and inventing
+values would manufacture evidence. What we actually did:
+
+\begin{enumerate}
+  \item \textbf{Verify before use.} Every file is checksummed (SHA-256) against
+        a committed manifest. The Mendeley hash matches the publisher's own
+        official API hash.
+  \item \textbf{Convert, don't alter.} Each adapter maps raw columns into the
+        IR. Values are carried across unchanged; anything not in the schema is
+        preserved in a \code{raw\_attrs} JSON field rather than discarded.
+  \item \textbf{Handle missing structure honestly.} Mendeley rows with no buyer
+        simply produce no \code{buys\_from} edge --- we do not invent a buyer.
+        Where losing-bidder data does not exist, the co-bid features are
+        \emph{switched off} for that country-year rather than filled with zeros
+        (a zero would be a lie: it means ``no co-bidding'', not ``unknown'').
+  \item \textbf{Keep unknown labels in the graph.} 77\% of Elliptic nodes are
+        unlabelled. We do \emph{not} delete them. They do not contribute to the
+        loss, but they \emph{do} carry messages, because they are the structure
+        that defines the crime. This is an explicit, documented policy.
+  \item \textbf{Missing numbers stay missing.} XGBoost handles NaN natively;
+        for isolated nodes the neighbour-average features are NaN, not 0.
+  \item \textbf{Normalise per graph, frozen at train time.} Features are
+        z-scored (rescaled to mean 0, spread 1). \textbf{The scaling constants
+        are computed on training data only and then frozen.} This mattered
+        enormously --- see the audit in Section~\ref{sec:tuning}.
+  \item \textbf{Deduplicate alerts, not data.} Overlap removal happens at the
+        alert stage (NMS), where it is a reporting decision, not a data
+        decision.
+\end{enumerate}
+
+% =====================================================================
+\section{The Common Data Format (IR)}
+
+Every dataset becomes four tables. After this point, no code cares which domain
+it is looking at --- this is what makes ``one stack, two crimes'' real rather
+than a slogan.
+
+\begin{plain}
+\code{nodes.parquet} \quad node\_id · node\_type · domain · time\_first\_seen ·
+features · raw\_attrs\\
+\code{edges.parquet} \quad src · dst · edge\_type · timestamp · amount ·
+directed · raw\_attrs\\
+\code{labels.parquet} \quad node\_id · label $\in$ \{illicit, licit, unknown\} ·
+label\_source · confidence\\
+\code{communities.parquet} \quad community\_id · member node\_ids · method
+\end{plain}
+
+\begin{longtable}{@{}p{3.2cm}p{5.9cm}p{5.9cm}@{}}
+\toprule
+ & \textbf{Financial} & \textbf{Procurement} \\
+\midrule
+\endhead
+Node types & account / address, transaction & firm, tender, bid, lot, buyer \\
+Edge types & \code{pays} (directed, timed, amount), \code{linked\_to} &
+\code{awarded}, \code{buys\_from} (always available); \code{bids\_on},
+\code{co\_bid}, \code{linked\_to} (where data allows) \\
+\bottomrule
+\end{longtable}
+
+\textbf{Two design rules that came out of an internal audit:}
+
+\begin{enumerate}
+  \item \textbf{Award-network-first.} Because losing bids are missing in many
+        countries, every procurement component must work using \emph{awards
+        alone}; richer co-bid features activate only where the data exists. This
+        prevents building something that quietly only works on one country.
+  \item \textbf{Shared structural template.} Degrees, motif counts, clustering,
+        k-core, burstiness, community statistics --- computed identically for
+        both domains and z-scored per graph. \textbf{This shared channel is what
+        makes cross-domain transfer technically possible at all}, since the raw
+        features of Bitcoin and EU tenders have nothing in common.
+\end{enumerate}
+
+% =====================================================================
+\section{The Algorithms --- What They Are and Why We Chose Them}
+\label{sec:algos}
+
+\subsection{Graph Neural Networks (GNNs) --- the heart}
+
+\pw{A GNN is a system where every dot repeatedly asks its neighbours ``what are
+you?'', summarises the answers, and updates its own description. After two
+rounds, each dot's description contains information about its neighbours and its
+neighbours' neighbours. So the dot is described by \emph{the company it keeps},
+which is exactly what we need --- because a laundering account looks normal alone
+and suspicious in context.}
+
+Formally, each node has a vector; at each layer it aggregates its neighbours'
+vectors, combines that with its own, and passes it through a small neural
+network. We use two layers (two hops of context).
+
+\subsubsection*{GATv2 --- attention (our main financial model)}
+
+\pw{Not all neighbours matter equally. Attention lets each node \emph{learn how
+much to listen to} each neighbour. A node with 200 neighbours where 3 matter can
+now focus on those 3.}
+\textbf{Bonus:} the attention weights are readable, so they double as an
+explanation of which links drove a score.
+
+\textbf{Why GATv2 and not the original GAT?} The original GAT has a proven
+mathematical flaw called \emph{static attention}: the ranking of which
+neighbours are important ends up the same for every node, regardless of that
+node. GATv2 fixes this at identical computational cost. Choosing the older one
+would have been a strictly worse decision for no saving.
+
+\subsubsection*{GraphSAGE --- the scalable workhorse}
+
+\pw{Instead of looking at all neighbours (impossible when a node has 100{,}000),
+sample a fixed number. This makes it work on huge graphs and, importantly, on
+\emph{nodes it has never seen before}.}
+We use a direction-aware version with separate aggregations for incoming and
+outgoing edges.
+
+\subsubsection*{R-GCN --- relation types (our main procurement model)}
+
+\pw{In procurement, ``firm was awarded tender'' and ``firm bid on tender'' and
+``firm shares a director with firm'' are completely different relationships.
+R-GCN learns a separate rule for each type of line instead of treating all lines
+as the same.}
+
+\subsubsection*{Direction handling --- a small decision with a big effect}
+
+Money flow and awards are directed, and \emph{direction is the crime}: fan-in
+(funnel) and fan-out (sprinkler) are opposite offences. So every model receives
+\textbf{both directions plus a flag saying which is which}. Our ablation shows
+this is the single most important component in the whole stack
+(Section~\ref{sec:results}).
+
+\subsection{Autoencoders --- finding oddities without any labels}
+
+\pw{Train a model to compress each node into a few numbers and then rebuild the
+original. Because it practises on mostly normal data, it gets good at rebuilding
+normal things. Anything it rebuilds \emph{badly} is unusual --- and unusual is
+worth a look. Crucially this needs \textbf{no labels at all}.}
+
+We implement two: \textbf{GAE} (rebuilds the connections) and
+\textbf{DOMINANT-style} (rebuilds both connections and node attributes).
+
+\textbf{Why does this matter?} Real deployments usually have no labels. The OCDS
+Georgia dataset has none by design, and the unsupervised arm is the only thing
+that works there.
+
+\subsection{The structural floor --- deliberate simplicity}
+
+The simplest possible scorer: count structural things (degrees, triangles,
+k-core), convert to z-scores, average the positive ones. No learning at all.
+
+\textbf{Why keep something so basic?} So we always know what ``zero cleverness''
+scores. It is our reality check --- and on one important task
+(\code{common\_control}) \textbf{the floor beats everything else}, which is a
+result worth knowing.
+
+\subsection{Calibration and the ensemble --- combining models fairly}
+
+\begin{plain}
+\pw{Model A says ``0.9'' and model B says ``0.4'' --- but A might be an
+optimist who says 0.9 about everything. Before averaging, you must convert each
+model's private scale into real probabilities. We use \emph{isotonic regression}
+on validation data, which learns the correction curve without assuming any
+particular shape.}
+\end{plain}
+
+\textbf{This is not a preference, it is a measured requirement.} Combining the
+models \emph{without} calibrating collapses performance from
+\textbf{0.4434 to 0.0511} AUC-PR. That is a catastrophic failure, and it is
+seed-invariant (it happens every time). Details in Section~\ref{sec:results}.
+
+\subsection{Leiden --- grouping into communities}
+
+\pw{Leiden finds clusters that are densely connected inside and sparsely
+connected to the outside. We run it to convert ``suspicious nodes'' into
+``suspicious groups'', because investigators open cases, not rows.}
+
+\textbf{Why Leiden and not Louvain?} Louvain --- the older, more famous
+algorithm --- can produce \emph{internally disconnected} communities: it can put
+two unrelated fragments in the same ``group''. For us that would mean an alert
+whose members are not actually connected to each other, which would be an
+incoherent case file. Leiden guarantees connected communities.
+
+\subsection{De-duplication (NMS) and the size cap}
+
+Go down the ranked list; if a new alert overlaps an accepted one by more than
+50\% (Jaccard), suppress it. Also cap alerts at 100 members.
+
+\pw{Without this, one big cluster would appear ten times in slightly different
+forms and eat the entire review budget. And a ``community'' of 5{,}000 members
+is not a lead, it is a phone book.}
+
+\subsection{XGBoost baselines --- the honesty yardstick}
+
+\pw{XGBoost is a classical (non-neural) method that builds many small decision
+trees, each fixing the previous one's mistakes. It is fast, robust, and very
+strong on table-shaped data.}
+
+We run four baselines: \textbf{B1} hand-written rules, \textbf{B2} XGBoost on
+plain features, \textbf{B3} XGBoost plus neighbour-averaged graph features (the
+GADBench recipe), \textbf{B4} the classical bid-rigging screens alone.
+
+\begin{warnbox}
+\textbf{Why we deliberately built the thing most likely to beat us.} A published
+benchmark (GADBench, NeurIPS 2023) found that tree models with simple
+neighbourhood features often beat specialised GNNs. Any reviewer who knows that
+paper will immediately ask ``did you compare against it?''. We did, and
+\textbf{B3 beats our GNN on Elliptic++} --- reported openly in
+Section~\ref{sec:results} rather than hidden.
+\end{warnbox}
+
+\subsection{PGExplainer --- explaining the decisions}
+
+\pw{After the model flags a group, we ask ``which few links actually caused
+this?'' The explainer learns a mask that keeps the important edges and drops the
+rest, leaving a small sub-network a human can read.}
+
+\textbf{Why PGExplainer and not GNNExplainer?} We measured both
+(Section~\ref{sec:tuning}). GNNExplainer optimises separately for every alert
+(slow) and produced explanations that failed a basic sanity check on
+\textbf{41 of 50} alerts. PGExplainer trains once and then explains the whole
+queue cheaply; sanity failures dropped to \textbf{1 of 50}, and it was
+2.4$\times$ faster. Evidence-based swap.
+
+\subsection{Why not these other methods?}
+
+An examiner will ask this, so here are the honest answers.
+
+\begin{longtable}{@{}p{3.9cm}p{11.6cm}@{}}
+\toprule
+\textbf{Not used} & \textbf{Why} \\
+\midrule
+\endhead
+\textbf{Plain GAT} & Superseded by GATv2 at identical cost (static-attention
+flaw). Kept as an ablation only. \\
+\textbf{Louvain} & Can emit disconnected communities --- meaningless as a case
+file. Leiden fixes exactly this. \\
+\textbf{GraphSMOTE} (synthetic minority nodes) & Creating fake nodes distorts
+the very topology we are trying to measure. We inject \emph{whole labelled
+sub-networks} instead, which matches the real detection target. \\
+\textbf{SMOTE / random oversampling} & Same objection, plus it ignores graph
+structure entirely. \\
+\textbf{Accuracy / ROC-AUC as headline} & Meaningless at 2\% prevalence.
+ROC-AUC is optimistic under heavy imbalance; AUC-PR is the correct choice. \\
+\textbf{Random train/test splits} & Would leak the future into the past.
+Forbidden project-wide. \\
+\textbf{TGN / TGAT} (continuous-time GNNs) & Genuinely promising, but we get
+temporal behaviour through snapshots plus time encodings. Listed as future work,
+not claimed. \\
+\textbf{PyGOD library} & Attempted and rejected --- unusable in our setting; we
+wrote native autoencoder implementations instead (recorded in the decision
+log). \\
+\textbf{Context-fusion gating} & \emph{Built and measured}, then \textbf{not
+adopted}: it made results worse under temporal shift. A negative result we keep
+and report. \\
+\textbf{Line-graph view} & Same story --- built, measured ($0.4986$ vs
+$0.5492$ at seed 0), not adopted on this dataset. \\
+\textbf{A large language model as the detector} & LLMs do not read million-edge
+graphs, cannot be calibrated to a budget, and hallucinate. The LLM is confined
+to the explanation/assistant layer where every claim is checked against
+retrieved evidence. \\
+\bottomrule
+\end{longtable}
+
+% =====================================================================
+\section{How We Measure Success}
+
+\subsection{The alert unit --- defining a ``hit''}
+
+Before you can measure precision on groups you must define what counts as
+correct. Ours: an alert is a true positive if it contains \textbf{at least one}
+confirmed illicit node / cartel firm.
+
+\begin{warnbox}
+\textbf{The obvious objection, and our answer.} A lenient rule like this
+flatters models that flag enormous groups --- flag 5{,}000 nodes and you are
+bound to catch someone. That is precisely why we (a) cap alerts at 100 members,
+(b) de-duplicate, and (c) run a \textbf{sensitivity analysis} at stricter
+thresholds (10\% and 25\% of members confirmed). The queues proved robust under
+those stricter rules.
+\end{warnbox}
+
+\subsection{The metrics we report, and why}
+
+\begin{itemize}
+  \item \textbf{Precision@k} at real budgets --- the operational truth.
+  \item \textbf{AUC-PR with the prevalence baseline printed beside it} --- always
+        both numbers, never AUC-PR alone.
+  \item \textbf{Recall@budget / FPR@budget} --- what you catch and what you waste.
+  \item \textbf{Per-time-step metrics} --- so a single good period cannot hide a
+        collapse elsewhere.
+  \item \textbf{5 seeds, mean $\pm$ std} --- single-seed numbers are not
+        publishable.
+  \item \textbf{Paired bootstrap} --- to test whether a gap is real or luck.
+  \item \textbf{Explanation fidelity} --- whether explanations are causally real.
+\end{itemize}
+
+% =====================================================================
+\section{Tuning: What We Tried and How Results Changed}
+\label{sec:tuning}
+
+This is the iteration history, in order. It is deliberately warts-and-all,
+because the corrections are the most instructive part.
+
+\subsection{Iteration 1 --- baselines first}
+
+Before any deep learning we built the simple methods, so we would know what
+``good'' meant.
+
+\begin{center}\small
+\begin{tabular}{@{}lrr@{}}
+\toprule
+\textbf{Elliptic++ (prevalence 0.065)} & \textbf{AUC-PR} & \textbf{P@100} \\
+\midrule
+B1 rules engine & 0.0576 & 0.00 \\
+B2 XGBoost & 0.8076 & 1.00 \\
+B3 XGBoost + graph features & \textbf{0.8104} & 1.00 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{What we learned immediately:} the hand-written rules engine scores
+\emph{below} the prevalence baseline --- i.e.\ worse than random ranking. This is
+the classic ``rules produce too many false positives'' complaint, measured on
+real data. And the tree models are extremely strong.
+
+\subsection{Iteration 2 --- first GNNs}
+
+GATv2 with focal loss reached AUC-PR \textbf{0.693}, P@100 0.99. Focal loss beat
+weighted cross-entropy on both GNN families. It looked like a success.
+
+\subsection{Iteration 3 --- the audit that cut our own numbers}
+
+We ran a deep internal audit and found \textbf{30 defects}. Two mattered enormously:
+
+\begin{warnbox}
+\textbf{Finding F3 --- accidental test-time adaptation.} The scoring pass was
+re-computing normalisation statistics \emph{on the test data}. That is a subtle
+form of leakage: the model was quietly absorbing part of the distribution shift
+it was supposed to be measured against.
+
+\textbf{Fix:} freeze normalisation at training time.
+\textbf{Effect: GATv2 fell from 0.693 to 0.532.}
+
+We cut our own headline by 23\% because the higher number was not honest. An
+\emph{explicit} test-time-adaptation experiment is a legitimate method; an
+\emph{accidental} one is a bug.
+\end{warnbox}
+
+\begin{warnbox}
+\textbf{Finding --- ties in ranking.} Metrics were not tie-aware, which inflated
+Precision@k for the rules and screens baselines (Mendeley B1 P@18 fell from 0.56
+to 0.47 once corrected).
+\end{warnbox}
+
+Every published number was regenerated after the fixes, and 34 regression tests
+were added so these specific bugs cannot return.
+
+\subsection{Iteration 4 --- calibration before fusion}
+
+We combined the supervised model, the autoencoders and the floor.
+
+\begin{center}\small
+\begin{tabular}{@{}lr@{}}
+\toprule
+\textbf{Fusion method (5 seeds)} & \textbf{AUC-PR} \\
+\midrule
+Naive rank fusion & 0.0511 $\pm$ 0.0019 \\
+\textbf{Calibrated fusion} & \textbf{0.4434 $\pm$ 0.0501} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\pw{Averaging the models raw destroys them, because the weak unsupervised
+members drown out the strong supervised one. Calibrating first fixes it.}
+Paired bootstrap at seed 0: $\Delta = +0.471$, 95\% CI $[0.440, 0.499]$,
+$p \approx 0.001$.
+
+\subsection{Iteration 5 --- multi-seed reality check}
+
+Running 5 seeds instead of 1 changed the story again. The single-seed 0.5492 was
+\emph{the best seed}, not a typical one.
+
+\begin{center}\small
+\begin{tabular}{@{}lrr@{}}
+\toprule
+\textbf{Model} & \textbf{Single seed} & \textbf{5-seed mean $\pm$ std} \\
+\midrule
+GATv2-focal & 0.5492 & \textbf{0.4729 $\pm$ 0.0525} \\
+GATv2-weighted CE & 0.4869 & 0.4388 $\pm$ 0.0505 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Consequence:} the focal-vs-weighted-CE question, which looked settled at
+one seed, is actually \textbf{second-order} --- the two overlap within their
+spread. We report it as inconclusive on GATv2 rather than claiming a win.
+(Note: the weighted-CE figure above is this machine's own 5-seed run,
+$0.4388 \pm 0.0505$; a collaborator machine measured $0.4435 \pm 0.0615$ --- the
+difference is within the recorded $\pm0.02$ machine-class variance and the
+verdict is identical.)
+
+\subsection{Iteration 6 --- explainer swap}
+
+\begin{center}\small
+\begin{tabular}{@{}lrr@{}}
+\toprule
+ & \textbf{GNNExplainer} & \textbf{PGExplainer} \\
+\midrule
+Passes PyG sanity check & 12 / 50 & \textbf{49 / 50} \\
+Nonsensical fidelity & 38--41 / 50 & \textbf{1 / 50} \\
+Speed (amortised) & 1$\times$ & \textbf{2.4$\times$ faster} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Iteration 7 --- component ablations}
+
+\begin{center}\small
+\begin{tabular}{@{}lrl@{}}
+\toprule
+\textbf{Change} & \textbf{Effect on AUC-PR} & \textbf{Verdict} \\
+\midrule
+Remove bidirectional edges & \textbf{$-$0.194} (seed 0) & Most important component \\
+Remove unsupervised members & \textbf{$+$0.030} (5 seeds) & Removing them \emph{helps} \\
+Remove focal loss & $-$0.034 (5 seeds) & Within noise --- second-order \\
+Add context-fusion gating & $-$0.225 (seed 0) & Rejected \\
+Add line-graph channel & $-$0.051 (seed 0) & Rejected \\
+Add raw+structural channels & $-$0.171 (seed 0) & Rejected \\
+Add screens to XGBoost (Mendeley) & \textbf{$+$0.063} & Adopted \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{plain}
+\textbf{Reading this table correctly.} The middle column is the effect
+\emph{of making the change}. A ``remove'' row therefore measures what a
+component contributes (a negative number means the component was helping). An
+``add'' row measures a variant we tested and \emph{rejected}. These are
+different kinds of claim and must not be compared with each other --- only
+``remove'' rows support a ``most important component'' statement. Our table
+builder enforces this separation automatically, and also keeps 5-seed, seed-0
+and deterministic comparisons in separate blocks so their numbers can never be
+subtracted from one another by accident.
+\end{plain}
+
+\textbf{The honest reading of the unsupervised arm:} taking it out
+\emph{improves} the fused score by $0.030$ (from $0.4434$ to $0.4729$) --- i.e.\
+including it \emph{costs} us $0.030$ AUC-PR. We keep it anyway, because it
+provides \emph{coverage} where no labels exist: the entire OCDS Georgia study,
+and any realistic deployment on unlabelled data, depends on it. Calibration is
+what stops these weak members from destroying the fusion. We keep it for
+robustness, not for the headline --- and we say so rather than quietly dropping
+an arm that does not flatter us.
+
+\subsection{Iteration 8 --- the UI, four attempts}
+
+The dashboard was rejected by the stakeholder three times before it passed.
+\textbf{V1} was rejected as monochrome and flat; \textbf{V2} added a five-hue
+system, visible glass and hover states but was still called too quiet;
+\textbf{V3} added real WebGL and a proper tab system and passed review \#4;
+\textbf{V4} (current) answered the last complaint --- ``still blue dominated''.
+
+We measured the V4 problem rather than guessing. The old background shader
+painted \textbf{59.1\% of screen pixels a strong blue}; after the fix it is
+\textbf{0\%}, with the average background colour moving from RGB(21,25,40) to
+RGB(11,12,15) --- true near-black. Colour is now reserved for \emph{meaning}
+(risk, category, view identity), which is how professional dashboards are built.
+
+% =====================================================================
+\section{Results}
+\label{sec:results}
+
+\subsection{Financial (Elliptic++, prevalence 0.065)}
+
+\begin{center}\small
+\begin{tabular}{@{}lrr@{}}
+\toprule
+\textbf{Model} & \textbf{AUC-PR} & \textbf{P@100} \\
+\midrule
+B1 rules & 0.0576 & 0.00 \\
+B2 XGBoost & 0.8076 & 1.00 \\
+\textbf{B3 XGBoost + graph} & \textbf{0.8104} & 1.00 \\
+GATv2-focal (5 seeds) & 0.4729 $\pm$ 0.0525 & 0.812 $\pm$ 0.238 \\
+GATv2-weighted CE (5 seeds) & 0.4388 $\pm$ 0.0505 & 0.724 $\pm$ 0.147 \\
+Calibrated ensemble (5 seeds) & 0.4434 $\pm$ 0.0501 & --- \\
+Rank fusion (5 seeds) & 0.0511 $\pm$ 0.0019 & --- \\
+Autoencoders / floor & 0.039--0.055 & --- \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{warnbox}
+\textbf{Our headline negative result, stated plainly.} \textbf{XGBoost beats our
+graph neural network on this dataset} --- 0.8104 versus 0.4729, roughly six
+standard deviations apart. This replicates the GADBench finding rather than
+contradicting it.
+
+\textbf{Why?} Elliptic's 166 features \emph{already contain} 72 hand-engineered
+one-hop neighbourhood aggregates. The graph information a GNN would learn has
+been pre-baked into the table, so the tree model gets the structural signal for
+free without the optimisation difficulty. That is also why B3 barely improves on
+B2 --- adding neighbour features to features that are already neighbour features.
+
+We report this because it is true, and because a reviewer familiar with the
+literature would find it in five minutes.
+\end{warnbox}
+
+\textbf{The actor-level view} is a useful contrast: global AUC-PR is only
+0.2473, yet the \emph{top} of its queue is excellent and stable (P@100 $\ge$
+0.98). This is exactly why budget-first metrics matter --- a mediocre global
+score can still be an excellent worklist.
+
+\subsection{Procurement (Mendeley, prevalence 0.358, within-sample)}
+
+\begin{center}\small
+\begin{tabular}{@{}lrr@{}}
+\toprule
+\textbf{Model} & \textbf{AUC-PR} & \textbf{P@18} \\
+\midrule
+B1 rules & 0.3426 & 0.47 \\
+B2 XGBoost & 0.3925 & 0.22 \\
+B3 XGBoost + graph & 0.3775 & 0.56 \\
+B4 screens & 0.3811 & 0.78 \\
+\textbf{B2 + dataset screens} & \textbf{0.4558} & 0.61 \\
+R-GCN (5 seeds) & 0.2808 $\pm$ 0.0087 & --- \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{warnbox}
+\textbf{Second honest negative.} The graph model scores \textbf{below the
+prevalence baseline} (0.2808 vs 0.358) and does so \emph{consistently} across
+seeds --- it is a stable negative, not noise. Causes: an era shift between the
+training and test periods, and genuinely weak signal in award-only data. On this
+dataset the best firm-level signal is tabular (0.4558).
+
+We did not delete this arm. A negative result on a fair test is a finding.
+\end{warnbox}
+
+\subsection{Transfer --- does it work somewhere new?}
+
+\begin{itemize}
+  \item \textbf{García (leave-one-market-out):} positive on \emph{every} market;
+        macro lift \textbf{1.57}; Italy reaches Precision@10 = 1.00.
+  \item \textbf{Mendeley (leave-one-country-out):} market-dependent --- macro lift
+        1.17, but \textbf{the largest market fails} (lift 0.90, i.e.\ worse than
+        guessing there). An average that hides a failure is a misleading average,
+        so we publish the whole matrix.
+  \item \textbf{Cross-domain:} procurement$\to$financial is weakly positive
+        ($0.1501$ vs $0.065$ prevalence); financial$\to$procurement is negative.
+  \item \textbf{Label efficiency:} transfer \textbf{never pays} at $\le$500
+        target labels in either direction. The pretrained encoder is not a
+        shortcut when labels are scarce --- a clean negative answer to a question
+        nobody had tested.
+\end{itemize}
+
+\subsection{Injection at scale --- the RQ2 result}
+
+We planted 100 fake cartels (940 member firms) into the 163{,}327-node OCDS
+Georgia test window and measured recovery over 5 seeds, with \emph{no labels
+available} to the detectors.
+
+\begin{center}\small
+\begin{tabular}{@{}lrl@{}}
+\toprule
+\textbf{Planted pattern} & \textbf{Recall@2000} & \textbf{Verdict} \\
+\midrule
+coordinated\_cluster (clique) & \textbf{0.9225 $\pm$ 0.1733} & Found (4/5 seeds perfect) \\
+common\_control & 0.4286 $\pm$ 0.0000 & Firms found deterministically \\
+partition & 0.172 & Evades \\
+rotation & 0.084 & Evades \\
+cover\_bid & 0.010 & Evades \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{keybox}
+\textbf{The finding.} At a 1.2\% review budget, structure-only unsupervised
+screening reliably catches \emph{clique-type} coordination --- firms that
+physically bid together --- and is \textbf{blind} to award-pattern cartels
+(rotation, market partition, cover bidding), seed-invariantly.
+
+\pw{If the cheats leave a visible web of connections, we find them. If they
+merely take turns winning without ever bidding together, structure alone cannot
+see it --- you need price and sequence evidence.} This tells a deployment team
+exactly which cartels this tool will and will not catch, which is far more
+useful than a single average score.
+\end{keybox}
+
+\subsection{Robustness}
+
+\begin{itemize}
+  \item Queue metrics are invariant to the de-duplication threshold and robust to
+        the hit rule --- the protocol is not doing the work.
+  \item The OCDS ingest and the tree baselines \textbf{reproduce byte-for-byte
+        across three different machines}.
+  \item \textbf{Validation blindness (an important warning):} validation AUC-PR
+        sits at 0.93--0.95 while test sits at 0.42--0.55. Worse, adding up to
+        20\% \emph{noise} to training labels \emph{raises} test AUC-PR to
+        0.5978 while validation collapses. Under temporal shift, our validation
+        set is not a trustworthy guide to test performance. We state this as a
+        known limitation rather than quietly using validation to pick winners.
+\end{itemize}
+
+% =====================================================================
+\section{The System Architecture}
+\label{sec:arch}
+
+This section explains \code{docs/architecture.html} --- the interactive diagram
+page --- in the same plain language. Open that file in any browser; it has a
+light/dark toggle and needs no internet connection.
+
+The page has four parts: the system flowchart, the algorithm cards, the AWS
+cloud diagram, and the cost tables.
+
+\subsection{The system flowchart --- ten numbered stages}
+
+The diagram is read \textbf{top to bottom}. Everything above the trust boundary
+is the \emph{offline deep-learning pipeline}; everything below is the
+\emph{always-on product}.
+
+\begin{longtable}{@{}p{0.7cm}p{4.0cm}p{10.5cm}@{}}
+\toprule
+\textbf{\#} & \textbf{Stage} & \textbf{What it means} \\
+\midrule
+\endhead
+1 & Data ingestion adapters & Reads the six public datasets and checks each file
+against its checksum. One adapter per dataset. \\
+2 & Unified graph schema (IR) & Converts everything into the one common format,
+and applies the time-safe splitting rules. After this box, nothing knows which
+domain it came from. \\
+3a & Supervised GNNs & GATv2, GraphSAGE, R-GCN with focal loss --- the models
+that learn from labelled examples. \\
+3b & Unsupervised arm & DOMINANT and GAE autoencoders --- work with no labels. \\
+3c & Graph features & Degrees, motifs, k-core, bid screens, ratios --- the
+hand-computed numbers. \\
+3d & Baselines \& checks & The XGBoost yardstick, injection studies, and the
+test suite. \\
+ & & \emph{(3a--3d sit side by side because they run in parallel on the same
+graph, and each produces its own score for every node.)} \\
+4 & Calibrated ensemble fusion & Converts each model's scores into honest
+probabilities \emph{first}, then merges them into one comparable risk score. \\
+5 & Leiden $\rightarrow$ alert queue & Groups nodes into communities, ranks them,
+removes duplicates, and cuts at the review budget. Produces 254 financial and
+223 procurement alerts. \\
+6 & Explanation layer & PGExplainer finds the minimal sub-network; the motif
+matcher names the pattern; FATF/OECD citations are attached. \\
+7 & Artifact store & Plain files: \code{alerts.parquet},
+\code{explanations/*.json}, metrics, \code{serving.json}. Nothing else. \\
+\midrule
+\multicolumn{3}{@{}l@{}}{\textbf{--- TRUST BOUNDARY ---}} \\
+\multicolumn{3}{@{}p{15.2cm}@{}}{\emph{Above: writes files, then exits.
+Below: read-only --- cannot retrain a model or change a score.}} \\
+\midrule
+8 & FastAPI REST layer & A small read-only web service that serves the files:
+\code{/alerts?budget=k}, \code{/subgraph/\{id\}}, \code{/explanations/\{id\}},
+\code{/metrics}, \code{/rigor}. Subgraphs are trimmed server-side so the browser
+never receives a million edges. Every response carries the ethics caveat. \\
+-- & GenAI Investigator Copilot & Mounted alongside the API at
+\code{/api/v1/copilot}. Read-only SQL and tools; every number it states must
+exist in the retrieved evidence; accusatory language is auto-rewritten. \\
+9 & Investigator console & The React + WebGL dashboard: ranked queue, graph
+explorer, evidence dossiers, Model Lab, Copilot dock, and the financial
+$\leftrightarrow$ procurement toggle. \\
+10 & Investigators decide & A human makes the escalation call, at a fixed
+budget. The system never decides anything. \\
+\bottomrule
+\end{longtable}
+
+\begin{keybox}
+\textbf{Why the trust boundary is the most important line on the diagram.}
+Training is powerful and dangerous: it can change what the system believes.
+Serving is what the outside world touches. By separating them completely --- the
+pipeline writes files and exits; the website can only read those files --- a
+compromise of the public-facing service cannot alter a single score or retrain
+anything. It also means the website needs no GPU, starts instantly, and can be
+demonstrated on a laptop with no internet.
+\end{keybox}
+
+\subsection{The algorithm cards}
+
+Below the flowchart the page has explanatory cards, each with a
+``\emph{What it does}'' and a ``\emph{How it works}'' line, covering: graph
+neural networks, GATv2 attention, GraphSAGE and R-GCN, the autoencoders,
+calibration and ensembling, Leiden grouping and de-duplication, the XGBoost
+baselines, the pattern matcher with official red flags, and the statistical
+rigor protocols. These are the same explanations given in
+Section~\ref{sec:algos} of this report --- the page is the visual version, this
+report is the reference version.
+
+% =====================================================================
+\section{The Cloud (AWS) Architecture}
+\label{sec:cloud}
+
+The second diagram on the architecture page shows how this would run as a real
+hosted product. It has \textbf{two planes}, and the separation between them is
+the whole point.
+
+\subsection{Plane 1 --- the serving plane (always on, cheap, no GPU)}
+
+\begin{longtable}{@{}p{4.3cm}p{11.2cm}@{}}
+\toprule
+\textbf{Component} & \textbf{What it is, in plain words} \\
+\midrule
+\endhead
+\textbf{Analyst teams} & The users. They need only a browser --- nothing to
+install. \\
+\textbf{Route 53} & The phone book of the internet. Turns your domain name into
+the address of the actual server. \\
+\textbf{CloudFront} & A global network of caches. It keeps a copy of the
+dashboard near each user so the page loads fast anywhere in the world. \\
+\textbf{WAF} (Web Application Firewall) & A filter in front of everything that
+blocks common web attacks before they reach us. \\
+\textbf{HTTPS} & The encrypted connection, so nobody can read or tamper with the
+traffic in transit. \\
+\textbf{S3 --- dashboard hosting} & Cheap file storage holding the built React
+website, in a private bucket that only CloudFront may read. \\
+\textbf{API + Copilot compute} & The machine(s) running the read-only FastAPI
+service and the Copilot. \emph{At launch:} AWS Lambda, which costs \$0 while
+nobody is using it. \emph{As it grows:} Fargate containers behind a load
+balancer, spread across two availability zones for resilience. \\
+\textbf{S3 artifact bucket} & Versioned results storage. Every pipeline run
+writes to \code{runs/<run\_id>/}. \textbf{Rolling back a bad model is just
+pointing at the previous folder} --- no retraining, no panic. \\
+\textbf{ECR} & The registry that stores our container images (keeps the last 3). \\
+\textbf{Secrets Manager} & Where the LLM API key lives, so no key is ever in the
+code or in a file. \\
+\textbf{IAM (read-only)} & Permissions. The serving side is granted
+\emph{read-only} rights to the artifact bucket --- the trust boundary enforced by
+the cloud itself, not merely by our code. \\
+\textbf{CloudWatch} & Logs, metrics and alarms --- how you find out something
+broke without a user telling you. \\
+\textbf{AWS Budgets} & A spending alarm, switched on from day one so a runaway
+job cannot quietly cost a fortune. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Plane 2 --- the scheduled deep-learning plane (exists only while it runs)}
+
+\begin{longtable}{@{}p{4.3cm}p{11.2cm}@{}}
+\toprule
+\textbf{Component} & \textbf{What it is, in plain words} \\
+\midrule
+\endhead
+\textbf{EventBridge schedule} & An alarm clock. ``Every night at 2am'' or
+``every Sunday'' it starts the pipeline. If the job fails, it raises an SNS
+alert. \\
+\textbf{Spot GPU batch job} & A rented graphics machine, at roughly 70\% off
+because you accept it can be reclaimed. It runs
+ingest $\rightarrow$ train $\rightarrow$ score $\rightarrow$ group
+$\rightarrow$ explain, writes its results to the artifact bucket,
+\textbf{and then shuts itself down}. \\
+\textbf{The upward arrow} & The only connection between the planes: the batch job
+\emph{writes} new results into the versioned bucket that the serving plane
+\emph{reads}. There is no path in the other direction. \\
+\bottomrule
+\end{longtable}
+
+\begin{keybox}
+\textbf{Why this shape saves most of the money.} GPUs are the expensive part.
+Naively you would keep a GPU server running all the time. But our system only
+needs a GPU while \emph{training}, which is a few hours a week --- scoring and
+serving need none. So the GPU exists for two hours and disappears, while the
+always-on part is a tiny CPU service that costs almost nothing. This is why the
+demo tier is about \$10/month and effectively \$0 on standard academic credits.
+\end{keybox}
+
+\subsection{What it would cost}
+
+The page carries three costed tiers (list prices; the demo tier is effectively
+free under the \$100--200 new-account credits).
+
+\begin{center}\small
+\begin{tabular}{@{}p{4.4cm}p{7.4cm}r@{}}
+\toprule
+\textbf{Tier} & \textbf{What you get} & \textbf{Approx.\ / month} \\
+\midrule
+1 --- University demo & S3 + CloudFront (free tier), one small EC2 t3.micro for
+API + Copilot, Route 53; training on your own PC or free Colab &
+$\approx$\,\$10 \\
+2 --- Product launch & S3 + CloudFront, Lambda + API Gateway for up to 1M
+requests, S3 + ECR, a rented GPU $\approx$4\,h/week, pay-per-use LLM,
+monitoring and secrets & $\approx$\,\$14--55 \\
+3 --- Growing product & Same plus ECS Fargate across two zones, load balancer,
+WAF, daily GPU refresh $\approx$2\,h/day, team-scale LLM usage &
+$\approx$\,\$90--183 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% =====================================================================
+\section{The Dashboard --- Every Screen Explained}
+\label{sec:dashboard}
+
+\subsection{Starting it}
+
+\begin{plain}
+\textbf{With real results:}\\
+\code{uv run collusiongraph serve --port 8001}\\
+then, in \code{frontend/}: \code{VITE\_API\_TARGET=http://127.0.0.1:8001 npm run dev}\\
+open \code{http://localhost:5173}
+
+\vspace{4pt}
+\textbf{Without any trained results} (any laptop, no API keys):\\
+\code{uv run python scripts/build\_dev\_store.py} then \code{poe serve}
+
+\vspace{4pt}
+\textbf{Everything at once:} \code{docker compose up} $\rightarrow$ port 8080
+\end{plain}
+
+\subsection{Things that appear on every screen}
+
+\begin{itemize}
+  \item \textbf{Domain toggle} --- switches financial $\leftrightarrow$
+        procurement. The accent colour changes with it.
+  \item \textbf{Dataset selector} --- two datasets per domain
+        (\code{elliptic\_pp} / \code{elliptic\_pp\_actor}; \code{mendeley\_eu} /
+        \code{garcia\_rodriguez}).
+  \item \textbf{Six tabs}, each with its own fixed colour and icon.
+  \item \textbf{The ethics caveat}, in the footer of every screen, always.
+  \item \textbf{Copilot dock} --- the assistant, openable from anywhere.
+\end{itemize}
+
+\subsection{Screen 1 --- Overview (command deck)}
+
+\begin{longtable}{@{}p{4.3cm}p{11.2cm}@{}}
+\toprule
+\textbf{Element} & \textbf{What it means} \\
+\midrule
+\endhead
+\textbf{Alerts in queue} & Total suspicious groups found in this dataset. \\
+\textbf{High-band alerts} & How many are in the top risk band. \\
+\textbf{Budget k slider} & \emph{The most important control on the page.} How
+many cases you can review. Everything re-ranks live as you drag it. \\
+\textbf{Precision@k readout} & The measured share of the top $k$ that are real
+--- it updates as you move the slider, which makes the central metric of the
+whole project tangible. \\
+\textbf{Flagged-community constellation} & The hero visual: each dot is an alert,
+size = number of members, colour = risk band (high / medium / low). Layout is
+schematic but \emph{ranks are real}. \\
+\textbf{Top flagged communities} & The leaderboard: rank, risk score, member
+count, jump arrow. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Screen 2 --- Alert Queue (the working surface)}
+
+The ranked table an investigator actually works through. Each row shows:
+
+\begin{itemize}
+  \item \textbf{Rank} and \textbf{calibrated risk score} (a real probability,
+        because of the calibration step --- not an arbitrary 0--1 number).
+  \item \textbf{Motif chip} --- the named pattern, with its own glyph and colour.
+  \item \textbf{Community size} --- how many entities are involved.
+  \item \textbf{Red-flag count} --- how many official indicators matched.
+  \item \textbf{Activity sparkline} --- a tiny chart of activity over time. A flat
+        line means all the activity sits in one time window (common in the
+        Elliptic data); a varied line means genuine spread.
+  \item \textbf{Row actions} --- open the graph, open the dossier, ask the Copilot.
+\end{itemize}
+
+\subsection{Screen 3 --- Graph Explorer}
+
+A WebGL canvas showing the alert's network.
+
+\begin{longtable}{@{}p{4.3cm}p{11.2cm}@{}}
+\toprule
+\textbf{Element} & \textbf{What it means} \\
+\midrule
+\endhead
+\textbf{Coral nodes} & Flagged members of this alert. Coral is used for nothing
+else anywhere in the product. \\
+\textbf{Grey nodes} & Context --- neighbours shown so the group is readable. \\
+\textbf{Lit edges} & Connections currently revealed by the replay. \\
+\textbf{Replay control} & Animates the network being built up. Two honest modes:
+\textbf{``replay flow''} when the edges carry different timestamps (real time
+order), and \textbf{``replay order''} when they do not (sequence order). The
+readout tells you which one you are watching --- e.g.\ ``all edges $\cdot$ window
+38'' versus ``full window 2014--2018''. \\
+\textbf{Click a node} & Expands its neighbours. \\
+\bottomrule
+\end{longtable}
+
+\begin{plain}
+\textbf{Why two replay modes exist} --- a real bug we found and fixed. Elliptic
+transaction edges within one alert often share a \emph{single} time step (we
+measured: the top alert's 101 edges all sit at window 38). The original replay
+animated by timestamp, so with all timestamps equal nothing appeared to move and
+the control looked broken. Rather than fake a time spread, we detect the
+situation and switch to sequence order, and we \emph{say so on screen}.
+\end{plain}
+
+\subsection{Screen 4 --- Case Detail (the evidence dossier)}
+
+Where an investigator decides. Contents:
+
+\begin{itemize}
+  \item \textbf{Motif schematic} --- an animated drawing of the detected shape.
+  \item \textbf{Minimal subgraph} --- the few links the explainer says actually
+        caused the score.
+  \item \textbf{Evidence fields} --- amounts and fees where the dataset has them,
+        structural and temporal evidence where it does not. \emph{We never invent
+        a field the data cannot support.}
+  \item \textbf{Red-flag cards} --- e.g.\ \code{FATF-STRUCT-01} ``sub-threshold
+        deposits converging on one account'', or \code{OECD-ROT-01} ``the same
+        supplier group wins in turn'', each with \emph{why it matched}.
+  \item \textbf{Evidence-source labels} --- each item marked as coming from the
+        learned model, the structural rules, or the statistical screens. This
+        prevents the false impression that one method explains everything.
+  \item \textbf{Fidelity scores} --- how much the score depends on the highlighted
+        evidence.
+  \item \textbf{Export} --- download the alert as JSON.
+  \item \textbf{The locked caveat} --- screening signal only. A code-level
+        validator refuses to construct a bundle with altered wording.
+\end{itemize}
+
+\subsection{Screen 5 --- Model Lab}
+
+The figure factory: PR curves, precision-versus-budget curves with markers, the
+transfer matrix heat map (train market $\times$ test market), ablation
+comparisons, and the rigor panel (multi-seed spreads, confidence intervals,
+label-noise curve). Everything exports to SVG/PNG for papers and slides.
+
+\subsection{Screen 6 --- About}
+
+A scroll-driven explanation of the ``two ledgers, one structure'' idea, with the
+motif table animated. Doubles as the opening narrative for a demo.
+
+\subsection{The Copilot dock}
+
+Ask questions in ordinary English (``why was alert 3 flagged?''). What makes it
+safe:
+
+\begin{itemize}
+  \item \textbf{Read-only.} It can query and read; it cannot change anything.
+  \item \textbf{Grounding gate.} Every number it states must exist in the
+        evidence it retrieved. Ungrounded claims are blocked, not printed.
+  \item \textbf{Guilt-language guard.} Accusatory phrasing is rewritten or
+        blocked before release. Measured: \textbf{zero released violations}
+        across the golden-question gate.
+  \item \textbf{24 golden questions} run as a gate; all 24 pass.
+  \item \textbf{Every answer is labelled AI-generated} and carries the caveat.
+\end{itemize}
+
+\textbf{Two measured weaknesses} (we tested it adversarially and record what
+failed): (a) correct arithmetic \emph{derived} from grounded numbers is
+sometimes flagged as ungrounded, lowering confidence unnecessarily; (b) very
+open-ended list questions can exhaust the tool-call budget and return ``please
+narrow the question''. Both are recorded as open work items.
+
+% =====================================================================
+\section{Who Would Actually Use This}
+
+\subsection{A realistic day in the life}
+
+\begin{plain}
+A procurement-integrity analyst at a national audit office can review about
+20 cases a week. There were 40{,}000 tenders last quarter.
+
+\textbf{Without this system:} she filters by simple rules --- single-bid tenders,
+unusual values. The list is thousands long, mostly boring, and rule-based
+filters are provably poor at ranking (our B1 baseline scored \emph{below} random
+on Elliptic).
+
+\textbf{With this system:} she sets the budget slider to 20. She receives 20
+ranked \emph{groups}, each named with a pattern, each carrying an OECD citation
+and the specific evidence. She opens \#1: five firms, a rotation pattern, they
+have never bid against each other, two share a registered address. She reads the
+dossier, asks the Copilot to summarise the timeline, exports the JSON, and
+escalates to a human investigator.
+
+\textbf{She still makes every decision.} The system changed \emph{what she looks
+at first}, not \emph{what is true}.
+\end{plain}
+
+\subsection{Who can use it}
+
+\begin{longtable}{@{}p{4.3cm}p{11.2cm}@{}}
+\toprule
+\textbf{User} & \textbf{Value} \\
+\midrule
+\endhead
+Public procurement / audit offices & Rank tenders and suppliers for review under
+a fixed staffing budget; citations map to OECD guidance they already use. \\
+Financial intelligence units, bank AML teams & Prioritise networks rather than
+single transactions; FATF indicator citations map to existing reporting
+vocabulary. \\
+Competition authorities & Screen for bid-rigging structures across markets;
+cross-market transfer results say honestly where it will and will not work. \\
+Development banks / donors & Screen contracts in countries with no labelled
+cartel history --- exactly the LOCO/LOMO scenario we measured. \\
+Auditors and investigative journalists & Open OCDS data plus this pipeline finds
+structures worth asking about. \\
+Researchers & A reproducible, leakage-safe benchmark harness with honest
+baselines; every number regenerates from a config. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Who should \emph{not} use it, and for what}
+
+\begin{warnbox}
+\textbf{Not for:} deciding guilt; automated adverse action of any kind
+(blacklisting, freezing, debarment); evidence in court; producing any output
+about a named private individual; real-time transaction blocking.
+
+This is a \textbf{prioritisation aid} at TRL 3--4. It has no authentication, no
+multi-user hardening, no case-management workflow, and no real-time scoring.
+Fraud screening is an EU AI Act \emph{high-risk} category with obligations
+enforceable from 2 August 2026; our human-in-the-loop framing, explanation
+bundles and logged caveats are our documented alignment posture --- not a
+compliance certification.
+\end{warnbox}
+
+% =====================================================================
+\section{Limitations --- Stated Honestly}
+\label{sec:limits}
+
+\begin{enumerate}
+  \item \textbf{XGBoost beats our GNN on Elliptic++} (0.8104 vs 0.4729). The
+        deep model is not the best detector on our main financial dataset. Its
+        value is that it produces communities and explanations; but the honest
+        headline is that a tree wins on ranking.
+  \item \textbf{The R-GCN scores below prevalence on Mendeley} (0.2808 vs
+        0.358) --- a stable negative.
+  \item \textbf{Validation blindness under temporal shift.} Validation says
+        0.93--0.95, test says 0.42--0.55; label noise \emph{improves} test while
+        validation collapses. We cannot currently trust validation for model
+        selection under shift.
+  \item \textbf{Seed variance ($\pm$0.05) is large} --- larger than most effects
+        we would like to claim. It dominates machine-class variance ($\pm$0.02).
+  \item \textbf{Mendeley prevalences are case-control artifacts} --- only lift
+        comparisons are meaningful.
+  \item \textbf{Elliptic features are anonymised}, so financial explanations lean
+        structural/temporal rather than semantic.
+  \item \textbf{No learned explanation for the R-GCN} --- mask-based explainers
+        work only on full-edge-set convolutions; heterogeneous explanation is
+        outstanding.
+  \item \textbf{Human validation is pending.} The practitioner study is built and
+        tested but the human phase has not been run, so ``are these explanations
+        useful to real investigators?'' is not yet answered empirically.
+  \item \textbf{Structure-only screening is blind to award-pattern cartels}
+        (rotation, partition, cover bidding) --- measured, seed-invariant.
+  \item \textbf{AMLworld is not fully exercised}, and the largest-scale GPU
+        experiments (PNA, GIN+EU) remain gated on hardware we do not have.
+  \item \textbf{Not a production system:} no auth, no multi-tenancy, no
+        real-time path.
+\end{enumerate}
+
+% =====================================================================
+\section{Future Work}
+\label{sec:future}
+
+\subsection{Directly addressing the limitations}
+
+\begin{enumerate}
+  \item \textbf{Shift-aware model selection.} The validation-blindness result is
+        the single most important open problem: build selection criteria that
+        survive temporal shift (e.g.\ time-sliced validation, or selecting on a
+        held-out \emph{late} slice).
+  \item \textbf{Close the tree-vs-GNN gap honestly.} Either find an architecture
+        that genuinely beats B3 on Elliptic++, or characterise precisely when
+        graph learning pays --- our own evidence suggests it pays when
+        neighbourhood aggregates are \emph{not} already baked into the features.
+  \item \textbf{Heterogeneous explanations} for R-GCN, closing the procurement
+        explanation gap.
+  \item \textbf{Run the practitioner study} with $\ge$5 raters, and report
+        inter-rater agreement.
+  \item \textbf{Price- and sequence-aware detectors} to attack the cartels that
+        structure alone provably misses --- the clearest scientific gap we found.
+  \item \textbf{GPU-scale experiments:} PNA and GIN+EU on AMLworld for external
+        comparability; neighbour-sampling minibatches for graphs beyond memory.
+  \item \textbf{Temporal GNNs (TGN/TGAT)} to test whether continuous-time message
+        passing beats snapshots plus time encodings.
+  \item \textbf{Firm--firm co-bid projection before grouping} in García, which
+        would yield a richer procurement queue than the current honest-but-thin
+        3 alerts.
+  \item \textbf{Production hardening:} authentication, multi-tenancy, incremental
+        scoring, case-management integration.
+\end{enumerate}
+
+\subsection{Should we add Web3 / blockchain? An honest assessment}
+\label{sec:web3}
+
+The question deserves a real answer rather than an enthusiastic one. We
+evaluated it against a single test: \emph{does it solve a problem we actually
+have?}
+
+\begin{keybox}
+\textbf{First, a fact that is easy to miss:} this project is \textbf{already}
+on-chain analytics. Elliptic/Elliptic++ \emph{is} Bitcoin transaction data. We
+are already doing graph forensics on a blockchain ledger. So the question is not
+``should we touch Web3'', it is ``which \emph{additional} Web3 capabilities earn
+their place''.
+\end{keybox}
+
+\subsubsection*{Where it genuinely adds value}
+
+\begin{enumerate}
+  \item \textbf{Live on-chain ingestion (strongest case).} Today the financial
+        arm is retrospective: a frozen 2016-era Bitcoin snapshot. A direct node
+        or indexer feed would make it \emph{operational} --- scoring wallets as
+        activity happens. This is a genuine capability gain, and the architecture
+        already supports it: it is a new adapter (stage 1) feeding the same IR.
+        The honest catch is that our current pipeline is batch by design, so this
+        also requires incremental scoring.
+  \item \textbf{Cross-chain and bridge analysis.} Moving assets across chains via
+        bridges is now a primary laundering route, and it is \emph{exactly} a
+        graph problem: bridges are edges between sub-graphs. Our IR already
+        supports multiple relation types and R-GCN already handles typed edges,
+        so a \code{bridges\_to} edge type is a natural extension rather than a
+        bolt-on. Genuinely valuable.
+  \item \textbf{DeFi-native motif families.} Mixer usage (e.g.\ Tornado-style
+        pools), wash trading in NFT markets, and circular flash-loan structures
+        are new \emph{shapes} --- and shapes are what this system detects. They
+        would slot into the existing motif table, injector and matcher without
+        architectural change. This is the most natural fit of all: it extends the
+        thing the project is actually good at.
+  \item \textbf{Smart-contract-call graphs.} Contract-to-contract call networks
+        are a rich, under-explored graph domain, and would be a genuine third
+        domain testing the ``one stack, many crimes'' thesis.
+\end{enumerate}
+
+\subsubsection*{Where it would be decoration --- and one place it would be actively harmful}
+
+\begin{enumerate}
+  \item \textbf{Putting alerts or scores on a blockchain: no, and we should say
+        so firmly.} It conflicts directly with the project's central ethical
+        rule. Our alerts are \emph{screening signals, not findings of guilt}, and
+        they can be wrong --- our own measurements say so. A blockchain is
+        immutable and public by design. Publishing ``firm X is flagged'' to an
+        immutable public ledger would create a permanent, unretractable
+        accusation against an entity that has been convicted of nothing. That is
+        the precise opposite of what \code{docs/ethics\_and\_scope.md} requires,
+        and no efficiency argument outweighs it.
+  \item \textbf{Tokenised incentives for reporting suspicious activity: no.} Pay
+        people per flag and you manufacture false positives. Our whole design
+        fights false positives under a fixed budget; a token reward would fight
+        the design.
+  \item \textbf{Decentralised / federated on-chain training: not justified
+        here.} Federated learning solves \emph{data cannot leave the
+        institution}. Every dataset we use is public. We would pay a large
+        complexity and coordination cost to solve a problem we do not have.
+        (It \emph{would} become relevant if real banks ever pooled private data
+        --- but then the technology needed is federated learning with secure
+        aggregation, which does not require a blockchain.)
+  \item \textbf{NFTs, DAOs, or a project token: no.} No mechanism here needs
+        transferable ownership or on-chain governance.
+  \item \textbf{Blockchain as a tamper-evident audit log: technically valid, but
+        not the right tool.} Auditability of ``which model version produced this
+        alert'' is a real requirement. But we already meet it more simply:
+        versioned artifact folders, pinned configs, checksummed inputs, and
+        byte-reproducibility verified across three machines. If stronger
+        guarantees were needed, a signed append-only transparency log gives the
+        same tamper-evidence without a chain's cost, latency and governance
+        overhead.
+\end{enumerate}
+
+\begin{keybox}
+\textbf{Recommendation.} Pursue Web3 \emph{as a data source}, not as
+infrastructure. Items 1--4 above (live ingestion, bridges, DeFi motifs, contract
+call graphs) are worth real effort because they feed the graph engine we
+already have. Everything in the second list should be declined explicitly --- and
+the alerts-on-chain idea should be declined on \emph{ethical} grounds, which is
+a stronger and more defensible position than declining it on technical ones.
+\end{keybox}
+
+% =====================================================================
+\section{Logs, Testing and Reproducibility}
+
+\subsection{The test suite}
+
+\begin{center}\small
+\begin{tabular}{@{}lr@{}}
+\toprule
+\textbf{Suite} & \textbf{Status} \\
+\midrule
+Backend (pytest) & \textbf{376 passing} \\
+Frontend (vitest) & \textbf{35 passing} \\
+Leakage suite (subset, runs standalone in CI) & 25 tests, green \\
+Copilot golden questions & 24 / 24 \\
+Linting (ruff), formatting (black), typing (mypy) & clean \\
+Continuous integration & green on every push \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Notable test categories: leakage negative controls; the flagship test that the
+motif matcher recovers \textbf{all ten injected families at 100\% recall} on
+fixtures (matcher and injector are independent implementations, so they
+cross-validate each other); calibration monotonicity; overfit-single-batch
+sanity; the ethics-caveat lock; and a bidirectional check that every experiment
+config appears in the reproducibility map and vice versa.
+
+\subsection{What the pipeline writes}
+
+Every run writes a machine-readable record --- these \emph{are} the logs:
+
+\begin{itemize}
+  \item \code{run.json} --- full configuration, seed, epochs run, best epoch, best
+        validation score, training seconds, and all resulting metrics.
+  \item \code{metrics.json} --- evaluation results including per-time-step
+        breakdowns.
+  \item \code{scores\_test.parquet} / \code{scores\_val.parquet} --- raw per-node
+        scores.
+  \item \code{model.pt}, \code{feature\_stats.json} --- weights and the
+        \emph{frozen} normalisation constants.
+  \item \code{multiseed.json} --- per-seed values plus mean/std.
+  \item \code{alerts.parquet}, \code{explanations/*.json} --- the queue and the
+        bundles.
+  \item \code{BUILD\_REPORT.json} --- which paper tables were built, and for any
+        that were skipped, the exact missing file path.
+\end{itemize}
+
+\begin{plain}
+\textbf{Example of a real log record} (Elliptic++ GATv2-focal, seed 0):
+model \code{gatv2}, features \code{raw}, loss \code{focal} ($\gamma=2.0$),
+hidden 64, 2 layers, 4 heads, dropout 0.3, lr 0.005 --- \textbf{142 epochs run,
+best at epoch 121}, best validation AUC-PR 0.9497, training time 2194.6 s,
+final test AUC-PR 0.5492 at prevalence 0.0650.
+
+\textbf{Notice the gap} between validation (0.9497) and test (0.5492) --- that
+single log line \emph{is} the validation-blindness limitation, visible in the
+raw record.
+\end{plain}
+
+\subsection{Reproducibility}
+
+\begin{itemize}
+  \item \code{docs/reproducibility.md} maps \textbf{all 40 experiment configs} to
+        the exact headline numbers they produce. A test enforces this
+        bidirectionally --- a config missing from the map, or a phantom config in
+        the map, fails CI.
+  \item Environment is frozen (\code{uv.lock}, pinned Python).
+  \item \code{uv run poe paper-tables} regenerates every paper table from stored
+        artifacts. A table whose source artifact is missing is \textbf{skipped
+        with the missing path recorded} --- never rendered from partial data.
+        \textbf{Current status on this machine: all 10 tables build, zero skips.}
+  \item \textbf{Verified cross-machine:} the tree baselines, the LOCO fold
+        (0.8025340470101002 --- to the last digit), the García matrix and the OCDS
+        ingest (451{,}346 $\rightarrow$ 488{,}300 / 1{,}449{,}077) reproduce
+        \emph{byte-identically} on three different machines. Torch-based results
+        reproduce same-machine and shift within $\pm$0.02 across machine classes,
+        which is smaller than the $\pm$0.05 seed spread --- so multi-seed means
+        are the only numbers we publish.
+\end{itemize}
+
+\subsection{Adversarial self-review}
+
+We ran a formal internal red-team pass against our own work
+(\code{docs/red\_team\_review.md}), checking leakage, imbalance reporting,
+baseline fairness, transfer honesty, number consistency, ablation completeness,
+explanation validity and ethics propagation.
+
+\textbf{Result: no finding invalidated any published number or protocol
+guarantee.} Two presentation defects were found and fixed --- most notably
+\textbf{RT-1}: single-seed bootstrap differences were printed next to multi-seed
+averages, so a reader recomputing the difference from the averages would land
+outside the stated confidence interval. Both are now labelled explicitly, and
+our table builder enforces the separation structurally.
+
+% =====================================================================
+\section{Questions an Examiner Will Ask}
+
+\begin{longtable}{@{}p{5.0cm}p{10.5cm}@{}}
+\toprule
+\textbf{Question} & \textbf{Answer} \\
+\midrule
+\endhead
+\emph{Your GNN loses to XGBoost. Why is this a deep-learning project?} &
+Because we report it. The GNN produces the community structure, the minimal
+sub-network and the attention evidence that a tree cannot; and on Elliptic++
+specifically the trees win because 72 neighbourhood aggregates are already baked
+into the features. We state the condition under which graph learning pays rather
+than claiming a win we did not get. \\
+\addlinespace
+\emph{How do I know you have no leakage?} & Four independent mechanisms:
+strict-inductive splitting (test-period \emph{edges} withheld --- verified 77{,}512
+on Elliptic++), as-of features (verified exactly equal to the truncated graph),
+a 25-test leakage suite with negative controls in CI, and an audit that
+\emph{found} a leak (F3) and cut our headline by 23\% to fix it. \\
+\addlinespace
+\emph{Is your alert-level hit rule too lenient?} & Possibly on its own, which is
+why it is paired with a 100-member cap, Jaccard de-duplication and a sensitivity
+analysis at 10\% and 25\% thresholds. Queue metrics were robust. \\
+\addlinespace
+\emph{Why AUC-PR and not ROC-AUC?} & At 2\% prevalence ROC-AUC is misleadingly
+optimistic. AUC-PR's baseline is the prevalence, which we print beside every
+value. \\
+\addlinespace
+\emph{Your baselines got the same tuning budget?} & Yes --- and precisely: no
+hyperparameter search was performed on \emph{either} side. That is conservative
+in our disfavour, since the trees win every comparison they enter. Stated
+explicitly. \\
+\addlinespace
+\emph{Are the differences statistically significant?} & Paired stratified
+bootstrap, 2{,}000 resamples, over identical test nodes. Reported with CIs --- and
+labelled as seed-0 comparisons wherever they sit beside multi-seed means. \\
+\addlinespace
+\emph{One seed?} & Never for a headline. Five seeds, mean $\pm$ std. The
+single-seed 0.5492 was the best seed; the mean is 0.4729. \\
+\addlinespace
+\emph{Are the explanations real or decorative?} & Measured with fidelity, which
+is why we \emph{replaced} GNNExplainer: it failed sanity on 41/50 alerts.
+PGExplainer fails 1/50. Human validation is still pending and we say so. \\
+\addlinespace
+\emph{Does it transfer?} & Partly, and we publish the failures: García positive
+on every market (lift 1.57); Mendeley market-dependent with its largest market
+\emph{failing} (0.90); cross-domain asymmetric and weak; and transfer never pays
+below 500 target labels in either direction. \\
+\addlinespace
+\emph{What can it not catch?} & Rotation, market partition and cover bidding, at
+scale, seed-invariantly --- because structure alone cannot see them. Measured on
+100 planted cartels in a 163k-node network. \\
+\addlinespace
+\emph{Could this harm someone?} & The rule is enforced in code, not just
+asserted: an immutable caveat field a validator refuses to alter, the caveat on
+every API response and screen, and a Copilot guard that rewrites accusatory
+language (zero released violations). No per-person outputs exist anywhere. \\
+\bottomrule
+\end{longtable}
+
+% =====================================================================
+\section{Summary}
+
+\begin{keybox}
+CollusionGraph turns two different crimes into the same question --- \emph{which
+connected group is behaving like a coordinated ring?} --- and answers it with a
+ranked, explained, budget-aware queue that a human reviews.
+
+\textbf{What works:} clique-type coordination is found reliably at scale with no
+labels (0.9225 recall at a 1.2\% budget); calibrated fusion is a measured
+requirement, not a preference; transfer to unseen markets works on one dataset
+family and is honestly market-dependent on another; explanations are validated
+by fidelity; the whole thing reproduces byte-for-byte across machines.
+
+\textbf{What does not:} a tree model beats our GNN on the main financial
+dataset; the procurement graph model scores below its prevalence baseline;
+validation cannot be trusted under temporal shift; and structure alone is blind
+to award-pattern cartels.
+
+Reporting both lists is the point. A screening tool whose limits are unknown is
+not usable by anyone who is accountable for the decision.
+\end{keybox}
+
+\vspace{1em}
+\begin{plain}
+\textbf{Where to look next}\\
+\code{PROGRESS.md} --- the full project ledger, every result with its date and commit\\
+\code{docs/model\_card.md} --- the formal model card\\
+\code{docs/reproducibility.md} --- all 40 configs mapped to their numbers\\
+\code{docs/red\_team\_review.md} --- our adversarial self-review\\
+\code{docs/architecture.html} --- the interactive architecture diagrams (Sections~\ref{sec:arch}, \ref{sec:cloud})\\
+\code{docs/ethics\_and\_scope.md} --- the binding ethical constraints\\
+\code{docs/DATASETS.md} and \code{docs/datasheets/} --- per-dataset detail
+\end{plain}
+
+\end{document}
