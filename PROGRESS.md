@@ -9,18 +9,22 @@
 
 ## Current milestone
 
-> 🔴 **NEXT SESSION STARTS AT "Next actions" ITEM 0 — PRESENTATION SCRIPTS.**
-> Brief: [`docs/presentation_scripts_brief.md`](docs/presentation_scripts_brief.md)
-> (read it in full first). The stakeholder rejected the report AND the dashboard
-> on 2026-07-25 for the same reason: **they give definitions, not explanations**
-> — *"there is no point reading it from the report, it made the work harder
-> rather than simpler"*. Deliver (a) a spoken script for every dashboard tab,
-> (b) a spoken script for `docs/architecture.html`, (c) real explanations in the
-> report's architecture / cloud / dashboard sections, (d) a third pass on the
-> Case-Detail wording. Format is mandatory and specified in the brief: a
-> **SAY THIS** block that sounds natural read aloud, then **WHAT THIS MEANS**,
-> then **IF THEY ASK…**. Everything else below is done and green
-> (381 backend / 43 frontend / 46-of-46 numbers verified, last commit 24a5116).
+> ✅ **PRESENTATION SCRIPTS + "EXPLAIN, DON'T DEFINE" REWRITE DELIVERED
+> [master, 2026-07-25]** — all four parts of the brief
+> ([`docs/presentation_scripts_brief.md`](docs/presentation_scripts_brief.md)):
+> (a) [`docs/presentation_script_dashboard.md`](docs/presentation_script_dashboard.md)
+> — 27 spoken units, ~20 min, every tab and every control; (b)
+> [`docs/presentation_script_architecture.md`](docs/presentation_script_architecture.md)
+> — 15 units, ~15 min, ten stages + trust boundary + both cloud planes + costs;
+> (c) the report's `sec:arch` / `sec:cloud` / `sec:dashboard` rebuilt from
+> one-line tables into four-part explanations (what it is · why it exists ·
+> what breaks without it · `\aloud{}` the sentence you say); (d) `plainReason`
+> attempt three — describes the SITUATION, never the system. **Measured, not
+> asserted:** 42 SAY THIS blocks, **0 spoken violations** under the extended
+> `ui_jargon.py`; report readability 4.2% → **3.9% hard**; numbers still
+> **46/46**; backend **381/381**, frontend **46/46**. **The audit that measured
+> the last round had a blind spot and it cost real defects** — see Completed.
+> Next: stakeholder review of the scripts (Next action 0).
 
 > ✅ **FRONTEND OVERHAUL DELIVERED [laptop-C, 2026-07-18]** per
 > [`docs/frontend_overhaul.md`](docs/frontend_overhaul.md): animated network-canvas backdrop with
@@ -181,6 +185,55 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-25 · **PRESENTATION SCRIPTS + THE "EXPLAIN, DON'T DEFINE" REWRITE —
+  all four brief items, and the audit that measured the previous round turned
+  out to be lying.** The stakeholder rejected report and dashboard together:
+  *"everything is just a single or two-three lines of meaning, no proper
+  explanations… there is no point reading it from the report, it made the work
+  harder rather than simpler."*
+  **(a+b) Two spoken scripts.** `presentation_script_dashboard.md` (27 units,
+  ~20 min) covers every tab, the domain toggle, dataset picker, review slider,
+  risk-band filter, every queue column, both replay modes, all four dossier
+  panels, the no-bundle panel, every Model Lab block, About and the Copilot —
+  plus a five-minute cut-down, a spoken-numbers table (`0.32` → *"about a third
+  — sixteen of the fifty"*) and the five questions actually asked.
+  `presentation_script_architecture.md` (15 units, ~15 min) covers the ten
+  stages, the trust boundary, the method cards, both cloud planes and the three
+  cost tiers. Format per the brief: **SAY THIS** / **WHAT THIS MEANS** /
+  **IF THEY ASK…**.
+  **(c) Report sections rebuilt.** `sec:arch`, `sec:cloud` and `sec:dashboard`
+  no longer answer "what is Route 53" with one line. Every component now
+  answers four questions — what it is, why it exists, **what breaks without
+  it**, and a new `\aloud{}` macro carrying the sentence you would say. The
+  stage-1 explanation now states why box 2 is what makes the cross-domain
+  question *askable*; the trust boundary explains that the worst attack is not
+  theft but *quietly altering who looks suspicious*; spot pricing is justified
+  by the workload's interruption tolerance rather than asserted as cheap.
+  **(d) `plainReason` attempt three.** The diagnosis was not vocabulary but
+  SUBJECT: attempt two described *the system* ("we asked the computer which
+  parts actually made it suspicious"), attempt three describes *the situation*
+  ("the money went through all of them in one go, one after another"). Tests
+  now ban machine words (`computer`, `algorithm`, `the system`, `score`,
+  `flagged`) as well as ML words, and cap sentences at 20 words (was 26).
+  **Verified live on real artifacts**, both target cases: `elliptic_pp:…:16`
+  renders "85 accounts, one after another"; `mendeley_eu:…:1` renders
+  "2 companies, tied to each other" with no shape claim, because two members
+  cannot form one.
+  **THE FINDING OF THIS SESSION.** `ui_jargon.py` reported "5 remaining, all
+  accepted" and that number was quoted in the last handoff. Its JSX-text rule
+  required a capital letter and 14+ characters — so the alert queue's slider
+  label **`budget k`**, eight lowercase characters on the busiest screen in the
+  product, was invisible to the audit whose entire job was to find exactly
+  that. Loosening the rule surfaced three real defects (`budget k`, the
+  `Motif` column header, `review budget` in Model Lab), all now plain English
+  and verified live. A checker with a blind spot is worse than no checker,
+  because its clean number gets quoted — recorded in `scripts/audit/README.md`.
+  **Measurements:** `ui_jargon.py` pass 2 (new) = 42 SAY THIS blocks, **0
+  violations** (jargon, printed decimals, bullet lists, >30-word sentences);
+  pass 1 = 10 → **7 accepted** (6 chart/metric labels, 1 JSON export key);
+  readability 33/787 (4.2%) → **47/1196 (3.9%)**; `texcheck` clean,
+  `texcols` 0 mismatches, `verify_numbers` **46/46**; backend **381/381**,
+  frontend **46/46** + tsc + build green · [master]
 - 2026-07-25 · **PLAIN-ENGLISH PASS over every user-facing string + the audit
   tooling that measured it.** A professional reviewer said the Case-Detail
   wording was "not at all used in industry". Wrote `scripts/audit/ui_jargon.py`
@@ -1230,62 +1283,49 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Next actions (ordered, self-contained)
 
-0. 🔴 **START HERE — PRESENTATION SCRIPTS + "EXPLAIN, DON'T DEFINE" REWRITE.**
-   **This is the entire next session. Read
-   [`docs/presentation_scripts_brief.md`](docs/presentation_scripts_brief.md)
-   first, all of it, before writing anything.**
+0. 🔴 **[user/stakeholder] READ THE TWO SCRIPTS ALOUD AND SAY WHERE THEY FAIL.**
+   They are written, measured and pushed:
+   [`docs/presentation_script_dashboard.md`](docs/presentation_script_dashboard.md)
+   (27 units, ~20 min) and
+   [`docs/presentation_script_architecture.md`](docs/presentation_script_architecture.md)
+   (15 units, ~15 min). **The test is reading a SAY THIS block out loud, at
+   normal speed, with the console open in front of you.** If a block does not
+   survive that, say **which unit number** and which of these it was — too long
+   to say in one breath / a word you would not use / it explains the system
+   instead of the situation / the number is wrong. Any of those is a one-pass
+   fix; "still too hard" is not, and has now cost two rounds.
+   Open the console first: `uv run collusiongraph serve --port 8001`, then in
+   `frontend/`, `VITE_API_TARGET=http://127.0.0.1:8001 npm run dev`. The
+   scripts assume Financial · AML, dataset `elliptic_pp`, review number 50.
+   Also re-check the Case Detail wording on `elliptic_pp:gatv2_multi_s0:16` —
+   it now reads *"The money went through all of them in one go. One account to
+   the next, then the next, then the next."* That is attempt three; if it is
+   still too hard, the next lever is dropping panels, not rewording them.
 
-   *Why this is top priority:* the stakeholder reviewed the report and dashboard
-   on 2026-07-25 and rejected both on the same grounds — **they give
-   definitions, not explanations.** Verbatim: *"in system architecture and cloud
-   architecture, everything is just a single or two-three lines of meaning, no
-   proper explanations… there is no point reading it from the report, it made
-   the work harder rather than simpler. Same for the dashboard screens."* And on
-   the dossier: *"Case 16 still uses extremely tough language. I showed it to a
-   professional and he said such difficult language is not at all used in
-   industry."*
+0b. **[any machine] Keep the spoken audit at zero.** `uv run python
+   scripts/audit/ui_jargon.py` now has a second pass over every
+   `> **SAY THIS**` block and **exits non-zero on any violation** — jargon,
+   printed decimals (`0.32` instead of "about a third"), bullet lists, or a
+   sentence over 30 words. Run it after touching either script file. Current:
+   42 blocks, 0 violations. Pass 1 (the screen) sits at 7 accepted hits — 6
+   chart/metric labels where the metric's real name belongs, 1 JSON export key.
+   **If you add a user-facing string, run this before you push:** the last
+   round's "5 remaining, all accepted" was wrong because the detector could not
+   see short lowercase JSX text.
 
-   **Build four things:**
-
-   a. **`docs/presentation_script_dashboard.md`** (new) — a spoken script for
-      EVERY tab and control: Overview, Alert Queue, Graph Explorer, Case Detail,
-      Model Lab, About, the Copilot dock, domain toggle, dataset picker, budget
-      slider, risk-band filter. Nothing on screen may be missing.
-
-   b. **`docs/presentation_script_architecture.md`** (new) — same for
-      `docs/architecture.html`: the ten numbered stages, the trust boundary, the
-      algorithm cards, both AWS planes, the three cost tiers.
-
-   c. **Report sections `sec:arch`, `sec:cloud`, `sec:dashboard`** in
-      `docs/internal_report/collusiongraph_internal_report.tex` — replace the
-      one-line-per-component tables with real explanations: what it is, why it
-      exists, what breaks without it, and the sentence you would say out loud.
-
-   d. **`frontend/src/lib/plainReason.ts`** — third attempt at the dossier
-      wording. It already passes a 14-term banned-word test and was STILL judged
-      too hard. The brief's §5 diagnoses why: it describes *the system* when it
-      should describe *the situation*. Verify on
-      `elliptic_pp:gatv2_multi_s0:16` and `mendeley_eu:sage_struct_s0:1`.
-
-   **Mandatory format for both script files** (the stakeholder asked for this
-   explicitly): each unit is a `> **SAY THIS**` block of natural spoken English
-   — contractions, short sentences, no bullet lists, mouse signposting, spoken
-   numbers ("about a third", never "0.3245") — followed by a **WHAT THIS MEANS**
-   paragraph explaining it to the presenter, and an **IF THEY ASK…** rebuttal
-   where an evaluator is likely to push. It must sound natural read aloud, so
-   nobody can tell it is a script. Mark timings and give a total.
-
-   **Banned vocabulary in SAY THIS blocks** — the full list is in the brief §4;
-   it is the same list `scripts/audit/ui_jargon.py` already enforces on the UI.
-
-   **Verify, don't guess.** `scripts/audit/` now holds every checker used this
-   round (jargon, readability, LaTeX structure, number verification, API sweep,
-   Copilot battery). Extend `ui_jargon.py` to scan the new SAY THIS blocks and
-   drive its count to zero. State measured before/after numbers in the commit.
-
-   **Do NOT** assume the previous language fix was nearly right — that
-   assumption has now cost two rounds. The brief's §6 lists all six rejections
-   and their lessons.
+0c. **Report: keep the three rewritten sections true as things change.**
+   `sec:arch`, `sec:cloud` and `sec:dashboard` in
+   `docs/internal_report/collusiongraph_internal_report.tex` now explain rather
+   than define, using a new `\aloud{}` macro for the spoken sentence. Two
+   staleness traps were found and fixed while rewriting them, so check for a
+   third whenever the UI moves: the report said the Model Lab opens with the
+   rigour block (it has been collapsed at the bottom since 2026-07-25), and it
+   still called the dossier panel "Attribution quality" (renamed to "How solid
+   is this?"). **Whenever a user-facing label changes, grep the report for the
+   old wording.** Audits to re-run after any report edit:
+   `texcheck.py <tex>`, `texcols.py <tex>`, `readability.py <tex>`,
+   `verify_numbers.py`. Current: clean / 0 mismatches / 47 of 1196 hard (3.9%)
+   / 46-of-46.
 
 1. **[user/stakeholder] REVIEW the V4 theme (review #6) on the multi-dataset console.**
    V4 answered review #5's "still blue dominated / not industry grade" — chrome is now
@@ -1378,6 +1418,35 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Decision log
 <!-- - YYYY-MM-DD · decision · rationale · plan section affected -->
+- 2026-07-25 · **[master] The spoken scripts are held to a STRICTER bar than the
+  screen, and the bar is enforced by a checker that fails the build.** The
+  brief only asked that SAY THIS blocks avoid a word list. `ui_jargon.py` pass 2
+  also rejects printed decimals, bullet lists and any sentence over 30 words,
+  and exits non-zero. *Rationale:* every one of those is a defect you cannot
+  hear until you are already on stage — "nought point three two" read aloud is
+  as bad as a jargon word, and a 40-word sentence runs the speaker out of
+  breath. A rule that only lives in a brief gets forgotten between sessions; a
+  rule with an exit code does not. Affects §9 test requirements (audit tooling).
+- 2026-07-25 · **[master] `plainReason` attempt three changes the SUBJECT of the
+  sentences, not the vocabulary.** Attempt two already passed a 14-term jargon
+  ban and was still rejected by a professional reviewer. *Rationale:* the
+  problem was never which words — it was that every sentence had the system as
+  its subject ("we asked the computer…"). Attempt three forbids mentioning the
+  machine at all and describes only what happened between the accounts. The
+  test file now bans `computer`, `algorithm`, `the system`, `score` and
+  `flagged` alongside the ML terms, and caps sentences at 20 words. *Risk
+  accepted:* the wording can no longer hedge with "the model thinks", so the
+  honesty burden moves entirely onto the caveat line and the source labels,
+  both of which are pinned by tests. Affects §5.3 view 4.
+- 2026-07-25 · **[master] Loosened `ui_jargon.py`'s JSX-text rule and accepted a
+  higher reported count (5 → 10 → 7 after fixes) rather than defending the old
+  number.** The old rule required a capital letter and 14+ characters and
+  therefore could not see `budget k`, `Motif` or `review budget`. *Rationale:*
+  a measurement that under-reports is worse than none, because its clean number
+  gets quoted in a handoff — which is exactly what happened. The three
+  newly-visible defects were fixed; the seven that remain are chart/metric
+  labels where the metric's real name belongs, plus one JSON export key.
+  Affects §9 test requirements.
 - 2026-07-20 · **[laptop-B] Unlabeled-regime fusion policy: rank fusion ONLY, reported
   as `ensemble_rank` with `fusion_mode: rank_unlabeled` — never a calibrated-fusion
   stand-in.** The §4.4 primary ensemble calibrates members on labeled validation nodes;
