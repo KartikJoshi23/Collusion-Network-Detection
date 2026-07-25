@@ -168,6 +168,92 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-25 · **INTERNAL TEAM REPORT (LaTeX) — the whole project in plain words**
+  (`docs/internal_report/collusiongraph_internal_report.tex`, ~1650 lines,
+  self-contained, standard packages only). Written so a non-ML reader can follow it
+  while still answering doctoral-examiner questions: 4-part glossary defining every
+  project term; all six datasets with measured spread; the four splitting rules; what
+  "cleaning" meant (and why we deliberately did NOT impute/drop); every algorithm with
+  plain-words mechanics + why chosen + a rejected-alternatives table; metric choices;
+  the tuning history iteration by iteration; results incl. both negatives; **the
+  architecture.html system + AWS diagrams explained box by box** (ten pipeline stages,
+  the trust boundary, both cloud planes, the three cost tiers); every dashboard screen
+  and control; use cases + who must NOT use it; limitations; future work; logs +
+  reproducibility; anticipated Q&A. **Web3 subsection is an assessment, not an
+  endorsement:** notes the project is ALREADY on-chain analytics (Elliptic is Bitcoin),
+  then admits live on-chain ingestion / bridge analysis / DeFi motif families / contract
+  call graphs (they feed the existing graph engine) and declines alerts-on-chain,
+  tokenised reporting incentives, federated on-chain training, NFTs — alerts-on-chain
+  declined on **ethical** grounds (a screening signal that can be wrong must not become
+  an immutable public accusation; inverse of `ethics_and_scope.md`). *Verification (no
+  LaTeX toolchain on master, so both mechanical):* structure — braces balanced, all
+  environments matched/nested, no undefined envs, no dangling `\ref`, every tabular +
+  longtable row width matches its declared columns; numbers — **36/36 quoted metric
+  values checked programmatically against the stored `eval_outputs/` JSON**. *Found+fixed
+  while verifying:* the ablation table signed the unsupervised-arm row backwards
+  (removing it **improves** the fusion +0.030, 0.4434→0.4729; draft showed −0.030 by
+  importing the model card's "costs us" phrasing into an "effect of the change" column)
+  — exactly the confusion the T7 basis separation exists to prevent · d2a5d65 · [master]
+- 2026-07-25 · **§7 STEP 33 (i) CLOSED — `poe paper-tables` builds ALL TEN tables on
+  master, zero skips** (the blueprint's submission-checklist line "all 🔶 tables
+  regenerated and drift-guard green"). The ledger's Next-action 3(i) flagged three 🔶
+  tables; **the true count was four** — `mendeley_headline` was undercounted because
+  master had the R-GCN multiseed and transfer matrices but never the Mendeley baseline
+  scoreboards (laptop-B-only artifacts). Regenerated on master, oldest first:
+  *(a) Mendeley baselines* (3 configs) — **all six values byte-identical to the repro
+  map** (B1 0.3426 / B2 0.3925 / B3 0.3775 / B4 0.3811; B2+screens 0.4558; B4+precomputed
+  0.3874), an unplanned third-machine-class confirmation of the §4 cross-machine
+  determinism claim for the tree/rule baselines. *(b) GATv2 weighted-CE 5-seed campaign*
+  — master measures **0.4388 ± 0.0505** vs laptop-B's 0.4435 ± 0.0615: within the
+  recorded ±0.02 machine-class variance, verdict unchanged (−focal stays second-order
+  against focal 0.4729 ± 0.0525). *(c) proc2fin label-efficiency curve.* *(d) OCDS
+  Georgia brought onto master end-to-end* — 16/16 files checksum-verified, and the
+  **ingest byte-reproduced the ledger exactly** (451,346 releases → 488,300 nodes /
+  1,449,077 edges / 687,336 `bids_on` / 0 skipped) on a third machine class; the 5-seed
+  injection **replicates the RQ2 verdict** (ensemble_rank coordinated_cluster
+  0.9225 ± 0.1733 vs recorded 0.9275 ± 0.162; floor common_control 0.4286 ± 0.0000
+  byte-exact; rotation 0.084 / partition 0.172 / cover_bid 0.010 all still evade;
+  940 members, 4/5 seeds at 1.00) · [master]
+- 2026-07-25 · **§7 STEP 32 — T7 COMPONENT-ABLATION TABLE BUILDER (`ablations`), the last
+  hand-assembled table.** Blueprint T7 was the only table-map entry still marked
+  "assemble from run.json entries" — i.e. the one paper table a writer would have retyped
+  from the ledger, exactly the drift the step-33 house rule (values are COPIED from
+  artifacts) exists to prevent. Deltas are **basis-separated structurally, not by caption
+  note**: each block opens with its OWN reference row and every Δ is formed against that
+  reference, so a 5-seed mean difference and a seed-0 comparison can never share one
+  (RT-1 enforced by construction); both operands of every Δ are printed so each is
+  checkable against its artifact. The caption also separates the two arm KINDS — a "−"
+  row removes an adopted component (ablation cost), a "+" row adds an evaluated-but-
+  rejected variant (rejection margin) — because without that distinction +context-fusion
+  (−0.2250 seed 0) reads as a larger "ablation" than −bidirectional edges (−0.1943) and
+  contradicts the ledger's strongest-component claim. Also: U+2212 added to the LaTeX
+  escape map (it opens every arm label); blueprint output path corrected to `paper/tables/`.
+  2 new tests (within-basis Δ pinning; whole-table skip when one arm is absent) —
+  **suite 376/376**, frontend 31/31 · 645c3d3 · [master]
+- 2026-07-25 · **FRONTEND V4 — review #5 ("still blue dominated… not industry grade")
+  answered by measurement.** The complaint was exact, and it was never about the accent —
+  it was the CANVAS. Three full-viewport layers painted blue before any component drew:
+  the WebGL aurora ran hue gains 0.30/0.26/0.20 over a blue-tinted base with a blue
+  luminance ripple; the CSS aurora ran 14–22% radials across 50rem+ fields; the particle
+  mesh weighted `--accent` double. On top, every surface token was blue-tinted (`--bg-3`
+  #1c2440 = 36/255 channel spread), the glass fill was itself a blue light source
+  (rgb 44 52 84), and every panel edge was a 55% accent stroke. **V4 inverts the rule:
+  chrome achromatic, hue carries meaning** — neutral grey surfaces/text/glass (channel
+  spread ≤ 8), aurora gains cut ~3×, ripple neutralised, CSS radials cut to 5–7% corner
+  embers so screen centres stay true black, panel edges mostly white-alpha, mesh neutral;
+  colour now only where it encodes something (risk, six view identities, five chart
+  categoricals, domain accent) so the multi-hue requirement from the V2/V3 rejections
+  still holds. **Measured live on real artifacts** (pane does not composite frames here,
+  so instrumented not visual): same shader probe under V3 constants = mean RGB (21,25,40)
+  with **59.1% of pixels strongly blue** → V4 = (11,12,15), **0.0%**; surface audit over
+  **12 view×domain combinations** (~1150 colour stops each) = **0 blue-leaning stops**,
+  5 hue families at rest in all 12; contrast on bare `--bg-0` text-0 18.1:1 / text-1
+  8.5:1 / text-2 4.9:1 / charts 6.7–7.6:1. *Fixed in passing:* `--text-2` had fallen
+  under WCAG AA (4.37:1) once the ground darkened — lifted to 4.90:1; chart categoricals
+  retuned for the darker ground; hardcoded V2 blues cleared from the tabbar, graph-
+  explorer ink, About tab hue and the PNG export ground. 3 new tests pin the rule
+  (surface/text tokens achromatic; CHART_SERIES ↔ `--chart-*` sync; contrast floors) —
+  frontend tsc + **vitest 35/35** + build green · c4871c2 · [master]
 - 2026-07-20 · **DASHBOARD: 2 more real datasets added (both domains now show two) +
   Activity-sparkline fix.** *(Activity bug):* the alert-queue "Activity" sparkline only
   fetched its subgraph on first hover (`armed={hovered}`) → blank until moused-over. Now
@@ -1056,15 +1142,21 @@ still public 2026-07-15 — anonymous clone succeeded).
 - AMLworld raw data is absent on laptop-B (Kaggle credentials are per-machine; script reports `blocked` as designed). Financial pack is untested at AMLworld scale (5M edges) — see Next action 5.
 
 ## Next actions (ordered, self-contained)
-1. **[user/stakeholder] REVIEW the V3 UI + the newly multi-dataset console.** On any
+1. **[user/stakeholder] REVIEW the V4 theme (review #6) on the multi-dataset console.**
+   V4 answered review #5's "still blue dominated / not industry grade" — chrome is now
+   neutral black and hue is reserved for meaning (see Completed for the measured
+   before/after: backdrop went from 59.1% strongly-blue pixels to 0.0%). On any
    machine: `uv run python scripts/build_dev_store.py` (synthetic, keyless) OR use a
    machine with real artifacts → `uv run collusiongraph serve --port 8001` and, in
    `frontend/`, `VITE_API_TARGET=http://127.0.0.1:8001 npm run dev` (port 8000 may be
    occupied — check first). Walk all six views in BOTH domains AND both datasets per
-   domain (the dataset dropdown now offers two each: financial = elliptic_pp +
+   domain (the dataset dropdown offers two each: financial = elliptic_pp +
    elliptic_pp_actor, procurement = mendeley_eu + garcia_rodriguez). The visual judgment
    is the point — every prior walk was programmatic, because the in-tool browser pane
-   freezes animation.
+   does not composite frames (screenshots time out; the audits are instrumented instead).
+   **If V4 still reads wrong, say WHICH SURFACE** (canvas / panel fill / panel edge /
+   tab bar / chart ink / graph nodes) — the audit script in the V4 Completed entry can
+   measure any named surface directly, so a specific complaint is fixable in one pass.
 2. **[user] §7 step 31 — RUN the practitioner study (the last M7 item).** The kit is built
    and tested. (i) on a machine with CURRENT bundles, `uv run collusiongraph eval -c
    configs/experiment/practitioner_study.yaml`; (ii) recruit ≥5 raters per
@@ -1078,10 +1170,13 @@ still public 2026-07-15 — anonymous clone succeeded).
    [`docs/paper_blueprint.md`](docs/paper_blueprint.md): section-by-section content plans
    with every claim mapped to the artifact that proves it, the T1–T8 table map keyed to
    `poe paper-tables`, the figure list, writing order and submission checklist.
-   (i) run `uv run poe paper-tables` on the master machine (it holds the campaign
-   artifacts) and carry the outputs into the manuscript — three tables are flagged 🔶
-   because their artifacts live on other laptops (wce multiseed, proc2fin curve, OCDS
-   injection); regenerate those or rerun the campaigns locally; (ii) **[user]** write per
+   ~~(i) run `uv run poe paper-tables` on the master machine…~~ **(i) DONE
+   2026-07-25 [master]: all TEN tables build, zero skips** (the four missing artifacts —
+   Mendeley baselines, wce multiseed, proc2fin curve, OCDS injection — were regenerated
+   on master; T7 `ablations` was added as a builder). Outputs are in `paper/tables/`
+   (gitignored, per-machine): one `.md` + one `.tex` per table plus `BUILD_REPORT.json`.
+   **Rerun `uv run poe paper-tables` before each manuscript revision** and copy values
+   from those files — never retype from this ledger; (ii) **[user]** write per
    §10.4 honoring RT-1 (label the seed-0 paired-bootstrap deltas wherever quoted beside
    multi-seed means) and RT-3 (state the no-search-on-either-side tuning policy in the
    baselines section); (iii) OPTIONAL, only if the writing wants a queue-necessity claim:
@@ -1121,7 +1216,16 @@ still public 2026-07-15 — anonymous clone succeeded).
    exposures) at platform.openai.com; consider rotating the Kaggle token shared in a chat
    session; add `NVIDIA_API_KEY` as a GitHub Actions secret so the manual goldens CI job
    can run.
-9. **Deferred small items.** HeteroExplanation for R-GCN (R12 — the mask-based explainer is
+9. **Internal team report — build the PDF and circulate.**
+   [`docs/internal_report/collusiongraph_internal_report.tex`](docs/internal_report/collusiongraph_internal_report.tex)
+   is written and mechanically verified (structure clean; 36/36 quoted numbers checked
+   against `eval_outputs/` JSON) but **never compiled — no LaTeX toolchain exists on
+   master**. On any machine with TeX: `pdflatex collusiongraph_internal_report.tex` run
+   TWICE (ToC + refs), or `latexmk -pdf`, or upload the single file to Overleaf. Windows:
+   `winget install MiKTeX.MiKTeX`. If a figure is wanted, the Model Lab exports SVG/PNG.
+   **When results change, update this report alongside the ledger** — it quotes 36 live
+   numbers and will drift silently otherwise.
+10. **Deferred small items.** HeteroExplanation for R-GCN (R12 — the mask-based explainer is
    GATv2-only); AMLworld injection-recovery calibration + feature packs + baselines on a
    machine with Kaggle credentials; Mendeley R-GCN follow-up (firm+tender joint
    supervision, García co-bid enrichment) before concluding graph signal is absent;
