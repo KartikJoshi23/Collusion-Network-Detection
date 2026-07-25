@@ -666,8 +666,14 @@ inside. \\
 \textbf{Paired bootstrap} & A fairness test. Re-run the comparison thousands of
 times on re-shuffled samples of the same cases, and see whether model A really
 beats model B or whether the gap was luck. \\
-\textbf{Fidelity} & Does the explanation actually matter? Delete the highlighted
-lines: if the score collapses, the explanation was real. \\
+\textbf{The handful} & When the system raises a case it also points at a few
+specific connections inside the group --- often three or four out of hundreds
+--- and says its decision depended on those. We call that ``the handful''
+throughout. The dashboard calls it ``the few connections that mattered most''.
+\\
+\textbf{Fidelity} & A check on whether the handful is real. Delete those few
+connections and re-run the case: if the warning disappears, they genuinely were
+the reason. Explained in full in Section~\ref{sec:dashboard}. \\
 \textbf{SHA-256} & A fingerprint for a file. If one byte changes, the fingerprint
 changes, so we can prove we have the same data everyone else has. \\
 \bottomrule
@@ -1659,8 +1665,10 @@ stricter rules.
         not a result.
   \item \textbf{A fairness test} (paired bootstrap) --- to check a gap is real and
         not luck.
-  \item \textbf{Explanation fidelity} --- delete the highlighted lines and see if
-        the score really collapses.
+  \item \textbf{Explanation fidelity} --- the system points at a few specific
+        connections and says the decision depended on them. Delete exactly
+        those, re-run the case, and see whether the warning really does
+        disappear.
 \end{itemize}
 
 % =====================================================================
@@ -2177,9 +2185,12 @@ first part and the other two still stand on their own --- and that is the
 property that makes this usable rather than merely impressive.
 
 \textbf{What breaks without the verification step.} Explanations that sound
-good and are not true. So each one is tested twice: show the model only the
-highlighted connections (does the same alert still come out?), and remove them
-(does it disappear?). Before we replaced the explainer, 38 of our 50 published
+good and are not true. So each one is tested twice. The explainer has pointed
+at a few specific connections --- say three accounts and the four payments
+between them, out of a group of eighty-five. Test one: show the model
+\emph{only} those four payments and hide everything else; does the same alert
+still come out? Test two: put the whole group back but \emph{delete} those four
+payments; does the alert disappear? Before we replaced the explainer, 38 of our 50 published
 Bitcoin explanations failed that check. Now one does. We kept the old figure in
 writing rather than quietly improving it.
 
@@ -3003,23 +3014,66 @@ homework.}
 
 \subsubsection*{Reading ``How solid is this?'' --- the two fidelity questions}
 
+\textbf{First, what is being checked.} This panel is not about the whole group.
+It is about a much smaller thing, and until you know what that thing is, the
+rest of this subsection is unreadable.
+
+When the system raises a case, it does two separate jobs. It gives the group a
+risk score. And it picks out \textbf{a small handful of the connections inside
+that group} --- often three or four out of hundreds --- and says: \emph{these
+specific few are what my decision depended on.} Everything else in the group is
+context.
+
+That handful is what the dashboard calls \emph{``the few connections that
+mattered most''}. Older drafts of this report called it ``the highlighted
+links'' or ``the minimal subgraph'' without ever saying what it was, which made
+the whole explanation collapse for anyone reading it cold.
+
 \begin{plain}
-The panel asks two questions and answers each Yes or No:
-
-\textbf{1. Is the highlighted evidence enough on its own?}
-The system re-runs the model showing it \emph{only} the highlighted links. If
-the decision still comes out the same, the answer is \textbf{Yes} --- the
-evidence is sufficient.
-
-\textbf{2. Does removing it change the decision?}
-The system re-runs the model with the highlighted links \emph{taken away}. If
-the decision flips, the answer is \textbf{Yes} --- the evidence was necessary.
-
-\vspace{4pt}
-The ideal alert answers \emph{Yes} to both. In practice most of ours answer
-\emph{Yes} then \emph{No}: the evidence is enough to reproduce the decision, but
-the model could also have reached it another way.
+\textbf{A worked example.} Case 16 on the Bitcoin data is a group of
+\textbf{85 accounts} joined by \textbf{84 payments}. Out of all of that, the
+system points at \textbf{3 accounts and the 4 payments between them}. So
+``the handful'' here means those 4 payments, and nothing else.
 \end{plain}
+
+\textbf{Second, the two questions.} Once you know what the handful is, the two
+obvious things to ask about it are the two things this panel asks. Both are
+answered Yes or No.
+
+\begin{plain}
+\textbf{Question 1 --- was that handful enough on its own?}
+
+We run the case again, but this time we let the system see \emph{only} those
+3 accounts and 4 payments. We hide the other 81 accounts completely.
+
+If the same warning still comes out, the answer is \textbf{Yes}. That handful
+really was enough by itself.
+
+\vspace{6pt}
+\textbf{Question 2 --- was that handful actually necessary?}
+
+We run the case a third time, with the full group present but those same
+4 payments \emph{deleted}.
+
+If the warning now disappears, the answer is \textbf{Yes}. Those payments
+really were holding the case up.
+\end{plain}
+
+\begin{keybox}
+\textbf{The everyday version.} Somebody says they failed an exam because of two
+particular questions.
+
+Test one: give them a paper containing \emph{only} those two questions. Do they
+still fail? If yes, those two really were enough to sink them.
+
+Test two: give them the full paper with those two questions \emph{removed}. Do
+they now pass? If yes, those two really were the cause.
+
+Answer Yes to both and the explanation is solid. Answer Yes then No --- which
+is what most of our cases do --- and it means the handful is enough to
+reproduce the decision, but the system could also have reached the same
+conclusion by another route.
+\end{keybox}
 
 \begin{warnbox}
 \textbf{Why the panel does not just print the raw numbers} (a dashboard bug we
