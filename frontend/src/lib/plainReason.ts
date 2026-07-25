@@ -1,22 +1,30 @@
 // Turn the numbers in an explanation bundle into sentences a 15-year-old can
-// read without stopping.
+// read once, at normal speed, and repeat to a friend.
 //
 // WHY THIS EXISTS: an alert can score 0.93 and still show "no motif matched"
 // and "red flags (0)", because the pattern matcher only names shapes it can
 // formally prove. A reviewer then sees a big number next to two blanks.
 //
-// LANGUAGE RULES (a professional reviewer said the first version was still
-// written like a research paper — these are the rules that came out of that):
-//   - No machine-learning words. No "signal", "attention", "model", "layering",
-//     "topology", "structural", "attribution", "subgraph", "node", "edge".
-//   - Short sentences. One idea each. Prefer a full stop over a dash.
-//   - Say the everyday thing first ("money moves in a line, like a relay
-//     race"), never the technical thing.
-//   - Say plainly what it does NOT mean.
+// THIRD ATTEMPT (2026-07-25). The second attempt passed a 14-word jargon test
+// and was STILL judged too hard. The diagnosis in
+// docs/presentation_scripts_brief.md §5 was not vocabulary — it was SUBJECT:
 //
-// HONESTY RULE (unchanged): every sentence describes a measured number. It
-// never claims wrongdoing, never invents a pattern, and we say nothing at all
-// when the numbers are missing.
+//   Attempt 2 described THE SYSTEM.    "We asked the computer which parts
+//                                       actually made it suspicious."
+//   Attempt 3 describes THE SITUATION. "The money went through all of them in
+//                                       one go, one after another."
+//
+// RULES THAT CAME OUT OF THAT:
+//   - Lead with the striking fact. Never with the method.
+//   - Delete every clause that explains HOW WE KNOW. That belongs in the
+//     technical panel underneath, and it is already there.
+//   - No machine-learning words, and no words about the machine at all — no
+//     "computer", "model", "we asked", "the system pointed at".
+//   - Short sentences. One idea each. A full stop beats a dash.
+//
+// HONESTY RULE (unchanged, and it outranks all of the above): every sentence
+// describes a measured number. It never claims wrongdoing, never invents a
+// pattern, and says nothing at all when the numbers are missing.
 
 export interface PlainReason {
   headline: string;
@@ -36,54 +44,83 @@ interface Facts {
   domain?: string;
 }
 
-/** Describe the arrangement of the connections using an everyday picture. */
-function describeShape(nodes: number, edges: number, financial: boolean): string | null {
+type Shape = "chain" | "dense" | "loops";
+
+/** What arrangement the connections are in, as an everyday picture.
+ *
+ *  n things joined by fewer than n links cannot contain a loop, so the money
+ *  or the work can only travel forwards — that is the "chain". Far more links
+ *  than things means nearly everyone is joined to nearly everyone. In between,
+ *  paths can return to where they began. */
+function shapeOf(nodes: number, edges: number): Shape | null {
   if (!nodes || nodes < 3 || !edges) return null;
   const ratio = edges / nodes;
-
-  if (ratio < 1.05) {
-    // n-1 links for n things = a tree: no loops, everything hangs off a line
-    return financial
-      ? "The money moves in a line, like a relay race. It goes from one account " +
-          "to the next, then the next. It does not go back and forth between the " +
-          "same people. This is one of the ways money gets moved when someone " +
-          "wants it to be hard to trace."
-      : "The work passes along in a line, like a relay race. The same few " +
-          "companies hand it on to each other. They are not competing against " +
-          "one another for it.";
-  }
-  if (ratio > 2.5) {
-    return financial
-      ? "Almost every account here deals with almost every other one. Strangers " +
-          "who have no reason to know each other are rarely this closely tied " +
-          "together."
-      : "Almost every company here appears alongside almost every other one. " +
-          "Real competitors are rarely this closely tied together.";
-  }
-  return financial
-    ? "The money goes round in loops. It can come back to where it started, " +
-        "instead of moving on to someone new."
-    : "The same companies keep turning up together, again and again.";
+  if (ratio < 1.05) return "chain";
+  if (ratio > 2.5) return "dense";
+  return "loops";
 }
+
+const SHAPE_LINES: Record<Shape, { financial: string[]; procurement: string[] }> = {
+  chain: {
+    financial: [
+      "The money went through all of them in one go.",
+      "One account to the next, then the next, then the next.",
+      "It never came back to where it started.",
+      "Ordinary business money does not travel like that.",
+    ],
+    procurement: [
+      "The work was passed along a line, one company to the next.",
+      "It never came back to where it started.",
+      "It also never left the group.",
+    ],
+  },
+  dense: {
+    financial: [
+      "Almost every account here deals with almost every other one.",
+      "People who have no reason to know each other are rarely this tangled up.",
+    ],
+    procurement: [
+      "Almost every company here turns up alongside almost every other one.",
+      "Real competitors are rarely this close.",
+    ],
+  },
+  loops: {
+    financial: [
+      "The money goes round in circles.",
+      "It comes back to where it started instead of moving on to someone new.",
+    ],
+    procurement: [
+      "The same companies keep turning up together, again and again.",
+      "The same few names, over and over.",
+    ],
+  },
+};
+
+const HEADLINE: Record<Shape, (n: number, thing: string) => string> = {
+  chain: (n, thing) => `${n} ${thing}, one after another`,
+  dense: (n, thing) => `${n} ${thing}, nearly all dealing with each other`,
+  loops: (n, thing) => `${n} ${thing}, the same names going round`,
+};
 
 export function plainReason(f: Facts): PlainReason | null {
   const points: string[] = [];
   const n = f.nMembers ?? 0;
   const e = f.nMemberEdges ?? 0;
   const financial = f.domain !== "procurement";
-  const thing = financial ? "bank accounts" : "companies";
+  const thing = financial ? "accounts" : "companies";
   const thingOne = financial ? "account" : "company";
+  const payment = financial ? "payment" : "deal";
+  const payments = financial ? "payments" : "deals";
 
-  if (n >= 2) {
+  // 1. THE STRIKING FACT — what the arrangement looks like, first.
+  const shape = shapeOf(n, e);
+  if (shape) {
     points.push(
-      `There are ${n} ${thing} here. They are all joined to each other, so we ` +
-        `look at them together as one case instead of ${n} separate ones.`,
+      SHAPE_LINES[shape][financial ? "financial" : "procurement"].join(" "),
     );
   }
 
-  const shape = describeShape(n, e, financial);
-  if (shape) points.push(shape);
-
+  // 2. WHEN — a single window is the second most striking thing about a case.
   const sameWindow =
     f.windowStart !== undefined &&
     f.windowEnd !== undefined &&
@@ -91,44 +128,62 @@ export function plainReason(f: Facts): PlainReason | null {
 
   if (sameWindow) {
     points.push(
-      `It all happened in one short stretch of time. A real business usually ` +
-        `spreads its payments out over weeks or months. This whole group acted ` +
-        `at once.`,
+      financial
+        ? "All of it happened in one short stretch of time. A real business " +
+            "spreads its payments over weeks. This lot moved at once."
+        : "All of it happened in one short stretch of time. Public contracts " +
+            "normally come round over months. These did not.",
     );
   } else if (f.windowStart !== undefined && f.windowEnd !== undefined) {
-    points.push(`The activity runs from ${f.windowStart} to ${f.windowEnd}.`);
+    points.push(`It runs from ${f.windowStart} through to ${f.windowEnd}.`);
   }
 
+  // 3. HOW MANY — a count, not a lecture about why we grouped them.
+  if (n >= 3) {
+    points.push(
+      `${n} ${thing} are caught up in it. They are one case here, not ${n}.`,
+    );
+  } else if (n === 2) {
+    points.push(`Two ${thing}, tied to each other. They come as a pair.`);
+  }
+
+  // 4. WHERE TO START — the minimal evidence, said as a place to look rather
+  //    than as a thing an explainer produced.
   if (f.minimalNodes && f.minimalNodes > 0) {
     const ml = f.minimalEdges ?? 0;
     points.push(
-      `We asked the computer which parts actually made it suspicious. It pointed ` +
-        `at just ${f.minimalNodes} of the ${thing} and ${ml} ` +
-        `${ml === 1 ? "payment" : financial ? "payments" : "links"} between them. ` +
-        `So the warning is about something specific, not just about the group ` +
-        `being big.`,
+      `Most of it comes down to ${f.minimalNodes} of the ${thing} and ` +
+        `${ml} ${ml === 1 ? payment : payments} between them. ` +
+        `That is where to start.`,
     );
   }
 
+  // 5. THE ONE THING — only when a single link genuinely dominates.
   if (typeof f.maxAttention === "number" && f.maxAttention > 0) {
     points.push(
-      `One single connection stood out far more than all the others — the ` +
-        `computer treated it as ${(f.maxAttention * 100).toFixed(0)} out of 100 ` +
-        `of what mattered here. That is the first place a person should look.`,
+      f.maxAttention > 0.5
+        ? `One single link between two of them matters more than everything ` +
+            `else here put together.`
+        : `One single link between two of them stands out from the rest.`,
     );
   }
 
   if (points.length === 0) return null;
 
   const headline =
-    n >= 2 ? `${n} ${thing}, all joined together` : `What made this ${thingOne} stand out`;
+    shape && n >= 3
+      ? HEADLINE[shape](n, thing)
+      : n >= 2
+        ? `${n} ${thing}, tied to each other`
+        : `What made this ${thingOne} stand out`;
 
   return {
     headline,
     points,
     caveat:
-      "None of these things is against the law on its own. Plenty of honest " +
-      "businesses do each one. Together they are just a reason for a person to " +
-      "take a closer look. Nothing here says anyone did anything wrong.",
+      "None of this is against the law on its own. Plenty of honest " +
+      "businesses do each of these things. Together they are a reason for a " +
+      "person to take a closer look. Nothing here says anyone did anything " +
+      "wrong.",
   };
 }
