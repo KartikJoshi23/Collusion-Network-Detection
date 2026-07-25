@@ -1,23 +1,26 @@
-// Turn the numbers already in an explanation bundle into sentences a
-// non-technical reviewer can read.
+// Turn the numbers in an explanation bundle into sentences a 15-year-old can
+// read without stopping.
 //
 // WHY THIS EXISTS: an alert can score 0.93 and still show "no motif matched"
-// and "red flags (0)", because the pattern matcher only names the nine shapes
-// it can formally prove. A reviewer then sees a very high risk score next to
-// two blanks and cannot tell why. But the bundle already carries the facts —
-// group size, how the connections are arranged, whether everything happened at
-// once. This turns those facts into plain English.
+// and "red flags (0)", because the pattern matcher only names shapes it can
+// formally prove. A reviewer then sees a big number next to two blanks.
 //
-// HONESTY RULE: every sentence below is a DESCRIPTION of a measured number, not
-// a claim about guilt and not an invented pattern. If the numbers are missing
-// we say nothing rather than guessing.
+// LANGUAGE RULES (a professional reviewer said the first version was still
+// written like a research paper — these are the rules that came out of that):
+//   - No machine-learning words. No "signal", "attention", "model", "layering",
+//     "topology", "structural", "attribution", "subgraph", "node", "edge".
+//   - Short sentences. One idea each. Prefer a full stop over a dash.
+//   - Say the everyday thing first ("money moves in a line, like a relay
+//     race"), never the technical thing.
+//   - Say plainly what it does NOT mean.
+//
+// HONESTY RULE (unchanged): every sentence describes a measured number. It
+// never claims wrongdoing, never invents a pattern, and we say nothing at all
+// when the numbers are missing.
 
 export interface PlainReason {
-  /** short headline, e.g. "85 accounts moving as one group" */
   headline: string;
-  /** the observations, each safe to read aloud */
   points: string[];
-  /** the honest limit of what these observations mean */
   caveat: string;
 }
 
@@ -33,96 +36,99 @@ interface Facts {
   domain?: string;
 }
 
-/** Describe how the connections are arranged, in words. */
-function describeShape(nodes: number, edges: number, domain?: string): string | null {
+/** Describe the arrangement of the connections using an everyday picture. */
+function describeShape(nodes: number, edges: number, financial: boolean): string | null {
   if (!nodes || nodes < 3 || !edges) return null;
   const ratio = edges / nodes;
-  const isFinancial = domain !== "procurement";
+
   if (ratio < 1.05) {
-    // n-1 edges for n nodes = a tree: no loops, everything hangs off a path
-    return isFinancial
-      ? "The connections form a chain or fan rather than a normal web — value passes " +
-          "along a line instead of circulating between the same parties. Layering " +
-          "and pass-through behaviour looks like this."
-      : "The connections form a chain or fan rather than a normal web — the same " +
-          "few parties hand work onward instead of competing against each other.";
+    // n-1 links for n things = a tree: no loops, everything hangs off a line
+    return financial
+      ? "The money moves in a line, like a relay race. It goes from one account " +
+          "to the next, then the next. It does not go back and forth between the " +
+          "same people. This is one of the ways money gets moved when someone " +
+          "wants it to be hard to trace."
+      : "The work passes along in a line, like a relay race. The same few " +
+          "companies hand it on to each other. They are not competing against " +
+          "one another for it.";
   }
   if (ratio > 2.5) {
-    return isFinancial
-      ? "The accounts are densely interconnected — close to everyone dealing with " +
-          "everyone. Ordinary unrelated accounts are rarely this tangled."
-      : "The firms are densely interconnected — close to everyone appearing " +
-          "alongside everyone. Genuine competitors are rarely this tangled.";
+    return financial
+      ? "Almost every account here deals with almost every other one. Strangers " +
+          "who have no reason to know each other are rarely this closely tied " +
+          "together."
+      : "Almost every company here appears alongside almost every other one. " +
+          "Real competitors are rarely this closely tied together.";
   }
-  return isFinancial
-    ? "Each account connects to roughly one or two others, forming loops — value " +
-        "can return towards where it started."
-    : "Each firm connects to roughly one or two others, forming loops — the same " +
-      "parties reappear together.";
+  return financial
+    ? "The money goes round in loops. It can come back to where it started, " +
+        "instead of moving on to someone new."
+    : "The same companies keep turning up together, again and again.";
 }
 
 export function plainReason(f: Facts): PlainReason | null {
   const points: string[] = [];
   const n = f.nMembers ?? 0;
   const e = f.nMemberEdges ?? 0;
-  const isFinancial = f.domain !== "procurement";
-  const unit = isFinancial ? "accounts" : "firms";
+  const financial = f.domain !== "procurement";
+  const thing = financial ? "bank accounts" : "companies";
+  const thingOne = financial ? "account" : "company";
 
   if (n >= 2) {
     points.push(
-      `${n} ${unit} are involved, and they were pulled out as one connected group ` +
-        `rather than as separate cases.`,
+      `There are ${n} ${thing} here. They are all joined to each other, so we ` +
+        `look at them together as one case instead of ${n} separate ones.`,
     );
   }
 
-  const shape = describeShape(n, e, f.domain);
+  const shape = describeShape(n, e, financial);
   if (shape) points.push(shape);
 
-  // all activity inside a single time step = a burst, not steady behaviour
-  if (
+  const sameWindow =
     f.windowStart !== undefined &&
     f.windowEnd !== undefined &&
-    String(f.windowStart) === String(f.windowEnd)
-  ) {
+    String(f.windowStart) === String(f.windowEnd);
+
+  if (sameWindow) {
     points.push(
-      `Everything happened inside a single time window (${f.windowStart}). Normal ` +
-        `business activity is usually spread out; a whole group acting at once is not.`,
+      `It all happened in one short stretch of time. A real business usually ` +
+        `spreads its payments out over weeks or months. This whole group acted ` +
+        `at once.`,
     );
   } else if (f.windowStart !== undefined && f.windowEnd !== undefined) {
-    points.push(`Activity runs from ${f.windowStart} to ${f.windowEnd}.`);
+    points.push(`The activity runs from ${f.windowStart} to ${f.windowEnd}.`);
   }
 
   if (f.minimalNodes && f.minimalNodes > 0) {
     const ml = f.minimalEdges ?? 0;
     points.push(
-      `When asked which connections actually drove the decision, the model kept ` +
-        `only ${f.minimalNodes} ${unit} and ${ml} ${ml === 1 ? "link" : "links"} — ` +
-        `so the signal comes from a small, specific part of the group, not from ` +
-        `its size alone.`,
+      `We asked the computer which parts actually made it suspicious. It pointed ` +
+        `at just ${f.minimalNodes} of the ${thing} and ${ml} ` +
+        `${ml === 1 ? "payment" : financial ? "payments" : "links"} between them. ` +
+        `So the warning is about something specific, not just about the group ` +
+        `being big.`,
     );
   }
 
   if (typeof f.maxAttention === "number" && f.maxAttention > 0) {
     points.push(
-      `Its strongest single connection carried ${(f.maxAttention * 100).toFixed(0)}% ` +
-        `of the model's attention, meaning one particular link mattered far more ` +
-        `than the rest.`,
+      `One single connection stood out far more than all the others — the ` +
+        `computer treated it as ${(f.maxAttention * 100).toFixed(0)} out of 100 ` +
+        `of what mattered here. That is the first place a person should look.`,
     );
   }
 
   if (points.length === 0) return null;
 
   const headline =
-    n >= 2
-      ? `${n} ${unit} moving as one group`
-      : "What the model reacted to";
+    n >= 2 ? `${n} ${thing}, all joined together` : `What made this ${thingOne} stand out`;
 
   return {
     headline,
     points,
     caveat:
-      "These are descriptions of measured facts, not accusations. None of them is " +
-      "illegal on its own — they are the reasons this group was put in front of a " +
-      "human, who decides what happens next.",
+      "None of these things is against the law on its own. Plenty of honest " +
+      "businesses do each one. Together they are just a reason for a person to " +
+      "take a closer look. Nothing here says anyone did anything wrong.",
   };
 }

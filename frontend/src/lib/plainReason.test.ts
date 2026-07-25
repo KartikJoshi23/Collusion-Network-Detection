@@ -3,8 +3,9 @@ import { plainReason } from "./plainReason";
 
 // Regression pin for the live 2026-07-25 complaint: an alert scoring 0.93 showed
 // "no motif matched" and "red flags (0)" and nothing else, so a reviewer could
-// not tell why it was risky. The bundle already held the facts; they just were
-// never put into words.
+// not tell why it was risky. A professional reviewer then said the first fix was
+// STILL written like a research paper. These tests pin both the content and the
+// reading level.
 describe("plain-language reasons", () => {
   const CASE_16 = {
     riskScore: 0.9265,
@@ -20,47 +21,86 @@ describe("plain-language reasons", () => {
 
   it("explains a high-risk alert that matched no motif", () => {
     const r = plainReason(CASE_16)!;
-    expect(r).toBeTruthy();
-    expect(r.headline).toContain("85 accounts");
+    expect(r.headline).toContain("85 bank accounts");
     const text = r.points.join(" ");
-    expect(text).toContain("85 accounts are involved");
-    // 85 nodes / 84 edges is a tree — must be described as a chain/fan
-    expect(text).toMatch(/chain or fan/);
-    // single time window must be called out as a burst
-    expect(text).toContain("single time window (45)");
-    expect(text).toMatch(/53%.*attention/);
+    expect(text).toContain("There are 85 bank accounts here");
+    // 85 things joined by 84 links is a tree — describe it as a line/relay
+    expect(text).toMatch(/relay race/);
+    // everything in one period must be called out
+    expect(text).toMatch(/one short stretch of time/);
+    // the standout connection, as a plain fraction not "attention"
+    expect(text).toMatch(/53 out of 100/);
+  });
+
+  it("uses NO machine-learning jargon anywhere", () => {
+    const all = [
+      plainReason(CASE_16)!,
+      plainReason({ ...CASE_16, domain: "procurement" })!,
+      plainReason({ ...CASE_16, nMembers: 20, nMemberEdges: 90 })!,
+    ]
+      .flatMap((r) => [r.headline, ...r.points, r.caveat])
+      .join(" ")
+      .toLowerCase();
+
+    for (const jargon of [
+      "attention",
+      "signal",
+      "model",
+      "layering",
+      "topology",
+      "structural",
+      "attribution",
+      "subgraph",
+      "node",
+      "edge",
+      "motif",
+      "calibrated",
+      "prevalence",
+      "embedding",
+    ]) {
+      expect(all, `must not use the word "${jargon}"`).not.toContain(jargon);
+    }
   });
 
   it("never states or implies guilt", () => {
     const r = plainReason(CASE_16)!;
     const all = [r.headline, ...r.points, r.caveat].join(" ").toLowerCase();
-    for (const banned of ["guilty", "criminal", "fraud", "proves", "illegal activity"]) {
-      // "illegal" appears only in the caveat's "none of them is illegal on its own"
-      if (banned === "illegal activity") continue;
+    for (const banned of ["guilty", "criminal", "fraud", "proves", "laundering"]) {
       expect(all, `must not assert "${banned}"`).not.toContain(banned);
     }
-    expect(r.caveat).toContain("not accusations");
+    expect(r.caveat).toContain("against the law on its own");
+    expect(r.caveat).toContain("Nothing here says anyone did anything wrong");
   });
 
-  it("uses the right words for each domain", () => {
+  it("keeps sentences short enough to read once", () => {
+    const r = plainReason(CASE_16)!;
+    for (const p of r.points) {
+      for (const sentence of p.split(/(?<=\.)\s+/)) {
+        const words = sentence.trim().split(/\s+/).length;
+        expect(words, `too long: "${sentence}"`).toBeLessThanOrEqual(26);
+      }
+    }
+  });
+
+  it("uses the right everyday words for each domain", () => {
     const fin = plainReason({ ...CASE_16, domain: "financial" })!;
     const proc = plainReason({ ...CASE_16, domain: "procurement" })!;
-    expect(fin.points.join(" ")).toContain("accounts");
-    expect(proc.points.join(" ")).toContain("firms");
-    // and the shape wording must be domain-appropriate, not copy-pasted
-    expect(fin.points.join(" ")).toMatch(/value passes/);
-    expect(proc.points.join(" ")).toMatch(/hand work onward/);
+    expect(fin.points.join(" ")).toContain("bank accounts");
+    expect(proc.points.join(" ")).toContain("companies");
+    expect(fin.points.join(" ")).toMatch(/money moves in a line/);
+    expect(proc.points.join(" ")).toMatch(/work passes along in a line/);
   });
 
   it("describes a dense group differently from a chain", () => {
     const dense = plainReason({ ...CASE_16, nMembers: 20, nMemberEdges: 90 })!;
-    expect(dense.points.join(" ")).toMatch(/densely interconnected/);
+    expect(dense.points.join(" ")).toMatch(/deals with almost every other one/);
   });
 
-  it("gets singular/plural right", () => {
+  it("gets singular and plural right", () => {
     const r = plainReason({ ...CASE_16, minimalNodes: 2, minimalEdges: 1 })!;
-    expect(r.points.join(" ")).toContain("1 link ");
-    expect(r.points.join(" ")).not.toContain("1 links");
+    const t = r.points.join(" ");
+    expect(t).toContain("1 payment ");
+    expect(t).not.toContain("1 payments");
   });
 
   it("says nothing rather than guessing when the facts are missing", () => {

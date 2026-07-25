@@ -40,6 +40,22 @@ const KNOWN = new Set([
 
 type Bundle = Record<string, unknown>;
 
+/** Plain names for the raw evidence keys. Without this the panel printed
+ *  "N MEMBER EDGES" and "TIME WINDOW", which mean nothing to a reader. */
+const EVIDENCE_LABEL: Record<string, string> = {
+  n_members: "How many are in this group",
+  n_member_edges: "Connections between them",
+  time_window: "When it happened",
+  member_time_span: "When the group was active",
+  amounts: "Amounts involved",
+  fees: "Fees paid",
+  degrees: "How many links each one has",
+  rotation_sequence: "Order the wins went round",
+  price_stats: "Price patterns",
+  co_bid_history: "How often they bid together",
+  shared_links: "Things they share (address, director)",
+};
+
 /** Shown when an alert has no explanation bundle — which is the DESIGNED
  *  outcome for everything below the explanation budget, not a failure. It
  *  reads the alert row (already fetched for the queue) so the reviewer still
@@ -96,29 +112,29 @@ function NoBundlePanel({ alertId }: { alertId: string }) {
 
       <div className="min-h-0 flex-1 overflow-auto p-4">
         <div className="grid gap-3 lg:grid-cols-2">
-          <Card title="Why there is no dossier" hue={UI_HUES.teal} delay={0}>
+          <Card title="Why there is no case file" hue={UI_HUES.teal} delay={0}>
             {band?.name === "Low / ordinary" ? (
               <p className="text-xs leading-relaxed text-text-1">
                 <span style={{ color: "var(--benign)" }}>
-                  This group was scored as <strong>ordinary</strong>.
+                  This group looks <strong>ordinary</strong>.
                 </span>{" "}
-                The system did not consider it worth a reviewer's time, so no
-                detailed evidence was assembled for it. That is the correct
-                outcome — it is the contrast case, showing what the model does{" "}
-                <em>not</em> flag.
+                The system did not think it was worth anyone&rsquo;s time, so it
+                did not write up a case file. That is the right outcome. This is
+                the comparison case — it shows you what the system does{" "}
+                <em>not</em> worry about.
               </p>
             ) : (
               <p className="text-xs leading-relaxed text-text-1">
-                This alert sits below the explanation budget. Detailed evidence
-                is assembled for the head of the queue because producing it
-                costs real computation, so lower-ranked groups carry a score and
-                a subgraph but no dossier.
+                This case sits further down the list. We only write up the full
+                evidence for the cases at the top, because doing that takes real
+                computing time. Cases further down still get a score and a
+                network you can look at — just not a written-up file.
               </p>
             )}
             <p className="mt-2 text-[11px] leading-snug text-text-2">
               Nothing is hidden here: the network itself is still fully
               inspectable in the Graph Explorer, and the score below comes from
-              the same calibrated model as every other alert.
+              exactly the same scoring as every other case.
             </p>
             <button
               onClick={() => setView("explorer")}
@@ -180,13 +196,13 @@ const FIDELITY_TILES = [
   {
     key: "fidelity_minus",
     label: "fidelity−",
-    question: "Is the highlighted evidence enough on its own?",
+    question: "Is this evidence enough on its own?",
     goodWhen: "low" as const,
   },
   {
     key: "fidelity_plus",
     label: "fidelity+",
-    question: "Does removing it change the decision?",
+    question: "If we take this evidence away, does the warning go away?",
     goodWhen: "high" as const,
   },
 ];
@@ -282,7 +298,7 @@ export function CaseDetail() {
         {typeof bundle.risk_score === "number" && (
           <span
             className="mono rounded-md px-2 py-0.5 text-xs"
-            title="calibrated probability — a screening score, not certainty"
+            title="How strongly this group stands out, on a scale of 0 to 1. It is a reason to look, not proof of anything."
             style={{
               color: "var(--risk-high)",
               background: "var(--risk-high-dim)",
@@ -368,27 +384,28 @@ export function CaseDetail() {
                   </p>
                 )}
                 <p className="mb-2 text-xs leading-snug text-text-2">
-                  No nameable motif matched. The matcher only names the nine
-                  shapes it can prove; it never invents one. The plain-English
-                  reasons are in the Red flags card; the raw measurements are
-                  below.
+                  This group does not match any of the nine known cheating
+                  patterns by name. We only put a name on a pattern when we can
+                  prove it, and we never make one up. The reasons it was still
+                  flagged are written out in plain words in the next panel.
                 </p>
                 <div className="grid gap-1.5 text-xs">
                   {minimalNodes > 0 && (
                     <div className="flex justify-between gap-3">
                       <span className="text-text-2">
-                        Minimal sub-network the explainer kept
+                        The few connections that mattered most
                       </span>
                       <span className="mono text-text-1">
-                        {minimalNodes} {minimalNodes === 1 ? "node" : "nodes"} ·{" "}
-                        {minimalEdges} {minimalEdges === 1 ? "link" : "links"}
+                        {minimalNodes} of them ·{" "}
+                        {minimalEdges}{" "}
+                        {minimalEdges === 1 ? "connection" : "connections"}
                       </span>
                     </div>
                   )}
                   {typeof attention?.max_incoming_attention === "number" && (
                     <div className="flex justify-between gap-3">
                       <span className="text-text-2">
-                        Strongest single incoming link (attention)
+                        Strongest single connection
                       </span>
                       <span className="mono text-text-1">
                         {(attention.max_incoming_attention as number).toFixed(3)}
@@ -405,9 +422,9 @@ export function CaseDetail() {
                   )}
                 </div>
                 <p className="mt-2 text-[11px] leading-snug text-text-2">
-                  An absent motif is an honest answer, never fabricated — see
-                  Attribution quality for whether this evidence reproduces the
-                  decision.
+                  Having no named pattern is an honest answer, not a gap. See
+                  &ldquo;How solid is this?&rdquo; below for whether this
+                  evidence holds up on its own.
                 </p>
               </div>
             )}
@@ -425,7 +442,7 @@ export function CaseDetail() {
                 <div>
                   <p className="mb-2 text-xs text-text-2">
                     This group matches no official indicator by name. Here is
-                    what the model reacted to, in plain terms:
+                    what made it stand out, in plain words:
                   </p>
                   <ul className="grid list-disc gap-1.5 pl-4 text-xs leading-relaxed text-text-1">
                     {reason.points.map((p, i) => (
@@ -488,8 +505,8 @@ export function CaseDetail() {
                   key={k}
                   className="flex items-baseline gap-2 border-b border-hairline/30 pb-1.5 text-xs"
                 >
-                  <span className="w-36 shrink-0 uppercase tracking-wide text-text-2">
-                    {k.replace(/_/g, " ")}
+                  <span className="w-36 shrink-0 text-text-2">
+                    {EVIDENCE_LABEL[k] ?? k.replace(/_/g, " ")}
                   </span>
                   <span className="mono min-w-0 flex-1 break-words text-text-0">
                     {fmtValue(v)}
@@ -503,15 +520,15 @@ export function CaseDetail() {
               ))}
               {Object.keys(sources).length > 0 && (
                 <p className="pt-1 text-[10px] text-text-2">
-                  labels name each field's evidence source — absent channels are
-                  absent, not imputed
+                  each fact is labelled with where it came from. If a fact is
+                  missing, it is genuinely missing — we never fill in a guess
                 </p>
               )}
             </div>
           </Card>
 
           {/* fidelity + members */}
-          <Card title="Attribution quality" hue={UI_HUES.violet} delay={3}>
+          <Card title="How solid is this?" hue={UI_HUES.violet} delay={3}>
             {fidelity ? (
               <div className="mb-3 flex flex-wrap gap-2">
                 {FIDELITY_TILES.map(({ key, label, question, goodWhen }) => {
@@ -562,15 +579,16 @@ export function CaseDetail() {
                   </div>
                 )}
                 <p className="w-full text-[11px] leading-snug text-text-2">
-                  For a single alert these are yes/no verdicts, not scores: the
-                  test re-runs the model with the highlighted evidence alone, and
-                  again with it removed, and checks whether the decision holds.
+                  We check this by running the case twice more: once showing the
+                  computer only this evidence, and once hiding it. Then we see
+                  whether the warning still comes out the same. For one case the
+                  answer is a plain yes or no, not a score.
                 </p>
               </div>
             ) : (
               <p className="mb-3 text-xs text-text-2">
-                No learned attribution for this model family (R12) — matcher and
-                screen evidence carry this bundle.
+                This kind of model cannot show which links it used. The pattern rules and
+                the standard checks carry the evidence here instead.
               </p>
             )}
             {members.length > 0 && (
@@ -602,8 +620,8 @@ export function CaseDetail() {
         {(attention || bundle.minimal_subgraph || unknownKeys.length > 0) && (
           <details className="mt-3 rounded-md bg-bg-1/60 p-2">
             <summary className="cursor-pointer text-xs text-text-1 transition-colors hover:text-accent">
-              Technical appendix (attention summary, minimal subgraph
-              {unknownKeys.length > 0 ? `, ${unknownKeys.join(", ")}` : ""})
+              For the technical team: every raw value behind this case
+              {unknownKeys.length > 0 ? ` (incl. ${unknownKeys.join(", ")})` : ""}
             </summary>
             <pre className="mono mt-2 overflow-x-auto text-[11px] leading-relaxed text-text-1">
               {JSON.stringify(

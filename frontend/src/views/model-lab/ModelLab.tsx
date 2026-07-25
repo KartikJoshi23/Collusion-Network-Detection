@@ -154,8 +154,8 @@ export function ModelLab() {
         </h2>
         <p className="text-xs text-text-2">
           Published metrics for <span className="mono">{dataset}</span> — every
-          chart exports as SVG/PNG (paper figures). AUC-PR always reads against
-          its prevalence baseline.
+          chart can be saved as an image for slides. Every score is read against
+          what blind guessing would achieve.
         </p>
       </div>
 
@@ -191,8 +191,8 @@ export function ModelLab() {
               <div className="grid gap-3 xl:grid-cols-2">
                 {steps.length > 0 && (
                   <ChartCard
-                    title="AUC-PR by time step"
-                    subtitle="temporal shift, per-step vs its own prevalence (dashed) — the step-43 regime change is the finding"
+                    title="How well it scored, period by period"
+                    subtitle="each bar is one time period, against what blind guessing would score there (dashed). The drop after period 43 is a real-world change, and it is one of our findings"
                     hue={UI_HUES.cyan}
                     filename={`${dataset}_auc_pr_by_step`}
                   >
@@ -201,8 +201,8 @@ export function ModelLab() {
                 )}
                 {precK.length > 0 && (
                   <ChartCard
-                    title="Node-level precision@k"
-                    subtitle="measured at the run's published budgets only"
+                    title="How many of your top picks are real"
+                    subtitle="measured only at the review sizes this run actually published"
                     hue={UI_HUES.violet}
                     filename={`${dataset}_precision_at_k`}
                   >
@@ -217,7 +217,7 @@ export function ModelLab() {
                 {queueK.length > 0 && (
                   <ChartCard
                     title="Alert-level queue precision"
-                    subtitle="deduplicated community alerts; unconfirmed ≠ false (77% unknown labels on Elliptic++)"
+                    subtitle="near-duplicate cases removed. Note: a case we could not confirm is not the same as a case that was wrong — 77% of this data has no answer recorded either way"
                     hue={UI_HUES.magenta}
                     filename={`${dataset}_queue_precision`}
                   >
@@ -251,7 +251,7 @@ export function ModelLab() {
         <Glass className="mx-0 p-0">
           <details>
             <summary className="cursor-pointer px-3 py-2 text-xs text-text-1 transition-colors hover:text-accent">
-              Statistical rigour — multi-seed spread, significance, transfer
+              How much can you trust these numbers? Repeat runs, fairness tests, transfer
               matrices, robustness curves
             </summary>
             <div className="pb-2">

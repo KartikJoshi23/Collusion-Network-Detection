@@ -89,7 +89,7 @@ export function About() {
       {/* motif table */}
       <section className="mx-auto max-w-4xl px-6 py-8">
         <h2 data-reveal className="display mb-1 text-xl font-semibold">
-          The motif table
+          The pattern table
         </h2>
         <p data-reveal className="mb-5 max-w-2xl text-xs text-text-1">
           Nine coordination patterns, curated from FATF money-laundering
@@ -158,9 +158,11 @@ export function About() {
           ))}
         </div>
         <p data-reveal className="mt-4 text-xs leading-relaxed text-text-2">
-          Every number the console shows is leakage-safe by construction:
-          strict-inductive temporal splits, as-of features, group-isolated
-          folds — and every headline reads against its prevalence baseline.
+          Every number here is built so the system cannot cheat. It learns from
+          the past and is tested on the future, never the other way round. It
+          only ever uses facts that were known at the time. When we test on a
+          new country, that country is held out completely. And every score is
+          shown next to what blind guessing would have achieved.
         </p>
       </section>
 

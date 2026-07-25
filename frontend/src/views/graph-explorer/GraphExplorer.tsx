@@ -210,7 +210,7 @@ export function GraphExplorer() {
         <span className="mono text-xs text-text-2">{alertId}</span>
         {data?.truncated && (
           <span className="rounded bg-risk-med/15 px-1.5 py-0.5 text-xs text-risk-med">
-            view truncated at node cap
+            showing only part of the network, to keep it readable
           </span>
         )}
         <button

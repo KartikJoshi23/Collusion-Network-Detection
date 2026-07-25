@@ -351,7 +351,7 @@ function PrecisionReadout({
   return (
     <span
       className="mono flex items-center gap-1.5 text-xs text-text-1"
-      title="measured alert-level precision at the nearest published budget — a calibrated screening rate, not certainty"
+      title="out of the cases you review, how many turned out to be real. Measured, not promised"
     >
       <span className="text-text-2">measured P@{at.k}</span>
       <span className="text-sm" style={{ color: UI_HUES.amber }}>

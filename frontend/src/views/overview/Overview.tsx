@@ -66,7 +66,7 @@ export function Overview() {
           value={isLoading ? undefined : flagged}
           hue={UI_HUES.coral}
         />
-        <Kpi label="Budget k" value={budget} hue={UI_HUES.amber} />
+        <Kpi label="Cases to review" value={budget} hue={UI_HUES.amber} />
         <Kpi label={`${domain} datasets`} value={nDatasets} hue={UI_HUES.violet} />
       </div>
 

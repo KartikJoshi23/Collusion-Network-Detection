@@ -155,7 +155,7 @@ export function RigorSection({ dataset }: { dataset: string }) {
       {significance.length > 0 && (
         <Glass className="mx-2 p-3">
           <div className="mb-1 text-[10px] uppercase tracking-wide text-text-2">
-            Paired bootstrap significance (2,000 resamples, stratified)
+            Is the difference real, or luck?
           </div>
           <div className="grid gap-1">
             {significance.map((row) => {
@@ -231,7 +231,7 @@ export function RigorSection({ dataset }: { dataset: string }) {
         {noise.length > 0 && (
           <ChartCard
             title="Label-noise robustness"
-            subtitle="test AUC-PR vs % of train labels flipped (mean over seeds; evaluation labels untouched)"
+            subtitle="we deliberately corrupted some training answers and re-scored. The test answers were never touched"
             hue={UI_HUES.amber}
             filename={`${dataset}_label_noise`}
           >
