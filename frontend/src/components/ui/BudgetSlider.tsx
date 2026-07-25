@@ -12,7 +12,7 @@ export function BudgetSlider() {
   const fill = `${(100 * (budget - MIN)) / (MAX - MIN)}%`;
   return (
     <label className="flex items-center gap-2 text-xs text-text-1">
-      <span className="text-text-2">budget k</span>
+      <span className="text-text-2">Cases to review</span>
       <input
         type="range"
         min={MIN}

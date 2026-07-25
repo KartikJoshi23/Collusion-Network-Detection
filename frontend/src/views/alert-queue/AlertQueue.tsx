@@ -134,7 +134,7 @@ export function AlertQueue() {
               <tr className="border-b border-hairline">
                 <th className="px-4 py-2 font-medium">#</th>
                 <th className="px-4 py-2 font-medium">Risk</th>
-                <th className="px-4 py-2 font-medium">Motif</th>
+                <th className="px-4 py-2 font-medium">Pattern</th>
                 <th className="px-4 py-2 font-medium">Flags</th>
                 <th className="px-4 py-2 font-medium">Members</th>
                 <th className="px-4 py-2 font-medium">Activity</th>

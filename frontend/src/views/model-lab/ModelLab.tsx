@@ -91,7 +91,7 @@ function HeadlineBlock({ nodeLevel }: { nodeLevel: Record<string, unknown> }) {
             <thead>
               <tr className="text-text-2">
                 <th className="px-3 py-1.5 text-left font-normal">
-                  review budget
+                  cases reviewed
                 </th>
                 <th className="px-3 py-1.5 text-right font-normal">
                   precision
