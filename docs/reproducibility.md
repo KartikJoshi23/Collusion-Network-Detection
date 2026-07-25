@@ -49,6 +49,7 @@ auto-dispatches on config shape). Outputs land in the gitignored
 | `alert_queue_elliptic_pp.yaml` | M2-era SAGE queue (historical first queue) |
 | `alert_queue_elliptic_pp_ensemble.yaml` | the published queue: 254 alerts, P@50 0.32 |
 | `gnn_elliptic_actor_rgcn.yaml` / `alert_queue_elliptic_actor.yaml` | actor view: AUC-PR 0.2473 with seed-stable queue head P@100 ≥ 0.98 |
+| `explanations_elliptic_actor.yaml` | 20/20 matcher bundles over the actor queue — **15 with motif + FATF flags** (added 2026-07-25: the dashboard audit found the actor dataset served 50 alerts with zero bundles) |
 | `injection_recovery_elliptic_pp.yaml` | M3 injection-recovery report (floor catches common_control 1.0) |
 | `explanations_elliptic_pp.yaml` | 50/50 PGExplainer bundles |
 | `explainer_ablation_elliptic_pp.yaml` | the §7-27 three-arm fidelity ablation (PGExplainer adopted) |
@@ -80,6 +81,7 @@ parquets and are persisted by `scripts/build_demo_artifacts.py`.
 |---|---|
 | `transfer_lomo_matrix_garcia.yaml` | 4×5 LOMO matrix: macro lift 1.57, positive on every market (Italy P@10 1.00) |
 | `alert_queue_garcia_italy.yaml` | dashboard queue over the Italy LOMO fold (market-based `test_group`, precalibrated): 3 alerts, all confirmed cartels |
+| `explanations_garcia_italy.yaml` | 3/3 matcher bundles over that queue — 0 motifs (its communities are 2-firm, too small to contain a shape; honest, not a failure). Added 2026-07-25 by the dashboard audit |
 | `cross_domain_probe_proc2fin.yaml` | frozen-probe proc→fin: 0.1501 vs 0.065 prevalence (byte-reproduces cross-machine) |
 | `cross_domain_probe_fin2proc.yaml` | frozen-probe fin→proc: 0.2843 < 0.358 prevalence (negative) |
 | `label_efficiency_proc2fin.yaml` / `label_efficiency_fin2proc.yaml` | label-efficiency curves: transfer never pays at ≤500 target labels, either direction |

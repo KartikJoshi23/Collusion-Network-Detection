@@ -1714,6 +1714,44 @@ then open \code{http://localhost:5173}
 \textbf{Everything in one command:} \code{docker compose up}, then port 8080
 \end{plain}
 
+\subsection{Why the dashboard shows four datasets and not six}
+
+This is the first question people ask, so it belongs here rather than buried.
+
+We use six datasets. The dashboard shows \textbf{four}. Nothing is broken --- the
+dashboard can only show a dataset that has a finished, ranked alert queue, and
+two of the six do not have one \emph{by design}.
+
+\begin{longtable}{@{}p{3.4cm}p{2.4cm}p{9.3cm}@{}}
+\toprule
+\textbf{Dataset} & \textbf{On screen?} & \textbf{Why} \\
+\midrule
+\endhead
+Elliptic++ (payments) & \textbf{Yes} & Trained model, 254 alerts, explanations. \\
+Elliptic++ (wallets) & \textbf{Yes} & Trained model, 2{,}514 alerts. The
+two-granularity story: same crime, two ways of looking at it. \\
+Mendeley EU & \textbf{Yes} & Trained model, 223 alerts, explanations. \\
+García Rodríguez & \textbf{Yes} & Queue over the Italy market fold --- only 3
+alerts, and honestly so (its network yields few multi-firm groups). \\
+\addlinespace
+OCDS Georgia & \textbf{No} & \textbf{It has no answer key at all} --- that is the
+whole point of it. It is our large playground for planting fake cartels and
+measuring recovery (Section~\ref{sec:results}). With no labels there is no
+supervised queue to rank, so there is nothing for the queue screen to show. \\
+AMLworld & \textbf{No} & Needs credentials on the running machine and
+graphics hardware we do not have. Its role is checking the detector against
+known patterns, not powering the dashboard. \\
+\bottomrule
+\end{longtable}
+
+\begin{plain}
+\textbf{The short version for a presentation:} ``Four of the six datasets have a
+trained ranking model, so those four appear in the console. The fifth is
+deliberately unlabelled --- it is where we plant synthetic cartels to measure what
+we can recover without any answer key --- and the sixth needs hardware we do not
+have.''
+\end{plain}
+
 \subsection{On every screen}
 
 \begin{itemize}
@@ -1810,29 +1848,150 @@ Where an investigator decides. It contains:
   \item \textbf{Source labels} --- each piece marked as coming from the learned
         model, the plain rules, or the statistical checks. This stops anyone
         assuming one method explains everything.
-  \item \textbf{Fidelity} --- how much the score really depends on the highlighted
-        evidence.
+  \item \textbf{Attribution quality} --- two plain questions, explained below.
   \item \textbf{Export} --- download the alert as a file.
   \item \textbf{The fixed ethics wording}, which the code physically refuses to
         let anyone alter.
 \end{itemize}
 
+\subsubsection*{Reading ``Attribution quality'' --- the two fidelity questions}
+
+\begin{plain}
+The panel asks two questions and answers each Yes or No:
+
+\textbf{1. Is the highlighted evidence enough on its own?}
+The system re-runs the model showing it \emph{only} the highlighted links. If
+the decision still comes out the same, the answer is \textbf{Yes} --- the
+evidence is sufficient.
+
+\textbf{2. Does removing it change the decision?}
+The system re-runs the model with the highlighted links \emph{taken away}. If
+the decision flips, the answer is \textbf{Yes} --- the evidence was necessary.
+
+\vspace{4pt}
+The ideal alert answers \emph{Yes} to both. In practice most of ours answer
+\emph{Yes} then \emph{No}: the evidence is enough to reproduce the decision, but
+the model could also have reached it another way.
+\end{plain}
+
+\begin{warnbox}
+\textbf{Why the panel does not just print the raw numbers} (a dashboard bug we
+found and fixed on 2026-07-25). Underneath, these are two numbers called
+\emph{fidelity$-$} and \emph{fidelity$+$}. For a single alert each is a hard 0 or
+1, never a sliding scale --- and confusingly, \textbf{zero means opposite things
+for the two}: fidelity$-$ of 0 is the \emph{best} possible result, while
+fidelity$+$ of 0 is the \emph{weak} one.
+
+The dashboard used to print ``fidelity plus 0.000 / fidelity minus 0.000'',
+which told a viewer nothing and looked like a broken readout. It now asks the
+question each number actually answers, colours the good answer, and keeps the
+raw value in brackets for anyone who wants it.
+\end{warnbox}
+
+\subsubsection*{When no pattern name appears}
+
+Some alerts show ``no nameable motif matched''. That is honest, not a failure:
+the matcher only names the nine shapes it can actually prove, and many real
+communities do not contain a textbook shape. On the Mendeley queue the top
+alerts are two-firm groups, which are too small to contain any shape at all.
+
+In that case the dossier now shows \textbf{what the model did key on} --- the size
+of the minimal sub-network the explainer kept, the strongest single incoming
+link, and the community size --- so the alert is still defensible. Before
+2026-07-25 that evidence sat collapsed inside a technical appendix, which made
+those dossiers look empty on exactly the alerts a reviewer most needs to
+justify.
+
 \subsection{Screen 5 --- Model Lab}
 
-The chart factory: accuracy curves, precision-against-budget curves, the
-country-to-country transfer heat map, comparison charts, and the rigour panel
-(spreads across attempts, confidence ranges, the label-noise curve). Everything
-exports as an image for papers and slides.
+The chart factory. It is laid out so you can present from it top to bottom:
+
+\begin{enumerate}
+  \item \textbf{Rigour and uncertainty} (first, because it frames everything
+        else): the spread across our five attempts, transfer matrices,
+        significance tests and robustness curves.
+  \item \textbf{Per run, a headline block:} the AUC-PR score, the blind-guessing
+        level it must be read against, and the resulting ``$N\times$ better than
+        guessing''. Underneath, the size of the labelled test set.
+  \item \textbf{Per run, one budget table:} for each review budget, the
+        precision, recall and false-positive rate. One row per budget.
+  \item \textbf{Then the charts:} score by time step (this is where the
+        step-43 regime change is visible), precision against budget with a live
+        marker, and queue precision.
+  \item \textbf{A collapsible tree} holding every raw number the run published,
+        for anyone who wants to check.
+\end{enumerate}
+
+\begin{warnbox}
+\textbf{A clutter bug fixed on 2026-07-25.} This screen used to dump
+\emph{every} numeric field a run published as its own small tile, in whatever
+order they happened to sit in the file --- twelve unlabelled tiles per run, two
+runs per dataset. It was impossible to present from.
+
+It also formatted every one of them to four decimal places, so the count of
+test items rendered as ``16670.0000''.
+
+Now: one headline number that carries its own meaning, and one ordered table.
+The underlying numbers are identical --- only the arrangement changed.
+\end{warnbox}
+
+Everything exports as an image for papers and slides.
 
 \subsection{Screen 6 --- About}
 
 A scrolling explanation of the ``two ledgers, one shape'' idea, with the shape
 table animated. Doubles as the opening of a demo.
 
-\subsection{The assistant}
+\subsection{The assistant, and the knowledge base behind it}
 
-Ask questions in ordinary English, such as ``why was alert 3 flagged?''. What
-makes it safe:
+Ask questions in ordinary English, such as ``why was alert 3 flagged?''.
+
+\subsubsection*{Where its answers come from}
+
+The assistant is not allowed to answer from memory. Before it writes anything it
+must go and look something up. It has exactly three places it is allowed to
+look, and nothing else:
+
+\begin{longtable}{@{}p{4.3cm}p{11.2cm}@{}}
+\toprule
+\textbf{Source} & \textbf{What it holds} \\
+\midrule
+\endhead
+\textbf{The knowledge base} & Our own curated warning-sign library: the FATF
+(money laundering) and OECD (bid rigging) indicator tables, plus the mapping
+notes that say which shape triggers which indicator. Each entry has a citable
+id such as \code{FATF-STRUCT-01}. \\
+\textbf{The results database} & The stored alerts, scores and metrics ---
+queried \textbf{read-only}. The assistant physically cannot write. \\
+\textbf{The explanation bundles} & The evidence attached to whichever alert you
+are asking about. \\
+\bottomrule
+\end{longtable}
+
+\subsubsection*{How the knowledge base works}
+
+\begin{plain}
+\pw{Think of a small, carefully written reference book about fraud warning
+signs. When you ask a question, the assistant looks up the handful of pages most
+relevant to your words, reads only those, and must quote a page number for
+anything it claims.}
+
+Technically this is called \textbf{retrieval}: the question is matched against
+the library using a classic word-overlap ranking method (\textbf{BM25}), which
+scores a passage by how many of your rare words it contains. The matched entries
+come back with their ids, and the grounding check then verifies that every claim
+in the answer traces to one of them.
+\end{plain}
+
+\textbf{Why a small curated library rather than a giant one?} Three reasons, all
+practical. It is \emph{license-safe} --- the indicator texts are our own
+paraphrased condensations, not copied source material. It is \emph{citable} ---
+every entry has a stable id, which is exactly what the grounding check needs. And
+it is \emph{small}, so a simple word-overlap search is genuinely enough; we did
+not need a heavyweight vector database, and adding one would have been
+complexity for its own sake.
+
+\subsubsection*{What makes it safe}
 
 \begin{itemize}
   \item \textbf{It can only read.} It cannot change anything.

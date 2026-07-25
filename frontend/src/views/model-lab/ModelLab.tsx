@@ -18,6 +18,118 @@ import { RigorSection } from "./RigorSection";
 // precision@k lines with the live budget marker; queue precision) with
 // SVG/PNG export, plus the scalar tiles and the full collapsible tree so
 // every number a run published stays inspectable.
+
+/** Headline AUC-PR read against its own prevalence baseline, plus one compact
+ *  per-budget table. Replaces the old flat dump of every numeric key (see the
+ *  call site) — the numbers are identical, the ordering is now meaningful and
+ *  a presenter can point at one row. */
+function HeadlineBlock({ nodeLevel }: { nodeLevel: Record<string, unknown> }) {
+  const num = (k: string) =>
+    typeof nodeLevel[k] === "number" ? (nodeLevel[k] as number) : undefined;
+  const auc = num("auc_pr");
+  const prev = num("prevalence_baseline");
+  const nConf = num("n_confirmed");
+  const budgets = [
+    ...new Set(
+      Object.keys(nodeLevel)
+        .map((k) => /^precision@(\d+)$/.exec(k)?.[1])
+        .filter((x): x is string => Boolean(x)),
+    ),
+  ].sort((a, b) => Number(a) - Number(b));
+
+  return (
+    <div className="grid gap-3 px-2 lg:grid-cols-[minmax(0,20rem)_1fr]">
+      <div
+        className="hover-lift rounded-md px-3 py-2.5"
+        style={{
+          background: "var(--bg-2)",
+          boxShadow: "inset 0 0 0 1px var(--hairline)",
+        }}
+      >
+        <div className="text-[10px] uppercase tracking-wide text-text-2">
+          AUC-PR
+        </div>
+        <div className="mono text-2xl" style={{ color: UI_HUES.cyan }}>
+          {auc !== undefined ? auc.toFixed(4) : "—"}
+        </div>
+        {prev !== undefined && (
+          <div className="mt-0.5 text-[11px] leading-snug text-text-2">
+            blind guessing scores{" "}
+            <span className="mono" style={{ color: "var(--text-1)" }}>
+              {prev.toFixed(4)}
+            </span>
+            {auc !== undefined && prev > 0 && (
+              <>
+                {" "}
+                → <span style={{ color: UI_HUES.teal }}>
+                  {(auc / prev).toFixed(1)}× better than guessing
+                </span>
+              </>
+            )}
+          </div>
+        )}
+        {nConf !== undefined && (
+          <div className="mt-1 text-[11px] text-text-2">
+            over{" "}
+            <span className="mono" style={{ color: "var(--text-1)" }}>
+              {nConf.toLocaleString()}
+            </span>{" "}
+            confirmed-label nodes
+          </div>
+        )}
+      </div>
+
+      {budgets.length > 0 && (
+        <div
+          className="overflow-x-auto rounded-md"
+          style={{
+            background: "var(--bg-2)",
+            boxShadow: "inset 0 0 0 1px var(--hairline)",
+          }}
+        >
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="text-text-2">
+                <th className="px-3 py-1.5 text-left font-normal">
+                  review budget
+                </th>
+                <th className="px-3 py-1.5 text-right font-normal">
+                  precision
+                </th>
+                <th className="px-3 py-1.5 text-right font-normal">recall</th>
+                <th className="px-3 py-1.5 text-right font-normal">
+                  false-positive rate
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {budgets.map((k) => (
+                <tr key={k} className="hover-row">
+                  <td className="mono px-3 py-1.5 text-text-1">top {k}</td>
+                  <td
+                    className="mono px-3 py-1.5 text-right"
+                    style={{ color: UI_HUES.amber }}
+                  >
+                    {num(`precision@${k}`)?.toFixed(3) ?? "—"}
+                  </td>
+                  <td
+                    className="mono px-3 py-1.5 text-right"
+                    style={{ color: UI_HUES.violet }}
+                  >
+                    {num(`recall@${k}`)?.toFixed(3) ?? "—"}
+                  </td>
+                  <td className="mono px-3 py-1.5 text-right text-text-1">
+                    {num(`fpr@${k}`)?.toFixed(4) ?? "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
 export function ModelLab() {
   const dataset = useConsole((s) => s.dataset);
   const budget = useConsole((s) => s.budget);
@@ -66,41 +178,13 @@ export function ModelLab() {
             >
               <div className="mono px-2 text-xs text-text-2">{shortSrc}</div>
 
-              {/* headline scalar tiles */}
-              {m.node_level && (
-                <div className="flex flex-wrap gap-2 px-2">
-                  {Object.entries(m.node_level)
-                    .filter(([, v]) => typeof v === "number")
-                    .map(([k, v]) => (
-                      <div
-                        key={k}
-                        className="hover-lift min-w-24 rounded-md px-2.5 py-1.5"
-                        style={{
-                          background: "var(--bg-2)",
-                          boxShadow: "inset 0 0 0 1px var(--hairline)",
-                        }}
-                      >
-                        <div className="text-[10px] uppercase tracking-wide text-text-2">
-                          {k}
-                        </div>
-                        <div
-                          className="mono text-sm"
-                          style={{
-                            color: k.startsWith("auc")
-                              ? UI_HUES.cyan
-                              : k.startsWith("precision")
-                                ? UI_HUES.amber
-                                : k.startsWith("recall")
-                                  ? UI_HUES.violet
-                                  : "var(--text-0)",
-                          }}
-                        >
-                          {(v as number).toFixed(4)}
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              )}
+              {/* Headline + budget table.
+                  Previously this dumped EVERY numeric key as its own tile in
+                  dict order — 12 unlabelled tiles per run, with counts run
+                  through toFixed(4) so n_confirmed read "16670.0000". Nobody
+                  could present from that. Now: one hero number read against its
+                  own prevalence baseline, plus a proper per-budget table. */}
+              {m.node_level && <HeadlineBlock nodeLevel={m.node_level} />}
 
               <div className="grid gap-3 xl:grid-cols-2">
                 {steps.length > 0 && (

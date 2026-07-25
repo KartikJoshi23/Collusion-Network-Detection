@@ -1,0 +1,16 @@
+# Explanation bundles for the Elliptic++ ACTOR (wallet) queue: motif matcher +
+# FATF red flags + structural evidence. Learned attribution is absent by design
+# — the actor view is scored by R-GCN and mask-based explainers are GATv2-only
+# (R12 de-risk finding, ledger); the bundle's evidence_sources labels exactly
+# what is present (§4.4 scope honesty).
+#
+# Added 2026-07-25: the dashboard audit found the actor dataset served 50 alerts
+# with ZERO explanation bundles, so its Case Detail was empty on every alert.
+# The matcher path needs no checkpoint, so there was no reason for the gap.
+dataset: elliptic_pp_actor
+domain: financial
+store_root: data/interim
+alerts: eval_outputs/elliptic_pp_actor/alert_queue/alerts.parquet
+output_dir: eval_outputs/elliptic_pp_actor/explanations
+top_k: 20
+seed: 0

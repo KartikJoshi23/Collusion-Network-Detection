@@ -37,6 +37,31 @@ const KNOWN = new Set([
 
 type Bundle = Record<string, unknown>;
 
+/** How to READ the two PyG fidelity numbers (docs/model_card.md, §7 step 27).
+ *
+ *  For a single alert both are hard 0/1 verdicts — PyG compares the model's
+ *  hard predictions — so printing "0.000" told the reader nothing and, worse,
+ *  hid that the two zeros mean OPPOSITE things:
+ *    fidelity_minus = 0  → the highlighted evidence ALONE reproduces the
+ *                          decision. This is the BEST possible value.
+ *    fidelity_plus  = 0  → removing the evidence does NOT change the decision,
+ *                          i.e. it was not necessary. This is the WEAK case.
+ *  So each tile asks the question the number actually answers. */
+const FIDELITY_TILES = [
+  {
+    key: "fidelity_minus",
+    label: "fidelity−",
+    question: "Is the highlighted evidence enough on its own?",
+    goodWhen: "low" as const,
+  },
+  {
+    key: "fidelity_plus",
+    label: "fidelity+",
+    question: "Does removing it change the decision?",
+    goodWhen: "high" as const,
+  },
+];
+
 export function CaseDetail() {
   const dataset = useConsole((s) => s.dataset);
   const alertId = useConsole((s) => s.selectedAlertId);
@@ -70,6 +95,12 @@ export function CaseDetail() {
   const fidelity = bundle.fidelity as Record<string, number> | null | undefined;
   const members = (bundle.member_node_ids ?? []) as string[];
   const attention = bundle.attention_summary as Bundle | null | undefined;
+  const minimal = (bundle.minimal_subgraph ?? {}) as {
+    nodes?: unknown[];
+    edges?: unknown[];
+  };
+  const minimalNodes = minimal.nodes?.length ?? 0;
+  const minimalEdges = minimal.edges?.length ?? 0;
   const unknownKeys = Object.keys(bundle).filter((k) => !KNOWN.has(k));
 
   const exportJson = () => {
@@ -166,11 +197,52 @@ export function CaseDetail() {
                 )}
               </>
             ) : (
-              <p className="py-6 text-center text-xs text-text-2">
-                No nameable motif matched — this alert leads with structural and
-                temporal evidence instead. An absent motif is an honest answer,
-                never fabricated.
-              </p>
+              /* No textbook shape matched. The learned evidence still exists —
+                 it used to sit collapsed in the technical appendix, which made
+                 the dossier LOOK empty on exactly the alerts a reviewer most
+                 needs to justify. Surface it here instead. */
+              <div className="py-2">
+                <p className="mb-2 text-xs leading-snug text-text-2">
+                  No nameable motif matched. The matcher only names the nine
+                  shapes it can prove; it never invents one. What the model
+                  actually keyed on is below.
+                </p>
+                <div className="grid gap-1.5 text-xs">
+                  {minimalNodes > 0 && (
+                    <div className="flex justify-between gap-3">
+                      <span className="text-text-2">
+                        Minimal sub-network the explainer kept
+                      </span>
+                      <span className="mono text-text-1">
+                        {minimalNodes} nodes · {minimalEdges} links
+                      </span>
+                    </div>
+                  )}
+                  {typeof attention?.max_incoming_attention === "number" && (
+                    <div className="flex justify-between gap-3">
+                      <span className="text-text-2">
+                        Strongest single incoming link (attention)
+                      </span>
+                      <span className="mono text-text-1">
+                        {(attention.max_incoming_attention as number).toFixed(3)}
+                      </span>
+                    </div>
+                  )}
+                  {members.length > 0 && (
+                    <div className="flex justify-between gap-3">
+                      <span className="text-text-2">Community size</span>
+                      <span className="mono text-text-1">
+                        {members.length} members
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <p className="mt-2 text-[11px] leading-snug text-text-2">
+                  An absent motif is an honest answer, never fabricated — see
+                  Attribution quality for whether this evidence reproduces the
+                  decision.
+                </p>
+              </div>
             )}
           </Card>
 
@@ -253,23 +325,41 @@ export function CaseDetail() {
           <Card title="Attribution quality" hue={UI_HUES.violet} delay={3}>
             {fidelity ? (
               <div className="mb-3 flex flex-wrap gap-2">
-                {Object.entries(fidelity).map(([k, v]) => (
-                  <div
-                    key={k}
-                    className="min-w-28 rounded-md px-2.5 py-1.5"
-                    style={{
-                      background: "var(--bg-2)",
-                      boxShadow: "inset 0 0 0 1px var(--hairline)",
-                    }}
-                  >
-                    <div className="text-[10px] uppercase tracking-wide text-text-2">
-                      {k.replace(/_/g, " ")}
+                {FIDELITY_TILES.map(({ key, label, question, goodWhen }) => {
+                  const v = fidelity[key];
+                  if (typeof v !== "number") return null;
+                  // PyG fidelity is a HARD 0/1 verdict for a single alert
+                  // (it compares hard predictions), so a bare "0.000" is
+                  // unreadable — and worse, ambiguous: fidelity_minus = 0 is
+                  // the BEST value while fidelity_plus = 0 is the WORST.
+                  const good = goodWhen === "low" ? v === 0 : v > 0;
+                  return (
+                    <div
+                      key={key}
+                      className="min-w-[13.5rem] rounded-md px-2.5 py-1.5"
+                      title={`${label} = ${v.toFixed(3)} — for one alert this is a yes/no verdict, not a sliding scale`}
+                      style={{
+                        background: "var(--bg-2)",
+                        boxShadow: `inset 0 0 0 1px ${
+                          good ? "color-mix(in srgb, var(--benign) 42%, transparent)" : "var(--hairline)"
+                        }`,
+                      }}
+                    >
+                      <div className="text-[10px] uppercase tracking-wide text-text-2">
+                        {question}
+                      </div>
+                      <div
+                        className="text-sm font-medium"
+                        style={{ color: good ? "var(--benign)" : "var(--hue-amber)" }}
+                      >
+                        {good ? "Yes" : "No"}
+                        <span className="mono ml-1.5 text-[11px] text-text-2">
+                          ({label} {v.toFixed(2)})
+                        </span>
+                      </div>
                     </div>
-                    <div className="mono text-sm" style={{ color: UI_HUES.violet }}>
-                      {typeof v === "number" ? v.toFixed(3) : String(v)}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
                 {bundle.fidelity_sane === false && (
                   <div
                     className="flex items-center rounded-md px-2.5 py-1.5 text-xs"
@@ -282,6 +372,11 @@ export function CaseDetail() {
                     ⚠ fidelity check failed — treat attribution cautiously
                   </div>
                 )}
+                <p className="w-full text-[11px] leading-snug text-text-2">
+                  For a single alert these are yes/no verdicts, not scores: the
+                  test re-runs the model with the highlighted evidence alone, and
+                  again with it removed, and checks whether the decision holds.
+                </p>
               </div>
             ) : (
               <p className="mb-3 text-xs text-text-2">
