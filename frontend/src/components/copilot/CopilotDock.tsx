@@ -92,11 +92,20 @@ export function CopilotDock() {
     <AnimatePresence>
       {open && (
         <motion.aside
-          initial={{ x: 40, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          exit={{ x: 40, opacity: 0 }}
-          transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-          className="glass glass-neon z-20 m-2 ml-0 flex w-96 shrink-0 flex-col overflow-hidden"
+          // Opacity ONLY — never an x-transform. This panel is a layout child
+          // of the console's flex row, and a transform does not move its layout
+          // box: if the enter animation is interrupted, throttled (background
+          // tab, low-power mode) or simply never runs, the panel stays painted
+          // 40px to the right of where the layout put it and hangs off the
+          // edge of the screen. Measured 2026-07-26: stuck at translateX(40px),
+          // right edge 32px past the viewport, on every tab.
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+          // max-w keeps it inside the viewport on a narrow window, where a
+          // fixed 24rem would otherwise squeeze the main view to nothing.
+          className="glass glass-neon z-20 m-2 ml-0 flex w-[21rem] max-w-[calc(100vw-1rem)] shrink-0 flex-col overflow-hidden xl:w-96"
           style={{ "--panel-hue": UI_HUES.magenta } as React.CSSProperties}
           aria-label="Investigator Copilot"
         >

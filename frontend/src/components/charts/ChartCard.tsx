@@ -10,12 +10,17 @@ export function ChartCard({
   subtitle,
   hue,
   filename,
+  howToRead,
   children,
 }: {
   title: string;
   subtitle?: string;
   hue?: string;
   filename: string;
+  /** Plain-English "how to read this chart", collapsed underneath it. A chart
+   *  nobody can read is decoration; this is the difference between a figure and
+   *  a finding, and it sits below the marks so it never competes with them. */
+  howToRead?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const boxRef = useRef<HTMLDivElement>(null);
@@ -91,6 +96,16 @@ export function ChartCard({
         </div>
       </div>
       <div ref={boxRef}>{children}</div>
+      {howToRead && (
+        <details className="mt-2 rounded-md" style={{ background: "var(--bg-2)" }}>
+          <summary className="cursor-pointer px-2.5 py-1.5 text-[11px] text-text-1 transition-colors hover:text-accent">
+            How do I read this chart?
+          </summary>
+          <div className="px-2.5 pb-2.5 pt-0.5 text-[11px] leading-relaxed text-text-1">
+            {howToRead}
+          </div>
+        </details>
+      )}
     </Glass>
   );
 }

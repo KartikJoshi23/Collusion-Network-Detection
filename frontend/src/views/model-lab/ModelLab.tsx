@@ -195,6 +195,22 @@ export function ModelLab() {
                     subtitle="each bar is one time period, against what blind guessing would score there (dashed). The drop after period 43 is a real-world change, and it is one of our findings"
                     hue={UI_HUES.cyan}
                     filename={`${dataset}_auc_pr_by_step`}
+                    howToRead={
+                      <>
+                        <b>Each bar is one time period</b>, left to right in order. Taller
+                        is better. The dashed line behind the bars is what blind
+                        guessing would have scored in that same period — so a bar
+                        above the line means the model beat guessing there, and a bar
+                        below it means it did not.
+                        <br />
+                        <br />
+                        <b>What to look for:</b> the collapse after period 43. That is
+                        real. A large marketplace was shut down and the behaviour of
+                        the whole network changed underneath the model. We could have
+                        cropped the chart there — showing it is the finding, and it is
+                        why we test strictly forwards in time.
+                      </>
+                    }
                   >
                     <StepBarChart points={steps} color={CHART_SERIES[0]} />
                   </ChartCard>
@@ -205,6 +221,25 @@ export function ModelLab() {
                     subtitle="measured only at the review sizes this run actually published"
                     hue={UI_HUES.violet}
                     filename={`${dataset}_precision_at_k`}
+                    howToRead={
+                      <>
+                        <b>Left to right is how many cases you review.</b> Up is the
+                        share of those that turned out to be real. The marker shows
+                        wherever you left the slider on the Alert Queue screen.
+                        <br />
+                        <br />
+                        <b>The line falls as you go right, and that is normal.</b> The
+                        strongest cases are at the top of the list, so the deeper you
+                        dig the more ordinary the cases become. Every screening system
+                        behaves this way — being able to show you exactly how fast it
+                        falls is the point.
+                        <br />
+                        <br />
+                        There is a dot only where the evaluation actually measured a
+                        value. We never draw a point for a review size that was not
+                        tested.
+                      </>
+                    }
                   >
                     <AtKChart
                       points={precK}
@@ -220,6 +255,21 @@ export function ModelLab() {
                     subtitle="near-duplicate cases removed. Note: a case we could not confirm is not the same as a case that was wrong — 77% of this data has no answer recorded either way"
                     hue={UI_HUES.magenta}
                     filename={`${dataset}_queue_precision`}
+                    howToRead={
+                      <>
+                        <b>The same idea as the chart beside it, but counted in
+                        groups rather than in individual accounts.</b> This is the one
+                        that matches what an investigator actually opens, because they
+                        work a case at a time, not an account at a time.
+                        <br />
+                        <br />
+                        <b>Read this number as a floor, not a ceiling.</b> On this data
+                        about three quarters of everything has no recorded answer
+                        either way. A group we could not confirm is counted here as
+                        not-real — but it is not the same as a group we got wrong. The
+                        true rate can only be higher than what you see.
+                      </>
+                    }
                   >
                     <AtKChart
                       points={queueK}

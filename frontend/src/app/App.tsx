@@ -56,7 +56,11 @@ export function App() {
         <NetworkBackground />
 
         <header className="glass z-10 m-2 mb-0">
-          <div className="flex items-center gap-4 px-4 py-2">
+          {/* flex-wrap: at 1280px the brand + six tabs + dataset picker +
+              domain toggle + Copilot button overflowed the viewport by 16px
+              (measured 2026-07-26). Wrapping drops the right-hand group onto a
+              second line instead of pushing it off the screen. */}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2">
             <div className="flex items-center gap-2.5">
               <span
                 className="grid h-7 w-7 place-items-center rounded-lg"

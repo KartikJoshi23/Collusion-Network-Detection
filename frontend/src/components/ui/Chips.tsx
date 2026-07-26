@@ -40,7 +40,20 @@ export function RiskChip({ score }: { score: number }) {
 }
 
 export function MotifChip({ motif }: { motif: string | null }) {
-  if (!motif) return <span className="text-xs text-text-2">—</span>;
+  // A bare "—" read as a broken column, and on the served queues it is EVERY
+  // row: measured 2026-07-26, 0 of 254 Elliptic / 0 of 223 Mendeley alerts
+  // carry a proven pattern name. That is the honest outcome — the matcher only
+  // names a shape it can formally prove — but the column has to say so rather
+  // than look empty.
+  if (!motif)
+    return (
+      <span
+        className="text-xs italic text-text-2"
+        title="No textbook pattern could be proved for this group. That is an honest answer, not a gap — open the case file to see what did make it stand out."
+      >
+        none named
+      </span>
+    );
   const hue = MOTIF_HUE[motif] ?? "var(--text-1)";
   const label = isMotifId(motif) ? MOTIF_LABEL[motif] : motif;
   return (

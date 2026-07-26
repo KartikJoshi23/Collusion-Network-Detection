@@ -2892,20 +2892,56 @@ than ``whatever fell inside the budget''. The \emph{budget} still governs what
 the All view shows and what the precision readout reports --- that number has to
 match the published protocol.
 
-\subsubsection*{What each row shows}
+\subsubsection*{What each row shows --- the eight columns, in order}
+
+These are the columns as they actually appear on screen, left to right. Hovering
+any heading gives the same explanation inside the console.
 
 \begin{itemize}
-  \item \textbf{Rank} and \textbf{risk score} --- a genuine probability, because of
-        the translation step, not an arbitrary number between 0 and 1.
-  \item \textbf{The shape} --- the named pattern, with its own symbol and colour.
-  \item \textbf{Group size} --- how many firms or accounts are involved.
-  \item \textbf{Warning-sign count} --- how many official indicators matched.
-  \item \textbf{Activity sparkline} --- a tiny chart of activity over time. A flat
-        line means everything happened in one window, which is common in the
-        Bitcoin data. A varied line means genuine spread.
-  \item \textbf{Buttons} --- open the network, open the evidence sheet, ask the
+  \item \textbf{\#} --- the rank. Position in the queue, worst first.
+  \item \textbf{Risk} --- a genuine probability, because of the translation step,
+        not an arbitrary number between 0 and 1.
+  \item \textbf{Pattern} --- which of the nine known shapes this group matches.
+        \textbf{On every served queue this reads ``none named'' for every row}
+        --- see the warning below, which you should read before presenting.
+  \item \textbf{Flags} --- how many official indicators matched. Blank when none
+        did.
+  \item \textbf{Members} --- how many firms or accounts are in the group.
+  \item \textbf{Activity} --- a tiny chart of activity over time. A flat line
+        means everything happened in one window, which is common in the Bitcoin
+        data. A varied line means genuine spread.
+  \item \textbf{When} --- when it happened, and the format changes with the
+        source. Contract data carries calendar years, so it reads \code{2015} or
+        \code{2004 -- 2021}. \textbf{The Bitcoin data has no calendar dates at
+        all} --- it is stamped with 49 numbered steps in order --- so it reads
+        \code{step 35}. Until 2026-07-26 this column printed a bare
+        \code{35 -- 35}, which a first-time viewer could not interpret and which
+        looked like a fault rather than ``it all happened at once''.
+  \item \textbf{Alert ID} --- the machine key. Hovering a row replaces it with
+        three buttons: open the network, open the evidence sheet, ask the
         assistant.
 \end{itemize}
+
+\begin{warnbox}
+\textbf{The Pattern column is empty on every row, on every dataset. Know why
+before somebody asks.}
+
+Measured 2026-07-26: \textbf{0 of 254} Elliptic alerts, \textbf{0 of 223}
+Mendeley alerts, \textbf{0 of 500} wallet alerts and \textbf{0 of 3} Garc\'ia
+alerts carry a proven pattern name.
+
+That is the matcher behaving correctly, not failing. It names one of the nine
+shapes only when it can \emph{formally prove} the shape is present, and it never
+guesses. Real communities frequently contain no textbook shape --- and on the
+Mendeley queue the top groups are two-firm pairs, which are too small to contain
+any shape at all.
+
+The column now prints \emph{``none named''} rather than a dash, because a column
+of dashes reads as broken software. The honest sentence to say out loud is:
+\pw{Having no name is an answer, not a gap. We only put a name on a pattern when
+we can prove it --- and the case file still explains, in plain words, what did
+make the group stand out.}
+\end{warnbox}
 
 \subsection{Screen 3 --- Graph Explorer}
 
@@ -2920,17 +2956,33 @@ word for it.
 ``flagged'' throughout the entire product and is used for nothing else, so it
 never has to be explained twice. \textbf{Grey dots} are context: neighbours drawn
 in so the group sits in a world rather than floating in space. \textbf{Lines}
-are connections, and clicking a dot expands its own neighbours.
+are connections.
 
 \textbf{Why context nodes are drawn at all.} Without them a flagged group looks
 equally suspicious in every case, because you cannot see what it is
 \emph{unusually} connected to. The contrast is the information.
 
+\textbf{Widening the picture --- the \emph{Context} control.} Top right of the
+screen are two buttons, \textbf{1 step out} and \textbf{2 steps out}. One step
+shows the flagged group plus whoever they deal with directly; two steps also
+brings in who \emph{those} neighbours deal with. On Elliptic alert 2 that is the
+difference between 50 dots / 49 lines and 62 / 62.
+
+\begin{plain}
+\textbf{A correction to an earlier draft of this report.} Until 2026-07-26 this
+section claimed that \emph{``clicking a dot expands its own neighbours''}. It
+never did. The service is alert-scoped rather than dot-scoped, so there is no
+per-dot expansion to offer, and a reader who tried it found nothing happened.
+The \emph{Context} buttons above are the real capability, and they were added
+when the false claim was found. Claiming a feature the software does not have is
+worse than having no feature.
+\end{plain}
+
 \textbf{Why the network is trimmed, and why we say so.} The server windows the
-network to the alert's own members plus one hop, inside the alert's time range,
-before sending. A browser cannot draw a million connections, and a silently
-cropped picture is worse than a small one because the viewer assumes it is
-complete. When trimming happens, the screen says so.
+network to the alert's own members plus the chosen number of steps, inside the
+alert's time range, before sending. A browser cannot draw a million connections,
+and a silently cropped picture is worse than a small one because the viewer
+assumes it is complete. When trimming happens, the screen says so.
 
 \aloud{Coral is flagged. Grey is context, so the group sits in a world instead
 of floating. And if we've had to trim the picture to keep it readable, it says
@@ -2939,9 +2991,26 @@ so on screen rather than quietly showing you a slice.}
 \subsubsection*{The replay control, and the bug that produced it}
 
 \textbf{What it does.} Plays the group's connections in order, so you watch the
-case assemble itself. There are two honest modes and the button label tells you
-which one you are in: \textbf{replay flow} when the connections carry genuinely
-different dates, and \textbf{replay order} when they do not.
+case assemble itself.
+
+\textbf{You will only ever see ONE mode at a time, and the data chooses it ---
+not you.} There is no switch. The code looks at whether the connections in this
+particular group carry different dates, and picks accordingly:
+
+\begin{itemize}
+  \item \textbf{replay flow} --- the dates differ, so the playhead follows real
+        time. You get this on the contract datasets, where connections carry
+        calendar years.
+  \item \textbf{replay order} --- every connection shares one time step, so
+        there is no time order to follow and the reveal follows the recorded
+        sequence instead. You get this on most Bitcoin alerts.
+\end{itemize}
+
+The button label says which one is running, and \emph{beside it a sentence now
+says why} --- for example ``in order --- every connection here shares one time
+step, so there is no time order to show''. Before 2026-07-26 the button said only
+``replay order'' with no explanation, so a first-time viewer had no idea a second
+mode existed or that the choice was forced by the data.
 
 \textbf{Why two modes exist.} Because of a real fault found on 2026-07-20.
 Bitcoin connections inside one alert often all sit at a \emph{single} time step
@@ -3180,6 +3249,21 @@ that kind of shift.
 
 \textbf{4. The full tree,} collapsed: every raw number the run published, for
 anyone who wants to check one.
+
+\begin{plain}
+\textbf{Every chart carries its own instructions.} Underneath each one is a
+collapsed line reading \emph{``How do I read this chart?''}. Opening it explains,
+in plain words, what the horizontal axis is, what the vertical axis is, which
+direction is good, and what the thing worth noticing is --- the period-43
+collapse, the fact that precision is expected to fall as you review more, the
+fact that the queue figure is a floor rather than a ceiling.
+
+It is collapsed rather than printed because the marks should be read first, and
+it sits below the chart rather than above it so it never competes with them. It
+was added on 2026-07-26: a chart nobody can read is decoration, and the
+difference between a figure and a finding is whether the reader knows which way
+is up.
+\end{plain}
 
 \textbf{5. Rigour and uncertainty,} collapsed, at the bottom. Repeat runs with
 their spread, the ``is the difference real or luck'' comparisons, the transfer

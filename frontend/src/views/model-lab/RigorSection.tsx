@@ -234,6 +234,20 @@ export function RigorSection({ dataset }: { dataset: string }) {
             subtitle="we deliberately corrupted some training answers and re-scored. The test answers were never touched"
             hue={UI_HUES.amber}
             filename={`${dataset}_label_noise`}
+            howToRead={
+              <>
+                <b>Left to right is how many of the training answers we deliberately
+                flipped to the wrong value.</b> Up is how well the model still scored
+                afterwards. The answers it was <i>tested</i> against were never
+                touched — only the ones it learned from.
+                <br />
+                <br />
+                <b>Why do this at all?</b> Real label data is always partly wrong.
+                If a small amount of bad answers destroyed the model, it would be
+                useless in practice. A line that stays roughly flat is the result you
+                want here.
+              </>
+            }
           >
             <AtKChart points={noise} color={CHART_SERIES[2]} label="AUC-PR @ noise%" />
           </ChartCard>
@@ -249,6 +263,25 @@ export function RigorSection({ dataset }: { dataset: string }) {
             }
             hue={UI_HUES.violet}
             filename={`${dataset}_label_efficiency`}
+            howToRead={
+              <>
+                <b>The question here is: does knowing one crime help you learn the
+                other one faster?</b> Left to right is how many labelled examples the
+                model was given in the new domain. Up is how well it did.
+                <br />
+                <br />
+                We take a model trained on one side, freeze what it learned, and let
+                it try the other side with only a handful of answers. The
+                &ldquo;gain&rdquo; line underneath compares that against learning the
+                new side from scratch.
+                <br />
+                <br />
+                <b>Our honest result:</b> below about five hundred labelled examples,
+                transferring never helped in either direction. That is a clean
+                negative answer to a question nobody had tested, and we publish it
+                rather than bury it.
+              </>
+            }
           >
             <>
               <AtKChart points={efficiency.source} color={CHART_SERIES[1]} label="AUC-PR @ k" />

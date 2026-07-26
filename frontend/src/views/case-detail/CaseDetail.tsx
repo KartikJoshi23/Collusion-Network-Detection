@@ -6,7 +6,7 @@ import { Glass } from "../../components/ui/Glass";
 import { MotifSchematic } from "../../components/ui/MotifSchematic";
 import { Empty, Loading } from "../../components/ui/States";
 import { decodeAlertId } from "../../lib/alertLabel";
-import { fmtTimeWindow } from "../../lib/format";
+import { describeTimeWindow, fmtTimeWindow } from "../../lib/format";
 import { isMotifId } from "../../lib/motifs";
 import { MOTIF_HUE, UI_HUES } from "../../lib/palette";
 import { plainReason } from "../../lib/plainReason";
@@ -55,6 +55,9 @@ const EVIDENCE_LABEL: Record<string, string> = {
   co_bid_history: "How often they bid together",
   shared_links: "Things they share (address, director)",
 };
+
+/** Evidence keys that hold a [start, end] time pair rather than a plain value. */
+const TIME_FIELDS = new Set(["time_window", "member_time_span"]);
 
 /** Shown when an alert has no explanation bundle — which is the DESIGNED
  *  outcome for everything below the explanation budget, not a failure. It
@@ -499,6 +502,19 @@ export function CaseDetail() {
 
           {/* evidence fields with per-source labels (§4.4 scope honesty) */}
           <Card title="Evidence" hue={UI_HUES.cyan} delay={2}>
+            {/* The time fields print as raw numbers ("35 – 35"), which means
+                nothing to a first-time reader — they cannot know 35 is a step
+                index rather than a date, and the repeated value looks like a
+                bug instead of "it all happened at once". Say it in words
+                first, then let the raw rows below carry the exact values. */}
+            {win.length > 0 && (
+              <p className="mb-2 rounded-md bg-bg-2 px-2.5 py-2 text-[11px] leading-snug text-text-1">
+                {describeTimeWindow(
+                  win[0] as number | null,
+                  (win[1] ?? win[0]) as number | null,
+                )}
+              </p>
+            )}
             <div className="grid gap-1.5">
               {Object.entries(evidence).map(([k, v]) => (
                 <div
@@ -509,7 +525,15 @@ export function CaseDetail() {
                     {EVIDENCE_LABEL[k] ?? k.replace(/_/g, " ")}
                   </span>
                   <span className="mono min-w-0 flex-1 break-words text-text-0">
-                    {fmtValue(v)}
+                    {/* the two time rows are [start, end] pairs; rendered raw
+                        they printed "35 – 35", which reads as a bug rather
+                        than "a single step" */}
+                    {TIME_FIELDS.has(k) && Array.isArray(v) && v.length === 2
+                      ? fmtTimeWindow(
+                          v[0] as number | null,
+                          v[1] as number | null,
+                        )
+                      : fmtValue(v)}
                   </span>
                   {sources[k] && (
                     <span className="shrink-0 text-[10px] text-text-2">

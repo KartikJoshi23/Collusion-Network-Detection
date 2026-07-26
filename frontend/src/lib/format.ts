@@ -27,11 +27,52 @@ export const RISK_VAR: Record<RiskBand, string> = {
   low: "var(--benign)",
 };
 
+// Time is recorded differently by different sources: the Bitcoin data uses
+// numbered steps (1..49), the contract data uses calendar years, and some
+// sources record nothing at all. Printing a bare "35 – 35" for the first case
+// was unreadable — a viewer has no way to know 35 is a step index, and the
+// repeated value looks like a bug rather than "it all happened at once".
+const YEAR_FLOOR = 1900;
+
+export function isCalendarYear(v: number | null): boolean {
+  return v !== null && v >= YEAR_FLOOR;
+}
+
 export function fmtTimeWindow(
   start: number | null,
   end: number | null,
 ): string {
-  if (start === null && end === null) return "—";
-  if (start === end) return String(start);
-  return `${start ?? "?"} – ${end ?? "?"}`;
+  if (start === null && end === null) return "not recorded";
+  if (start === null || end === null) {
+    const v = (start ?? end) as number;
+    return isCalendarYear(v) ? String(v) : `step ${v}`;
+  }
+  if (isCalendarYear(start) || isCalendarYear(end)) {
+    return start === end ? String(start) : `${start} – ${end}`;
+  }
+  return start === end ? `step ${start}` : `steps ${start} – ${end}`;
+}
+
+/** A full sentence for a tooltip / dossier line — says what the number IS. */
+export function describeTimeWindow(
+  start: number | null,
+  end: number | null,
+): string {
+  if (start === null && end === null)
+    return "This source does not record when things happened.";
+  if (isCalendarYear(start) || isCalendarYear(end)) {
+    return start === end
+      ? `Everything here happened during ${start}.`
+      : `Activity runs from ${start} through to ${end}.`;
+  }
+  if (start === end)
+    return (
+      `All of it lands in a single time step — step ${start}. ` +
+      `This data is stamped with numbered steps in order, not calendar dates, ` +
+      `so one step means one short stretch of time.`
+    );
+  return (
+    `Activity spans steps ${start} to ${end}. ` +
+    `This data is stamped with numbered steps in order, not calendar dates.`
+  );
 }

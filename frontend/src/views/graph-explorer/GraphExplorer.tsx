@@ -101,7 +101,13 @@ export function GraphExplorer() {
   const dataset = useConsole((s) => s.dataset);
   const alertId = useConsole((s) => s.selectedAlertId);
   const setView = useConsole((s) => s.setView);
-  const { data, isLoading, isError, error } = useSubgraph(dataset, alertId, 1);
+  // Context depth. The report used to claim "clicking a dot expands its
+  // neighbours" — it never did, and the API is alert-scoped rather than
+  // node-scoped, so per-dot expansion does not exist. What DOES exist is this:
+  // the server can widen the whole picture by one more hop. Measured on
+  // elliptic_pp alert 2: 1 hop = 50 dots / 49 lines, 2 hops = 62 / 62.
+  const [hops, setHops] = useState<1 | 2>(1);
+  const { data, isLoading, isError, error } = useSubgraph(dataset, alertId, hops);
   const containerRef = useRef<HTMLDivElement>(null);
   const sigmaRef = useRef<Sigma | null>(null);
   const playheadRef = useRef(1); // 0..1 through the time span; 1 = everything
@@ -213,9 +219,38 @@ export function GraphExplorer() {
             showing only part of the network, to keep it readable
           </span>
         )}
+        {/* context depth — the honest replacement for "click a dot to expand" */}
+        <div className="ml-auto flex items-center gap-1">
+          <span className="text-xs text-text-2">Context</span>
+          {([1, 2] as const).map((h) => (
+            <button
+              key={h}
+              onClick={() => setHops(h)}
+              title={
+                h === 1
+                  ? "Just the flagged group and who they deal with directly."
+                  : "Widen the picture by one more step out — shows who those neighbours deal with too."
+              }
+              className="chip-bloom rounded-md px-2 py-0.5 text-[11px] transition-colors"
+              style={{
+                color: hops === h ? "var(--text-0)" : "var(--text-2)",
+                background:
+                  hops === h
+                    ? "color-mix(in srgb, var(--accent) 18%, transparent)"
+                    : "transparent",
+                boxShadow:
+                  hops === h
+                    ? "inset 0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent)"
+                    : "inset 0 0 0 1px var(--hairline)",
+              }}
+            >
+              {h === 1 ? "1 step out" : "2 steps out"}
+            </button>
+          ))}
+        </div>
         <button
           onClick={() => setView("case")}
-          className="btn-sheen ml-auto rounded-md px-3 py-1 text-xs"
+          className="btn-sheen rounded-md px-3 py-1 text-xs"
           style={{
             color: "var(--accent)",
             background: "var(--accent-dim)",
@@ -285,6 +320,22 @@ export function GraphExplorer() {
           >
             {playing ? "❚❚" : "▶"} replay {timeline.varies ? "flow" : "order"}
           </button>
+          {/* Which of the two modes is running, and WHY it is that one. Before
+              this the button just said "replay order" and a first-time viewer
+              had no idea a second mode existed, or that the choice is forced
+              by the data rather than by a setting. */}
+          <span
+            className="hidden max-w-[26rem] text-[11px] leading-snug text-text-2 sm:inline"
+            title={
+              timeline.varies
+                ? "The connections in this group carry different dates, so the replay follows real time."
+                : "Every connection in this group is stamped with the same time step, so there is no time order to follow. Rather than invent dates, we reveal them in the order they are recorded and say so."
+            }
+          >
+            {timeline.varies
+              ? "by time — these connections carry different dates"
+              : "in order — every connection here shares one time step, so there is no time order to show"}
+          </span>
           <input
             type="range"
             className="budget min-w-0 flex-1 cursor-pointer"

@@ -8,7 +8,7 @@ import { CopilotMark } from "../../components/copilot/CopilotMark";
 import { FlagBadge, MotifChip, RiskChip } from "../../components/ui/Chips";
 import { Glass } from "../../components/ui/Glass";
 import { Empty, ErrorState, Loading } from "../../components/ui/States";
-import { fmtTimeWindow, shortId } from "../../lib/format";
+import { describeTimeWindow, fmtTimeWindow, shortId } from "../../lib/format";
 import { parseQueue } from "../../lib/metricsExtract";
 import { UI_HUES } from "../../lib/palette";
 import { bucketTimestamps, sparklinePoints } from "../../lib/sparkline";
@@ -133,12 +133,39 @@ export function AlertQueue() {
             >
               <tr className="border-b border-hairline">
                 <th className="px-4 py-2 font-medium">#</th>
-                <th className="px-4 py-2 font-medium">Risk</th>
-                <th className="px-4 py-2 font-medium">Pattern</th>
-                <th className="px-4 py-2 font-medium">Flags</th>
-                <th className="px-4 py-2 font-medium">Members</th>
-                <th className="px-4 py-2 font-medium">Activity</th>
-                <th className="px-4 py-2 font-medium">Time window</th>
+                <th
+                  className="px-4 py-2 font-medium"
+                  title="How strongly this group stands out, on a scale of 0 to 1. A reason to look, never proof."
+                >
+                  Risk
+                </th>
+                <th
+                  className="px-4 py-2 font-medium"
+                  title="Which of the nine known cheating shapes this group matches. We only put a name here when we can prove it, so 'none named' is common and honest."
+                >
+                  Pattern
+                </th>
+                <th
+                  className="px-4 py-2 font-medium"
+                  title="How many official warning signs (FATF for money, OECD for contracts) this group matched."
+                >
+                  Flags
+                </th>
+                <th className="px-4 py-2 font-medium" title="How many accounts or companies are in this group.">
+                  Members
+                </th>
+                <th
+                  className="px-4 py-2 font-medium"
+                  title="A tiny chart of activity over time. Flat means it all happened in one window; a varied line means it was spread out."
+                >
+                  Activity
+                </th>
+                <th
+                  className="px-4 py-2 font-medium"
+                  title="When it happened. Some sources record calendar years; the Bitcoin data records numbered steps in order instead of dates, shown as 'step 35'."
+                >
+                  When
+                </th>
                 <th className="px-4 py-2 font-medium">Alert ID</th>
               </tr>
             </thead>
@@ -219,7 +246,10 @@ function Row({
       <td className="px-2 py-1.5">
         <ActivitySparkline dataset={dataset} alertId={a.alert_id} />
       </td>
-      <td className="mono px-4 py-1.5 text-text-1">
+      <td
+        className="mono px-4 py-1.5 text-text-1"
+        title={describeTimeWindow(a.time_window_start, a.time_window_end)}
+      >
         {fmtTimeWindow(a.time_window_start, a.time_window_end)}
       </td>
       <td className="mono relative px-4 py-1.5 text-text-2">
