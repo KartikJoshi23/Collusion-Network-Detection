@@ -7,8 +7,8 @@
 \begin{center}
 {\LARGE\bfseries CollusionGraph --- Presentation Script}\\[4pt]
 {\large The Architecture Page}\\[8pt]
-{\small Total running time: \textbf{about 16 minutes}\quad\textbar\quad
-19 slides\quad\textbar\quad Runs \emph{after} the dashboard script.}
+{\small Total running time: \textbf{about 20 minutes}\quad\textbar\quad
+23 slides\quad\textbar\quad Runs \emph{after} the dashboard script.}
 \end{center}
 
 \vspace{6pt}
@@ -698,9 +698,236 @@ night and then disappears. Showing results needs none of it.
 \end{asked}
 
 % ===========================================================================
-\phase{Part 7 --- Close (35 seconds)}
+\phase{Part 7 --- The data, and what the assistant knows (4 minutes 15)}
 
-\slide{Slide 18 --- The Close}{HIGH (8/10)}{$\approx$ 35 seconds}
+\slide{Slide 18 --- The Data --- Six Sets, Two Crimes}{HIGH (8/10)}{$\approx$ 1 minute 10}
+
+\begin{saythis}
+Scroll on and you reach the data. Six public sets, and every number on this page
+we measured ourselves from our own converted copy \bt not copied out of the
+original papers.
+
+Three on the money side. Real Bitcoin payments, about two hundred thousand of
+them. The same Bitcoin world seen as wallets instead, which is over eight
+hundred thousand. And a simulated bank set with half a million accounts and
+five million payments, where every answer is known exactly.
+
+Three on the contracts side. European public contracts with seventy-three
+confirmed cartels. An auctions set that records who \emph{lost}, not just who
+won. And a complete national contract archive from Georgia \bt nearly half a
+million things, one and a half million connections, and not a single answer
+anywhere in it.
+
+Look at the coloured bar on each card. That's the answer key. Red is known
+criminal, green is known clean, and grey is unknown.
+
+And on the Bitcoin card the grey is most of the bar. Three quarters of that set
+has no recorded answer either way. That single fact shapes how we're allowed to
+report every result.
+\end{saythis}
+
+\begin{means}
+This section exists because ``we used six datasets'' is a claim, and a claim
+with no numbers behind it invites the question you least want.
+
+\textbf{The grey bar is the slide's real content.} On Elliptic, 4,545 are
+labelled criminal, 42,019 clean, and 157,205 unknown. That unknown share is why
+every precision figure in the project is described as a floor rather than a
+ceiling: a case nobody confirmed is not a case we got wrong.
+
+\textbf{Why the Georgian set with no answers is not a weakness.} It is the only
+one that resembles deployment. Nobody hands a real investigator a labelled
+country. It is where the planted-cartel study runs, and that study is the
+project's strongest deep-learning result.
+
+\textbf{If asked which is the ``main'' one:} Elliptic for money, Mendeley for
+contracts. The others each exist to answer one specific doubt --- does it survive
+a change of zoom, does it work when answers are complete, does it work with no
+answers at all.
+\end{means}
+
+\begin{asked}
+\q{Why not just use one big dataset?} Because one dataset can only ever prove
+something about that dataset. Each of ours removes one specific doubt, and the
+one with no answer key is the one closest to real use.
+
+\q{Is any of it private or personal data?} No. All six are published research or
+government sets. We never store the raw files in our code either --- we ship a
+download script and a fingerprint, so anyone can fetch the same data and prove
+it is the same.
+\end{asked}
+
+% ---------------------------------------------------------------------------
+\slide{Slide 19 --- Two Warnings We Print Ourselves}{VERY HIGH (9/10)}{$\approx$ 1 minute}
+
+\begin{saythis}
+Underneath the cards are two warnings, and we wrote them about our own data.
+
+The first. In the European contracts set, about forty-two percent of the rows
+are cartel cases. The real world is nowhere near that. It's high because of how
+the researchers built the file \bt they deliberately gathered known cartels
+alongside a comparison group.
+
+So it is a study sample, not a snapshot of the world. We may compare a score
+against that set's own guessing level. We may never present a number from it as
+a real-world hit rate.
+
+The second one we found by measuring. In the auctions set, thirty-six thousand
+entries are stamped nineteen seventy \bt which is just what a computer writes
+when a date is missing. Another twenty-one thousand have no date at all. And
+thirty-three rows say sixteen seventy-seven.
+
+So we don't trust its dates. And that is exactly why it's the one set we never
+split by time. We split it by country instead \bt train on some, then test on a
+country the model has never seen.
+
+A dataset's weaknesses should decide how you test it. Not the other way round.
+\end{saythis}
+
+\begin{means}
+Volunteering both of these is worth more than any result on the page. An
+examiner who finds a data problem you did not mention will discount everything
+else you said; an examiner who watches you find your own will trust the rest.
+
+\textbf{The first warning is about honesty in reporting.} A forty-two percent
+base rate makes any hit rate look wonderful. Quoting it without the caveat would
+be the single easiest way to oversell this project.
+
+\textbf{The second is about method.} It is a genuine finding that changed a
+design decision, and that is the version to tell. We did not discover a broken
+column and shrug --- we changed how that dataset is tested because of it.
+
+\textbf{Keep the causal order when you say it:} we measured the dates, the dates
+were unusable, therefore we split by country. Not the reverse.
+\end{means}
+
+\begin{asked}
+\q{Why not just drop the rows with bad dates?} That would throw away most of the
+set, and the remaining rows would be the ones with good record-keeping, which is
+not a random sample. Splitting by country uses everything and tests something
+harder.
+
+\q{Doesn't the forty-two percent make your contracts results meaningless?} It
+makes them non-comparable to the real world, which is why we say so. Within that
+set the comparison is still fair, because every method faces the same base rate.
+\end{asked}
+
+% ---------------------------------------------------------------------------
+\slide{Slide 20 --- What One Row Actually Looks Like}{Medium (6/10)}{$\approx$ 50 seconds}
+
+\begin{saythis}
+Next, three small tables. This is what box two on the flowchart actually
+produces.
+
+Every one of those six sets becomes the same three tables. Things. Connections
+between things. And answers, where any exist.
+
+A thing has an identity, a kind \bt a payment, a wallet, a company, a tender \bt
+which world it came from, and when it first appeared. A connection has a from,
+a to, a kind, a date, and an amount where the source records one. An answer has
+just the thing, the verdict, who says so, and how sure they are.
+
+That's it. That's the whole shared format. And once a bank account and a
+construction firm are both just a thing with connections, everything after this
+point is written once instead of twice.
+
+One deliberate choice you'll notice. We show you the column names and not the
+contents. Those files hold the names of real companies that were investigated.
+Putting a real company's name on a slide, next to the word cartel, is the exact
+harm this project exists to avoid.
+\end{saythis}
+
+\begin{means}
+This is the payoff for box two, made concrete. If somebody did not believe the
+``one format'' claim earlier, this is where it becomes checkable.
+
+\textbf{The last paragraph is not filler.} It is the ethics principle applied to
+our own presentation, and it lands harder here than in any policy sentence,
+because the audience can see you had the data and chose not to show it.
+
+\textbf{If somebody wants to see real rows}, the answer is yes --- privately, in
+the files, not on a projector. That is a reasonable request and a reasonable
+answer.
+\end{means}
+
+\begin{asked}
+\q{Do you lose information by forcing everything into three tables?} No, because
+anything the source carried that does not fit a column is kept alongside it. What
+we gain is that every later stage is built once and audited once.
+
+\q{Why is amount sometimes empty?} Because some sources genuinely do not record
+it. The Bitcoin payment set has no amounts at all. We leave it empty rather than
+filling in a guess, and any method that needs amounts simply does not run there.
+\end{asked}
+
+% ---------------------------------------------------------------------------
+\slide{Slide 21 --- What the Assistant Actually Knows}{VERY HIGH (9/10)}{$\approx$ 1 minute 15}
+
+\begin{saythis}
+Last section. People always ask what the assistant is really running on, so we
+put it on the page.
+
+It has two sources of knowledge and no others.
+
+The first is a small reference library. Twenty-nine short passages, and each one
+has an identity code. Fifteen of them define our own words \bt what a risk score
+means, what a case is. Five are the official money warning signs, five are the
+official contract ones, and four explain how those link to our patterns.
+
+Every answer that uses a passage has to quote its code. So you can always trace
+a sentence back to the exact passage it came from.
+
+The second source is the results themselves. For anything factual it doesn't
+remember \bt it looks it up, live, through seven read-only tools. And you watch
+it do that on screen.
+
+Now I want to correct something people assume. This is a searchable library.
+It is \emph{not} a knowledge graph. We tried a vector database early on and
+removed it \bt with only twenty-nine passages, plain keyword search gave the
+same answers with one less thing to go wrong.
+
+There \emph{is} a graph here. It's the data itself \bt the dots and lines. The
+assistant reaches that through those read-only lookups.
+\end{saythis}
+
+\begin{means}
+\textbf{Say the correction out loud.} It would be easy, and wrong, to call this
+a knowledge graph because it sounds more impressive. An examiner who asks
+``which graph database?'' would then get an answer that unravels. Correcting the
+assumption yourself converts a trap into a point in your favour.
+
+\textbf{The accurate one-sentence version,} worth memorising: \emph{a small
+cited reference library for the words, and read-only lookups against the graph
+for the numbers.}
+
+\textbf{Why dropping the vector database is a good story.} It is a decision
+where we chose the simpler thing and can say why: twenty-nine passages is far
+too small for the extra machinery to earn its place, and keyword search is
+easier to audit. Removing something is a harder decision to defend than adding
+it, which is why it reads well.
+
+\textbf{The read-only point closes the loop} back to the trust boundary on slide
+10. There is no tool that writes. It cannot change a score even if it wanted to.
+\end{means}
+
+\begin{asked}
+\q{Which graph database do you use?} None, and that is deliberate. The reference
+library is twenty-nine short passages searched by keyword. The graph itself is
+the data, held as plain files, reached through read-only lookups.
+
+\q{How do you stop it inventing a number?} Every number in an answer has to
+appear in what it actually looked up. If it doesn't, the answer is marked
+unverified on screen rather than shown clean.
+
+\q{Could it leak something a user shouldn't see?} It reads exactly what a person
+looking at the dashboard could read, and nothing else. There is no private path
+to the data.
+\end{asked}
+
+% ===========================================================================
+\phase{Part 8 --- Close (35 seconds)}
+
+\slide{Slide 22 --- The Close}{HIGH (8/10)}{$\approx$ 35 seconds}
 
 \begin{saythis}
 So: one page, two halves, one line between them.
@@ -719,9 +946,9 @@ different people --- that reads as a group that actually planned together.
 \end{means}
 
 % ---------------------------------------------------------------------------
-\slide{Slide 19 --- Appendix --- The Four Minute Version}{---}{$\approx$ 4 minutes}
+\slide{Slide 23 --- Appendix --- The Four Minute Version}{---}{$\approx$ 4 minutes}
 
-If you are cut short, run slides \textbf{2, 4, 5, 10, 16, 18}.
+If you are cut short, run slides \textbf{2, 4, 5, 10, 16, 22}.
 
 That is: the shape, the four arms, the result that only deep learning can
 produce, the trust boundary, the cloud version of the boundary, and the close.

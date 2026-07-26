@@ -1,0 +1,9 @@
+# LaTeX build artifacts — regenerate with `pdflatex collusiongraph_internal_report.tex` (run twice)
+*.aux
+*.log
+*.out
+*.toc
+*.pdf
+*.fls
+*.fdb_latexmk
+*.synctex.gz
