@@ -9,6 +9,23 @@
 
 ## Current milestone
 
+> ✅ **SCRIPTS + REPORT NOW ACTUALLY COMPILE [master, 2026-07-26].** A LaTeX
+> toolchain (MiKTeX 25.12) was installed on master — the "no toolchain here"
+> excuse is retired. `pdflatex` builds all three clean:
+> `dashboard.pdf` (24pp), `architecture.pdf` (14pp),
+> `collusiongraph_internal_report.pdf` (59pp) — 0 errors, 0 undefined refs, no
+> margin overflow, verified against rendered PNGs. The scripts were shipped
+> **twice uncompiled** and did not build; real errors fixed: `\part`/`\do`
+> redefined kernel names (→ `\phase`/`\stage`), the `meaning` env collided with
+> the `\meaning` primitive AND its begin/end had drifted 30-vs-0 out of balance
+> (the runaway `\@iiiparbox` fatal), an out-of-range `metagrey!160` colour, and
+> tcolorbox `breakable` tripping the 2025 kernel's tagging sockets. The
+> dashboard **opening was rebuilt around a hook** ("nobody looks guilty on
+> their own — the crime is in the arrangement") after the "vague start"
+> rejection. `docs/presentation_scripts/README.md` + `.gitignore` added.
+> **RULE GOING FORWARD: never call LaTeX "verified" without a `pdflatex` run —
+> brace-balance is not compilation.**
+>
 > 🔴 **SCRIPTS REBUILT IN LATEX, REFERENCE SLIDE FORMAT [master, 2026-07-25 —
 > second pass, supersedes the markdown ones].** The stakeholder rejected the
 > first drafts: *"I wanted it in latex code not md files… the starting is so
@@ -1302,12 +1319,12 @@ still public 2026-07-15 — anonymous clone succeeded).
    format: [`docs/presentation_scripts/dashboard.tex`](docs/presentation_scripts/dashboard.tex)
    (30 slides, ~21 min — **this is the opening of the talk**) and
    [`docs/presentation_scripts/architecture.tex`](docs/presentation_scripts/architecture.tex)
-   (19 slides, ~16 min). Compile with `pdflatex dashboard.tex` from inside
-   `docs/presentation_scripts/` (the `.sty` must sit beside the `.tex`); there
-   is still **no LaTeX toolchain on master**, so both files are verified
-   mechanically only — braces balanced, environments matched, 0 table column
-   mismatches. **First job on any machine with TeX: compile both and eyeball
-   the boxes against the reference images.**
+   (19 slides, ~16 min). **They compile clean** — MiKTeX is now installed on
+   master (`C:\Users\kartu\AppData\Local\Programs\MiKTeX\miktex\bin\x64`);
+   `pdflatex dashboard.tex` from inside `docs/presentation_scripts/` produces
+   `dashboard.pdf` (24pp) and `architecture.pdf` (14pp), 0 errors. The `.sty`
+   must sit beside the `.tex`. Rendered PNGs confirm the reference format
+   (blue/green/amber boxes, Importance + time line, running header).
    **The test is reading a Say this block out loud, at
    normal speed, with the console open in front of you.** If a block does not
    survive that, say **which unit number** and which of these it was — too long
