@@ -30,81 +30,114 @@ number \textbf{50}. Copilot closed. Nothing else on screen.
 % ===========================================================================
 \part{Part 1 --- The opening (2 minutes)}
 
-\slide{Slide 1 --- Title --- One System, Two Crimes}{Medium (6/10)}{$\approx$ 50 seconds}
+\slide{Slide 1 --- Opening --- Nobody Looks Guilty On Their Own}{HIGH (8/10)}{$\approx$ 55 seconds}
 
 \begin{saythis}
-Good morning everyone. We're Group \blank, and our project is called
-CollusionGraph.
+Good morning everyone. We're Group \blank.
 
-We were handed what looks like two completely separate briefs. Find the
-money-laundering rings hiding inside a payments network. And find the companies
-secretly rigging bids on public contracts. Different industry, different
-regulator, different data.
+I want to start with the one thing that makes this project hard.
 
-Our claim \bt and this is the thing we'll defend for the next twenty minutes
-\bt is that underneath, those are the same problem. Both crimes need more than
-one person to work. And the moment a crime needs more than one person, it
-leaves a shape behind.
+Pick any single bank account inside a money-laundering ring. Just one. On its
+own, it looks completely ordinary. Money comes in, money goes out, and it
+hasn't broken a single rule you could point at.
 
-So we built one system that screens both. I'm \blank, with me are \blank\ and
-\blank.
+Now pick any single company inside a bid-rigging cartel. Same story. It bids
+for public contracts. Sometimes it wins. Sometimes it loses. Perfectly normal.
 
-We're going to start at the finished end \bt with the screen an investigator
-would actually sit in front of \bt and then work backwards into how it's built.
+That's the whole difficulty \bt and it's why this is a hard problem rather than
+a big one. Looked at one at a time, there is nothing to find. Nobody looks
+guilty on their own.
+
+Because the crime isn't in any one of them. The crime is in the
+\emph{arrangement}.
+
+So we stopped looking at them one at a time. We built a system that looks at
+who deals with whom \bt and it turns out coordination has a shape you can
+actually see.
+
+Our project is called CollusionGraph. One system, screening two completely
+different crimes. Dirty money on one side, rigged public contracts on the
+other.
+
+Over the next twenty minutes we'll take you from that one idea \bt to the
+working console an investigator would sit in front of. Which we built and
+tested ourselves.
+
+I'm \blank, and I'll take you through the product.
 \end{saythis}
 
 \begin{meaning}
-This slide is the handshake. You are telling the room four things: who you are,
-what you were given, what your claim is, and what order the talk will run in.
+This is the most rehearsed forty seconds of the talk. Everything after it is
+easier if this lands, so learn it properly rather than reading it.
 
-The claim sentence is the one that matters. \textbf{``Coordination leaves a
-shape''} is your thesis, and every slide after this is evidence for it. Say it
-slowly.
+\textbf{Why it opens with a puzzle rather than a summary.} A room's attention is
+highest in the first fifteen seconds and you only get to spend it once.
+``Our project is about collusion detection'' spends it on nothing. ``Nobody
+looks guilty on their own'' makes the room want the answer, and then you give
+it to them.
 
-Two words to be clear about from the start:
-\begin{itemize}
-  \item \textbf{Screening} = narrowing a huge list down to the few worth
-        looking at. It is not deciding anyone is guilty.
-  \item \textbf{The two domains} = money laundering on one side, bid rigging on
-        the other. We call them ``money'' and ``contracts'' throughout.
-\end{itemize}
+\textbf{The line to land, and how.} \emph{``The crime isn't in any one of them.
+The crime is in the arrangement.''} Pause before it. Slow down through it. That
+single sentence is the thesis of the whole project, and if the examiner
+remembers one thing from twenty minutes, this is the thing worth remembering.
 
-Announcing the running order sounds like a small thing. It isn't --- examiners
-relax when they know where a talk is going, and a relaxed examiner asks better
-questions.
+\textbf{The shape of the opening,} so you can rebuild it if you lose your
+place: a puzzle, the same puzzle again in the other world, the difficulty named
+out loud, the turn, and then the promise of where we're going. Puzzle, puzzle,
+problem, turn, promise.
+
+\textbf{Two words to be clear about from the start.} \emph{Screening} means
+narrowing a huge list down to the few worth a human look --- it is never
+deciding somebody is guilty. And the \emph{two sides} are money laundering and
+bid rigging; we'll call them ``money'' and ``contracts'' all the way through.
+
+\textbf{Do not oversell.} ``Which we built and tested ourselves'' is a quiet
+line, and it is doing more work than any adjective would. Say it flatly.
 \end{meaning}
 
 \begin{asked}
 \q{Why start with the dashboard instead of your method?} Because the dashboard
 is the only part that proves the project is finished. Anyone can draw a method
-slide. A working console running on real public data cannot be faked, and
-everything in the method section is visible in it.
+slide. A working console running on real public data can't be faked --- and
+everything in the method is visible inside it, so we get to show it rather than
+claim it.
 
-\q{Is this a real product or a prototype?} It is a research prototype that runs
-end to end. Real public datasets, real trained models, real results files. What
-it is not is deployed at a bank, and we're careful about that difference.
+\q{Is this a real product or a prototype?} A research prototype that runs end to
+end. Real public datasets, real trained models, real stored results. What it
+isn't is deployed at a bank, and we're careful about that difference all the way
+through.
+
+\q{Two crimes in one project --- isn't that just doing two things at once?} It
+would be, if we'd built two systems. We built one, and the fact that one system
+handles both is the actual finding. If the arrangement is what gives collusion
+away, then the industry it happens in shouldn't matter much --- and we tested
+whether that's true rather than assuming it.
 \end{asked}
 
 % ---------------------------------------------------------------------------
 \slide{Slide 2 --- The Problem --- Why Two Crimes Belong Together}{HIGH (8/10)}{$\approx$ 1 minute}
 
 \begin{saythis}
-Let me set up the problem properly, because everything else follows from it.
+So let me show you what that arrangement actually looks like, in each of our
+two worlds.
 
-Money laundering works by moving dirty money through a chain of accounts until
-nobody can trace where it started. One account can't do that. You need a chain.
+Money laundering works by pushing dirty money through a chain of accounts,
+until nobody can see where it started. That needs a chain. One account can't
+launder anything on its own \bt there's nowhere for the money to go.
 
-Bid rigging works by companies agreeing in advance who wins which contract, so
-the price stays high. One company can't do that either. You need at least two.
+Bid rigging works by companies quietly agreeing in advance who's going to win
+which contract, so nobody has to compete and the price stays high. That needs
+at least two of them. One company can't rig an auction against itself.
 
-So in both cases the crime \emph{is} the coordination. And coordination is
-visible \bt not in any one record, but in the pattern between records.
+Notice what both of those have in common. The thing that makes it a crime is
+the \emph{agreement between them}. And an agreement isn't written down anywhere
+in the data. What \emph{is} in the data is the trace it leaves.
 
-That's why we don't treat this as a spreadsheet problem, where you look at each
-customer one at a time. We treat it as a network problem, where what matters is
-who deals with whom.
+Which is why we didn't build this as a spreadsheet problem, where you go down a
+list of customers and score each one. We built it as a network problem, where
+the thing you're looking at is who deals with whom.
 
-And that single decision is what let us build one system instead of two.
+And that one decision is what let us build a single system instead of two.
 \end{saythis}
 
 \begin{meaning}
