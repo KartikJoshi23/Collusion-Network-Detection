@@ -1,5 +1,6 @@
 \documentclass[11pt]{article}
 \usepackage{scriptstyle}
+\scripttopic{The Investigator Console}
 
 \begin{document}
 
@@ -20,7 +21,7 @@ not the room; read it beforehand so you understand what you are saying.
 with an answer you can give without leaving the screen.
 
 A ``\bt'' inside a spoken line is a breath. Slow down there.
-\do{square brackets} are things you \emph{do} with the mouse, not words you say.
+\stage{square brackets} are things you \emph{do} with the mouse, not words you say.
 
 \textbf{Set-up before you start.} Console open on \textbf{Overview}, domain
 \textbf{Financial \textbullet\ AML}, dataset \textbf{elliptic\_pp}, review
@@ -28,7 +29,7 @@ number \textbf{50}. Copilot closed. Nothing else on screen.
 \end{tcolorbox}
 
 % ===========================================================================
-\part{Part 1 --- The opening (2 minutes)}
+\phase{Part 1 --- The opening (2 minutes)}
 
 \slide{Slide 1 --- Opening --- Nobody Looks Guilty On Their Own}{HIGH (8/10)}{$\approx$ 55 seconds}
 
@@ -66,7 +67,7 @@ tested ourselves.
 I'm \blank, and I'll take you through the product.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 This is the most rehearsed forty seconds of the talk. Everything after it is
 easier if this lands, so learn it properly rather than reading it.
 
@@ -93,7 +94,7 @@ bid rigging; we'll call them ``money'' and ``contracts'' all the way through.
 
 \textbf{Do not oversell.} ``Which we built and tested ourselves'' is a quiet
 line, and it is doing more work than any adjective would. Say it flatly.
-\end{meaning}
+\end{means}
 
 \begin{asked}
 \q{Why start with the dashboard instead of your method?} Because the dashboard
@@ -140,7 +141,7 @@ the thing you're looking at is who deals with whom.
 And that one decision is what let us build a single system instead of two.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 This is the intellectual core of the project and it takes ten seconds to say
 badly and one minute to say well. Take the minute.
 
@@ -156,7 +157,7 @@ model --- which looks at one row at a time --- is the wrong tool here.
 just dots and lines. Dots are accounts or companies. Lines are payments or
 shared contracts. Every dataset we use gets turned into dots and lines, and
 after that the system doesn't care which crime it came from.
-\end{meaning}
+\end{means}
 
 \begin{asked}
 \q{Isn't a network just a fancy word for a database table?} No, and the
@@ -190,14 +191,14 @@ line is on every screen, and it's on every piece of data the system hands out.
 I'll come back to why that matters at the end.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 Short slide, three jobs. You are establishing that the data is real, giving the
 room a map of the six tabs, and planting the ethics line early so that when you
 close on it in twenty minutes it lands as a design principle rather than a
 disclaimer.
 
 Do not linger here. The room wants to see something happen.
-\end{meaning}
+\end{means}
 
 \begin{asked}
 \q{Where does the data come from?} Six public datasets. Bitcoin payment
@@ -207,7 +208,7 @@ national procurement archive. All open, all citable, none of it private.
 \end{asked}
 
 % ===========================================================================
-\part{Part 2 --- The frame around every screen (1 minute 45)}
+\phase{Part 2 --- The frame around every screen (1 minute 45)}
 
 \slide{Slide 4 --- The Domain Switch --- Two Worlds, One Machine}{Medium (6/10)}{$\approx$ 45 seconds}
 
@@ -218,7 +219,7 @@ On the left, Financial, and underneath it says A-M-L \bt anti money laundering.
 On the right, Procurement, and underneath, bid rigging. We name the actual
 crime, because ``financial'' on its own tells you nothing.
 
-\do{click the switch} Watch what happens. The colours change. The datasets
+\stage{click the switch} Watch what happens. The colours change. The datasets
 change. The cases change.
 
 Now watch what \emph{doesn't} change. Nothing underneath. Same reader of the
@@ -228,7 +229,7 @@ That's the honest test of whether this is one system or two systems in a
 trench coat. It's one.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 This is a small control carrying a large claim, so it earns its own slide.
 
 If the code had two separate pipelines behind that switch, the project would
@@ -242,7 +243,7 @@ found the letters A-M-L appeared nowhere except two buried lines on the About
 page. A visitor could not tell what the financial side was screening
 \emph{for}. Naming it cost four characters. Mention this if you want to show
 you audit your own interface.
-\end{meaning}
+\end{means}
 
 \begin{asked}
 \q{Same model for both?} Same architecture, same pipeline, but each domain
@@ -269,14 +270,14 @@ were cartels. That one is our hardest test, because somebody official already
 knows the answer.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 Two datasets per side is a deliberate defence. One dataset per domain invites
 the reasonable suspicion that your result is a property of that one dataset.
 
 The wallets view is the strongest thing on this slide. Same underlying world,
 different definition of ``a thing'', and the pipeline needs no changes to
 handle it.
-\end{meaning}
+\end{means}
 
 \begin{asked}
 \q{You said six datasets, but I only see four.} Correct, and it's deliberate.
@@ -299,15 +300,15 @@ One colour is deliberately missing from that set. Coral \bt this red-orange
 the product. So when you see coral later on, you already know what it is.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 Small point, but it shows deliberate interface design rather than decoration,
 and it pays off twice later --- on the constellation and on the network
 picture, where you never have to explain what coral means because you already
 did.
-\end{meaning}
+\end{means}
 
 % ===========================================================================
-\part{Part 3 --- Overview: the opening screen (2 minutes)}
+\phase{Part 3 --- Overview: the opening screen (2 minutes)}
 
 \slide{Slide 7 --- The Four Numbers That Matter}{HIGH (8/10)}{$\approx$ 1 minute}
 
@@ -331,7 +332,7 @@ you're willing to review everything. An accuracy number with no workload
 attached to it is meaningless.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 This is where you introduce the project's central measuring idea, and you do it
 without naming it. The technical name is \emph{Precision@k}, and the ``k'' is
 that third tile. Do not say ``Precision at k'' out loud unless asked.
@@ -344,7 +345,7 @@ fifty places it told me to dig, how many had a coin?
 you have this week. It is a staffing decision, not a modelling decision. What
 the system owes you is an honest measurement at whatever number you pick ---
 which is what the next screen delivers.
-\end{meaning}
+\end{means}
 
 \begin{asked}
 \q{Why not just report accuracy?} Because on this data you can be
@@ -373,13 +374,13 @@ the top, and then a long quiet tail. That's what a real screening problem looks
 like, and it's exactly why that review number matters so much.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 Volunteering that the layout is decorative is worth more than the panel is. An
 evaluator who works it out for themselves starts wondering what \emph{else} is
 decorative, and you have lost the room's trust for the rest of the talk.
 
 Say it, move on, and you have bought credibility cheaply.
-\end{meaning}
+\end{means}
 
 \begin{asked}
 \q{So it's just decoration?} The layout is. The data is not, and you can click
@@ -398,13 +399,13 @@ If you had ten seconds and one screen, it'd be this one. But let's go into the
 screen an investigator actually works in.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 Pure transition. Keep it short and click through on the last word --- a talk
 that moves feels rehearsed even when it isn't.
-\end{meaning}
+\end{means}
 
 % ===========================================================================
-\part{Part 4 --- The Alert Queue: the working screen (4 minutes 30)}
+\phase{Part 4 --- The Alert Queue: the working screen (4 minutes 30)}
 
 \slide{Slide 10 --- What One Row Actually Is}{VERY HIGH (9/10)}{$\approx$ 55 seconds}
 
@@ -429,7 +430,7 @@ Second \bt near-identical groups get merged, so you never open the same case
 twice under two different reference numbers.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 The single most common misunderstanding in the whole demo is that a row is a
 suspect. Kill it in the first fifteen seconds.
 
@@ -444,7 +445,7 @@ saying unless somebody asks.
 \textbf{The detail that impresses.} The grouping never looks at the answers.
 It runs on structure alone --- which is why the identical step also runs on the
 dataset where no answers exist at all.
-\end{meaning}
+\end{means}
 
 \begin{asked}
 \q{Why not just show me the top scoring accounts?} Because you'd hand an
@@ -465,7 +466,7 @@ This slider is the most honest thing in the system, so I want to spend a proper
 moment on it.
 
 It asks one question. How many cases can your team actually get through? Say
-it's fifty. \do{drag to 50}
+it's fifty. \stage{drag to 50}
 
 Now watch this number just to the right of it.
 
@@ -473,8 +474,8 @@ That's telling me that out of those fifty cases, about a third turn out to be
 real. Sixteen out of the fifty, to be exact. And that's not a promise or a
 forecast \bt it's measured, on cases where somebody already knew the answer.
 
-Now watch what happens when I get greedy. \do{drag to 100} A hundred cases, and
-it drops to about a quarter. \do{drag to 200} Two hundred, and it's down to
+Now watch what happens when I get greedy. \stage{drag to 100} A hundred cases, and
+it drops to about a quarter. \stage{drag to 200} Two hundred, and it's down to
 roughly one in seven.
 
 That is not the system getting worse. That's what happens to every screening
@@ -484,7 +485,7 @@ top.
 Being able to show you exactly how fast it falls off \bt that's the point.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 If the room remembers one slide, make it this one. It is the project's central
 measurement made physical.
 
@@ -499,7 +500,7 @@ the fifty figure, because that is the last one that was really tested.
 
 \textbf{Do not skip the honesty line.} ``Measured, not promised'' is the phrase
 that separates this from a sales demo.
-\end{meaning}
+\end{means}
 
 \begin{asked}
 \q{A third seems low.} Two answers and both matter. First, blind guessing on
@@ -528,11 +529,11 @@ And each one carries its own count, so you can see the shape of the queue
 before you click anything.
 
 Look at this. On the Bitcoin payments data, out of two hundred and fifty-four
-groups, nearly a hundred and fifty are rated ordinary. \do{click Low} There
+groups, nearly a hundred and fifty are rated ordinary. \stage{click Low} There
 they are. Same scoring, same everything. The system simply doesn't think
 they're worth your morning.
 
-And I'll be straight about one thing. \do{switch to contracts} If I flip to
+And I'll be straight about one thing. \stage{switch to contracts} If I flip to
 the European contracts data, this Low button is empty and greyed out.
 
 That is not the system failing to recognise a normal company. That dataset is a
@@ -540,7 +541,7 @@ research sample where roughly four in every ten entries are cartel cases by
 design. There genuinely aren't many ordinary firms in it to show you.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 This is the highest-value defensive slide in the deck, because it answers the
 sceptic's question \emph{before} they ask it. Answering it unprompted is worth
 far more than answering it under pressure.
@@ -554,7 +555,7 @@ nothing surfaced them.
 \textbf{The empty band.} Volunteer it. A greyed-out button with a zero on it
 looks like a bug for about four seconds, and if the examiner spots it before
 you mention it, you spend the next two minutes on the back foot.
-\end{meaning}
+\end{means}
 
 \begin{asked}
 \q{Isn't an empty band a bug?} It was the first thing we checked. It follows
@@ -592,7 +593,7 @@ activity is genuinely spread out.
 Then when it happened, and the case reference.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 \textbf{The word to be ready for is ``calibrated''.} What it means: two models
 can both be good at ranking and still be on totally different scales. One says
 nought point nine when it's fairly confident; the other says nought point one
@@ -605,7 +606,7 @@ one ordering decision was worth more than any model we trained.
 \textbf{Say the standards bodies out loud.} It moves the nine patterns from
 ``something a student invented'' to ``something a regulator published'', and
 that is a large shift in how the rest of the evidence is received.
-\end{meaning}
+\end{means}
 
 \begin{asked}
 \q{What makes a probability ``genuine''?} If the system says nought point eight
@@ -629,14 +630,14 @@ That last one carries the case across with it, so nobody's retyping a reference
 number into a chat box.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 Trivial slide, but it sets up the Copilot at the end. When you open the
 assistant later, it will already be holding a case, and that looks designed
 rather than bolted on --- because it is.
-\end{meaning}
+\end{means}
 
 % ===========================================================================
-\part{Part 5 --- Graph Explorer: seeing the shape (1 minute 45)}
+\phase{Part 5 --- Graph Explorer: seeing the shape (1 minute 45)}
 
 \slide{Slide 15 --- The Picture --- This Is The Whole Argument}{VERY HIGH (9/10)}{$\approx$ 55 seconds}
 
@@ -656,7 +657,7 @@ the coordination. That's the whole argument in one picture \bt coordination has
 a shape, and here is the shape.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 Slow down and let the room look. Silence for two seconds here is worth more
 than another sentence.
 
@@ -668,7 +669,7 @@ connected to. The contrast is the information.
 one step outwards, inside this group's own time range, before it's sent. A
 browser can't draw a million connections. And a silently cropped picture is
 worse than a small one, because the viewer assumes it's complete.
-\end{meaning}
+\end{means}
 
 \begin{asked}
 \q{Is this the whole network?} No, and it says so when it isn't. It's this
@@ -683,7 +684,7 @@ yourself and I'll open it. Every case in the queue draws the same way.
 \slide{Slide 16 --- The Replay, and a Bug We Chose Not to Hide}{HIGH (7/10)}{$\approx$ 50 seconds}
 
 \begin{saythis}
-And you can replay it. \do{press play} The connections light up in order, so
+And you can replay it. \stage{press play} The connections light up in order, so
 you watch the case assemble itself.
 
 Now read the label on that button, because it's doing something careful.
@@ -703,13 +704,13 @@ been inventing data. So instead it detects the situation and tells you which
 one you're watching.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 This is a ``we found our own bug and fixed it honestly'' story, and those are
 disproportionately persuasive with examiners because they cannot be faked.
 
 The underlying point is a principle you can state: \textbf{when the data can't
 support the visual, change the visual, don't change the data.}
-\end{meaning}
+\end{means}
 
 \begin{asked}
 \q{Why not interpolate the dates so it always animates?} Because the animation
@@ -718,7 +719,7 @@ never happened in that order.
 \end{asked}
 
 % ===========================================================================
-\part{Part 6 --- Case Detail: where a person decides (4 minutes 45)}
+\phase{Part 6 --- Case Detail: where a person decides (4 minutes 45)}
 
 \slide{Slide 17 --- The Case File Header}{Medium (5/10)}{$\approx$ 35 seconds}
 
@@ -734,12 +735,12 @@ And the score. More than nine tenths on this one, which is about as high as
 this system goes.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 Small but worth having. Machine identifiers used to be the single most
 confusing thing on this screen --- a reviewer would ask ``what is
 rgcn\_actor\_s0?'' and the answer took a minute. Now the plain sentence is the
 headline and the raw identifier is a subtitle.
-\end{meaning}
+\end{means}
 
 % ---------------------------------------------------------------------------
 \slide{Slide 18 --- The Pattern --- Including When There Isn't One}{VERY HIGH (10/10)}{$\approx$ 1 minute 15}
@@ -764,7 +765,7 @@ That's a describable situation. It doesn't need a textbook name to be worth
 twenty minutes of somebody's morning.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 This slide answers the hardest fair criticism of any machine-learning system:
 \emph{it flagged something and can't tell me why}.
 
@@ -782,7 +783,7 @@ the word ``chain'', and it is measured, not asserted.
 rejected as too technical. The rule now is that these sentences describe the
 \emph{situation}, never the system --- so there is no ``the model found'' or
 ``we asked the computer'' anywhere in them.
-\end{meaning}
+\end{means}
 
 \begin{asked}
 \q{So the model flagged something it can't explain?} It flagged something the
@@ -816,14 +817,14 @@ On this particular case there are none. And rather than show you an empty box,
 we tell you plainly what did make it stand out.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 The phrase that matters is \textbf{``even if you don't trust the neural
 network''}. It converts the evidence panel from a feature into a safeguard.
 
 Mechanically: these come from hand-written rules over the group's network, not
 from the learned model, and the indicator wording is quoted from a fixed
 reference file. The learned model has no way to touch this panel.
-\end{meaning}
+\end{means}
 
 \begin{asked}
 \q{Could the model have invented a warning sign?} It has no route to. The
@@ -851,14 +852,14 @@ missing. We don't fill in a guess and we don't quietly average something in. On
 a dataset that has no amounts, the amounts row simply isn't there.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 ``We never fill in a guess'' is a claim about data handling that examiners
 like, because the opposite --- silently imputing missing values --- is one of
 the most common quiet errors in student projects.
 
 It's also true here as a design rule: fields a dataset doesn't have stay absent
 rather than being filled in with an average.
-\end{meaning}
+\end{means}
 
 \begin{asked}
 \q{Why not impute the missing values?} Because on a screening system an
@@ -899,7 +900,7 @@ And when the two answers contradict each other, the panel says so, rather than
 hiding it.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 \textbf{Never say ``the highlighted links'' without first saying what they
 are.} That was a real complaint about our own report: the phrase was used
 before it was ever defined, so the whole explanation collapsed. The first
@@ -919,7 +920,7 @@ answers are yes, those two questions really were the reason.
 appear as fidelity-minus and fidelity-plus. Confusingly, a zero means the best
 possible result on one and the worst on the other, which is exactly why the
 panel asks the question instead of printing the number.
-\end{meaning}
+\end{means}
 
 \begin{asked}
 \q{How often does that check fail?} It used to fail on thirty-eight of our
@@ -945,17 +946,17 @@ the raw version. If a case carries a field we haven't designed a panel for, it
 still shows up down here.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 This is a structural guarantee, not a promise --- unrecognised fields fall
 through to that section automatically, so a new field cannot be silently
 swallowed by a future change.
-\end{meaning}
+\end{means}
 
 % ---------------------------------------------------------------------------
 \slide{Slide 23 --- The Case With No File At All}{HIGH (7/10)}{$\approx$ 45 seconds}
 
 \begin{saythis}
-Let me deliberately open a quiet one from further down the list. \do{open a low
+Let me deliberately open a quiet one from further down the list. \stage{open a low
 band case} Watch what you get.
 
 Not an error. It says: this group looks ordinary, the system didn't think it
@@ -970,7 +971,7 @@ them costs real computing time, and spending it on cases nobody will read is
 waste.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 Another self-caught bug worth telling. The moment the Low band was added, these
 cases became reachable for the first time --- and clicking one showed a red
 error box saying ``no explanation bundle''. The system was working exactly as
@@ -978,7 +979,7 @@ designed and reporting itself as broken.
 
 The lesson, if you want to say it: \textbf{a designed outcome must never be
 displayed as a failure.}
-\end{meaning}
+\end{means}
 
 \begin{asked}
 \q{So most of your cases have no explanation?} Most of the ones nobody would
@@ -988,7 +989,7 @@ computing for pages nobody opens.
 \end{asked}
 
 % ===========================================================================
-\part{Part 7 --- Model Lab: the evidence (4 minutes 15)}
+\phase{Part 7 --- Model Lab: the evidence (4 minutes 15)}
 
 \slide{Slide 24 --- Never A Score On Its Own}{VERY HIGH (10/10)}{$\approx$ 1 minute}
 
@@ -1013,7 +1014,7 @@ That's the honest form of every result in this project. Never a score on its
 own. Always a score next to what doing nothing clever would have got you.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 \textbf{The everyday version.} Scoring seventy percent on a test means nothing
 until you know whether the class average was thirty or ninety-five.
 
@@ -1024,7 +1025,7 @@ point three nine on contracts is a \emph{worse} result than nought point four
 seven on Bitcoin, even though the number looks similar. Quoting either alone
 would mislead --- and quoting scores alone is the most common way results in
 this field get oversold.
-\end{meaning}
+\end{means}
 
 \begin{asked}
 \q{Why is the guessing level so different between datasets?} Because it's just
@@ -1052,7 +1053,7 @@ This is the table you'd actually take to whoever signs off headcount, because
 it turns a research score into a staffing decision.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 Two words to be able to define if asked. \textbf{Precision} = of the cases you
 opened, how many were real. \textbf{Recall} = of all the real cases out there,
 how many you found. They pull against each other: review more, find more, but a
@@ -1060,7 +1061,7 @@ smaller share of what you open is real.
 
 The table only lists workloads that were actually measured. It never draws a
 row for a number that was not tested.
-\end{meaning}
+\end{means}
 
 \begin{asked}
 \q{Your recall looks low.} It is, at these workloads, and that's the honest
@@ -1095,7 +1096,7 @@ it governs this whole screen \bt a case we couldn't confirm is not the same as
 a case we got wrong.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 The step-43 collapse is a genuine strength dressed as a weakness. It is why the
 model is trained on the past and tested on the future and never the other way
 round, and it is why the report warns that our own validation scores are not a
@@ -1104,7 +1105,7 @@ trustworthy guide when the world shifts underneath the model.
 If you are asked whether it invalidates the results: it constrains them, and we
 state the constraint. A model that had never met a shift would be the more
 suspicious result.
-\end{meaning}
+\end{means}
 
 \begin{asked}
 \q{Doesn't that collapse invalidate everything after it?} It constrains it,
@@ -1123,7 +1124,7 @@ point were partly describing a world that no longer existed.
 Last section here, and it's collapsed by default because it's the follow-up
 question, not the opening one. Can I trust any of this?
 
-Four answers. \do{expand the section}
+Four answers. \stage{expand the section}
 
 One. Every headline model was built five separate times, each with different
 starting randomness, and we report the average \emph{and} the spread. If a
@@ -1146,7 +1147,7 @@ Four. We deliberately corrupted some of the training answers to see what
 breaks. The test answers were never touched.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 Publishing your own failing fold is the strongest single credibility move in
 the talk. Say it plainly and do not apologise for it.
 
@@ -1157,7 +1158,7 @@ the result is real or an accident.
 \textbf{Why hold a whole country out.} Otherwise you're only proving it works
 on places it has already seen. Holding a country out entirely is the closest
 thing to asking ``would this work somewhere new?''
-\end{meaning}
+\end{means}
 
 \begin{asked}
 \q{Which country fails, and why?} The largest one in that pool, and it scores
@@ -1171,7 +1172,7 @@ real world, where labels are always partly wrong.
 \end{asked}
 
 % ===========================================================================
-\part{Part 8 --- About, the assistant, and the close (3 minutes 30)}
+\phase{Part 8 --- About, the assistant, and the close (3 minutes 30)}
 
 \slide{Slide 28 --- The About Screen}{Medium (6/10)}{$\approx$ 50 seconds}
 
@@ -1195,7 +1196,7 @@ And at the bottom, the boundary. This produces screening signals for human
 investigators. Inputs to due process \bt never a substitute for it.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 The ``these nine are not ours'' line is doing real work. It moves the pattern
 library from something a student invented to something a regulator published,
 and it makes the recall claim meaningful.
@@ -1204,7 +1205,7 @@ The recall claim itself: the matcher and the thing that plants test patterns
 are two independently written pieces of code, so when one finds everything the
 other planted, they are genuinely checking each other rather than agreeing with
 themselves.
-\end{meaning}
+\end{means}
 
 % ---------------------------------------------------------------------------
 \slide{Slide 29 --- The Assistant, and Trying To Break It}{VERY HIGH (9/10)}{$\approx$ 2 minutes}
@@ -1213,7 +1214,7 @@ themselves.
 Last thing, and it's the part people most want to poke at. There's an
 assistant, and you can open it on any screen.
 
-Let me ask it something ordinary first. \do{type: which five cases should I look
+Let me ask it something ordinary first. \stage{type: which five cases should I look
 at first and why?}
 
 Watch the panel while it thinks. That trace is real \bt those are the actual
@@ -1226,20 +1227,20 @@ literally in something it looked up. If one didn't, it tells you. If it talks
 about warning signs without consulting the reference documents, it tells you
 that too.
 
-Now let me try to break it. \do{type: is firm X guilty?}
+Now let me try to break it. \stage{type: is firm X guilty?}
 
 There. ``This system does not determine guilt.'' It won't answer that question.
 And that isn't a filter on the way in \bt it's checked on the way out, on every
 single response.
 
-One more. \do{type: what will the score be in 2027?} It refuses, and it lists
+One more. \stage{type: what will the score be in 2027?} It refuses, and it lists
 what it actually has instead of inventing something.
 
 Before any release, it sits a twenty-four question exam covering exactly these
 failure modes. All twenty-four have to pass.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 Rehearse this one. It is the only live, unscripted-looking moment in the talk
 and it is the most impressive if it works.
 
@@ -1253,7 +1254,7 @@ checks applied to its output, not instructions given to it.
 
 \textbf{If there is no key on the machine} it says so plainly rather than
 pretending, and every other part of the console still works.
-\end{meaning}
+\end{means}
 
 \begin{asked}
 \q{What stops it making a number up?} A check that runs after it has spoken.
@@ -1293,16 +1294,16 @@ worse one. This one shortens the list a person has to read.
 Thank you \bt happy to take questions.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 Close on the ethics boundary as a design driver rather than a legal shield.
 Every claim in this block is checkable on screen within ten seconds, which is
 what makes it the right note to end on.
 
 Then stop talking. Do not add a summary slide after this.
-\end{meaning}
+\end{means}
 
 % ===========================================================================
-\part{Appendices}
+\phase{Appendices}
 
 \slide{Appendix A --- The Five Minute Version}{---}{$\approx$ 5 minutes}
 

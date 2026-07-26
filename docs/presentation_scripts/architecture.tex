@@ -1,5 +1,6 @@
 \documentclass[11pt]{article}
 \usepackage{scriptstyle}
+\scripttopic{The Architecture Page}
 
 \begin{document}
 
@@ -17,7 +18,7 @@ no internet and no server. Use the \textbf{light} theme --- it projects better.
 Scroll to the top of the system flowchart before you start.
 
 Same three boxes as the dashboard script. ``\bt'' is a breath.
-\do{square brackets} are things you do, not words you say.
+\stage{square brackets} are things you do, not words you say.
 
 \textbf{The one sentence this whole talk hangs on:} the top half of the diagram
 \emph{builds} results and then stops running; the bottom half can only
@@ -25,7 +26,7 @@ Same three boxes as the dashboard script. ``\bt'' is a breath.
 \end{tcolorbox}
 
 % ===========================================================================
-\part{Part 1 --- Opening (1 minute 15)}
+\phase{Part 1 --- Opening (1 minute 15)}
 
 \slide{Slide 1 --- Handing Over --- From The Product To The Machine}{Medium (6/10)}{$\approx$ 35 seconds}
 
@@ -50,7 +51,7 @@ middle. And then I'll show you what this looks like hosted properly as a real
 product, with the bill.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 A handover slide with a hook, so the second speaker doesn't open on
 housekeeping.
 
@@ -62,7 +63,7 @@ boundary before you name it.
 
 Naming that line as ``the decision I'd defend hardest'' makes them wait for it,
 which means they are listening when it arrives on slide 10.
-\end{meaning}
+\end{means}
 
 % ---------------------------------------------------------------------------
 \slide{Slide 2 --- Two Boxes And A Line}{HIGH (8/10)}{$\approx$ 40 seconds}
@@ -83,7 +84,7 @@ Between them, that dashed line labelled trust boundary. Hold that thought,
 because I'm coming back to it.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 Get the room to see the shape before any of the boxes. If they leave with only
 one thing from this section, it should be ``it trains, then stops, and the
 website can only read.''
@@ -91,10 +92,10 @@ website can only read.''
 Everything else on the page --- the security story, the cost story, the fact
 that the whole thing demonstrates on a laptop with the wifi off --- follows
 from that split.
-\end{meaning}
+\end{means}
 
 % ===========================================================================
-\part{Part 2 --- Down the pipeline (5 minutes)}
+\phase{Part 2 --- Down the pipeline (5 minutes)}
 
 \slide{Slide 3 --- Boxes 1 and 2 --- Making Two Worlds Look The Same}{HIGH (8/10)}{$\approx$ 1 minute}
 
@@ -118,7 +119,7 @@ That's what lets one system handle both worlds. And it's the only reason we
 could even \emph{ask} whether knowledge of one crime transfers to the other.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 \textbf{The everyday version.} Two countries with different plug sockets. You
 could build two of every appliance --- or you could build one adapter. Box two
 is the adapter, and everything downstream is built once instead of twice.
@@ -131,7 +132,7 @@ plumbing box into a research contribution.
 \textbf{The fingerprint check} is called a checksum. It is one line of code and
 it is the difference between ``our numbers are wrong'' and ``the pipeline
 refused to start''.
-\end{meaning}
+\end{means}
 
 \begin{asked}
 \q{Don't you lose information flattening two domains into one format?} You lose
@@ -169,7 +170,7 @@ could field, plus the planted-cartel tests, plus the automated test suite. It's
 there so nobody can accuse us of only racing against ourselves.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 Four arms, four different failure modes, and they don't overlap. That is the
 argument for having four.
 
@@ -181,7 +182,7 @@ unusual. No answer key required.
 no strong classical comparison is a demonstration, not a result. Arm four is
 also why you're able to admit, later and without flinching, that on one dataset
 the old-fashioned method wins.
-\end{meaning}
+\end{means}
 
 \begin{asked}
 \q{Why keep the no-answers arm if it scores worst?} Because it's the only arm
@@ -218,7 +219,7 @@ scores about nine in ten.
 That's deep learning doing something nothing else in the toolbox can do.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 This is your answer to the single hardest question in the project --- ``your
 XGBoost beats your neural network, so why bother?'' --- and it is much stronger
 delivered proactively here than defensively later.
@@ -231,7 +232,7 @@ tells them what to do next; the second tells them nothing.
 \textbf{The honest framing to use.} If the cheats leave a visible web between
 them, we find them. If they simply agree to take turns and never appear
 together, shape alone cannot see it --- you would need prices and dates.
-\end{meaning}
+\end{means}
 
 \begin{asked}
 \q{Aren't planted cartels easier than real ones?} They're generated from the
@@ -268,7 +269,7 @@ Same models. Same data. That single decision about \emph{ordering} was worth
 more than any model we trained.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 \textbf{The everyday version.} Three judges scoring a competition. One marks
 everything between six and seven. One uses the full range. Average their raw
 scores and the cautious judge is silently ignored. You normalise them first.
@@ -279,7 +280,7 @@ that separates a project that ran experiments from a project that ran a
 tutorial.
 
 The technical name is \emph{calibration}. Say it only if asked.
-\end{meaning}
+\end{means}
 
 \begin{asked}
 \q{Why combine at all instead of using the best single model?} On one dataset
@@ -309,14 +310,14 @@ structure alone \bt which is exactly why the identical step also runs on the
 data where no answers exist.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 This box is the bridge back to the console the room already saw, so gesture at
 the numbers they recognise --- 254 and 223 were on the Overview screen.
 
 The ``it never uses the answers'' point is what makes the planted-cartel study
 possible at all, so it is worth ten seconds even though it sounds like a
 technicality.
-\end{meaning}
+\end{means}
 
 % ---------------------------------------------------------------------------
 \slide{Slide 8 --- Box 6 --- Why An Alert Alone Isn't Enough}{HIGH (8/10)}{$\approx$ 1 minute}
@@ -341,7 +342,7 @@ who distrusts the neural network entirely can throw the first one away, and the
 other two still stand.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 \textbf{Define ``the handful of connections'' before you use it.} That phrase
 was a real failure in our own report --- it appeared before it was ever
 defined, so the whole explanation collapsed for the reader. The definition is:
@@ -356,7 +357,7 @@ reason.
 The numbers, if pushed: this check used to fail on thirty-eight of our fifty
 published explanations. We replaced the explanation method and now it fails on
 one.
-\end{meaning}
+\end{means}
 
 \begin{asked}
 \q{How do you know the explanation is honest and not a story?} Because it's
@@ -379,13 +380,13 @@ And a file opened read-only cannot be changed by the thing reading it \bt
 which is exactly what the next slide is about.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 This is the set-up for the trust boundary. Deliver the last line and pause
 before moving on.
-\end{meaning}
+\end{means}
 
 % ===========================================================================
-\part{Part 3 --- The most important line on the page (1 minute 15)}
+\phase{Part 3 --- The most important line on the page (1 minute 15)}
 
 \slide{Slide 10 --- The Trust Boundary}{VERY HIGH (10/10)}{$\approx$ 1 minute 15}
 
@@ -417,7 +418,7 @@ price list, and demonstrates on a laptop with the wifi switched off.
 The security argument and the cost argument turn out to be the same argument.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 This is the highest-value slide in the architecture talk. Rehearse it until it
 is smooth, and do not rush the ``quietly changing who looks suspicious'' line
 --- that is the sentence that shows you thought about the domain and not just
@@ -427,7 +428,7 @@ the code.
 design this is enforced by the cloud provider's own permission system, not by
 our code being well-behaved. Our code could contain a bug that tries to write,
 and the write would still be refused.
-\end{meaning}
+\end{means}
 
 \begin{asked}
 \q{Isn't that just a deployment detail?} In a system whose output decides who
@@ -442,7 +443,7 @@ internet at all.
 \end{asked}
 
 % ===========================================================================
-\part{Part 4 --- Below the line (1 minute 20)}
+\phase{Part 4 --- Below the line (1 minute 20)}
 
 \slide{Slide 11 --- Box 8 --- The Doorway, And Where The Assistant Sits}{HIGH (7/10)}{$\approx$ 50 seconds}
 
@@ -461,11 +462,11 @@ read-only service. It has no private access to anything. It reads exactly what
 a person looking at the dashboard could read.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 The placement on the diagram is the argument. If the assistant had its own line
 into the data store, everything you said about guardrails would rest on trust.
 Because it goes through the same read-only doorway, it rests on architecture.
-\end{meaning}
+\end{means}
 
 % ---------------------------------------------------------------------------
 \slide{Slide 12 --- Boxes 9 and 10 --- The Console, And The Person}{HIGH (7/10)}{$\approx$ 30 seconds}
@@ -482,16 +483,16 @@ That's not modesty about how good the model is. If a screening tool made the
 escalation decision, you'd have automated an accusation.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 Putting a human on an architecture diagram is unusual, and that is exactly why
 it works. It makes the human-in-the-loop constraint structural rather than
 aspirational.
 
 ``You'd have automated an accusation'' is the line to land. Then move on.
-\end{meaning}
+\end{means}
 
 % ===========================================================================
-\part{Part 5 --- The method cards (1 minute 30)}
+\phase{Part 5 --- The method cards (1 minute 30)}
 
 \slide{Slide 13 --- The Cards Below The Flowchart}{Medium (6/10)}{$\approx$ 1 minute 30}
 
@@ -517,7 +518,7 @@ correcting the last. On the Bitcoin data they still beat our neural networks,
 and we publish that with a proper statistical test rather than burying it.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 \textbf{The everyday version of a graph network.} Deciding whether a new pupil
 is trouble. You could read their file. Or you could notice who they eat lunch
 with every day. After a few days of watching, the lunch table tells you more
@@ -528,7 +529,7 @@ than the file.
 \textbf{Volunteering that the trees win} is a strength. It reads as confidence,
 and it sets up the answer you already gave on slide 5 --- the trees cannot
 enter the experiment that matters most.
-\end{meaning}
+\end{means}
 
 \begin{asked}
 \q{The trees beat your deep models --- doesn't that sink the project?} On that
@@ -539,7 +540,7 @@ and they can't run at all.
 \end{asked}
 
 % ===========================================================================
-\part{Part 6 --- The cloud, and the bill (3 minutes 30)}
+\phase{Part 6 --- The cloud, and the bill (3 minutes 30)}
 
 \slide{Slide 14 --- The Always-On Half}{HIGH (8/10)}{$\approx$ 1 minute 10}
 
@@ -566,7 +567,7 @@ retraining, no panic \bt and the bad run is still sitting there to be
 investigated rather than destroyed.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 The versioned-folder point is the one an examiner with industry experience will
 respond to, because rollback is the operational problem everybody has actually
 lived through.
@@ -575,7 +576,7 @@ lived through.
 misconfiguration away from being writable by somebody else, and it lets people
 bypass the protective filter. Making the delivery network the only reader means
 every visitor goes through the filter without exception.
-\end{meaning}
+\end{means}
 
 \begin{asked}
 \q{Why not use a proper database for the results?} Because we don't need one.
@@ -606,13 +607,13 @@ And a spending alarm, switched on from day one, so a stuck job can't quietly
 cost a fortune while nobody's looking.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 Say the read-only permissions line slowly. It converts a claim into a
 guarantee, and it is the single most defensible thing on the cloud diagram.
 
 The spending alarm sounds like a joke until you mention it is a student
 project. Then it sounds like judgement.
-\end{meaning}
+\end{means}
 
 % ---------------------------------------------------------------------------
 \slide{Slide 16 --- The Half That Only Exists While It Runs}{HIGH (8/10)}{$\approx$ 55 seconds}
@@ -639,7 +640,7 @@ halves. The nightly job \emph{writes} into the storage the website
 \emph{reads}. There's nothing coming back down.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 The spot-pricing justification is the good bit. Anyone can say ``we use cheap
 machines''. Explaining \emph{why this workload is the one that can tolerate
 cheap machines} is engineering judgement.
@@ -647,7 +648,7 @@ cheap machines} is engineering judgement.
 The upward arrow is the trust boundary again, drawn in cloud services. Point at
 it and say so --- repetition of the central idea across two diagrams is a
 feature.
-\end{meaning}
+\end{means}
 
 \begin{asked}
 \q{What if it gets taken away halfway through?} The website keeps serving
@@ -680,7 +681,7 @@ doesn't. Same pipeline, same results, every level. What you're buying as you go
 up is tolerance for things going wrong.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 That last paragraph is the insight, and most groups miss it. The tiers are not
 ``more model'' --- they are more resilience. Tier one assumes somebody will
 notice if it stops. Tier three survives a data centre failure.
@@ -688,7 +689,7 @@ notice if it stops. Tier three survives a data centre failure.
 \textbf{If asked what the risky line is:} the assistant, because it is charged
 per unit of text and driven by humans rather than by us. The graphics machine
 is the biggest cost but it is bounded --- it runs for a few hours and stops.
-\end{meaning}
+\end{means}
 
 \begin{asked}
 \q{Could you actually afford to run this?} Yes, and that's a consequence of the
@@ -697,7 +698,7 @@ night and then disappears. Showing results needs none of it.
 \end{asked}
 
 % ===========================================================================
-\part{Part 7 --- Close (35 seconds)}
+\phase{Part 7 --- Close (35 seconds)}
 
 \slide{Slide 18 --- The Close}{HIGH (8/10)}{$\approx$ 35 seconds}
 
@@ -712,10 +713,10 @@ with no internet \bt all three from the same choice.
 And at the very bottom of the diagram, a person still decides.
 \end{saythis}
 
-\begin{meaning}
+\begin{means}
 Mirror the dashboard script's close. Two talks, same final note, delivered by
 different people --- that reads as a group that actually planned together.
-\end{meaning}
+\end{means}
 
 % ---------------------------------------------------------------------------
 \slide{Slide 19 --- Appendix --- The Four Minute Version}{---}{$\approx$ 4 minutes}

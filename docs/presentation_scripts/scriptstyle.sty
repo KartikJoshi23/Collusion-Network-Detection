@@ -1,15 +1,17 @@
 % ============================================================================
-%  scriptstyle.sty — the house style for CollusionGraph presentation scripts.
+%  scriptstyle.sty -- house style for the CollusionGraph presentation scripts.
 %
-%  Cloned from the reference format the stakeholder supplied on 2026-07-25:
-%  a slide heading carrying an IMPORTANCE rating and a SUGGESTED TIME, then a
-%  blue "Say this" box of spoken words, then a green "What this actually means"
-%  box for the presenter, then an amber "If the evaluator asks" box.
+%  Cloned from the reference format the stakeholder supplied on 2026-07-26:
+%  a running header, a slide heading carrying an IMPORTANCE rating and a
+%  SUGGESTED TIME, then a blue "Say this" box of spoken words, a green
+%  "What this actually means (plain English)" box for the presenter, and an
+%  amber "If the evaluator asks" box.
 %
-%  Usage:  \usepackage{scriptstyle}   (keep this file next to the .tex)
+%  Compiles clean with pdflatex (MiKTeX / TeX Live / Overleaf).
+%  Usage:  \usepackage{scriptstyle}   (keep this file beside the .tex)
 % ============================================================================
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{scriptstyle}[2026/07/25 CollusionGraph presentation scripts]
+\ProvidesPackage{scriptstyle}[2026/07/26 CollusionGraph presentation scripts]
 
 \RequirePackage[T1]{fontenc}
 \RequirePackage[utf8]{inputenc}
@@ -19,80 +21,89 @@
 \RequirePackage[most]{tcolorbox}
 \RequirePackage{enumitem}
 \RequirePackage{fancyhdr}
-\RequirePackage{titlesec}
-\RequirePackage[hidelinks]{hyperref}
+\RequirePackage{needspace}
 
 % ---- palette (matched to the reference images) -----------------------------
 \definecolor{sayframe}{HTML}{1F4E79}   % dark blue rule + title bar
-\definecolor{saytext}{HTML}{2A5C8F}    % blue body text
+\definecolor{saytext}{HTML}{22537E}    % blue body text (Say this)
 \definecolor{meanframe}{HTML}{1D6F42}  % dark green rule + title bar
-\definecolor{meantext}{HTML}{1D6F42}   % green body text
-\definecolor{askframe}{HTML}{8A5A0B}   % amber rule + title bar
-\definecolor{asktext}{HTML}{7A4E08}    % amber body text
-\definecolor{metagrey}{HTML}{444444}
+\definecolor{meantext}{HTML}{17301F}   % near-black body text (readable)
+\definecolor{askframe}{HTML}{9A5B00}   % amber rule + title bar
+\definecolor{asktext}{HTML}{4A3208}    % dark amber body text
+\definecolor{metagrey}{HTML}{555555}
+
+% ---- the topic shown on the right of the running header --------------------
+\newcommand{\scripttopic}[1]{\gdef\@scripttopic{#1}}
+\scripttopic{}
 
 % ---- page furniture --------------------------------------------------------
 \pagestyle{fancy}
 \fancyhf{}
-\lhead{\small\textcolor{metagrey}{CollusionGraph — presentation script}}
-\rhead{\small\thepage}
-\renewcommand{\headrulewidth}{0.4pt}
+\lhead{\small\textcolor{metagrey}{CollusionGraph --- Presentation Script}}
+\rhead{\small\textcolor{metagrey}{\@scripttopic}}
+\renewcommand{\headrulewidth}{0.6pt}
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{4pt}
 \setlist[itemize]{topsep=3pt,itemsep=2pt,parsep=0pt,leftmargin=1.4em}
 \setlist[enumerate]{topsep=3pt,itemsep=2pt,parsep=0pt,leftmargin=1.6em}
 
-% ---- the slide heading -----------------------------------------------------
-% \slide{Slide 1 — Title — ...}{Medium (6/10)}{≈ 45 seconds}
-\newcommand{\slide}[3]{%
+% ---- a phase divider: a slim full-width bar that flows inline ---------------
+% (No forced page break -- an empty page carrying one bar is what makes a
+%  script look unfinished. It keeps itself with the slide that follows.)
+\newcommand{\phase}[1]{%
+  \needspace{9\baselineskip}%
   \bigskip
-  {\large\bfseries #1}\par
-  \vspace{2pt}\hrule\vspace{5pt}
-  {\small\textbf{Importance:} #2 \quad\textcolor{metagrey}{\textbar}\quad
-   \textbf{Suggested time:} #3}\par
-  \vspace{4pt}
+  \begin{tcolorbox}[colback=metagrey!12, colframe=metagrey!30, boxrule=0.4pt,
+    arc=1pt, left=9pt, right=9pt, top=3.5pt, bottom=3.5pt,
+    before skip=4pt, after skip=8pt]
+    {\small\bfseries\textcolor{metagrey}{#1}}
+  \end{tcolorbox}%
 }
 
-% Section divider for a run of slides that belong to one screen / one part.
-\newcommand{\part}[1]{%
-  \clearpage
-  \begin{tcolorbox}[colback=metagrey!8,colframe=metagrey!55,boxrule=0.6pt,
-    arc=1pt,left=8pt,right=8pt,top=5pt,bottom=5pt]
-    \centering\large\bfseries #1
-  \end{tcolorbox}
+% ---- the slide heading -----------------------------------------------------
+% \slide{Slide 1 -- Title -- ...}{Medium (6/10)}{$\approx$ 45 seconds}
+\newcommand{\slide}[3]{%
+  \needspace{8\baselineskip}%
+  \bigskip
+  {\large\bfseries #1\par}%
+  \vspace{2pt}%
+  {\small\textbf{Importance:} #2 \quad\textcolor{metagrey}{\textbar}\quad
+   \textbf{Suggested time:} #3\par}%
+  \vspace{5pt}%
 }
 
 % ---- the three boxes -------------------------------------------------------
 \newtcolorbox{saythis}{%
-  enhanced, breakable,
-  colback=white, colframe=sayframe, boxrule=0.9pt, arc=1pt,
+  enhanced, before skip=6pt, after skip=8pt,
+  colback=white, colframe=sayframe, boxrule=0.9pt, arc=2pt,
   title={\bfseries Say this}, coltitle=white, colbacktitle=sayframe,
-  fonttitle=\small, coltext=saytext,
+  fonttitle=\small, coltext=saytext, boxsep=3pt,
   left=8pt, right=8pt, top=6pt, bottom=6pt}
 
-\newtcolorbox{meaning}{%
-  enhanced, breakable,
-  colback=white, colframe=meanframe, boxrule=0.9pt, arc=1pt,
+\newtcolorbox{means}{%
+  enhanced, before skip=6pt, after skip=8pt,
+  colback=white, colframe=meanframe, boxrule=0.9pt, arc=2pt,
   title={\bfseries What this actually means (plain English)},
   coltitle=white, colbacktitle=meanframe,
-  fonttitle=\small, coltext=meantext,
+  fonttitle=\small, coltext=meantext, boxsep=3pt,
   left=8pt, right=8pt, top=6pt, bottom=6pt}
 
 \newtcolorbox{asked}{%
-  enhanced, breakable,
-  colback=white, colframe=askframe, boxrule=0.9pt, arc=1pt,
+  enhanced, before skip=6pt, after skip=10pt,
+  colback=white, colframe=askframe, boxrule=0.9pt, arc=2pt,
   title={\bfseries If the evaluator asks}, coltitle=white, colbacktitle=askframe,
-  fonttitle=\small, coltext=asktext,
+  fonttitle=\small, coltext=asktext, boxsep=3pt,
   left=8pt, right=8pt, top=6pt, bottom=6pt}
 
 % ---- inline helpers --------------------------------------------------------
-% A beat: where to pause for breath mid-sentence. Reads as " / " on the page.
-\newcommand{\bt}{\,\textcolor{metagrey}{/}\,}
-% A blank for a name the speaker fills in.
-\newcommand{\blank}{\underline{\hspace{2.4cm}}}
-% A stage direction — something you DO, not something you say.
-\newcommand{\do}[1]{\textcolor{metagrey}{\textit{[#1]}}}
-% A question inside the amber box.
+% A beat: where to pause for breath mid-sentence. Renders as " / ", exactly
+% the convention in the reference script.
+\newcommand{\bt}{\,/\,}
+% A blank the speaker fills in (the group number, a name).
+\newcommand{\blank}{\underline{\hspace{2.2cm}}}
+% A stage direction -- something you DO, not something you say.
+\newcommand{\stage}[1]{\textnormal{\itshape[\,#1\,]}}
+% A question inside the amber box: italic, quoted, then a dash.
 \newcommand{\q}[1]{\textit{``#1''}\ ---\ }
 
 \endinput

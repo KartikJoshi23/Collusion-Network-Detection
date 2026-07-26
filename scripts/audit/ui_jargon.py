@@ -191,10 +191,10 @@ def say_this_blocks(text: str):
 def strip_tex(s: str) -> str:
     r"""Reduce a LaTeX spoken block to the words that are actually said.
 
-    Stage directions (\do{...}) are removed entirely — they are things the
+    Stage directions (\stage{...}) are removed entirely — they are things the
     speaker DOES, not words. Everything else keeps its argument text.
     """
-    s = re.sub(r"\\do\{[^{}]*\}", "", s)  # [click the switch]
+    s = re.sub(r"\\stage\{[^{}]*\}", "", s)  # [click the switch]
     s = re.sub(r"\\bt\b", " ", s)  # breath marker
     s = re.sub(r"\\blank\b", "NAME", s)  # the fill-in-your-name rule
     s = re.sub(r"\\textbullet\b", "", s)
