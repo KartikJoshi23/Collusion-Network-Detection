@@ -216,6 +216,35 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-27 · **STRESS TEST TAB — the injection "playground" made SHOWABLE, and
+  AMLworld given a defensible on-screen home (§7 step 30, §5.3 view; the two
+  dataset questions an evaluator fires hardest, answered in the product not in
+  prose).** *Why:* the presenter needed a live answer to "plant the fake cartels
+  right now and show the output" and to "AMLworld scores below guessing, why keep
+  it" — theory alone would not survive either. *Backend:* new top-level
+  `stress_test` section in the serving index + `StressTestStudy` +
+  **read-only `GET /api/v1/stress-test`** (serves the injection artifact; absent
+  files omitted, empty section 404s — thin-machine honest; OCDS stays OUT of the
+  datasets/domain machinery since it has no queue). Wired in
+  `build_demo_artifacts.py` AND `build_dev_store.py` (multi-seed preferred,
+  single-seed fallback). 3 new API tests. *Real data:* ran the genuine 5-seed
+  OCDS injection on this machine (`injection_recovery_ocds_georgia_multiseed`,
+  ~18 min) — **clique 0.921 ± 0.176, common_control 0.570 ± 0.020, partition
+  0.193, rotation 0.072, cover_bid 0.010** — matches the report's headline table
+  (0.9225 etc.) to cross-machine tolerance. *Frontend:* a 7th tab **Stress Test**
+  (lime identity, own icon) — `parseStress` normaliser (both artifact shapes, 3
+  tests), an interactive **plant → detect → reveal**: pick a review budget, hit
+  Plant & Detect, watch the shapes plant and the real recovered-% bars fill with
+  honest verdicts (CAUGHT / PARTLY CAUGHT / ESCAPES), the reproduce command with
+  a copy button ("not canned — run it live"), and a **known-answer bench** panel
+  reframing AMLworld (perfect key, 8 real shapes, real amounts → the proving
+  ground, not the showcase; its weak score reported openly). All visible strings
+  jargon-clean (`ui_jargon.py` pass 1: 0). *Verified live* against the real
+  served study: endpoint 200, the five shapes render the exact measured numbers
+  (92/57/19/7/1%), budget switch re-reads per-budget values (ring 0%@500 →
+  92%@2000), all three verdicts, zero console errors. Also `docs/presentation_qa_datasets.md`
+  — the spoken answers to both questions, tied to the live tab. Backend
+  **389/389**, frontend build + vitest **52/52**, ruff/black/mypy clean · [laptop-D]
 - 2026-07-25 · **PRESENTATION SCRIPTS + THE "EXPLAIN, DON'T DEFINE" REWRITE —
   all four brief items, and the audit that measured the previous round turned
   out to be lying.** The stakeholder rejected report and dashboard together:
