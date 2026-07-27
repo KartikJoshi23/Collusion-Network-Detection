@@ -9,11 +9,13 @@ import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useStressTest } from "../../api/hooks";
 import { SCREENING_CAVEAT } from "../../api/types";
+import { CopilotMark } from "../../components/copilot/CopilotMark";
 import { CountUp } from "../../components/ui/CountUp";
 import { Glass } from "../../components/ui/Glass";
 import { Empty, ErrorState, Loading } from "../../components/ui/States";
 import { UI_HUES } from "../../lib/palette";
 import { parseStress, type StressModel } from "../../lib/stressExtract";
+import { useConsole } from "../../state/console";
 
 const HUE = "#a3e635"; // the Stress Test identity hue (lime — proof/experiment)
 
@@ -112,6 +114,7 @@ function PlantAndDetect({ model, reproduce }: { model: StressModel; reproduce: s
   const [budget, setBudget] = useState(budgets[budgets.length - 1]);
   const [phase, setPhase] = useState<Phase>("idle");
   const [copied, setCopied] = useState(false);
+  const askCopilot = useConsole((s) => s.askCopilot);
 
   // Drive the idle → planting → detecting → done reveal.
   useEffect(() => {
@@ -280,6 +283,27 @@ function PlantAndDetect({ model, reproduce }: { model: StressModel; reproduce: s
           Knowing exactly which it will and won't catch is far more useful than one average
           score. This is the case with no answer key, so the tree model and every method that
           needs answers cannot even take part — only the learn-what's-normal models can.
+        </div>
+
+        <div className="mt-2.5 flex items-center gap-2">
+          <button
+            onClick={() =>
+              askCopilot(
+                "In the stress test, which planted cartel shapes does the detector catch and which escape, and roughly what fraction of the bid-together ring do we recover?",
+              )
+            }
+            className="btn-sheen inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-medium"
+            style={{
+              color: UI_HUES.magenta,
+              background: `color-mix(in srgb, ${UI_HUES.magenta} 12%, transparent)`,
+              boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${UI_HUES.magenta} 30%, transparent)`,
+            }}
+          >
+            <CopilotMark size={14} /> Ask the Copilot about the stress test
+          </button>
+          <span className="text-[10px] text-text-2">
+            it reads these same numbers and answers, grounded, in the dock
+          </span>
         </div>
 
         <div className="mt-3 flex flex-wrap items-center gap-2">

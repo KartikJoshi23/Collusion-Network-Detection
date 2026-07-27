@@ -216,6 +216,26 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-27 · **COPILOT ↔ STRESS TEST LINK — the assistant can now read and
+  quote the injection study, and the tab links straight into the dock.**
+  *Backend:* new `get_stress_test` tool in `copilot/alert_tools.py` (reads the
+  served injection artifact via a new `stress_test_index()` in `store.py`;
+  normalises both artifact shapes → per-shape best recall with plain names and
+  verdicts; returns the population/planted-firm/recall numbers so the numeric
+  gate passes when the model quotes them); registered in the schemas + dispatch;
+  the system prompt routes stress-test / playground / injection / "no answer
+  key" questions to it (one call, no SQL wandering). 2 new goldens (g25/g26) and
+  2 unit tests (both artifact shapes, absent-study honesty) — verified the tool
+  returns clique 0.921, take-turns escapes, 940 firms / 163,327 population.
+  *Frontend:* a lightweight console-state `askCopilot(question)` +
+  `copilotPrefill` the dock consumes on open; an **"Ask the Copilot about the
+  stress test"** button on the tab opens the dock pre-filled with a grounded
+  question (presenter hits Enter — on a keyed machine the dock streams the
+  `get_stress_test` call + answer). Verified live: button opens the dock with
+  the question in its input, zero console errors. *(Live-LLM answer is
+  key-gated, same as the rest of the Copilot — covered by the goldens CI job on
+  a keyed machine.)* Backend **391/391**, frontend build + vitest **52/52**,
+  ruff/black/mypy clean · [laptop-D]
 - 2026-07-27 · **STRESS TEST TAB — the injection "playground" made SHOWABLE, and
   AMLworld given a defensible on-screen home (§7 step 30, §5.3 view; the two
   dataset questions an evaluator fires hardest, answered in the product not in

@@ -19,6 +19,7 @@ interface ConsoleState {
   view: ViewId;
   copilotOpen: boolean;
   copilotSeed: string | undefined; // alert id the dock is contextualised with
+  copilotPrefill: string | undefined; // a question to drop into the dock input
   setDomain: (d: Domain) => void;
   setDataset: (d: string | undefined) => void;
   hydrateFromAlert: (domain: Domain, dataset: string) => void;
@@ -27,6 +28,8 @@ interface ConsoleState {
   setView: (v: ViewId) => void;
   toggleCopilot: () => void;
   askCopilotAbout: (alertId: string) => void;
+  askCopilot: (question: string) => void; // open the dock with a suggested question
+  consumeCopilotPrefill: () => void;
   clearCopilotSeed: () => void;
 }
 
@@ -61,6 +64,7 @@ export const useConsole = create<ConsoleState>((set) => ({
   view: initial.view,
   copilotOpen: false,
   copilotSeed: undefined,
+  copilotPrefill: undefined,
   setDomain: (domain) =>
     set({ domain, dataset: undefined, selectedAlertId: undefined }),
   // Switching datasets clears the selection; the INITIAL auto-select (dataset
@@ -80,6 +84,10 @@ export const useConsole = create<ConsoleState>((set) => ({
   // §5.3 view 7 context-seeding: opened from an alert, the dock carries that
   // alert's id so "explain this" resolves without retyping
   askCopilotAbout: (alertId) => set({ copilotOpen: true, copilotSeed: alertId }),
+  // Open the dock carrying a suggested question (the dock drops it into its
+  // input on open); used by the Stress Test tab's "Ask the Copilot" button.
+  askCopilot: (question) => set({ copilotOpen: true, copilotPrefill: question }),
+  consumeCopilotPrefill: () => set({ copilotPrefill: undefined }),
   clearCopilotSeed: () => set({ copilotSeed: undefined }),
 }));
 
