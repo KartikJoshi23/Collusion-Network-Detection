@@ -7,6 +7,7 @@ import type {
   ExplanationResponse,
   MetricsResponse,
   RigorResponse,
+  StressTestResponse,
   SubgraphResponse,
 } from "./types";
 
@@ -74,5 +75,13 @@ export function useRigor(dataset: string | undefined) {
     queryFn: () => apiGet<RigorResponse>(`/datasets/${enc(dataset!)}/rigor`),
     enabled: !!dataset,
     retry: false, // absence of rigor artifacts is a normal 404 on thin machines
+  });
+}
+
+export function useStressTest() {
+  return useQuery({
+    queryKey: ["stress-test"],
+    queryFn: () => apiGet<StressTestResponse>("/stress-test"),
+    retry: false, // a machine without the injection study 404s — a normal state
   });
 }

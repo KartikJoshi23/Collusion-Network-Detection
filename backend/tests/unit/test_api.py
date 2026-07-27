@@ -310,6 +310,55 @@ class TestEndpoints:
             assert body.get("caveat") == SCREENING_CAVEAT, path
 
 
+class TestStressTest:
+    """The /stress-test endpoint (§7 step 30): serves the injection-recovery
+    study read-only, omits absent artifacts, 404s on a thin machine."""
+
+    def _index(self, tmp_path, with_study: bool, artifact_exists: bool = True):
+        recovery = tmp_path / "injection.json"
+        if artifact_exists:
+            recovery.write_text(
+                json.dumps({"population": 163327, "recovery": {"gae": []}}),
+                encoding="utf-8",
+            )
+        datasets = {"toyapi": {"domain": "financial", "store_root": str(tmp_path / "s")}}
+        stress = (
+            {
+                "ocds_georgia": {
+                    "title": "Georgia — no answer key",
+                    "recovery": str(recovery),
+                    "reproduce": "uv run collusiongraph train -c ...",
+                    "note": "plant and measure",
+                }
+            }
+            if with_study
+            else None
+        )
+        return write_serving_index(tmp_path / "serving.json", datasets, stress_test=stress)
+
+    def test_study_served_with_payload_and_caveat(self, tmp_path) -> None:
+        client = TestClient(create_app(self._index(tmp_path, with_study=True)))
+        r = client.get("/api/v1/stress-test")
+        assert r.status_code == 200
+        body = r.json()
+        assert body["caveat"] == SCREENING_CAVEAT
+        study = body["studies"]["ocds_georgia"]
+        assert study["title"] == "Georgia — no answer key"
+        assert study["reproduce"].startswith("uv run")
+        assert study["payload"]["population"] == 163327
+
+    def test_404_when_no_study_published(self, tmp_path) -> None:
+        client = TestClient(create_app(self._index(tmp_path, with_study=False)))
+        assert client.get("/api/v1/stress-test").status_code == 404
+
+    def test_absent_artifact_is_omitted_not_faked(self, tmp_path) -> None:
+        # a study is declared but its file was never produced on this machine
+        client = TestClient(
+            create_app(self._index(tmp_path, with_study=True, artifact_exists=False))
+        )
+        assert client.get("/api/v1/stress-test").status_code == 404
+
+
 def test_serving_never_imports_torch(tmp_path) -> None:
     """Deployment rule (docs/deployment.md §2): the serving path must be
     importable — AND buildable via create_app, which mounts the Copilot

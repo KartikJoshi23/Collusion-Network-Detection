@@ -356,4 +356,26 @@ def create_app(index_path: str | Path | None = None) -> FastAPI:
             raise HTTPException(404, f"no rigor artifacts published for {dataset!r}")
         return {"dataset": dataset, "artifacts": out, "caveat": SCREENING_CAVEAT}
 
+    @app.get("/api/v1/stress-test")
+    def stress_test() -> dict:
+        """Injection-recovery studies (§7 step 30): fake cartels of known
+        shapes planted into a real UNLABELED network, with measured recall per
+        shape. The honest answer to "how do you evaluate with no answer key" —
+        hide answers you DO know and count how many come back. Read-only over
+        the stored injection artifact; absent files are omitted (thin machines
+        stay honest), an empty section is a normal 404."""
+        studies = {}
+        for name, study in sorted(index.stress_test.items()):
+            path = Path(study.recovery)
+            if path.is_file():
+                studies[name] = {
+                    "title": study.title,
+                    "reproduce": study.reproduce,
+                    "note": study.note,
+                    "payload": json.loads(path.read_text(encoding="utf-8")),
+                }
+        if not studies:
+            raise HTTPException(404, "no stress-test studies published on this machine")
+        return {"studies": studies, "caveat": SCREENING_CAVEAT}
+
     return app

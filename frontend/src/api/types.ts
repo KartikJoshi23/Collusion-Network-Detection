@@ -103,5 +103,21 @@ export interface RigorResponse {
   caveat: string;
 }
 
+// Stress-test / injection-recovery study (§7 step 30): fake cartels of known
+// shapes planted into a real UNLABELED network, with measured recovery. The
+// payload is the injection artifact itself (single-seed report OR multi-seed
+// aggregate) — parsed defensively in lib/stressExtract.ts, never re-derived.
+export interface StressStudy {
+  title: string;
+  reproduce: string;
+  note: string;
+  payload: Record<string, unknown>;
+}
+
+export interface StressTestResponse {
+  studies: Record<string, StressStudy>;
+  caveat: string;
+}
+
 export const SCREENING_CAVEAT =
   "screening signal only — no determination of guilt";
