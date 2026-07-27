@@ -2764,13 +2764,38 @@ switch and the assistant button onto a second line. The result was a tall bar
 holding small controls with a large empty gap beside them --- it read as a
 layout accident rather than a design, and it was reported as such.
 
-It now stays on a single line at every width, and the two widest optional pieces
-yield in order as the window narrows: the ``Integrity Screening Console'' tag
-line disappears below 1536 pixels, and the tab \emph{labels} disappear below
-1280, leaving the six icons (each keeps a tooltip). Measured at 1100 pixels: one
-row, no overflow, controls ending 24 pixels inside the edge. The controls
-themselves were also sized up to match the bar they sit in --- everything in the
-header is now one consistent 13-pixel type size.
+It now stays on a single line at every width, and the optional pieces yield in a
+measured order as the window narrows. \textbf{The breakpoints are arithmetic,
+not taste:} the room left for the tab bar is the viewport minus the padding, the
+brand, the gaps and the 576-pixel control group. Six labelled tabs need about
+690 pixels, so the labels can only appear from roughly 1500 upwards, and the
+``Integrity Screening Console'' tag line (another 165 on the brand) only from
+1800. Below those, the tab labels give way to their six icons, then the wordmark
+to the logo, then the crime names on the domain pills --- each still reachable
+as a tooltip.
+
+Getting that arithmetic wrong is precisely what produced the second reported
+fault: with labels switched on at 1280 the bar needed 690 pixels inside a
+470-pixel box, and the tabs \emph{painted straight over} the dataset picker, so
+``Case Detail'' sat on top of ``elliptic\_pp''. A shrunken flex item does not
+shrink its contents.
+
+\begin{plain}
+\textbf{And a belt as well as braces.} The bar now also scrolls inside its own
+box rather than spilling out of it, so even if the arithmetic above is wrong on
+some future screen the tabs can never again overlap a neighbour --- the worst
+case is a bar you have to scroll.
+
+Measured after the fix: at 1920, 1536, 1280 and 900 pixels, one row, all six
+tabs fully visible, nothing painted over the controls, no page overflow. That
+last test matters, because the first attempt \emph{passed} a page-overflow check
+while visibly broken --- \code{getBoundingClientRect} reports layout boxes and
+ignores clipping, so the overlap has to be detected by asking which element is
+actually painted at a point.
+\end{plain}
+
+The controls themselves were also sized up to match the bar they sit in ---
+everything in the header is now one consistent 13-pixel type size.
 \end{plain}
 
 \textbf{Why fixed colours.} They are a navigation aid, not decoration: after a

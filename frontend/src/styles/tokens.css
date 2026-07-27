@@ -463,16 +463,28 @@ input[type="range"].budget::-moz-range-thumb {
 /* Sized up 2026-07-27: against the header's true height the old 12px tabs in a
    3px trough looked undersized and floated in empty space. */
 .tabbar {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 2px;
   padding: 4px;
   border-radius: 12px;
   background: linear-gradient(160deg, var(--glass-fill-lo), rgb(12 13 15 / 0.35));
   box-shadow: inset 0 0 0 1px var(--hairline);
+  /* The bar may be shrunk by the header's flex layout. Without this it kept
+     its intrinsic width and PAINTED OVER the dataset picker and domain toggle
+     (reported 2026-07-27: "Case Detail" sitting on top of "elliptic_pp").
+     Scrolling inside its own box is the one behaviour that can never overlap a
+     neighbour, whatever the window width. */
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none; /* Firefox */
+}
+.tabbar::-webkit-scrollbar {
+  display: none;
 }
 .tab {
   --tab-hue: var(--accent);
+  flex: none; /* tabs keep their size; the BAR scrolls rather than squashing */
   position: relative;
   display: inline-flex;
   align-items: center;

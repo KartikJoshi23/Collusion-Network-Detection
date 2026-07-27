@@ -75,10 +75,16 @@ export function App() {
               >
                 <Mark />
               </span>
-              <span className="display text-[17px] font-semibold tracking-tight">
+              <span className="display hidden text-[17px] font-semibold tracking-tight min-[1024px]:inline">
                 Collusion<span className="text-grad">Graph</span>
               </span>
-              <span className="hidden text-xs text-text-2 2xl:inline">
+              {/* Breakpoints are MEASURED, not guessed. Space for the tab bar
+                  is whatever the fixed pieces leave: viewport - 32 padding -
+                  brand - 36 gaps - 576 controls. Six labelled tabs need ~690px,
+                  so labels only fit from ~1500px, and the tag line (another
+                  ~165px on the brand) only from ~1800px. Getting this wrong is
+                  what put "Case Detail" on top of "elliptic_pp". */}
+              <span className="hidden text-xs text-text-2 min-[1800px]:inline">
                 Integrity Screening Console
               </span>
             </div>
@@ -109,7 +115,7 @@ export function App() {
                     )}
                     <span className="relative inline-flex items-center gap-1.5">
                       <ViewIcon view={n.id} />
-                      <span className="hidden whitespace-nowrap xl:inline">
+                      <span className="hidden whitespace-nowrap 2xl:inline">
                         {n.label}
                       </span>
                     </span>
