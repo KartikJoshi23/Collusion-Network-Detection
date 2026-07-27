@@ -1709,6 +1709,17 @@ still public 2026-07-15 — anonymous clone succeeded).
 - 2026-07-16 · **Week-3 stack merged to main from laptop-B on explicit user instruction** — a recorded deviation from the "master laptop integrates" rule (§7 collaboration workflow). CI was green on every PR head before merging; 126/126 tests re-verified on merged main. Bookkeeping note: PR #2 (`feat/eval-harness`) ended **closed-unmerged** — deleting PR #1's branch outside the PR flow closed it and GitHub cannot reopen a PR whose base ref is gone; its commits (d2ad3c3, beec8dc) reached main via PR #3, which was retargeted to main and merged. Merge refs: PR #1 380465c, PR #3 030b2fa · §7.
 
 ## Known issues
+
+- **`motif_type` is null in every stored `alerts.parquet`** — the ranking stage
+  writes the queue before the explanation stage runs, so the column can never be
+  populated at build time. The serving layer now joins the proven motif in from
+  the explanation bundles at read time (`backend/api/app.py::_bundle_motifs`),
+  which is correct for every consumer of the API, but the **artifact itself is
+  still wrong**. Proper fix: have `build_alert_queue` back-fill the column after
+  explanations exist, then drop the serving-side join. Until then, anything
+  reading `alerts.parquet` directly (a notebook, `paper-tables`, a future
+  exporter) will still see nulls. Found 2026-07-27 after the column read empty on
+  every dashboard row; 12 of the first 40 Elliptic bundles carried a shape.
 <!-- - description · discovered when · severity -->
 - ~~**Main's CI was RED for ~30 consecutive pushes (2026-07-18 → 2026-07-20) and no
   ledger entry recorded it.**~~ **FOUND + FIXED 2026-07-20 [laptop-B] (PR #8):** the

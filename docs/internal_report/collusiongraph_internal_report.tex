@@ -2757,6 +2757,22 @@ the second question every evaluator asks.
 \textbf{What they are.} Overview, Alert Queue, Graph Explorer, Case Detail,
 Model Lab, About --- each with a fixed colour and icon that never change.
 
+\begin{plain}
+\textbf{The bar is one row, and it stays one row.} An earlier fix for a 16-pixel
+overflow simply let the header wrap, which pushed the dataset picker, the domain
+switch and the assistant button onto a second line. The result was a tall bar
+holding small controls with a large empty gap beside them --- it read as a
+layout accident rather than a design, and it was reported as such.
+
+It now stays on a single line at every width, and the two widest optional pieces
+yield in order as the window narrows: the ``Integrity Screening Console'' tag
+line disappears below 1536 pixels, and the tab \emph{labels} disappear below
+1280, leaving the six icons (each keeps a tooltip). Measured at 1100 pixels: one
+row, no overflow, controls ending 24 pixels inside the edge. The controls
+themselves were also sized up to match the bar they sit in --- everything in the
+header is now one consistent 13-pixel type size.
+\end{plain}
+
 \textbf{Why fixed colours.} They are a navigation aid, not decoration: after a
 minute of use you locate a screen by its colour before you read its name. The
 one colour deliberately \emph{not} used for any tab is coral, which means
@@ -2901,9 +2917,11 @@ any heading gives the same explanation inside the console.
   \item \textbf{\#} --- the rank. Position in the queue, worst first.
   \item \textbf{Risk} --- a genuine probability, because of the translation step,
         not an arbitrary number between 0 and 1.
-  \item \textbf{Pattern} --- which of the nine known shapes this group matches.
-        \textbf{On every served queue this reads ``none named'' for every row}
-        --- see the warning below, which you should read before presenting.
+  \item \textbf{Pattern} --- which of the nine known shapes this group matches,
+        with its own symbol and colour. Reads \emph{``none named''} when a case
+        file was written and no shape could be proved, and \emph{``not
+        checked''} when no case file exists for that alert at all. See the
+        warning below --- this column carried a real bug until 2026-07-27.
   \item \textbf{Flags} --- how many official indicators matched. Blank when none
         did.
   \item \textbf{Members} --- how many firms or accounts are in the group.
@@ -2923,24 +2941,46 @@ any heading gives the same explanation inside the console.
 \end{itemize}
 
 \begin{warnbox}
-\textbf{The Pattern column is empty on every row, on every dataset. Know why
-before somebody asks.}
+\textbf{A real bug lived in this column, and an earlier draft of this report
+defended it as correct behaviour. Both are worth knowing.}
 
-Measured 2026-07-26: \textbf{0 of 254} Elliptic alerts, \textbf{0 of 223}
-Mendeley alerts, \textbf{0 of 500} wallet alerts and \textbf{0 of 3} Garc\'ia
-alerts carry a proven pattern name.
+\textbf{What was seen.} Every row of the Pattern column, on every dataset, was
+empty.
 
-That is the matcher behaving correctly, not failing. It names one of the nine
-shapes only when it can \emph{formally prove} the shape is present, and it never
-guesses. Real communities frequently contain no textbook shape --- and on the
-Mendeley queue the top groups are two-firm pairs, which are too small to contain
-any shape at all.
+\textbf{The wrong explanation (in this report until 2026-07-27).} That the
+matcher had simply proved nothing --- it names a shape only when it can prove
+one, so an empty column was honest. The measurement offered in support was
+``0 of 254 Elliptic alerts carry a pattern''.
 
-The column now prints \emph{``none named''} rather than a dash, because a column
-of dashes reads as broken software. The honest sentence to say out loud is:
-\pw{Having no name is an answer, not a gap. We only put a name on a pattern when
-we can prove it --- and the case file still explains, in plain words, what did
-make the group stand out.}
+\textbf{What was actually true.} The queue is written by the ranking stage,
+which runs \emph{before} the explanation stage. So \code{motif\_type} in
+\code{alerts.parquet} is null on every row by construction --- including the
+rows where the matcher later did prove a shape. Checking the bundles instead of
+the queue: \textbf{12 of the first 40 Elliptic bundles carry \code{fan\_in} or
+\code{fan\_out}}. The patterns existed all along; the value simply never reached
+the alert row.
+
+\textbf{The fix.} The serving layer now joins the two published artifacts at
+read time, so a proven shape reaches the queue. On the live Elliptic queue that
+turns 0 named patterns into \textbf{15 of the top 60}. Nothing is invented: the
+name comes from the same bundle the explanations endpoint already serves. The
+proper long-term fix is for the ranking stage to back-fill the column once
+explanations exist, and that is recorded as an open item.
+
+\textbf{The column now has three states, because two of them were being
+conflated:}
+\begin{itemize}
+  \item a \textbf{named pattern} --- the matcher proved this shape;
+  \item \textbf{``none named''} --- a case file was written and no shape could
+        be proved. Honest, and common;
+  \item \textbf{``not checked''} --- no case file exists for this alert at all,
+        because full explanations are produced only for the head of the queue.
+\end{itemize}
+
+\textbf{The lesson worth repeating.} A plausible story explained the symptom, it
+was written into this report, and it was wrong. ``0 of 254'' should have been
+read as suspicious rather than reassuring --- a rate of exactly zero across four
+unrelated datasets is far more likely to be a broken join than a true finding.
 \end{warnbox}
 
 \subsection{Screen 3 --- Graph Explorer}
@@ -2962,11 +3002,19 @@ are connections.
 equally suspicious in every case, because you cannot see what it is
 \emph{unusually} connected to. The contrast is the information.
 
-\textbf{Widening the picture --- the \emph{Context} control.} Top right of the
-screen are two buttons, \textbf{1 step out} and \textbf{2 steps out}. One step
-shows the flagged group plus whoever they deal with directly; two steps also
-brings in who \emph{those} neighbours deal with. On Elliptic alert 2 that is the
-difference between 50 dots / 49 lines and 62 / 62.
+\textbf{Widening the picture --- the \emph{Show} control.} Top right of the
+screen are two buttons: \textbf{direct neighbours} draws the flagged group plus
+everyone who deals with them directly, and \textbf{neighbours of neighbours}
+also brings in who \emph{those} people deal with. On Elliptic alert 2 that is
+the difference between 50 dots / 49 lines and 62 / 62.
+
+\begin{plain}
+\textbf{Why not ``1 step out / 2 steps out''.} That was the first wording and it
+was reported as confusing on sight --- reasonably, because \emph{step} already
+means a unit of \emph{time} everywhere else in this product (``step 35'' in the
+When column). Two meanings for one word in one screen is a defect, not a
+quibble. The buttons now say what they draw.
+\end{plain}
 
 \begin{plain}
 \textbf{A correction to an earlier draft of this report.} Until 2026-07-26 this

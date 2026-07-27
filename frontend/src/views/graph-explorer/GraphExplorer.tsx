@@ -219,17 +219,19 @@ export function GraphExplorer() {
             showing only part of the network, to keep it readable
           </span>
         )}
-        {/* context depth — the honest replacement for "click a dot to expand" */}
+        {/* How much of the surrounding network to draw. Labelled in full words:
+            "1 step out / 2 steps out" was reported as confusing, because
+            "step" also means a time step everywhere else in this product. */}
         <div className="ml-auto flex items-center gap-1">
-          <span className="text-xs text-text-2">Context</span>
+          <span className="text-xs text-text-2">Show</span>
           {([1, 2] as const).map((h) => (
             <button
               key={h}
               onClick={() => setHops(h)}
               title={
                 h === 1
-                  ? "Just the flagged group and who they deal with directly."
-                  : "Widen the picture by one more step out — shows who those neighbours deal with too."
+                  ? "Draw the flagged group plus everyone who deals with them directly."
+                  : "Also draw the people THOSE neighbours deal with — a wider picture, and a slower one to load."
               }
               className="chip-bloom rounded-md px-2 py-0.5 text-[11px] transition-colors"
               style={{
@@ -244,7 +246,7 @@ export function GraphExplorer() {
                     : "inset 0 0 0 1px var(--hairline)",
               }}
             >
-              {h === 1 ? "1 step out" : "2 steps out"}
+              {h === 1 ? "direct neighbours" : "neighbours of neighbours"}
             </button>
           ))}
         </div>

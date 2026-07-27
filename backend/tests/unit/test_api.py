@@ -92,6 +92,116 @@ def client(tmp_path) -> TestClient:
     return TestClient(create_app(index))
 
 
+class TestMotifBackfill:
+    """Regression pin for a live bug found 2026-07-27.
+
+    The ranking stage writes `alerts.parquet` BEFORE the explanation stage runs,
+    so `motif_type` was null on every queue row even where the matcher later
+    proved a shape. Measured on the real artifacts: 12 of the first 40 Elliptic
+    bundles carried `fan_in` / `fan_out` while all 254 queue rows said nothing,
+    so the dashboard's Pattern column was empty on every dataset and read as
+    broken software. The serving layer now joins the two published artifacts.
+    """
+
+    @pytest.fixture()
+    def client(self, tmp_path) -> TestClient:
+        import pyarrow.parquet as pq
+
+        store = GraphStore(tmp_path / "interim")
+        store.write(
+            "toy",
+            "nodes",
+            pl.DataFrame(
+                {
+                    "node_id": ["a", "b"],
+                    "node_type": ["account"] * 2,
+                    "domain": ["financial"] * 2,
+                    "time_first_seen": [1, 1],
+                    "raw_features": [[0.0], [1.0]],
+                    "raw_attrs": [None, None],
+                }
+            ),
+        )
+        store.write(
+            "toy",
+            "edges",
+            pl.DataFrame(
+                {
+                    "src": ["a"],
+                    "dst": ["b"],
+                    "edge_type": ["pays"],
+                    "timestamp": [1],
+                    "amount": [1.0],
+                    "directed": [True],
+                    "raw_attrs": [None],
+                }
+            ),
+        )
+
+        # BOTH rows carry a null motif, exactly as the real queues do.
+        alerts = pl.DataFrame(
+            [
+                Alert(
+                    alert_id=f"toy:run0:{r}",
+                    domain=Domain.FINANCIAL,
+                    dataset="toy",
+                    model_run_id="run0",
+                    rank=r,
+                    risk_score=1.0 - r / 10,
+                    member_node_ids=["a", "b"],
+                    n_members=2,
+                    motif_type=None,
+                ).model_dump(mode="python")
+                for r in (1, 2)
+            ]
+        )
+        alerts_path = tmp_path / "alerts.parquet"
+        pq.write_table(conform("alerts", alerts), alerts_path)
+
+        bundles = tmp_path / "explanations"
+        bundles.mkdir()
+        # rank 1 was explained AND the matcher proved a shape — bundles.py
+        # writes the name under "type", not "motif_type"
+        (bundles / "toy_run0_1.json").write_text(
+            json.dumps(
+                {"alert_id": "toy:run0:1", "motif": {"type": "fan_in", "params": {}}},
+            ),
+            encoding="utf-8",
+        )
+        # rank 2 was explained and NOTHING was proved
+        (bundles / "toy_run0_2.json").write_text(
+            json.dumps({"alert_id": "toy:run0:2", "motif": None}), encoding="utf-8"
+        )
+
+        index = write_serving_index(
+            tmp_path / "serving.json",
+            {
+                "toy": {
+                    "domain": "financial",
+                    "store_root": str(store.root),
+                    "alerts": str(alerts_path),
+                    "explanations": str(bundles),
+                    "metrics": [],
+                }
+            },
+        )
+        return TestClient(create_app(index))
+
+    def test_proven_motif_reaches_the_queue_row(self, client) -> None:
+        rows = client.get("/api/v1/datasets/toy/alerts", params={"budget": 5}).json()["alerts"]
+        by_id = {r["alert_id"]: r for r in rows}
+        # THE BUG: this was None even though the bundle proved fan_in
+        assert by_id["toy:run0:1"]["motif_type"] == "fan_in"
+        assert by_id["toy:run0:1"]["explained"] is True
+
+    def test_explained_with_no_proven_shape_stays_null(self, client) -> None:
+        """Absence must not be invented into a pattern name."""
+        rows = client.get("/api/v1/datasets/toy/alerts", params={"budget": 5}).json()["alerts"]
+        row = next(r for r in rows if r["alert_id"] == "toy:run0:2")
+        assert row["motif_type"] is None
+        assert row["explained"] is True  # checked, and nothing was proved
+
+
 class TestEndpoints:
     def test_domains_and_datasets(self, client) -> None:
         r = client.get("/api/v1/domains")
@@ -106,6 +216,17 @@ class TestEndpoints:
         assert body["k_effective"] == 1
         assert body["alerts"][0]["alert_id"] == "toyapi:run0:1"
         assert body["alerts"][0]["rank"] == 1
+
+    def test_queue_reports_which_alerts_were_explained(self, client) -> None:
+        """`explained` separates "checked, nothing proved" from "never checked".
+
+        Only the head of the queue gets a bundle, and collapsing both cases into
+        one blank cell is what made the dashboard's Pattern column look broken.
+        """
+        rows = client.get("/api/v1/datasets/toyapi/alerts", params={"budget": 5}).json()["alerts"]
+        by_id = {r["alert_id"]: r for r in rows}
+        assert by_id["toyapi:run0:1"]["explained"] is True  # has a bundle
+        assert by_id["toyapi:run0:2"]["explained"] is False  # no bundle written
 
     def test_alert_detail_and_404(self, client) -> None:
         ok = client.get("/api/v1/datasets/toyapi/alerts/toyapi:run0:2")

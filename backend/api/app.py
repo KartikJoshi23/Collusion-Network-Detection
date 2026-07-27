@@ -20,6 +20,7 @@ from __future__ import annotations
 import json
 import os
 import re
+from functools import lru_cache
 from pathlib import Path
 
 import polars as pl
@@ -44,6 +45,66 @@ _ALERT_LIST_COLS = [
 
 def _rows(df: pl.DataFrame) -> list[dict]:
     return json.loads(df.write_json())
+
+
+@lru_cache(maxsize=16)
+def _bundle_motifs(explanations_dir: str) -> dict[str, str]:
+    """alert_id -> proven motif name, read from the published bundles.
+
+    WHY THIS JOIN EXISTS. The alert queue is written by the ranking stage, which
+    runs BEFORE the explanation stage — so `motif_type` in `alerts.parquet` is
+    null on every row, even for the alerts the matcher later proved a shape for.
+    Measured 2026-07-27: 12 of the first 40 Elliptic bundles carry `fan_in` /
+    `fan_out`, while all 254 queue rows reported nothing, which made the
+    dashboard's Pattern column read empty on every dataset and look broken.
+
+    Rather than regenerate every stored queue, the two published artifacts are
+    joined here at read time. Nothing is invented: the motif comes from the same
+    bundle the /explanations endpoint already serves. Bundles exist only for the
+    head of the queue, so this scan is small. The proper long-term fix is for
+    the ranking stage to back-fill the column once explanations exist.
+    """
+    base = Path(explanations_dir)
+    if not base.is_dir():
+        return {}
+    out: dict[str, str] = {}
+    for path in base.glob("*.json"):
+        try:
+            bundle = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue  # a malformed bundle must never take the queue down
+        motif = bundle.get("motif")
+        if not isinstance(motif, dict):
+            continue
+        # bundles.py writes {"type": ...}; the schema calls it motif_type
+        name = motif.get("motif_type") or motif.get("type")
+        alert_id = bundle.get("alert_id")
+        if name and isinstance(alert_id, str):
+            out[alert_id] = str(name)
+    return out
+
+
+@lru_cache(maxsize=16)
+def _explained_ids(explanations_dir: str) -> frozenset[str]:
+    """Which alerts actually have a bundle — i.e. which ones were checked.
+
+    Needed to keep the UI honest: "no shape was proved" and "no check was ever
+    run here" are different statements, and only alerts at the head of the queue
+    are explained at all.
+    """
+    base = Path(explanations_dir)
+    if not base.is_dir():
+        return frozenset()
+    ids: set[str] = set()
+    for path in base.glob("*.json"):
+        try:
+            bundle = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        alert_id = bundle.get("alert_id")
+        if isinstance(alert_id, str):
+            ids.add(alert_id)
+    return frozenset(ids)
 
 
 def create_app(index_path: str | Path | None = None) -> FastAPI:
@@ -98,12 +159,25 @@ def create_app(index_path: str | Path | None = None) -> FastAPI:
     def alerts(dataset: str, budget: int = Query(default=50, ge=1, le=500)) -> dict:
         entry = entry_or_404(dataset)
         frame = alerts_or_404(entry).sort("rank")
-        top = frame.head(budget)
+        top = frame.head(budget).select([c for c in _ALERT_LIST_COLS if c in frame.columns])
+
+        # Join the proven motif in from the explanation bundles, and say which
+        # alerts were checked at all — see _bundle_motifs for why the stored
+        # queue cannot carry this itself.
+        motifs = _bundle_motifs(entry.explanations) if entry.explanations else {}
+        explained = _explained_ids(entry.explanations) if entry.explanations else frozenset()
+        rows = _rows(top)
+        for row in rows:
+            aid = row.get("alert_id")
+            if not row.get("motif_type") and aid in motifs:
+                row["motif_type"] = motifs[aid]
+            row["explained"] = aid in explained
+
         return {
             "dataset": dataset,
             "budget": budget,
             "k_effective": top.height,
-            "alerts": _rows(top.select([c for c in _ALERT_LIST_COLS if c in top.columns])),
+            "alerts": rows,
             "caveat": SCREENING_CAVEAT,
         }
 

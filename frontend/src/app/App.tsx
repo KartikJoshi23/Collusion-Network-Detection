@@ -56,14 +56,18 @@ export function App() {
         <NetworkBackground />
 
         <header className="glass z-10 m-2 mb-0">
-          {/* flex-wrap: at 1280px the brand + six tabs + dataset picker +
-              domain toggle + Copilot button overflowed the viewport by 16px
-              (measured 2026-07-26). Wrapping drops the right-hand group onto a
-              second line instead of pushing it off the screen. */}
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2">
-            <div className="flex items-center gap-2.5">
+          {/* ONE row, never wrapped. Wrapping (the 2026-07-26 overflow fix)
+              dropped the right-hand controls onto a second line, which left a
+              tall bar with small contents and a large empty gap — it read as a
+              layout accident rather than a design. Instead everything sizes up
+              a little and the two widest optional pieces yield as the window
+              narrows: the tag line goes below 1536px, the tab LABELS below
+              1280px (icons remain, each with a tooltip). min-w-0 on the nav
+              lets it shrink rather than push the controls off-screen. */}
+          <div className="flex flex-nowrap items-center gap-3 px-4 py-2.5">
+            <div className="flex shrink-0 items-center gap-2.5">
               <span
-                className="grid h-7 w-7 place-items-center rounded-lg"
+                className="grid h-9 w-9 place-items-center rounded-xl"
                 style={{
                   background: "var(--accent-dim)",
                   boxShadow: "0 0 18px -2px var(--accent)",
@@ -71,15 +75,19 @@ export function App() {
               >
                 <Mark />
               </span>
-              <span className="display text-[15px] font-semibold tracking-tight">
+              <span className="display text-[17px] font-semibold tracking-tight">
                 Collusion<span className="text-grad">Graph</span>
               </span>
-              <span className="hidden text-xs text-text-2 xl:inline">
+              <span className="hidden text-xs text-text-2 2xl:inline">
                 Integrity Screening Console
               </span>
             </div>
 
-            <nav className="tabbar ml-2" role="tablist" aria-label="console views">
+            <nav
+              className="tabbar ml-1 min-w-0 shrink"
+              role="tablist"
+              aria-label="console views"
+            >
               {NAV.map((n) => {
                 const active = view === n.id;
                 return (
@@ -88,6 +96,7 @@ export function App() {
                     role="tab"
                     aria-selected={active}
                     onClick={() => setView(n.id)}
+                    title={n.label}
                     className="tab"
                     style={{ "--tab-hue": n.hue } as React.CSSProperties}
                   >
@@ -100,20 +109,22 @@ export function App() {
                     )}
                     <span className="relative inline-flex items-center gap-1.5">
                       <ViewIcon view={n.id} />
-                      <span className="hidden lg:inline">{n.label}</span>
+                      <span className="hidden whitespace-nowrap xl:inline">
+                        {n.label}
+                      </span>
                     </span>
                   </button>
                 );
               })}
             </nav>
 
-            <div className="ml-auto flex items-center gap-3">
+            <div className="ml-auto flex shrink-0 items-center gap-2.5">
               <DatasetSelector />
               <DomainToggle />
               <button
                 onClick={toggleCopilot}
                 title="Investigator Copilot — tool-grounded Q&A over the served queues"
-                className="btn-sheen inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium"
+                className="btn-sheen inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-medium"
                 style={{
                   color: copilotOpen ? "var(--hue-magenta)" : "var(--text-1)",
                   background: copilotOpen

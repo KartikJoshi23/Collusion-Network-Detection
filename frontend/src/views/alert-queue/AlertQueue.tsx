@@ -237,7 +237,7 @@ function Row({
         <RiskChip score={a.risk_score} />
       </td>
       <td className="px-4 py-1.5">
-        <MotifChip motif={a.motif_type} />
+        <MotifChip motif={a.motif_type} explained={a.explained !== false} />
       </td>
       <td className="px-4 py-1.5">
         <FlagBadge count={flags} />

@@ -42,7 +42,7 @@ export function DomainToggle() {
   const setDomain = useConsole((s) => s.setDomain);
   return (
     <div
-      className="inline-flex rounded-lg p-0.5"
+      className="inline-flex rounded-xl p-1"
       style={{
         background: "var(--glass-fill)",
         boxShadow: "inset 0 0 0 1px var(--hairline)",
@@ -55,7 +55,7 @@ export function DomainToggle() {
             key={d.id}
             onClick={() => setDomain(d.id)}
             title={d.title}
-            className="relative rounded-md px-3 py-1 text-xs font-medium transition-colors"
+            className="relative rounded-lg px-3.5 py-1.5 text-[13px] font-medium transition-colors"
             style={{ color: active ? d.from : "var(--text-1)" }}
           >
             {active && (

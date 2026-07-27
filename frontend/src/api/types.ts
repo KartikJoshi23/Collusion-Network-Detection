@@ -31,6 +31,10 @@ export interface AlertRow {
   time_window_start: number | null;
   time_window_end: number | null;
   community_id: string | null;
+  /** Whether a case file exists for this alert — i.e. whether the pattern
+   *  matcher was ever run on it. Absent on older payloads, so treat undefined
+   *  as "explained" rather than silently downgrading every row. */
+  explained?: boolean;
 }
 
 export interface AlertsResponse {

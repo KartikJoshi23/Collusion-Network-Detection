@@ -41,7 +41,7 @@ export function DatasetSelector() {
     <select
       value={dataset ?? ""}
       onChange={(e) => setDataset(e.target.value)}
-      className="mono rounded-md px-2 py-1 text-xs text-text-0 outline-none focus:border-accent"
+      className="mono rounded-lg px-2.5 py-1.5 text-[13px] text-text-0 outline-none focus:border-accent"
       style={{
         background: "var(--glass-fill)",
         border: "1px solid var(--hairline)",
