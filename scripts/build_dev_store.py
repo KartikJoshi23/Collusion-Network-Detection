@@ -385,6 +385,29 @@ def main() -> None:
         ),
     }
 
+    # Stress-test section (§7 step 30): point at the REAL OCDS injection
+    # artifact if this machine has run it (multi-seed preferred — it matches the
+    # report's mean±std numbers; single-seed report as fallback). Never
+    # synthesized: if neither exists the endpoint 404s and the tab says so.
+    stress_test = {}
+    ms = REPO / "eval_outputs/ocds_georgia/injection_recovery_multiseed/injection_multiseed.json"
+    s0 = REPO / "eval_outputs/ocds_georgia/injection_recovery/injection_recovery_report.json"
+    recovery = ms if ms.is_file() else (s0 if s0.is_file() else None)
+    if recovery is not None:
+        stress_test["ocds_georgia"] = {
+            "title": "Georgia public contracts — 163,327 firms, no answer key",
+            "recovery": str(recovery),
+            "reproduce": (
+                "uv run collusiongraph train -c "
+                "configs/experiment/injection_recovery_ocds_georgia_multiseed.yaml"
+            ),
+            "note": (
+                "Real government contract network with no labels. We plant fake "
+                "cartels of known shapes and measure how many the detector claws "
+                "back — the only honest way to evaluate where there is no answer key."
+            ),
+        }
+
     index_path = REPO / "eval_outputs" / "serving.json"
     write_serving_index(
         index_path,
@@ -406,8 +429,11 @@ def main() -> None:
                 "rigor": {k: str(v) for k, v in proc_rigor.items()},
             },
         },
+        stress_test=stress_test or None,
     )
     print(f"dev store written; serving index at {index_path}")
+    if stress_test:
+        print(f"stress-test study wired: {recovery}")
     print(SCREENING_CAVEAT)
 
 

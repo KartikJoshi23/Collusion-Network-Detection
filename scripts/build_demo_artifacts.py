@@ -158,12 +158,39 @@ def main() -> int:
     if not serving:
         print("no artifacts produced — run the score pipeline first")
         return 1
+
+    # Stress-test section (§7 step 30, §5.3): the OCDS injection study — fake
+    # cartels planted into the real unlabeled network. Multi-seed preferred
+    # (matches the report's mean±std); single-seed report as fallback; omitted
+    # if neither has been run on this machine.
+    index: dict[str, dict] = {"datasets": serving}
+    ms = "eval_outputs/ocds_georgia/injection_recovery_multiseed/injection_multiseed.json"
+    s0 = "eval_outputs/ocds_georgia/injection_recovery/injection_recovery_report.json"
+    recovery = ms if (REPO / ms).is_file() else (s0 if (REPO / s0).is_file() else None)
+    if recovery is not None:
+        index["stress_test"] = {
+            "ocds_georgia": {
+                "title": "Georgia public contracts — 163,327 firms, no answer key",
+                "recovery": recovery,
+                "reproduce": (
+                    "uv run collusiongraph train -c "
+                    "configs/experiment/injection_recovery_ocds_georgia_multiseed.yaml"
+                ),
+                "note": (
+                    "Real government contract network with no labels. We plant fake "
+                    "cartels of known shapes and measure how many the detector claws "
+                    "back — the only honest way to evaluate where there is no answer key."
+                ),
+            }
+        }
+
     EVAL.mkdir(parents=True, exist_ok=True)
     (EVAL / "serving.json").write_text(
-        json.dumps({"datasets": serving}, indent=2, ensure_ascii=False) + "\n",
+        json.dumps(index, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
     )
-    print(f"wrote {EVAL / 'serving.json'} ({len(serving)} datasets)")
+    extra = " + stress-test study" if "stress_test" in index else ""
+    print(f"wrote {EVAL / 'serving.json'} ({len(serving)} datasets{extra})")
     return 0
 
 
