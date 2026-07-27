@@ -41,22 +41,22 @@ export function RiskChip({ score }: { score: number }) {
 
 export function MotifChip({
   motif,
-  explained = true,
+  checked = true,
 }: {
   motif: string | null;
-  /** Whether a case file was written for this alert at all. Only the head of
-   *  the queue is explained, and "we checked and proved nothing" is a different
-   *  statement from "nothing was ever checked here". Showing both as the same
-   *  blank cell is what made this column look broken. */
-  explained?: boolean;
+  /** Whether the pattern matcher ran on this alert. It now runs on every
+   *  alert, so this is true in practice — the branch survives only so a
+   *  dataset the matcher genuinely cannot run on can still be honest rather
+   *  than claiming "none found". */
+  checked?: boolean;
 }) {
   if (!motif)
-    return explained ? (
+    return checked ? (
       <span
         className="text-xs italic text-text-2"
-        title="A case file was written for this group and no textbook pattern could be proved. That is an honest answer, not a gap — open the case file to see what did make it stand out."
+        title="We checked this group against all nine known cheating shapes and could prove none of them. That is an honest answer, not a gap — open the case file to see what did make it stand out."
       >
-        none named
+        none found
       </span>
     ) : (
       <span

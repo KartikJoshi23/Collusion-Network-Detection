@@ -84,6 +84,62 @@ def _bundle_motifs(explanations_dir: str) -> dict[str, str]:
     return out
 
 
+@lru_cache(maxsize=8)
+def _matched_motifs(alerts_path: str, store_root: str, dataset: str, domain: str) -> dict[str, str]:
+    """alert_id -> proven motif name, for EVERY alert in the queue.
+
+    WHY THIS EXISTS. Naming the pattern was previously a side effect of writing
+    a full explanation bundle, and bundles are produced only for the head of the
+    queue because the *learned* explainer is expensive. That left 203 of 223
+    Mendeley rows and 204 of 254 Elliptic rows admitting "not checked" — an
+    indefensible thing to show a reviewer, and unnecessary, because naming the
+    shape does not need the learned explainer at all. The matcher is
+    deterministic graph rules over the alert's own edges.
+
+    So we run exactly what `build_bundle` runs — `match_motifs`, then the
+    largest match wins — over every alert, once per dataset, cached. One pass
+    over the edge table assigns each edge to the alert whose members hold both
+    of its endpoints; Leiden communities are a partition, so an edge belongs to
+    at most one alert.
+    """
+    try:
+        from collusiongraph.explain import match_motifs
+    except Exception:  # pragma: no cover - matcher unavailable, stay serving
+        return {}
+
+    alerts = pl.read_parquet(alerts_path, columns=["alert_id", "member_node_ids"])
+    pairs = (
+        alerts.explode("member_node_ids")
+        .rename({"member_node_ids": "node_id"})
+        .drop_nulls("node_id")
+        .unique(subset=["node_id"], keep="first")  # partition: first alert wins
+    )
+    edges_path = GraphStore(store_root).dataset_dir(dataset) / "edges.parquet"
+    if not edges_path.is_file():
+        return {}
+
+    edges = (
+        pl.scan_parquet(edges_path)
+        .select("src", "dst", "edge_type", "timestamp", "amount")
+        .join(pairs.lazy().rename({"node_id": "src", "alert_id": "a_src"}), on="src", how="inner")
+        .join(pairs.lazy().rename({"node_id": "dst", "alert_id": "a_dst"}), on="dst", how="inner")
+        .filter(pl.col("a_src") == pl.col("a_dst"))
+        .collect()
+    )
+
+    out: dict[str, str] = {}
+    for (alert_id,), group in edges.group_by(["a_src"]):
+        member_edges = group.select("src", "dst", "edge_type", "timestamp", "amount")
+        try:
+            matches = match_motifs(member_edges, domain)
+        except Exception:
+            continue  # one awkward alert must never take the queue down
+        top = max(matches, key=lambda m: len(m.member_node_ids), default=None)
+        if top is not None:
+            out[str(alert_id)] = str(top.motif_type)
+    return out
+
+
 @lru_cache(maxsize=16)
 def _explained_ids(explanations_dir: str) -> frozenset[str]:
     """Which alerts actually have a bundle — i.e. which ones were checked.
@@ -166,11 +222,21 @@ def create_app(index_path: str | Path | None = None) -> FastAPI:
         # queue cannot carry this itself.
         motifs = _bundle_motifs(entry.explanations) if entry.explanations else {}
         explained = _explained_ids(entry.explanations) if entry.explanations else frozenset()
+        # Every alert gets the pattern check, not just the ones with a written
+        # bundle — see _matched_motifs.
+        try:
+            matched = _matched_motifs(entry.alerts, entry.store_root, entry.dataset, entry.domain)
+        except Exception:
+            matched = {}
         rows = _rows(top)
         for row in rows:
             aid = row.get("alert_id")
-            if not row.get("motif_type") and aid in motifs:
-                row["motif_type"] = motifs[aid]
+            if not row.get("motif_type"):
+                # the bundle's own answer wins; the queue-wide run fills the rest
+                row["motif_type"] = motifs.get(aid) or matched.get(aid)
+            # "checked" now means the pattern matcher ran, which it does for
+            # every alert — a written case file is a separate, richer thing.
+            row["pattern_checked"] = True
             row["explained"] = aid in explained
 
         return {

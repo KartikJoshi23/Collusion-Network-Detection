@@ -194,6 +194,18 @@ class TestMotifBackfill:
         assert by_id["toy:run0:1"]["motif_type"] == "fan_in"
         assert by_id["toy:run0:1"]["explained"] is True
 
+    def test_every_alert_is_pattern_checked_not_just_the_explained_ones(self, client) -> None:
+        """No row may admit "not checked".
+
+        Naming a shape needs only the rule matcher, not the expensive learned
+        explainer, so it runs on the whole queue. Before this, the check rode
+        along with the written case file and 203 of 223 Mendeley rows said "not
+        checked" — an indefensible thing to put in front of a reviewer.
+        """
+        rows = client.get("/api/v1/datasets/toy/alerts", params={"budget": 50}).json()["alerts"]
+        assert rows, "fixture produced no alerts"
+        assert all(r["pattern_checked"] for r in rows)
+
     def test_explained_with_no_proven_shape_stays_null(self, client) -> None:
         """Absence must not be invented into a pattern name."""
         rows = client.get("/api/v1/datasets/toy/alerts", params={"budget": 5}).json()["alerts"]

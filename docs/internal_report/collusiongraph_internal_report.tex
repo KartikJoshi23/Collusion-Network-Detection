@@ -2987,11 +2987,11 @@ any heading gives the same explanation inside the console.
   \item \textbf{\#} --- the rank. Position in the queue, worst first.
   \item \textbf{Risk} --- a genuine probability, because of the translation step,
         not an arbitrary number between 0 and 1.
-  \item \textbf{Pattern} --- which of the nine known shapes this group matches,
-        with its own symbol and colour. Reads \emph{``none named''} when a case
-        file was written and no shape could be proved, and \emph{``not
-        checked''} when no case file exists for that alert at all. See the
-        warning below --- this column carried a real bug until 2026-07-27.
+        \item \textbf{Pattern} --- which of the nine known shapes this group
+        matches, with its own symbol and colour. Every alert is checked, so the
+        only other reading is \emph{``none found''}: all nine shapes were tested
+        and none could be proved. See the warning below --- this column carried
+        two real bugs until 2026-07-27.
   \item \textbf{Flags} --- how many official indicators matched. Blank when none
         did.
   \item \textbf{Members} --- how many firms or accounts are in the group.
@@ -3037,14 +3037,36 @@ name comes from the same bundle the explanations endpoint already serves. The
 proper long-term fix is for the ranking stage to back-fill the column once
 explanations exist, and that is recorded as an open item.
 
-\textbf{The column now has three states, because two of them were being
-conflated:}
+\textbf{Then a second, larger version of the same mistake surfaced.} Splitting
+the column into ``named'', ``none named'' and ``not checked'' was accurate but
+revealed how little was actually being checked: \textbf{203 of 223} Mendeley
+rows and \textbf{204 of 254} Elliptic rows said \emph{not checked}. A queue
+that admits it never looked at ninety per cent of itself cannot be presented.
+
+The cause was a design accident. Naming the shape had been made a side effect of
+writing a full case file --- and case files are produced only for the head of the
+queue, because the \emph{learned} explainer is expensive. But naming a shape
+never needed the learned explainer. The matcher is deterministic graph rules
+over the alert's own connections, and it is cheap.
+
+So it now runs on \textbf{every alert}, exactly as the bundle builder runs it,
+once per dataset and cached. One pass over the edge table assigns each
+connection to the alert holding both its endpoints; communities are a partition,
+so a connection belongs to at most one alert. Measured cost on first request:
+under nine tenths of a second for the largest queue, then cached.
+
+\textbf{What that recovered.} Mendeley went from no named patterns to
+\textbf{eight bid-rotation alerts} --- a real OECD indicator that had been sitting
+in the data unreported. Elliptic went from 15 named patterns to \textbf{56}
+(44 fan-in, 12 fan-out).
+
+\textbf{The column now has two states, and ``not checked'' is gone:}
 \begin{itemize}
   \item a \textbf{named pattern} --- the matcher proved this shape;
-  \item \textbf{``none named''} --- a case file was written and no shape could
-        be proved. Honest, and common;
-  \item \textbf{``not checked''} --- no case file exists for this alert at all,
-        because full explanations are produced only for the head of the queue.
+  \item \textbf{``none found''} --- all nine shapes were checked against this
+        group and none could be proved. Honest, and common, because real
+        communities frequently contain no textbook shape --- and on Mendeley many
+        top groups are two-firm pairs, too small to contain one.
 \end{itemize}
 
 \textbf{The lesson worth repeating.} A plausible story explained the symptom, it
