@@ -27,6 +27,8 @@ interface Turn {
 export function CopilotDock() {
   const open = useConsole((s) => s.copilotOpen);
   const seed = useConsole((s) => s.copilotSeed);
+  const prefill = useConsole((s) => s.copilotPrefill);
+  const consumePrefill = useConsole((s) => s.consumeCopilotPrefill);
   const toggle = useConsole((s) => s.toggleCopilot);
   const clearSeed = useConsole((s) => s.clearCopilotSeed);
   const [health, setHealth] = useState<CopilotHealth | null>(null);
@@ -43,6 +45,15 @@ export function CopilotDock() {
           setHealth({ configured: false, provider: "?", model: "?", caveat: "" }),
         );
   }, [open, health]);
+
+  // A suggested question (e.g. from the Stress Test tab's "Ask the Copilot")
+  // lands in the input on open; the presenter presses Enter to send.
+  useEffect(() => {
+    if (open && prefill) {
+      setInput(prefill);
+      consumePrefill();
+    }
+  }, [open, prefill, consumePrefill]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
