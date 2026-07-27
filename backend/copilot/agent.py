@@ -46,9 +46,24 @@ what the screening evidence shows, in screening language only.
 answer came from. When corpus evidence is used, include its [chunk ids] \
 (e.g. FATF-STRUCT-01, OECD-…) verbatim in the answer.
 - Never answer about queue contents, alerts, or metrics from memory — always \
-call a tool first, even for simple questions.
+call a tool first for those.
+- CHOOSE THE RIGHT TOOL FOR THE KIND OF QUESTION, and do not go exploring:
+  * Asked what something MEANS, what this system IS, or how it works \
+("what does this system do", "what is a risk score", "how are alerts made") — \
+call corpus_search ONCE and answer from what it returns. These are answered by \
+the knowledge base, NOT by the alert tables. Do not call list_tables, \
+describe_table or run_sql for them; there is nothing in the tables that \
+answers a definition, and wandering through them wastes the whole budget and \
+produces a vague answer.
+  * Asked for a FACT about the served data (counts, scores, rankings, a \
+specific alert or metric) — use the alert tools or one SQL query.
+- Prefer the fewest tool calls that answer the question. One good call then an \
+answer is better than five and a timeout.
 - If the question cannot be answered from the served artifacts, say so plainly.
-Answer concisely in Markdown."""
+
+Write for an intelligent non-specialist: short sentences, everyday words, no \
+unexplained jargon. Lead with the direct answer, then the detail. Keep it under \
+about 150 words unless more is explicitly asked for. Answer in Markdown."""
 
 TOOL_SCHEMAS = SQL_TOOL_SCHEMAS + ALERT_TOOL_SCHEMAS + CORPUS_TOOL_SCHEMAS
 TOOL_DISPATCH = {**SQL_TOOL_DISPATCH, **ALERT_TOOL_DISPATCH, **CORPUS_TOOL_DISPATCH}
@@ -64,7 +79,15 @@ def get_client() -> Any:
         )
     from openai import OpenAI
 
-    return OpenAI(api_key=settings.api_key, base_url=settings.base_url)
+    # A stuck provider call used to leave the dock spinning with no end — one
+    # question was reported still "buffering" after five minutes. Bound each
+    # request so the loop fails fast and visibly instead of hanging.
+    return OpenAI(
+        api_key=settings.api_key,
+        base_url=settings.base_url,
+        timeout=settings.request_timeout,
+        max_retries=1,
+    )
 
 
 def answer_question(

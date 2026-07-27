@@ -35,6 +35,9 @@ class Settings:
     # short budgets truncate the call at finish_reason=length
     max_tokens: int = 4096
     max_iterations: int = 8
+    # Seconds per provider request. Eight iterations of an unbounded call is how
+    # a single question sat "buffering" for five minutes (reported 2026-07-27).
+    request_timeout: float = 45.0
     provider: str = field(default="nim")
 
 
@@ -56,5 +59,6 @@ def get_settings() -> Settings:
         serving_path=env.get("COPILOT_SERVING") or Settings.serving_path,
         max_tokens=int(env.get("COPILOT_MAX_TOKENS") or Settings.max_tokens),
         max_iterations=int(env.get("COPILOT_MAX_ITERATIONS") or Settings.max_iterations),
+        request_timeout=float(env.get("COPILOT_REQUEST_TIMEOUT") or Settings.request_timeout),
         provider=provider,
     )

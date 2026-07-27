@@ -164,3 +164,56 @@ terms:
       human reviews. Nothing it produces is, or may be presented as, a finding
       of wrongdoing by any person or firm. A human always makes the escalation
       decision.
+
+  # Added 2026-07-27: asked "explain what this system does in simple words" the
+  # Copilot had nothing to retrieve, so it went exploring the SQL tables, spent
+  # its whole tool budget and answered vaguely. The two entries below are the
+  # authoritative plain-English description of the product and the pipeline.
+  - id: CG-SYSTEM-01
+    term: what CollusionGraph does
+    aliases:
+      [
+        what does this system do,
+        what is this system,
+        what is collusiongraph,
+        explain the system,
+        overview,
+        purpose,
+        in simple words,
+        what does it do,
+      ]
+    text: >-
+      CollusionGraph finds groups who appear to be working together to cheat,
+      in two settings: money laundering through bank or crypto accounts, and
+      companies secretly rigging bids for public contracts. The idea behind it
+      is that neither crime can be done alone, and any one member looks
+      perfectly ordinary on their own — what gives it away is the pattern of
+      who deals with whom. So instead of scoring customers one at a time, it
+      treats the data as a network of things and the connections between them,
+      and looks for shapes that coordination leaves behind. It hands a reviewer
+      a short ranked list of suspicious GROUPS, with the evidence for each, and
+      a human decides what happens next.
+
+  - id: CG-PIPELINE-01
+    term: how CollusionGraph works
+    aliases:
+      [
+        how does it work,
+        how it works,
+        the pipeline,
+        the stages,
+        how are alerts made,
+        what happens behind the scenes,
+      ]
+    text: >-
+      Five stages. First, every dataset is converted into one common format of
+      things and connections, so the rest of the system does not know or care
+      which crime it came from. Second, several models score every account or
+      company at once — some learn from known answers, one needs no answers at
+      all, and a set of hand-computed measurements sits alongside them. Third,
+      the scores are put on a common scale and combined. Fourth, tightly
+      connected clusters become group-level alerts, near-duplicates are
+      removed, and the list is cut to the number of cases the team can review.
+      Fifth, the top alerts get an explanation: which few connections mattered,
+      which known shape it matches if any, and the official warning sign that
+      shape corresponds to.

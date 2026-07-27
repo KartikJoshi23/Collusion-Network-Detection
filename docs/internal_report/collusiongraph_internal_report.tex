@@ -2879,6 +2879,25 @@ model B is 0.44'' --- with no statement of what either costs an analyst.
 hand you a pile of work and wish you luck. You tell it what your team can get
 through, and every number on the screen is measured at exactly that workload.}
 
+\begin{warnbox}
+\textbf{A thin queue is not a broken one --- and the Garc\'ia numbers will be
+questioned.} Select the auctions dataset and the tiles read \textbf{3 alerts,
+1 in the high band}. Both figures are real: that dataset genuinely produces
+three groups, and all three are confirmed cartels.
+
+It looks wrong because its records link each firm to the \emph{contracts} it bid
+on rather than to other firms, so very few groups of firms form in the first
+place. The Overview now says exactly that on screen whenever a queue holds
+fewer than ten groups, instead of leaving a reviewer to guess.
+
+\textbf{A real display bug sat next to it, and that one was ours.} The
+``Cases to review'' tile showed the raw slider value --- \textbf{50} --- beside a
+queue holding three. Asking for fifty cases where three exist is not a
+workload, it is a contradiction, and it made the whole panel read as broken.
+The tile now shows what will actually be reviewed and states the difference:
+\emph{``you asked for 50 --- this dataset has only 3''}.
+\end{warnbox}
+
 \subsubsection*{The constellation}
 
 \textbf{What it is.} Every alert as one dot. Size is group size, colour is risk
@@ -3426,9 +3445,50 @@ more than it earned.
 from the international standards bodies. And at the bottom, the boundary:
 screening signals for human investigators, never a substitute for due process.}
 
+\begin{plain}
+\textbf{A decorative animation was publishing wrong numbers.} The KPI figures
+count up on first paint. That count-up wrote the number \emph{only} from its
+animation callback, so if animation frames stalled --- a background tab, a
+low-power mode, an embedded browser view --- the tile kept whatever partial
+value the tween had reached.
+
+Measured 2026-07-27: a stalled count-up showed \textbf{9} where the queue held
+\textbf{50}, and \textbf{0} where two datasets were loaded. Not blank ---
+\emph{wrong}, and plausible enough to be believed. In a screening console that
+is a correctness bug wearing a decoration's clothes.
+
+The number is now painted before the animation starts and settled again
+unconditionally when it should have finished, so the worst case is ``the number
+did not count up'', never ``the number is wrong''.
+\end{plain}
+
 \subsection{The assistant, and the knowledge base behind it}
 
 Ask questions in ordinary English, such as ``why was alert 3 flagged?''.
+
+\begin{warnbox}
+\textbf{It could not explain itself, and that was the most obvious question
+anyone would ask.} Asked \emph{``explain what this system does in simple
+words''} the assistant spent minutes and then answered vaguely.
+
+The cause was two mistakes compounding. First, its instructions told it to
+``always call a tool first, \emph{even for simple questions}'' --- so for a
+question about \emph{meaning} it went exploring the alert tables, which contain
+no definitions, and burned its whole tool budget doing it. Second, the knowledge
+base had entries for every project term but \textbf{no entry describing the
+project}. There was nothing to retrieve, so it improvised, which is exactly what
+vague answers are made of.
+
+Both are fixed. The tool rule now distinguishes the two kinds of question: a
+question about what something \emph{means} takes one knowledge-base lookup and
+no SQL at all, while a question about the \emph{data} uses the alert tools. And
+the knowledge base gained two authoritative entries, \code{CG-SYSTEM-01} (what
+the system does) and \code{CG-PIPELINE-01} (how it works, in five stages),
+written in the same plain register as the rest of this report.
+
+Each provider request is also bounded now. Eight unbounded calls in a row is how
+a single question sat spinning with no end in sight.
+\end{warnbox}
 
 \subsubsection*{Where its answers come from}
 

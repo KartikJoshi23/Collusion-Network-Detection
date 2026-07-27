@@ -85,6 +85,27 @@ class TestGuards:
             hits = {h["chunk_id"] for h in bm25_search(question, k=3)}
             assert expected in hits, f"{question!r} did not retrieve {expected} (got {hits})"
 
+    def test_plain_overview_questions_retrieve_an_answer(self) -> None:
+        """ "Explain what this system does" must hit the knowledge base.
+
+        Reported 2026-07-27: that exact question left the Copilot with nothing
+        to retrieve, so it went exploring the alert tables instead, spent its
+        whole tool budget and answered vaguely. The fix is an authoritative
+        entry — this pins that the retriever actually finds it.
+        """
+        from copilot.corpus import bm25_search
+
+        for question in (
+            "explain what this system does in simple words",
+            "what is CollusionGraph",
+            "what does it do",
+            "how does it work",
+        ):
+            ids = [h["chunk_id"] for h in bm25_search(question, k=4)]
+            assert any(
+                i in {"CG-SYSTEM-01", "CG-PIPELINE-01"} for i in ids
+            ), f"{question!r} retrieved {ids} — no system overview"
+
     def test_glossary_definitions_carry_no_driftable_numbers(self) -> None:
         """Definitions must not hard-code measured values — numbers come from
         the tools, meanings come from the glossary. Otherwise the numeric

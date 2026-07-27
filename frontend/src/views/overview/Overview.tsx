@@ -52,6 +52,21 @@ export function Overview() {
           <span className="mono text-text-0">{dataset}</span> ledger. Calibrated
           screening probabilities, never verdicts.
         </p>
+        {/* A very short queue looks like a failure unless you say why. García
+            yields 3 groups because its records link firms to tenders rather
+            than to each other, so few multi-firm clusters form at all. */}
+        {!isLoading && data && data.k_effective > 0 && data.k_effective < 10 && (
+          <p className="mt-2 max-w-xl rounded-md bg-bg-2 px-3 py-2 text-xs leading-relaxed text-text-1">
+            <strong className="text-text-0">
+              Only {data.k_effective} group
+              {data.k_effective === 1 ? "" : "s"} came out of this dataset.
+            </strong>{" "}
+            That is a property of the data, not a failure. Records here link
+            each firm to the contracts it bid on rather than to other firms, so
+            very few groups of firms form in the first place. A short, honest
+            queue is better than a padded one.
+          </p>
+        )}
       </div>
 
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -66,7 +81,21 @@ export function Overview() {
           value={isLoading ? undefined : flagged}
           hue={UI_HUES.coral}
         />
-        <Kpi label="Cases to review" value={budget} hue={UI_HUES.amber} />
+        {/* The slider can ask for more cases than a dataset actually produced.
+            Showing the raw request ("50") beside a 3-alert queue reads as a
+            bug — reported on García, which genuinely yields only 3 groups.
+            Show what you will really review, and say why when they differ. */}
+        <Kpi
+          label="Cases to review"
+          value={data ? Math.min(budget, data.k_effective) : budget}
+          loading={isLoading}
+          hue={UI_HUES.amber}
+          note={
+            data && data.k_effective < budget
+              ? `you asked for ${budget} — this dataset has only ${data.k_effective}`
+              : undefined
+          }
+        />
         <Kpi label={`${domain} datasets`} value={nDatasets} hue={UI_HUES.violet} />
       </div>
 
@@ -159,11 +188,15 @@ function Kpi({
   value,
   loading,
   hue,
+  note,
 }: {
   label: string;
   value: number | undefined;
   loading?: boolean;
   hue: string;
+  /** Shown under the number when it needs a caveat — e.g. the queue holds
+   *  fewer cases than the review slider asked for. */
+  note?: string;
 }) {
   return (
     <Glass neon lift hue={hue} className="p-3.5">
@@ -171,6 +204,9 @@ function Kpi({
       <div className="mono mt-1 text-2xl" style={{ color: hue }}>
         {loading || value === undefined ? "…" : <CountUp value={value} />}
       </div>
+      {note && (
+        <div className="mt-0.5 text-[10px] leading-snug text-text-2">{note}</div>
+      )}
     </Glass>
   );
 }
