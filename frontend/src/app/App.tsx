@@ -75,15 +75,22 @@ export function App() {
               >
                 <Mark />
               </span>
-              <span className="display hidden text-[17px] font-semibold tracking-tight min-[1024px]:inline">
+              <span className="display hidden text-[17px] font-semibold tracking-tight min-[1400px]:inline">
                 Collusion<span className="text-grad">Graph</span>
               </span>
-              {/* Breakpoints are MEASURED, not guessed. Space for the tab bar
-                  is whatever the fixed pieces leave: viewport - 32 padding -
-                  brand - 36 gaps - 576 controls. Six labelled tabs need ~690px,
-                  so labels only fit from ~1500px, and the tag line (another
-                  ~165px on the brand) only from ~1800px. Getting this wrong is
-                  what put "Case Detail" on top of "elliptic_pp". */}
+              {/* PRIORITY ORDER, measured at 1280 CSS px (a 1920 screen at the
+                  150% Windows scaling this project is demoed on):
+                  the six labelled tabs need 694px and only 471px was left, so
+                  something has to yield. The TAB NAMES are the navigation and
+                  yield LAST — an earlier version hid them and left six mute
+                  icons, which is the wrong trade.
+                  Yield order: this tag line (1800px) -> the wordmark (1400px)
+                  -> the crime names on the domain pills (1536px) -> finally the
+                  tab labels at 1280px, where nothing else is left to give.
+                  1280 is MEASURED, not chosen: the labelled bar needs 670px,
+                  and 1280 is the width at which the room for it (viewport minus
+                  32 padding, 36 logo, 36 gaps, 485 controls) first clears that
+                  — 691px, a 21px margin. Re-measure before moving it. */}
               <span className="hidden text-xs text-text-2 min-[1800px]:inline">
                 Integrity Screening Console
               </span>
@@ -115,7 +122,7 @@ export function App() {
                     )}
                     <span className="relative inline-flex items-center gap-1.5">
                       <ViewIcon view={n.id} />
-                      <span className="hidden whitespace-nowrap 2xl:inline">
+                      <span className="hidden whitespace-nowrap xl:inline">
                         {n.label}
                       </span>
                     </span>

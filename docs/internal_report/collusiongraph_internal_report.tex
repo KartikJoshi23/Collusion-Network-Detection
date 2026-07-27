@@ -2765,14 +2765,40 @@ holding small controls with a large empty gap beside them --- it read as a
 layout accident rather than a design, and it was reported as such.
 
 It now stays on a single line at every width, and the optional pieces yield in a
-measured order as the window narrows. \textbf{The breakpoints are arithmetic,
-not taste:} the room left for the tab bar is the viewport minus the padding, the
-brand, the gaps and the 576-pixel control group. Six labelled tabs need about
-690 pixels, so the labels can only appear from roughly 1500 upwards, and the
-``Integrity Screening Console'' tag line (another 165 on the brand) only from
-1800. Below those, the tab labels give way to their six icons, then the wordmark
-to the logo, then the crime names on the domain pills --- each still reachable
-as a tooltip.
+\emph{measured} order as the window narrows.
+
+\textbf{What yields, and in what order.} The tab names are the navigation, so
+they yield \textbf{last}:
+
+\begin{enumerate}
+  \item the ``Integrity Screening Console'' tag line, below 1800;
+  \item the \textbf{CollusionGraph} wordmark, below 1400 --- the logo still
+        identifies the product;
+  \item the crime names on the domain pills (``\,$\cdot$ AML'', ``\,$\cdot$ bid
+        rigging''), below 1536 --- both still named in the pill's tooltip and in
+        the Overview headline;
+  \item and only below 1280, the tab labels themselves, leaving six icons that
+        each keep a tooltip.
+\end{enumerate}
+
+\begin{warnbox}
+\textbf{This order was wrong once, and the wrong version shipped.} An earlier
+attempt made the tab labels yield \emph{first} --- at 1280 the bar showed six
+mute icons while the wordmark and the tag line kept their space. That is
+backwards: a wordmark is decoration, the tab names are how somebody moves around
+the product. The complaint was immediate and correct.
+
+It matters more than it sounds because \textbf{1280 is the width this project is
+actually demonstrated at}: a 1920-pixel laptop at the 150\% display scaling
+Windows sets by default reports a 1280-pixel page. A breakpoint chosen for
+``1920 screens'' silently applies the 1280 rules.
+\end{warnbox}
+
+\textbf{The 1280 figure is measured, not chosen.} The labelled bar needs
+658 pixels. The room available for it is the viewport minus 32 of padding, 36
+for the logo, 36 of gaps and 485 for the control group --- which first clears
+658 at about 1267. The breakpoint sits at 1280 with 37 pixels of slack, and the
+tab padding was tightened slightly to buy that slack rather than drop a label.
 
 Getting that arithmetic wrong is precisely what produced the second reported
 fault: with labels switched on at 1280 the bar needed 690 pixels inside a

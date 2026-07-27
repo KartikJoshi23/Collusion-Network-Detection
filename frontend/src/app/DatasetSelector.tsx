@@ -41,7 +41,8 @@ export function DatasetSelector() {
     <select
       value={dataset ?? ""}
       onChange={(e) => setDataset(e.target.value)}
-      className="mono rounded-lg px-2.5 py-1.5 text-[13px] text-text-0 outline-none focus:border-accent"
+      // capped so a long dataset name can never eat the tab bar's width
+      className="mono max-w-[11rem] rounded-lg px-2.5 py-1.5 text-[13px] text-text-0 outline-none focus:border-accent"
       style={{
         background: "var(--glass-fill)",
         border: "1px solid var(--hairline)",

@@ -71,11 +71,12 @@ export function DomainToggle() {
             )}
             <span className="relative inline-flex items-baseline gap-1">
               <span>{d.label}</span>
-              {/* The crime name is the point of this control, so it is the LAST
-                  thing to go — but below 1280px it costs ~130px that the tab
-                  bar needs more. The pill's tooltip still names the crime. */}
+              {/* Costs ~130px, which the tab NAMES need more (see App.tsx for
+                  the measured yield order). Returns at 1536px. The crime is
+                  still named in this pill's tooltip and in the Overview
+                  headline, so it is never only implied. */}
               <span
-                className="hidden text-[10px] font-normal xl:inline"
+                className="hidden text-[10px] font-normal 2xl:inline"
                 style={{ color: active ? d.to : "var(--text-2)" }}
               >
                 · {d.sub}

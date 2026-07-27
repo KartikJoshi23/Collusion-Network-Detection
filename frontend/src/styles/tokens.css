@@ -488,8 +488,11 @@ input[type="range"].budget::-moz-range-thumb {
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 7px 13px;
+  /* Tightened 2026-07-27 to buy headroom for the LABELS rather than dropping
+     them: at 1280 the labelled bar needed exactly the space available, with
+     zero margin. Costs nothing visible; buys ~20px of slack. */
+  gap: 6px;
+  padding: 7px 10px;
   border-radius: 9px;
   font-size: 13px;
   white-space: nowrap;
