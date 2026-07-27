@@ -111,7 +111,10 @@ def main() -> int:
     serving: dict[str, dict] = {}
     for spec in DEMOS:
         scores = REPO / spec["scores_dir"]
-        if not (scores / "scores_test.parquet").is_file():
+        # honour the spec's own scores_file — a queue built from a non-default
+        # score file (e.g. the calibrated-ensemble parquet) was skipped by this
+        # guard even though build_alert_queue would have found it
+        if not (scores / spec.get("scores_file", "scores_test.parquet")).is_file():
             print(f"skip {spec['dataset']}: no score run at {spec['scores_dir']}")
             continue
         cfg = {
