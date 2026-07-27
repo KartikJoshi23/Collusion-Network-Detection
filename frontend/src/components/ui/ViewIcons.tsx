@@ -62,6 +62,17 @@ const GLYPHS: Record<ViewId, React.ReactNode> = {
       <circle cx="11.4" cy="15.2" r="0.9" fill="currentColor" stroke="none" />
     </>
   ),
+  // stress test — a seedling/spark planted into a dish (plant & detect)
+  stress: (
+    <>
+      <path d="M4 16.5h12" />
+      <path d="M6 16.5c0 2.4 1.8 3.2 4 3.2s4-.8 4-3.2" />
+      <path d="M10 16.3V9.4" />
+      <path d="M10 11.4c-2.6 0-3.8-1.4-3.8-3.8 2.4 0 3.8 1.2 3.8 3.8Z" />
+      <path d="M10 12.6c2.2 0 3.4-1.1 3.4-3.3-2 0-3.4 1-3.4 3.3Z" />
+      <circle cx="15.6" cy="6.2" r="1.4" fill="currentColor" stroke="none" />
+    </>
+  ),
   // about — the mission mark
   about: (
     <>

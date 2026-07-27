@@ -21,6 +21,7 @@ const NAV: { id: ViewId; label: string; hue: string }[] = [
   { id: "explorer", label: "Graph Explorer", hue: UI_HUES.teal },
   { id: "case", label: "Case Detail", hue: UI_HUES.magenta },
   { id: "lab", label: "Model Lab", hue: UI_HUES.violet },
+  { id: "stress", label: "Stress Test", hue: "#a3e635" }, // lime — proof/no-answer-key
   { id: "about", label: "About", hue: "#a0a2a6" }, // neutral slate (V4)
 ];
 

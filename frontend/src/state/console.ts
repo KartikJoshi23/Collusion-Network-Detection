@@ -8,6 +8,7 @@ export type ViewId =
   | "explorer"
   | "case"
   | "lab"
+  | "stress"
   | "about";
 
 interface ConsoleState {
@@ -29,7 +30,15 @@ interface ConsoleState {
   clearCopilotSeed: () => void;
 }
 
-const VIEW_IDS: ViewId[] = ["overview", "queue", "explorer", "case", "lab", "about"];
+const VIEW_IDS: ViewId[] = [
+  "overview",
+  "queue",
+  "explorer",
+  "case",
+  "lab",
+  "stress",
+  "about",
+];
 
 // Deep-link support (demo script §5.4): /?view=explorer&alert=<id> opens the
 // console directly on a view / alert.
