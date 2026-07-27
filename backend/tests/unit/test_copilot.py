@@ -222,10 +222,12 @@ def serving_fixture(tmp_path, monkeypatch):
 
     config.get_settings.cache_clear()
     store.serving_index.cache_clear()
+    store.stress_test_index.cache_clear()
     store.get_connection.cache_clear()
     yield serving
     config.get_settings.cache_clear()
     store.serving_index.cache_clear()
+    store.stress_test_index.cache_clear()
     store.get_connection.cache_clear()
 
 
@@ -245,6 +247,80 @@ class TestToolsOnServingFixture:
         assert "toy:run:1" in get_explanation("toy:run:1")
         assert "top-k" in get_explanation("toy:run:2")  # honest miss, not an error
         assert "No alerts" in list_alerts("ghost")
+
+
+class TestStressTool:
+    """The get_stress_test tool (§7 step 30): the Copilot reads the injection
+    study and can quote its recovery numbers — grounded, both artifact shapes."""
+
+    def _wire(self, tmp_path, monkeypatch, recovery: dict) -> None:
+        art = tmp_path / "injection.json"
+        art.write_text(json.dumps(recovery), encoding="utf-8")
+        serving = tmp_path / "serving.json"
+        serving.write_text(
+            json.dumps(
+                {
+                    "datasets": {},
+                    "stress_test": {
+                        "ocds_georgia": {
+                            "title": "Georgia — no answer key",
+                            "recovery": str(art),
+                            "reproduce": "uv run collusiongraph train -c cfg.yaml",
+                            "note": "plant and measure",
+                        }
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
+        monkeypatch.setenv("COPILOT_SERVING", str(serving))
+        import copilot.config as config
+        import copilot.store as store
+
+        config.get_settings.cache_clear()
+        store.stress_test_index.cache_clear()
+
+    def test_multiseed_recovery_is_read_and_grounded(self, tmp_path, monkeypatch) -> None:
+        self._wire(
+            tmp_path,
+            monkeypatch,
+            {
+                "population": 163327,
+                "seeds": [0, 1, 2, 3, 4],
+                "n_injected_instances": 100,
+                "recovery_multiseed": {
+                    "ensemble_rank": {
+                        "coordinated_cluster": {
+                            "n_members": 160,
+                            "recall@2000": {"mean": 0.921, "std": 0.176},
+                        }
+                    },
+                    "dominant": {
+                        "rotation": {"n_members": 240, "recall@2000": {"mean": 0.072, "std": 0.011}}
+                    },
+                },
+            },
+        )
+        from copilot.alert_tools import get_stress_test
+
+        out = get_stress_test()
+        assert "bid-together ring" in out and "take-turns" in out
+        assert "0.921" in out  # the number the model will quote — must be present
+        assert "163327" in out and "400" in out  # population + summed planted firms (160+240)
+        assert "caught" in out and "escapes" in out
+
+    def test_absent_study_is_honest(self, tmp_path, monkeypatch) -> None:
+        serving = tmp_path / "serving.json"
+        serving.write_text(json.dumps({"datasets": {}}), encoding="utf-8")
+        monkeypatch.setenv("COPILOT_SERVING", str(serving))
+        import copilot.config as config
+        import copilot.store as store
+
+        config.get_settings.cache_clear()
+        store.stress_test_index.cache_clear()
+        from copilot.alert_tools import get_stress_test
+
+        assert "No stress-test" in get_stress_test()
 
 
 def _scripted_client(script):

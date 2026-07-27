@@ -17,14 +17,25 @@ import duckdb
 from .config import get_settings
 
 
-@lru_cache(maxsize=1)
-def serving_index() -> dict[str, Any]:
+def _read_index() -> dict[str, Any]:
     path = Path(get_settings().serving_path)
     if not path.is_file():
         raise FileNotFoundError(
             f"serving index not found at {path} — run `poe demo-artifacts` first"
         )
-    return json.loads(path.read_text(encoding="utf-8"))["datasets"]
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+@lru_cache(maxsize=1)
+def serving_index() -> dict[str, Any]:
+    return _read_index()["datasets"]
+
+
+@lru_cache(maxsize=1)
+def stress_test_index() -> dict[str, Any]:
+    """The ``stress_test`` section (§7 step 30): injection-recovery studies the
+    Copilot can read. Empty when this machine has run none."""
+    return _read_index().get("stress_test", {})
 
 
 def build_connection() -> duckdb.DuckDBPyConnection:

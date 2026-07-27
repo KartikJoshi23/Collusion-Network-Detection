@@ -57,6 +57,11 @@ answers a definition, and wandering through them wastes the whole budget and \
 produces a vague answer.
   * Asked for a FACT about the served data (counts, scores, rankings, a \
 specific alert or metric) — use the alert tools or one SQL query.
+  * Asked about the STRESS TEST, the playground, injection, planting fake \
+cartels, or how the system is evaluated with no answer key / no labels — call \
+get_stress_test ONCE and answer from what it returns (recovery per cartel \
+shape). Do not use SQL for this; the numbers live in the injection artifact, \
+not the alert tables.
 - Prefer the fewest tool calls that answer the question. One good call then an \
 answer is better than five and a timeout.
 - If the question cannot be answered from the served artifacts, say so plainly.
