@@ -99,10 +99,20 @@ export function parseStress(payload: Obj): StressModel | null {
   );
   const seeds = Array.isArray(payload.seeds) ? (payload.seeds as unknown[]).length : 1;
 
+  // Total planted member firms. The single-seed report writes it as
+  // n_injected_members, but the multi-seed aggregate never has — so it rendered
+  // as a bare "—" in the header. Each distinct shape already carries its own
+  // member count, and their sum IS the total (160+140+280+240+120 = 940 on the
+  // Georgia study). Fall back to that so the figure is always shown, still
+  // copied from the artifact rather than re-derived from anything measured.
+  const nMembers =
+    num(payload.n_injected_members) ??
+    (shapes.length ? shapes.reduce((t, s) => t + s.nMembers, 0) : null);
+
   return {
     population,
     nInstances: num(payload.n_injected_instances),
-    nMembers: num(payload.n_injected_members),
+    nMembers,
     nSeeds: seeds,
     budgets: budgetList,
     shapes,

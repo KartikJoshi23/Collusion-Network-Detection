@@ -51,6 +51,26 @@ describe("parseStress", () => {
     expect(m.shapes[0].byBudget[2000]).toEqual({ recall: 0.09, std: 0, arm: "dominant" });
   });
 
+  it("sums the shapes for total members when n_injected_members is absent", () => {
+    // The real multi-seed artifact on disk has no n_injected_members key, so
+    // the header used to render a bare "—". The sum of the distinct shapes'
+    // member counts is the true total.
+    const payload = {
+      population: 163327,
+      seeds: [0, 1],
+      n_injected_instances: 100,
+      recovery_multiseed: {
+        gae: {
+          coordinated_cluster: { n_members: 160, "recall@2000": { mean: 0.9, std: 0 } },
+          common_control: { n_members: 140, "recall@2000": { mean: 0.5, std: 0 } },
+          rotation: { n_members: 240, "recall@2000": { mean: 0.08, std: 0 } },
+        },
+      },
+    };
+    const m = parseStress(payload)!;
+    expect(m.nMembers).toBe(540); // 160 + 140 + 240, counted once per distinct shape
+  });
+
   it("returns null when the payload has neither recovery shape", () => {
     expect(parseStress({ population: 1 })).toBeNull();
     expect(parseStress({ recovery_multiseed: {} })).toBeNull();
