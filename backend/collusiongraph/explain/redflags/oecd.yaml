@@ -1,0 +1,30 @@
+# Curated procurement red-flag indicators (paraphrased from the OECD
+# bid-rigging detection checklist; §4.4). Each maps to the motif vocabulary
+# the matcher emits.
+framework: OECD
+indicators:
+  - id: OECD-ROT-01
+    text: >-
+      The same group of suppliers wins in turn, with winners alternating in a
+      pattern over successive tenders (bid rotation).
+    motifs: [rotation]
+  - id: OECD-COVER-01
+    text: >-
+      Losing bids sit implausibly close above the winning bid, consistent with
+      cover bidding arranged to make the process look competitive.
+    motifs: [cover_bid]
+  - id: OECD-ALLOC-01
+    text: >-
+      Suppliers never compete for the same buyer or territory, consistent with
+      an agreed market-allocation scheme.
+    motifs: [partition]
+  - id: OECD-CLUST-01
+    text: >-
+      A recurring set of co-bidders submits tightly clustered prices across
+      tenders (coordinated bidding ring).
+    motifs: [clique]
+  - id: OECD-LINK-01
+    text: >-
+      Ostensibly competing firms share directors, addresses, or contact
+      details (common control undermining independent bidding).
+    motifs: [common_control]

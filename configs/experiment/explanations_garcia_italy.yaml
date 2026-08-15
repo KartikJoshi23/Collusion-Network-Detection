@@ -1,0 +1,16 @@
+# Explanation bundles for the García (Italy LOMO fold) queue: motif matcher +
+# OECD red flags + screens evidence. Learned attribution is absent by design —
+# the queue is precalibrated R-GCN fold scores and mask-based explainers are
+# GATv2-only (R12 de-risk finding, ledger); the bundle's evidence_sources
+# labels exactly what is present (§4.4 scope honesty).
+#
+# Added 2026-07-25: the dashboard audit found García served 3 alerts with ZERO
+# explanation bundles, so its Case Detail was empty on every alert. The matcher
+# path needs no checkpoint, so there was no reason for the gap.
+dataset: garcia_rodriguez
+domain: procurement
+store_root: data/interim
+alerts: eval_outputs/garcia_rodriguez/alert_queue_italy/alerts.parquet
+output_dir: eval_outputs/garcia_rodriguez/explanations
+top_k: 20
+seed: 0

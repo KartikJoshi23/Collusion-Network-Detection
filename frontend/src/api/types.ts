@@ -1,0 +1,123 @@
+// Response shapes from backend/api/app.py. Hand-authored to mirror the
+// endpoints; when the API grows, regenerate from /openapi.json with
+// openapi-typescript (§5.4). Every response carries the screening caveat.
+
+export type Domain = "financial" | "procurement";
+
+export interface DatasetSummary {
+  dataset: string;
+  domain: Domain;
+  has_alerts: boolean;
+  has_explanations: boolean;
+  n_metrics_files: number;
+}
+
+export interface DatasetsResponse {
+  datasets: DatasetSummary[];
+  caveat: string;
+}
+
+export interface DomainsResponse {
+  domains: Record<string, string[]>;
+  caveat: string;
+}
+
+export interface AlertRow {
+  alert_id: string;
+  rank: number;
+  risk_score: number;
+  n_members: number;
+  motif_type: string | null;
+  time_window_start: number | null;
+  time_window_end: number | null;
+  community_id: string | null;
+  /** Whether a full written case file exists for this alert. Only the head of
+   *  the queue gets one, because the learned explainer is expensive. */
+  explained?: boolean;
+  /** Whether the pattern matcher ran on this alert. It now runs on EVERY
+   *  alert — naming a shape needs only graph rules, not the explainer — so
+   *  "no pattern" always means "none found", never "never looked". */
+  pattern_checked?: boolean;
+}
+
+export interface AlertsResponse {
+  dataset: string;
+  budget: number;
+  k_effective: number;
+  alerts: AlertRow[];
+  caveat: string;
+}
+
+export interface SubgraphNode {
+  node_id: string;
+  node_type: string;
+  time_first_seen: number | null;
+  is_member: boolean;
+}
+
+export interface SubgraphEdge {
+  src: string;
+  dst: string;
+  edge_type: string;
+  timestamp: number | null;
+  amount: number | null;
+}
+
+export interface SubgraphResponse {
+  alert_id: string;
+  hops: number;
+  truncated: boolean;
+  nodes: SubgraphNode[];
+  edges: SubgraphEdge[];
+  caveat: string;
+}
+
+export interface ExplanationResponse {
+  bundle: Record<string, unknown>;
+  caveat: string;
+}
+
+export interface MetricsRun {
+  source: string;
+  metrics: Record<string, unknown>;
+}
+
+export interface MetricsResponse {
+  dataset: string;
+  runs: MetricsRun[];
+  caveat: string;
+}
+
+// Phase-2 rigor artifacts (§7 steps 28–29, 32): payload shapes are the
+// artifact JSONs themselves (multiseed.json, matrix.json, sensitivity.json,
+// noise_curve.json, label_efficiency.json, significance.json) — rendered
+// defensively, never re-derived.
+export interface RigorArtifact {
+  source: string;
+  payload: Record<string, unknown>;
+}
+
+export interface RigorResponse {
+  dataset: string;
+  artifacts: Record<string, RigorArtifact>;
+  caveat: string;
+}
+
+// Stress-test / injection-recovery study (§7 step 30): fake cartels of known
+// shapes planted into a real UNLABELED network, with measured recovery. The
+// payload is the injection artifact itself (single-seed report OR multi-seed
+// aggregate) — parsed defensively in lib/stressExtract.ts, never re-derived.
+export interface StressStudy {
+  title: string;
+  reproduce: string;
+  note: string;
+  payload: Record<string, unknown>;
+}
+
+export interface StressTestResponse {
+  studies: Record<string, StressStudy>;
+  caveat: string;
+}
+
+export const SCREENING_CAVEAT =
+  "screening signal only — no determination of guilt";

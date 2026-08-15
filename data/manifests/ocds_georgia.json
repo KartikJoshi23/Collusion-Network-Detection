@@ -1,0 +1,90 @@
+{
+  "dataset": "ocds_georgia",
+  "source": "https://data.open-contracting.org/en/publication/52 (OCP Data Registry: Georgia OpenTender, compiled releases, per-year JSONL)",
+  "license": "CC BY-NC-SA 4.0 (as stated on the registry publication page, verified 2026-07-20). Research use with attribution; not redistributed in this repository.",
+  "downloaded_at": "2026-07-20",
+  "status": "complete",
+  "files": [
+    {
+      "path": "2010.jsonl.gz",
+      "bytes": 98242,
+      "sha256": "ffe43b559dcc055387cf66ad4958ca178089a469056bb8d333bf869d126a5173"
+    },
+    {
+      "path": "2011.jsonl.gz",
+      "bytes": 11535434,
+      "sha256": "0b259016356ce667a814a2ff5e087a4d2975935d256769690f53ac3a987b5298"
+    },
+    {
+      "path": "2012.jsonl.gz",
+      "bytes": 10871596,
+      "sha256": "d5cb4c69fcec392cd35b7c140e5e26258f07014c6f8fa1e9fc0b63675192e08b"
+    },
+    {
+      "path": "2013.jsonl.gz",
+      "bytes": 11970174,
+      "sha256": "ac65da1d8fda9e6d157858b81f066e3428b9648f4b45dabe287b6c3682faac67"
+    },
+    {
+      "path": "2014.jsonl.gz",
+      "bytes": 13618522,
+      "sha256": "c7cc82c15394e0211b3b0e20938c414cf3b98ab8af43dc364a30eaf464322447"
+    },
+    {
+      "path": "2015.jsonl.gz",
+      "bytes": 16253594,
+      "sha256": "d9f4acea1fc5e84001cf92bcccba2123fd777c522cbd8ff9d043610b0210af68"
+    },
+    {
+      "path": "2016.jsonl.gz",
+      "bytes": 18197911,
+      "sha256": "57caa6b05991e254a1130ba9f97e588ab7a079281bd0f663d805ba5c4b4c88d8"
+    },
+    {
+      "path": "2017.jsonl.gz",
+      "bytes": 15962413,
+      "sha256": "f7aa2b266a7e5af6b8d207bb8314bbf84989be9e92923b7af098d5cc46407ad9"
+    },
+    {
+      "path": "2018.jsonl.gz",
+      "bytes": 15299380,
+      "sha256": "441f0e7fb49bc91392ec61edf0a9040ee9731faf0416344871ba551342843f5b"
+    },
+    {
+      "path": "2019.jsonl.gz",
+      "bytes": 15976386,
+      "sha256": "7f3b69475663ca915d94853fe8aa8eeadab517d68fb48f77051d432e0f4de6bb"
+    },
+    {
+      "path": "2020.jsonl.gz",
+      "bytes": 13047832,
+      "sha256": "77e7103c8accb4f982200f4a75f68810031dd607aeb5413b54e2f04484b41608"
+    },
+    {
+      "path": "2021.jsonl.gz",
+      "bytes": 14884318,
+      "sha256": "0a6d61a348b22cfd27816917a224bcab7ee1da632511bb274304846446143357"
+    },
+    {
+      "path": "2022.jsonl.gz",
+      "bytes": 15765453,
+      "sha256": "232b8f620473c2a13d92de3725869ec1d63c682a55141b27d7dba03b5177f0a4"
+    },
+    {
+      "path": "2023.jsonl.gz",
+      "bytes": 15559529,
+      "sha256": "3d9bc7af3c63c6d05a0648bfdfed87d90018ec515258d3b143f414722fe7b329"
+    },
+    {
+      "path": "2024.jsonl.gz",
+      "bytes": 14792239,
+      "sha256": "e7732378d23bef3c62608fdbd0867ee031df811595b87607ecaf8ccf48b40bc8"
+    },
+    {
+      "path": "2025.jsonl.gz",
+      "bytes": 4938,
+      "sha256": "4eee20e3d14920fdc422bb946dae8881e713dc4fbb9f8198d77d7863f7c8565c"
+    }
+  ],
+  "notes": "D5: unlabeled OCDS publisher for the unsupervised regime + synthetic injection at scale (§7 step 30). Selected for standard bids.details[] coverage with identified losing bidders (co-bid structure). Coverage 2010-11..2025-01, updated half-yearly."
+}

@@ -1,0 +1,13 @@
+# §7 step 29 (iii) — the same protocol-sensitivity sweep on the Mendeley
+# procurement queue (published budgets 4/18/36 = top 1/5/10% of the firm
+# queue; published setting jaccard 0.5 / min_fraction null is a grid point).
+dataset: mendeley_eu
+store_root: data/interim
+alerts: eval_outputs/mendeley_eu/alert_queue/alerts.parquet
+labels: eval_outputs/mendeley_eu/alert_queue/labels_test_window.parquet
+output_dir: eval_outputs/mendeley_eu/sensitivity
+budgets: [4, 18, 36]
+
+sweep:
+  jaccard_thresholds: [0.3, 0.4, 0.5, 0.6, 0.7]
+  min_fractions: [null, 0.1, 0.25]

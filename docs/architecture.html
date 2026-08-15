@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CollusionGraph — System Architecture</title>
+<style>
+/* ── THEME TOKENS — light is default (clean/airy, like the reference); dark re-specifies all ── */
+:root, [data-theme="light"] {
+  --canvas: #eef2f9;
+  --panel: #ffffff;
+  --box: #ffffff;
+  --ink: #121b33; --ink-2: #44526e; --ink-3: #697691;
+  --arrow: #5a6a88;
+  --purple: #7c3aed; --green: #15a34a; --blue: #2563eb; --amber: #b45309;
+  --rose: #db2777; --cyan: #0e7490; --teal: #0d9488;
+  --clbg-green: rgba(21,163,74,.05); --clbg-blue: rgba(37,99,235,.05);
+  --chip: #eef1f8; --table-line: #e4e9f2; --code: #eef1f8;
+  --box-shadow: 0 6px 16px rgba(30,58,138,.08);
+  --panel-shadow: 0 20px 50px rgba(30,58,138,.10);
+}
+[data-theme="dark"] {
+  --canvas: #0a0f1e;
+  --panel: #0f1830;
+  --box: #16223c;
+  --ink: #eef3fb; --ink-2: #c2cde2; --ink-3: #8593b0;
+  --arrow: #9aa9c9;
+  --purple: #b79bff; --green: #57e6a2; --blue: #7db4ff; --amber: #ffce6a;
+  --rose: #ff8fc0; --cyan: #46d8f0; --teal: #35d6bf;
+  --clbg-green: rgba(87,230,162,.05); --clbg-blue: rgba(125,180,255,.05);
+  --chip: rgba(255,255,255,.07); --table-line: rgba(255,255,255,.10); --code: rgba(255,255,255,.07);
+  --box-shadow: 0 6px 16px rgba(0,0,0,.28);
+  --panel-shadow: 0 20px 50px rgba(0,0,0,.30);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { background: var(--canvas); color: var(--ink-2);
+  font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; line-height: 1.5; overflow-x: hidden; }
+code { font-family: Consolas, Menlo, monospace; font-size: .86em; background: var(--code);
+  border-radius: 5px; padding: 1px 6px; color: var(--ink); }
+.wrap { max-width: 1040px; margin: 0 auto; padding: 0 18px 90px; }
+
+header.site { position: sticky; top: 0; z-index: 50; background: color-mix(in srgb, var(--canvas) 82%, transparent);
+  backdrop-filter: blur(12px); border-bottom: 1px solid var(--table-line); }
+.site-inner { max-width: 1040px; margin: 0 auto; padding: 12px 18px; display: flex; align-items: center; gap: 14px; }
+.brand { color: var(--ink); font-weight: 700; }
+.brand em { font-style: normal; background: linear-gradient(90deg, var(--cyan), var(--purple), var(--rose));
+  -webkit-background-clip: text; background-clip: text; color: transparent; }
+nav.toc { margin-left: auto; display: flex; gap: 2px; flex-wrap: wrap; }
+nav.toc a { color: var(--ink-3); text-decoration: none; font-size: .8rem; padding: 5px 10px; border-radius: 8px; }
+nav.toc a:hover { color: var(--ink); background: var(--chip); }
+.theme-btn { border: 1px solid var(--table-line); background: var(--box); color: var(--ink);
+  border-radius: 999px; padding: 6px 14px; font-size: .8rem; cursor: pointer; display: flex; gap: 7px; align-items: center; }
+.theme-btn:hover { border-color: var(--cyan); }
+
+.hero { text-align: center; padding: 42px 0 4px; }
+.hero h1 { color: var(--ink); font-size: clamp(1.4rem, 3vw, 1.9rem); }
+.hero h1 em { font-style: normal; background: linear-gradient(90deg, var(--cyan), var(--purple), var(--rose));
+  -webkit-background-clip: text; background-clip: text; color: transparent; }
+.hero p { color: var(--ink-3); max-width: 74ch; margin: 8px auto 0; font-size: .89rem; }
+
+section { margin-top: 56px; }
+.sec { text-align: center; margin-bottom: 16px; }
+.sec h2 { color: var(--ink); font-size: 1.26rem; }
+.sec h2 b { background: linear-gradient(90deg, var(--cyan), var(--purple)); -webkit-background-clip: text;
+  background-clip: text; color: transparent; }
+.sec p { color: var(--ink-3); font-size: .83rem; margin-top: 4px; max-width: 92ch; margin-left: auto; margin-right: auto; }
+
+.figure { background: var(--panel); border: 1px solid var(--table-line); border-radius: 18px; padding: 12px;
+  box-shadow: var(--panel-shadow); }
+.figure svg { width: 100%; height: auto; display: block; }
+
+/* SVG flowchart element styling — inherits theme tokens */
+svg text { font-family: "Segoe UI", system-ui, sans-serif; }
+.cl-rect { fill: var(--clbg-blue); stroke: var(--blue); stroke-width: 1.3; }
+.cl-rect.green { fill: var(--clbg-green); stroke: var(--green); stroke-dasharray: 7 5; }
+.cl-lbl { fill: var(--ink-3); font-size: 11.5px; font-weight: 800; letter-spacing: .07em; }
+.bx { fill: var(--box); stroke-width: 1.7; }
+.bx.pu { stroke: var(--purple); } .bx.gr { stroke: var(--green); } .bx.bl { stroke: var(--blue); }
+.bx.am { stroke: var(--amber); } .bx.ro { stroke: var(--rose); stroke-dasharray: 6 4; } .bx.cy { stroke: var(--cyan); }
+.tt { fill: var(--ink); font-size: 13.5px; font-weight: 700; }
+.dd { fill: var(--ink-2); font-size: 10.7px; }
+.mo { font-family: Consolas, Menlo, monospace; font-size: 10.2px; fill: var(--ink-2); }
+.ed { stroke: var(--arrow); stroke-width: 1.5; fill: none; }
+.el { fill: var(--ink-3); font-size: 10px; font-weight: 600; }
+.tbl { stroke: var(--rose); stroke-width: 1.5; stroke-dasharray: 8 6; }
+.tbt { fill: var(--rose); font-size: 11.5px; font-weight: 800; letter-spacing: .05em; }
+marker path { fill: var(--arrow); }
+
+.alg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+@media (max-width: 860px) { .alg-grid { grid-template-columns: 1fr; } }
+.alg { background: var(--panel); border: 1px solid var(--table-line); border-left: 3px solid var(--cyan);
+  border-radius: 14px; padding: 13px 16px; box-shadow: var(--box-shadow); transition: transform .16s; }
+.alg:hover { transform: translateY(-3px); }
+.alg.v { border-left-color: var(--purple); } .alg.m { border-left-color: var(--rose); }
+.alg.g { border-left-color: var(--green); }  .alg.a { border-left-color: var(--amber); }
+.alg h5 { color: var(--ink); font-size: .86rem; margin-bottom: 5px; }
+.alg h5 .where { display: block; font-weight: 400; font-size: .67rem; color: var(--ink-3); margin-top: 2px; }
+.alg p { font-size: .77rem; margin-bottom: 5px; }
+.alg p b { color: var(--ink); font-weight: 650; }
+
+.tier { background: var(--panel); border: 1px solid var(--table-line); margin-bottom: 15px;
+  padding: 15px 18px 11px; border-radius: 16px; box-shadow: var(--box-shadow); }
+.tier h3 { font-size: .9rem; color: var(--ink); margin-bottom: 8px; }
+.tier h3 span { font-size: .67rem; font-weight: 700; letter-spacing: .04em; color: #fff; border-radius: 999px;
+  padding: 3px 11px; margin-left: 9px; background: linear-gradient(90deg, var(--cyan), var(--purple)); white-space: nowrap; }
+table { width: 100%; border-collapse: collapse; font-size: .79rem; }
+th { text-align: left; color: var(--ink-3); font-size: .67rem; text-transform: uppercase; letter-spacing: .06em;
+  padding: 7px 8px; border-bottom: 1.5px solid var(--table-line); }
+td { padding: 7px 8px; border-bottom: 1px solid var(--table-line); color: var(--ink-2); }
+td.r, th.r { text-align: right; font-family: Consolas, monospace; white-space: nowrap; }
+tr.sum td { color: var(--ink); font-weight: 700; background: var(--chip); }
+@media (max-width: 540px) { table { font-size: .7rem; } td, th { padding: 5px 4px; } td.r, th.r { white-space: normal; } }
+.finenote { color: var(--ink-3); font-size: .76rem; max-width: 100ch; margin: 8px auto 0; text-align: center; }
+
+footer { margin-top: 64px; border-top: 1px solid var(--table-line); padding-top: 16px;
+  display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; color: var(--ink-3); font-size: .76rem; }
+footer .cav { color: var(--amber); font-weight: 700; }
+
+/* ── DATASET CARDS ── */
+.ds-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+@media (max-width: 860px) { .ds-grid { grid-template-columns: 1fr; } }
+.ds { background: var(--panel); border: 1px solid var(--table-line); border-top: 3px solid var(--cyan);
+  border-radius: 14px; padding: 14px 16px; box-shadow: var(--box-shadow); transition: transform .16s; }
+.ds:hover { transform: translateY(-3px); }
+.ds.fin { border-top-color: var(--blue); }
+.ds.proc { border-top-color: var(--purple); }
+.ds-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 3px; }
+.ds-head h5 { color: var(--ink); font-size: .9rem; }
+.ds p { font-size: .77rem; margin-bottom: 4px; }
+.ds p b { color: var(--ink); font-weight: 650; }
+.chip { font-size: .6rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+  padding: 2px 8px; border-radius: 999px; background: var(--chip); color: var(--ink-3); white-space: nowrap; }
+/* Chip ink is mixed TOWARDS --ink so it darkens in the light theme and
+   lightens in the dark one — the hue still identifies the category, but the
+   text clears WCAG AA in both themes (measured: was 2.33:1 on "Main anchor"). */
+.chip.blue   { background: color-mix(in srgb, var(--blue) 20%, transparent);   color: color-mix(in srgb, var(--blue) 42%, var(--ink)); }
+.chip.purple { background: color-mix(in srgb, var(--purple) 20%, transparent); color: color-mix(in srgb, var(--purple) 42%, var(--ink)); }
+.chip.green  { background: color-mix(in srgb, var(--green) 20%, transparent);  color: color-mix(in srgb, var(--green) 42%, var(--ink)); }
+.chip.amber  { background: color-mix(in srgb, var(--amber) 22%, transparent);  color: color-mix(in srgb, var(--amber) 42%, var(--ink)); }
+.chip.rose   { background: color-mix(in srgb, var(--rose) 20%, transparent);   color: color-mix(in srgb, var(--rose) 42%, var(--ink)); }
+.stats { display: flex; flex-wrap: wrap; gap: 6px; margin: 9px 0 7px; }
+.stat { background: var(--chip); border-radius: 9px; padding: 5px 9px; flex: 1 1 auto; min-width: 78px; }
+.stat b { display: block; color: var(--ink); font-family: Consolas, Menlo, monospace; font-size: .82rem; }
+.stat span { font-size: .65rem; color: var(--ink-2); text-transform: uppercase; letter-spacing: .04em; }
+.bar { display: flex; height: 7px; border-radius: 999px; overflow: hidden; margin: 7px 0 4px;
+  border: 1px solid var(--table-line); }
+.bar i { display: block; height: 100%; }
+.bar-key { display: flex; flex-wrap: wrap; gap: 10px; font-size: .64rem; color: var(--ink-3); }
+.bar-key i { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 4px;
+  vertical-align: -1px; }
+
+/* ── SCHEMA / "what one row looks like" ── */
+.schema-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+@media (max-width: 940px) { .schema-grid { grid-template-columns: 1fr; } }
+.tbl-card { background: var(--panel); border: 1px solid var(--table-line); border-radius: 14px;
+  overflow: hidden; box-shadow: var(--box-shadow); }
+.tbl-card h6 { font-family: Consolas, Menlo, monospace; font-size: .73rem; color: #fff; padding: 8px 13px;
+  background: linear-gradient(90deg, var(--cyan), var(--purple)); font-weight: 700; }
+.tbl-card .inner { padding: 3px 13px 11px; }
+.tbl-card table { font-size: .72rem; }
+.tbl-card td { padding: 5px 4px; }
+.tbl-card td:first-child { font-family: Consolas, Menlo, monospace; color: var(--ink); white-space: nowrap; }
+.tbl-card td:last-child { color: var(--ink-3); font-size: .69rem; }
+
+/* ── KNOWLEDGE BASE ── */
+.kb-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+@media (max-width: 860px) { .kb-grid { grid-template-columns: 1fr; } }
+.layer { background: var(--panel); border: 1px solid var(--table-line); border-left: 3px solid var(--teal);
+  border-radius: 14px; padding: 13px 16px; box-shadow: var(--box-shadow); }
+.layer.two { border-left-color: var(--amber); }
+.layer h5 { color: var(--ink); font-size: .86rem; margin-bottom: 5px; }
+.layer p { font-size: .77rem; margin-bottom: 5px; }
+.ids { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+.id-pill { font-family: Consolas, Menlo, monospace; font-size: .63rem; padding: 2px 7px; border-radius: 6px;
+  background: var(--chip); color: var(--ink-2); border: 1px solid var(--table-line); white-space: nowrap; }
+
+/* ── HONEST CALLOUT ── */
+.callout { background: var(--panel); border: 1px solid var(--table-line); border-left: 3px solid var(--amber);
+  border-radius: 12px; padding: 12px 16px; margin-top: 14px; font-size: .78rem; box-shadow: var(--box-shadow); }
+.callout b { color: var(--ink); }
+.callout.rose { border-left-color: var(--rose); }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="site-inner">
+    <div class="brand">Collusion<em>Graph</em></div>
+    <nav class="toc">
+      <a href="#system">Architecture</a><a href="#alg">Algorithms</a><a href="#aws">AWS</a><a href="#costs">Costs</a><a href="#data">Data</a><a href="#kb">Copilot brain</a>
+    </nav>
+    <button class="theme-btn" id="themeToggle"><span id="themeIcon">☾</span><span id="themeLabel">Dark</span></button>
+  </div>
+</header>
+
+<div class="wrap">
+
+<div class="hero">
+  <h1>Collusion<em>Graph</em> — one stack, two crimes: how it runs</h1>
+  <p>A completed deep-learning system that screens <b>money-laundering networks</b> and <b>bid-rigging cartels</b>
+     with one graph pipeline, explains every alert, and keeps a human making the final call.</p>
+</div>
+
+<!-- ═════════ SYSTEM ARCHITECTURE — vertical flowchart ═════════ -->
+<section id="system">
+  <div class="sec">
+    <h2>System <b>Architecture</b></h2>
+    <p>Top to bottom: the offline deep-learning pipeline (green group) produces files; the always-on product (blue group)
+       only reads them. Runs on one machine with <code>docker compose up</code>.</p>
+  </div>
+
+  <div class="figure">
+  <svg viewBox="0 0 1000 1100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="System architecture flowchart">
+    <defs>
+      <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z"/></marker>
+    </defs>
+
+    <!-- offline cluster -->
+    <rect class="cl-rect green" x="18" y="14" width="964" height="626" rx="15"/>
+    <text class="cl-lbl" x="34" y="36">OFFLINE — DEEP-LEARNING PIPELINE  ·  writes files, then exits</text>
+
+    <!-- 1 -->
+    <rect class="bx pu" x="270" y="56" width="460" height="50" rx="9"/>
+    <text class="tt" x="500" y="80" text-anchor="middle">1. Data ingestion adapters</text>
+    <text class="dd" x="500" y="97" text-anchor="middle">6 public datasets · 2 domains · checksum-verified</text>
+    <path class="ed" d="M500,106 L500,132" marker-end="url(#a1)"/>
+    <text class="el" x="512" y="124">ingest</text>
+
+    <!-- 2 -->
+    <rect class="bx pu" x="270" y="136" width="460" height="58" rx="9"/>
+    <text class="tt" x="500" y="159" text-anchor="middle">2. Unified graph schema (IR)</text>
+    <text class="dd" x="500" y="177" text-anchor="middle">nodes · edges · labels — one format for both domains · time-safe splits</text>
+
+    <!-- split to 4 arms -->
+    <path class="ed" d="M500,194 L500,212 L142,212 L142,226" marker-end="url(#a1)"/>
+    <path class="ed" d="M500,212 L380,212 L380,226" marker-end="url(#a1)"/>
+    <path class="ed" d="M500,212 L619,212 L619,226" marker-end="url(#a1)"/>
+    <path class="ed" d="M500,212 L857,212 L857,226" marker-end="url(#a1)"/>
+
+    <!-- 3a..3d parallel -->
+    <rect class="bx gr" x="30" y="228" width="225" height="66" rx="9"/>
+    <text class="tt" x="142" y="250" text-anchor="middle">3a. Supervised GNNs</text>
+    <text class="dd" x="142" y="267" text-anchor="middle">GATv2 · GraphSAGE · R-GCN</text>
+    <text class="dd" x="142" y="283" text-anchor="middle">focal loss (~2% positives)</text>
+
+    <rect class="bx gr" x="268" y="228" width="225" height="66" rx="9"/>
+    <text class="tt" x="380" y="250" text-anchor="middle">3b. Unsupervised arm</text>
+    <text class="dd" x="380" y="267" text-anchor="middle">DOMINANT · GAE</text>
+    <text class="dd" x="380" y="283" text-anchor="middle">no labels needed</text>
+
+    <rect class="bx gr" x="506" y="228" width="225" height="66" rx="9"/>
+    <text class="tt" x="619" y="250" text-anchor="middle">3c. Graph features</text>
+    <text class="dd" x="619" y="267" text-anchor="middle">degrees · motifs · k-core</text>
+    <text class="dd" x="619" y="283" text-anchor="middle">bid screens · ratios</text>
+
+    <rect class="bx am" x="744" y="228" width="225" height="66" rx="9"/>
+    <text class="tt" x="857" y="250" text-anchor="middle">3d. Baselines &amp; checks</text>
+    <text class="dd" x="857" y="267" text-anchor="middle">XGBoost yardstick</text>
+    <text class="dd" x="857" y="283" text-anchor="middle">injection · 404 tests</text>
+
+    <!-- converge -->
+    <path class="ed" d="M142,294 L142,308 L500,308" />
+    <path class="ed" d="M380,294 L380,308 L500,308" />
+    <path class="ed" d="M619,294 L619,308 L500,308" />
+    <path class="ed" d="M857,294 L857,308 L500,308" />
+    <path class="ed" d="M500,308 L500,320" marker-end="url(#a1)"/>
+
+    <!-- 4 -->
+    <rect class="bx pu" x="270" y="322" width="460" height="50" rx="9"/>
+    <text class="tt" x="500" y="346" text-anchor="middle">4. Calibrated ensemble fusion</text>
+    <text class="dd" x="500" y="363" text-anchor="middle">honest probabilities first → one comparable risk score per node</text>
+    <path class="ed" d="M500,372 L500,398" marker-end="url(#a1)"/>
+
+    <!-- 5 -->
+    <rect class="bx bl" x="270" y="402" width="460" height="58" rx="9"/>
+    <text class="tt" x="500" y="425" text-anchor="middle">5. Leiden communities → ranked alert queue</text>
+    <text class="dd" x="500" y="443" text-anchor="middle">254 financial + 223 procurement alerts · de-duped · fixed review budget</text>
+    <path class="ed" d="M500,460 L500,486" marker-end="url(#a1)"/>
+
+    <!-- 6 -->
+    <rect class="bx am" x="270" y="490" width="460" height="52" rx="9"/>
+    <text class="tt" x="500" y="513" text-anchor="middle">6. Explanation layer</text>
+    <text class="dd" x="500" y="531" text-anchor="middle">PGExplainer subgraph · motif matcher · FATF / OECD red-flag citations</text>
+    <path class="ed" d="M500,542 L500,568" marker-end="url(#a1)"/>
+
+    <!-- 7 -->
+    <rect class="bx am" x="270" y="572" width="460" height="54" rx="9"/>
+    <text class="tt" x="500" y="595" text-anchor="middle">7. Artifact store — plain files</text>
+    <text class="mo" x="500" y="613" text-anchor="middle">alerts.parquet · explanations/*.json · metrics · serving.json</text>
+
+    <!-- trust boundary -->
+    <path class="ed" d="M500,626 L500,656" marker-end="url(#a1)"/>
+    <line class="tbl" x1="40" y1="684" x2="960" y2="684"/>
+    <text class="tbt" x="500" y="674" text-anchor="middle">TRUST BOUNDARY</text>
+    <text class="el" x="500" y="702" text-anchor="middle">above: writes files, then exits   ·   below: read-only — cannot retrain or change a score</text>
+
+    <!-- product cluster -->
+    <rect class="cl-rect" x="18" y="716" width="964" height="368" rx="15"/>
+    <text class="cl-lbl" x="34" y="738">ALWAYS-ON PRODUCT  ·  read-only · tiny CPU · no GPU</text>
+
+    <path class="ed" d="M500,702 L500,758" marker-end="url(#a1)"/>
+
+    <!-- 8 API -->
+    <rect class="bx bl" x="40" y="762" width="520" height="98" rx="9"/>
+    <text class="tt" x="300" y="785" text-anchor="middle">8. FastAPI REST layer — read-only</text>
+    <text class="mo" x="300" y="805" text-anchor="middle">/alerts?budget=k · /subgraph/{id}</text>
+    <text class="mo" x="300" y="821" text-anchor="middle">/explanations/{id} · /metrics · /rigor</text>
+    <text class="dd" x="300" y="841" text-anchor="middle">subgraphs windowed server-side · caveat on every response</text>
+
+    <!-- copilot side box -->
+    <rect class="bx ro" x="602" y="762" width="378" height="112" rx="9"/>
+    <text class="tt" x="791" y="785" text-anchor="middle">💬 GenAI Investigator Copilot</text>
+    <text class="dd" x="791" y="804" text-anchor="middle">NVIDIA NIM LLM · read-only SQL + tools</text>
+    <text class="dd" x="791" y="820" text-anchor="middle">every number must exist in evidence</text>
+    <text class="dd" x="791" y="836" text-anchor="middle">guilt language auto-rewritten · 24/24 goldens</text>
+    <text class="mo" x="791" y="855" text-anchor="middle">mounted at /api/v1/copilot</text>
+    <path class="ed" d="M562,804 L600,804" marker-end="url(#a1)"/>
+    <path class="ed" d="M600,832 L564,832" marker-end="url(#a1)"/>
+
+    <!-- merge to console -->
+    <path class="ed" d="M300,860 L300,884 L500,884" />
+    <path class="ed" d="M791,874 L791,884 L500,884" />
+    <path class="ed" d="M500,884 L500,908" marker-end="url(#a1)"/>
+
+    <!-- 9 console -->
+    <rect class="bx cy" x="270" y="912" width="460" height="62" rx="9"/>
+    <text class="tt" x="500" y="935" text-anchor="middle">9. Investigator console — React + WebGL</text>
+    <text class="dd" x="500" y="953" text-anchor="middle">ranked queue · graph explorer · evidence dossiers · Model Lab · Copilot dock</text>
+    <text class="dd" x="500" y="968" text-anchor="middle">domain toggle: financial ⇄ procurement · works offline</text>
+    <path class="ed" d="M500,974 L500,1000" marker-end="url(#a1)"/>
+
+    <!-- 10 humans -->
+    <rect class="bx gr" x="270" y="1004" width="460" height="60" rx="9"/>
+    <text class="tt" x="500" y="1027" text-anchor="middle">10. Investigators decide — one shared queue</text>
+    <text class="dd" x="500" y="1045" text-anchor="middle">fixed budgets · the escalation call is always human</text>
+    <text class="dd" x="500" y="1060" text-anchor="middle">screening signal only — never a determination of guilt</text>
+  </svg>
+  </div>
+</section>
+
+<!-- ═════════ ALGORITHMS ═════════ -->
+<section id="alg">
+  <div class="sec">
+    <h2>The Algorithms, <b>Explained Simply</b></h2>
+    <p>What each box in the flowchart does and how it works — in everyday language.</p>
+  </div>
+
+  <div class="alg-grid">
+    <div class="alg v"><h5>Graph Neural Networks — the heart of the system<span class="where">box 3a · used wherever risk is scored</span></h5>
+      <p><b>What it does:</b> scores every account or company by looking at <i>who it deals with</i>, not just what it looks like.</p>
+      <p><b>How it works:</b> each node starts with a profile of numbers; in a few rounds every node blends its neighbours'
+      profiles into its own, so a node inside a laundering ring ends up looking measurably different from a normal one.</p></div>
+    <div class="alg v"><h5>GATv2 — attention<span class="where">box 3a · main model on the Bitcoin graph</span></h5>
+      <p><b>What it does:</b> learns which of a node's connections matter most and listens to those the hardest.</p>
+      <p><b>How it works:</b> it computes an importance weight for every connection before blending — and those weights double
+      as a first clue when explaining an alert.</p></div>
+    <div class="alg v"><h5>GraphSAGE &amp; R-GCN — direction and relation types<span class="where">box 3a · financial / procurement</span></h5>
+      <p><b>What it does:</b> treats “money in” differently from “money out”, and “won a tender” differently from “bought from”.</p>
+      <p><b>How it works:</b> each direction and each relationship type gets its own learned mixing rule instead of one shared pot.</p></div>
+    <div class="alg v"><h5>Focal loss — learning from 2% positives<span class="where">box 3a · trains every deep model</span></h5>
+      <p><b>What it does:</b> stops the model from lazily calling everything “innocent” (98% correct, 100% useless).</p>
+      <p><b>How it works:</b> easy, already-correct examples earn almost no credit in training, so effort concentrates on the
+      rare suspicious cases.</p></div>
+    <div class="alg m"><h5>Autoencoders (DOMINANT &amp; GAE) — anomalies without labels<span class="where">box 3b · the unsupervised arm</span></h5>
+      <p><b>What it does:</b> flags unusual nodes even where nobody ever labelled a crime.</p>
+      <p><b>How it works:</b> a network learns to compress and rebuild the graph; whatever rebuilds badly is unusual. (Honest
+      finding: weaker than the supervised models on our data — reported, not hidden.)</p></div>
+    <div class="alg m"><h5>Calibration + ensemble — merging models fairly<span class="where">flowchart box 4</span></h5>
+      <p><b>What it does:</b> combines several models without letting a loud weak one drown out a quiet strong one.</p>
+      <p><b>How it works:</b> each model's scores become honest probabilities first (checked on held-out data), then they're
+      averaged. Skip that first step and the ensemble collapses — we measured it.</p></div>
+    <div class="alg g"><h5>Leiden grouping + de-duplication — the short queue<span class="where">flowchart box 5</span></h5>
+      <p><b>What it does:</b> turns hundreds of thousands of node scores into a few hundred group-shaped alerts.</p>
+      <p><b>How it works:</b> a community-finding algorithm spots tightly-knit clusters; clusters become alerts; overlapping
+      alerts are removed from the top down so no analyst reads the same case twice.</p></div>
+    <div class="alg g"><h5>XGBoost baselines — the honesty yardstick<span class="where">box 3d · every headline comparison</span></h5>
+      <p><b>What it does:</b> fields the strongest classic method (boosted decision trees) before any deep-learning claim is made.</p>
+      <p><b>How it works:</b> hundreds of small decision trees, each correcting the last. On the Bitcoin data the trees still
+      win — we report that openly, with a statistical significance test.</p></div>
+    <div class="alg a"><h5>PGExplainer — “show me why”<span class="where">flowchart box 6 · evidence for every top alert</span></h5>
+      <p><b>What it does:</b> answers “which few connections made the model raise this alert?”</p>
+      <p><b>How it works:</b> a small helper network keeps only the links the prediction truly depends on — then each
+      explanation is verified: remove those links and the alert should collapse; keep only them and it should stand.</p></div>
+    <div class="alg a"><h5>Pattern matcher + official red flags<span class="where">box 6 · runs on every alert, no AI involved</span></h5>
+      <p><b>What it does:</b> checks each alert against nine known collusion shapes and cites the official FATF / OECD red flag
+      each corresponds to.</p>
+      <p><b>How it works:</b> hand-written graph rules search the alert's neighbourhood — evidence that stands even if you
+      distrust the neural network entirely.</p></div>
+    <div class="alg"><h5>The Copilot's guardrails — an AI that can't make things up<span class="where">flowchart box 8 · wrapped around every answer</span></h5>
+      <p><b>What it does:</b> lets investigators question the system in plain English without the usual AI risks.</p>
+      <p><b>How it works:</b> the Copilot may only <i>read</i> published results; every number must literally appear in what it
+      looked up; accusing phrases are rewritten automatically; a 24-question exam gates every release.</p></div>
+    <div class="alg"><h5>Statistical rigor — why the numbers can be trusted<span class="where">behind every published result</span></h5>
+      <p><b>What it does:</b> makes sure no result is a lucky accident.</p>
+      <p><b>How it works:</b> every headline model is retrained five times with different random starts and reported with its
+      spread; comparisons are re-checked thousands of times on resampled data; every country and market takes a turn being
+      fully held out to prove the system works on places it never saw.</p></div>
+  </div>
+</section>
+
+<!-- ═════════ AWS — cloud flowchart ═════════ -->
+<section id="aws">
+  <div class="sec">
+    <h2>AWS Cloud <b>Architecture</b></h2>
+    <p>The same three containers, hosted as a product. Two planes: the always-on serving path, and a scheduled
+       deep-learning job that exists only while it runs. No GPU is ever provisioned 24/7.</p>
+  </div>
+
+  <div class="figure">
+  <svg viewBox="0 0 1000 720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="AWS deployment flowchart">
+    <defs>
+      <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z"/></marker>
+    </defs>
+
+    <rect class="bx cy" x="380" y="16" width="240" height="48" rx="9"/>
+    <text class="tt" x="500" y="39" text-anchor="middle">Analyst teams</text>
+    <text class="dd" x="500" y="56" text-anchor="middle">just a browser — nothing to install</text>
+    <path class="ed" d="M500,64 L500,92" marker-end="url(#a2)"/>
+    <text class="el" x="514" y="84">HTTPS</text>
+
+    <!-- serving cluster -->
+    <rect class="cl-rect" x="18" y="96" width="964" height="418" rx="15"/>
+    <text class="cl-lbl" x="34" y="118">AWS CLOUD — SERVING PLANE  ·  always on</text>
+
+    <rect class="bx bl" x="270" y="130" width="460" height="56" rx="9"/>
+    <text class="tt" x="500" y="153" text-anchor="middle">Route 53 · CloudFront · WAF</text>
+    <text class="dd" x="500" y="171" text-anchor="middle">DNS · global cache · TLS · free tier 1 TB + 10M req/mo</text>
+    <path class="ed" d="M500,186 L500,206 L250,206 L250,230" marker-end="url(#a2)"/>
+    <path class="ed" d="M500,206 L750,206 L750,230" marker-end="url(#a2)"/>
+    <text class="el" x="312" y="222">website</text>
+    <text class="el" x="700" y="222">/api/*</text>
+
+    <rect class="bx gr" x="60" y="234" width="380" height="60" rx="9"/>
+    <text class="tt" x="250" y="257" text-anchor="middle">S3 — dashboard hosting</text>
+    <text class="dd" x="250" y="275" text-anchor="middle">React build in a private bucket</text>
+
+    <rect class="bx pu" x="560" y="234" width="380" height="78" rx="9"/>
+    <text class="tt" x="750" y="257" text-anchor="middle">API + Copilot compute</text>
+    <text class="dd" x="750" y="275" text-anchor="middle">launch: Lambda — $0 while idle</text>
+    <text class="dd" x="750" y="291" text-anchor="middle">grow: Fargate + load balancer, 2 zones</text>
+    <path class="ed" d="M750,312 L750,340 L500,340 L500,364" marker-end="url(#a2)"/>
+    <text class="el" x="514" y="356">read-only</text>
+
+    <rect class="bx am" x="270" y="368" width="460" height="60" rx="9"/>
+    <text class="tt" x="500" y="391" text-anchor="middle">S3 artifact bucket — versioned results</text>
+    <text class="mo" x="500" y="409" text-anchor="middle">runs/&lt;run_id&gt;/ · rollback = previous folder · ECR keeps 3 images</text>
+
+    <rect class="bx ro" x="150" y="452" width="700" height="40" rx="9"/>
+    <text class="dd" x="500" y="476" text-anchor="middle">Secrets Manager (LLM key) · read-only IAM for serving · CloudWatch logs + alarms · Budgets alert from day one</text>
+
+    <!-- DL plane -->
+    <rect class="cl-rect green" x="18" y="540" width="964" height="150" rx="15"/>
+    <text class="cl-lbl" x="34" y="562">SCHEDULED DEEP-LEARNING PLANE  ·  exists only while it runs</text>
+
+    <rect class="bx gr" x="70" y="592" width="240" height="68" rx="9"/>
+    <text class="tt" x="190" y="615" text-anchor="middle">EventBridge schedule</text>
+    <text class="dd" x="190" y="633" text-anchor="middle">daily / weekly trigger</text>
+    <text class="dd" x="190" y="649" text-anchor="middle">failure → SNS alarm</text>
+    <path class="ed" d="M310,626 L376,626" marker-end="url(#a2)"/>
+    <text class="el" x="343" y="618" text-anchor="middle">run</text>
+
+    <rect class="bx pu" x="380" y="586" width="240" height="80" rx="9"/>
+    <text class="tt" x="500" y="609" text-anchor="middle">Spot GPU batch job</text>
+    <text class="dd" x="500" y="627" text-anchor="middle">ingest → train → score</text>
+    <text class="dd" x="500" y="643" text-anchor="middle">→ group → explain, then stop</text>
+    <path class="ed" d="M620,626 L686,626" marker-end="url(#a2)"/>
+    <text class="el" x="653" y="618" text-anchor="middle">write</text>
+
+    <rect class="bx am" x="690" y="592" width="240" height="68" rx="9"/>
+    <text class="tt" x="810" y="615" text-anchor="middle">Publish to S3</text>
+    <text class="mo" x="810" y="633" text-anchor="middle">new runs/&lt;id&gt;/</text>
+    <text class="dd" x="810" y="649" text-anchor="middle">API reloads — zero downtime</text>
+    <path class="ed" d="M810,592 L810,432" marker-end="url(#a2)"/>
+    <text class="el" x="824" y="520">fresh results ↑</text>
+  </svg>
+  </div>
+</section>
+
+<!-- ═════════ COSTS ═════════ -->
+<section id="costs">
+  <div class="sec"><h2>What It <b>Costs</b></h2>
+    <p>All costs for the architecture above — monthly and yearly, US-East list prices (July 2026).</p></div>
+
+  <div class="tier">
+    <h3>Tier 1 — University demo <span>≈ $0 WITH FREE CREDITS</span></h3>
+    <table>
+      <thead><tr><th>What</th><th>AWS service</th><th class="r">Monthly</th><th class="r">Yearly</th></tr></thead>
+      <tbody>
+        <tr><td>Website hosting + delivery</td><td>S3 + CloudFront (free tier)</td><td class="r">$0.00</td><td class="r">$0</td></tr>
+        <tr><td>One small server for API + Copilot</td><td>EC2 t3.micro + disk</td><td class="r">$9.50</td><td class="r">$114</td></tr>
+        <tr><td>File storage</td><td>S3 (under 1 GB)</td><td class="r">$0.05</td><td class="r">$0.60</td></tr>
+        <tr><td>Domain routing</td><td>Route 53</td><td class="r">$0.50</td><td class="r">$6</td></tr>
+        <tr><td>Deep-learning training</td><td>your own PC / free Colab</td><td class="r">$0.00</td><td class="r">$0</td></tr>
+        <tr class="sum"><td colspan="2">Total at list price</td><td class="r">≈ $10</td><td class="r">≈ $121</td></tr>
+        <tr class="sum"><td colspan="2">Actually paid (inside the $100–$200 new-account credits)</td><td class="r">$0</td><td class="r">$0</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="tier">
+    <h3>Tier 2 — Product launch <span>SERVERLESS · SCALES TO ZERO</span></h3>
+    <table>
+      <thead><tr><th>What</th><th>AWS service</th><th class="r">Monthly</th><th class="r">Yearly</th></tr></thead>
+      <tbody>
+        <tr><td>Website hosting + delivery</td><td>S3 + CloudFront</td><td class="r">$0.10</td><td class="r">$1.20</td></tr>
+        <tr><td>API (up to 1M requests / month)</td><td>Lambda + API Gateway</td><td class="r">$0 – 5</td><td class="r">$0 – 60</td></tr>
+        <tr><td>Storage + container registry</td><td>S3 + ECR</td><td class="r">$0.50</td><td class="r">$6</td></tr>
+        <tr><td>Weekly model refresh (rented GPU)</td><td>EC2 g5 spot, ~4 h/week</td><td class="r">$6 – 25</td><td class="r">$72 – 300</td></tr>
+        <tr><td>Copilot AI answers</td><td>LLM API, pay-per-use</td><td class="r">$5 – 20</td><td class="r">$60 – 240</td></tr>
+        <tr><td>Monitoring, secrets, domain</td><td>CloudWatch · Secrets Mgr · Route 53</td><td class="r">$2 – 4</td><td class="r">$24 – 48</td></tr>
+        <tr class="sum"><td colspan="2">Total</td><td class="r">≈ $14 – 55</td><td class="r">≈ $165 – 655</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="tier">
+    <h3>Tier 3 — Growing product <span>ALWAYS-ON · HARDENED</span></h3>
+    <table>
+      <thead><tr><th>What</th><th>AWS service</th><th class="r">Monthly</th><th class="r">Yearly</th></tr></thead>
+      <tbody>
+        <tr><td>Website + delivery (more traffic)</td><td>S3 + CloudFront</td><td class="r">$1 – 5</td><td class="r">$12 – 60</td></tr>
+        <tr><td>API + Copilot containers (2 zones)</td><td>ECS Fargate</td><td class="r">$18 – 36</td><td class="r">$216 – 432</td></tr>
+        <tr><td>Load balancer</td><td>ALB</td><td class="r">$18 – 25</td><td class="r">$216 – 300</td></tr>
+        <tr><td>Web firewall</td><td>WAF</td><td class="r">$8 – 12</td><td class="r">$96 – 144</td></tr>
+        <tr><td>Daily model refresh (rented GPU)</td><td>EC2 g5 spot, ~2 h/day</td><td class="r">$20 – 35</td><td class="r">$240 – 420</td></tr>
+        <tr><td>Copilot AI answers (team scale)</td><td>LLM API, pay-per-use</td><td class="r">$20 – 60</td><td class="r">$240 – 720</td></tr>
+        <tr><td>Storage, monitoring, secrets, domain</td><td>S3 · ECR · CloudWatch · Route 53</td><td class="r">$5 – 10</td><td class="r">$60 – 120</td></tr>
+        <tr class="sum"><td colspan="2">Total</td><td class="r">≈ $90 – 183</td><td class="r">≈ $1,080 – 2,196</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="finenote">Why so cheap? The user-facing side is a website, a tiny read-only API and some files. The expensive part —
+  GPU deep learning — runs briefly on rented hardware, writes its results, and shuts down. A budget alarm is set from day one,
+  and every release can be rolled back by pointing at the previous results folder.</p>
+</section>
+
+<!-- ═════════ THE DATA ═════════ -->
+<section id="data">
+  <div class="sec">
+    <h2>The <b>Data</b></h2>
+    <p>Six public datasets, two crimes, nothing private and nothing personal. Every number on this page was measured
+       from our own converted copy of the data &mdash; not copied out of the original papers. Raw files are never stored in
+       our code; we ship a download script plus a fingerprint per file, so anyone can fetch exactly the same data and
+       prove it is the same.</p>
+  </div>
+
+  <div class="ds-grid">
+
+    <div class="ds fin">
+      <div class="ds-head"><h5>Elliptic (Bitcoin payments)</h5><span class="chip blue">Money</span><span class="chip green">Main anchor</span></div>
+      <p>Real Bitcoin payments, each one labelled criminal, clean, or unknown. Our hardest and most important money dataset.</p>
+      <div class="stats">
+        <div class="stat"><b>203,769</b><span>payments</span></div>
+        <div class="stat"><b>234,355</b><span>links</span></div>
+        <div class="stat"><b>49</b><span>time steps</span></div>
+        <div class="stat"><b>183</b><span>numbers each</span></div>
+      </div>
+      <div class="bar">
+        <i style="width:2.2%;background:var(--rose)"></i><i style="width:20.6%;background:var(--green)"></i><i style="width:77.2%;background:var(--chip)"></i>
+      </div>
+      <div class="bar-key">
+        <span><i style="background:var(--rose)"></i>4,545 criminal (2.2%)</span>
+        <span><i style="background:var(--green)"></i>42,019 clean</span>
+        <span><i style="background:var(--chip)"></i>157,205 unknown (77%)</span>
+      </div>
+      <p style="margin-top:7px"><b>Why we need it:</b> real crime with real answers, and criminals are genuinely rare &mdash;
+      which is the difficulty the whole project is built around.</p>
+    </div>
+
+    <div class="ds fin">
+      <div class="ds-head"><h5>Elliptic++ (Bitcoin wallets)</h5><span class="chip blue">Money</span><span class="chip amber">Second zoom level</span></div>
+      <p>The same Bitcoin world seen as wallets instead of individual payments.</p>
+      <div class="stats">
+        <div class="stat"><b>822,942</b><span>wallets</span></div>
+        <div class="stat"><b>2,868,964</b><span>links</span></div>
+        <div class="stat"><b>55</b><span>numbers each</span></div>
+      </div>
+      <div class="bar">
+        <i style="width:1.7%;background:var(--rose)"></i><i style="width:30.5%;background:var(--green)"></i><i style="width:67.8%;background:var(--chip)"></i>
+      </div>
+      <div class="bar-key">
+        <span><i style="background:var(--rose)"></i>14,266 criminal</span>
+        <span><i style="background:var(--green)"></i>251,088 clean</span>
+        <span><i style="background:var(--chip)"></i>557,588 unknown</span>
+      </div>
+      <p style="margin-top:7px"><b>Why we need it:</b> same crime, different definition of &ldquo;a thing&rdquo;. It tests whether the
+      approach survives a change of zoom level &mdash; and it needed no pipeline changes at all.</p>
+    </div>
+
+    <div class="ds fin">
+      <div class="ds-head"><h5>IBM AMLworld (HI-Small)</h5><span class="chip blue">Money</span><span class="chip rose">Made-up, perfect answers</span></div>
+      <p>Simulated bank payments where every answer is known exactly, and the only money dataset that carries real amounts.</p>
+      <div class="stats">
+        <div class="stat"><b>515,088</b><span>accounts</span></div>
+        <div class="stat"><b>5,078,345</b><span>payments</span></div>
+        <div class="stat"><b>18 days</b><span>time span</span></div>
+        <div class="stat"><b>100%</b><span>have amounts</span></div>
+      </div>
+      <div class="bar">
+        <i style="width:1.2%;background:var(--rose)"></i><i style="width:98.8%;background:var(--green)"></i>
+      </div>
+      <div class="bar-key">
+        <span><i style="background:var(--rose)"></i>6,357 criminal (1.2%)</span>
+        <span><i style="background:var(--green)"></i>508,731 clean</span>
+        <span><i style="background:var(--chip)"></i>nothing unknown</span>
+      </div>
+      <p style="margin-top:7px"><b>Why we need it:</b> nothing is unknown, so we can check the system against answers that
+      are complete rather than partial.</p>
+    </div>
+
+    <div class="ds proc">
+      <div class="ds-head"><h5>Mendeley EU contracts</h5><span class="chip purple">Contracts</span><span class="chip green">Main anchor</span></div>
+      <p>European public contracts, with 73 confirmed cartel cases across 7 countries.</p>
+      <div class="stats">
+        <div class="stat"><b>14,555</b><span>dots</span></div>
+        <div class="stat"><b>24,251</b><span>links</span></div>
+        <div class="stat"><b>2004&ndash;2021</b><span>years</span></div>
+        <div class="stat"><b>7</b><span>countries</span></div>
+      </div>
+      <p style="font-size:.72rem;color:var(--ink-3);margin:2px 0 6px">
+        Made of 10,570 tenders &middot; 2,984 buyers &middot; 1,001 firms.
+        Links: 15,616 &ldquo;won&rdquo; and 8,635 &ldquo;bought from&rdquo;.</p>
+      <div class="bar">
+        <i style="width:47.7%;background:var(--rose)"></i><i style="width:52.3%;background:var(--green)"></i>
+      </div>
+      <div class="bar-key">
+        <span><i style="background:var(--rose)"></i>5,523 cartel</span>
+        <span><i style="background:var(--green)"></i>6,048 clean</span>
+      </div>
+      <p style="margin-top:7px"><b>Why we need it:</b> real, confirmed cartels on the contracts side. Read the warning below
+      before quoting any number from it.</p>
+    </div>
+
+    <div class="ds proc">
+      <div class="ds-head"><h5>Garc&iacute;a Rodr&iacute;guez auctions</h5><span class="chip purple">Contracts</span><span class="chip amber">Has losing bids</span></div>
+      <p>Auctions from several countries, marked rigged or fair &mdash; and crucially it records who <em>lost</em>, not just who won.</p>
+      <div class="stats">
+        <div class="stat"><b>77,007</b><span>dots</span></div>
+        <div class="stat"><b>111,046</b><span>links</span></div>
+        <div class="stat"><b>2,878</b><span>firms</span></div>
+        <div class="stat"><b>100%</b><span>have amounts</span></div>
+      </div>
+      <p style="font-size:.72rem;color:var(--ink-3);margin:2px 0 6px">
+        Made of 64,348 bids &middot; 9,781 tenders &middot; 2,878 firms.
+        Links: 105,836 &ldquo;bid on&rdquo; and 5,210 &ldquo;won&rdquo;.</p>
+      <div class="bar">
+        <i style="width:45.9%;background:var(--rose)"></i><i style="width:54.1%;background:var(--green)"></i>
+      </div>
+      <div class="bar-key">
+        <span><i style="background:var(--rose)"></i>30,882 cartel</span>
+        <span><i style="background:var(--green)"></i>36,344 clean</span>
+      </div>
+      <p style="margin-top:7px"><b>Why we need it:</b> losing bids are what let us build a genuine &ldquo;who turns up together&rdquo;
+      network. Without them you only ever see winners, and a cartel looks like ordinary competition.</p>
+    </div>
+
+    <div class="ds proc">
+      <div class="ds-head"><h5>OCDS Georgia</h5><span class="chip purple">Contracts</span><span class="chip rose">No answers at all</span></div>
+      <p>A complete national public-contract archive. Nobody has labelled any of it &mdash; and that is exactly the point.</p>
+      <div class="stats">
+        <div class="stat"><b>488,300</b><span>dots</span></div>
+        <div class="stat"><b>1,449,077</b><span>links</span></div>
+        <div class="stat"><b>2010&ndash;2025</b><span>years</span></div>
+        <div class="stat"><b>33,218</b><span>firms</span></div>
+      </div>
+      <p style="font-size:.72rem;color:var(--ink-3);margin:2px 0 6px">
+        Built from 451,346 contract records. Links: 687,336 &ldquo;bid on&rdquo; (naming the losers),
+        451,346 &ldquo;bought from&rdquo;, 310,395 &ldquo;won&rdquo;. Amounts on 1,418,822 of them.</p>
+      <div class="bar"><i style="width:100%;background:var(--chip)"></i></div>
+      <div class="bar-key"><span><i style="background:var(--chip)"></i>484,564 unknown &mdash; every single one</span></div>
+      <p style="margin-top:7px"><b>Why we need it:</b> it is about 50 times bigger than Mendeley and has no answer key,
+      so it is the closest thing we have to real deployment. We plant fake cartels in it and measure how many we recover.</p>
+    </div>
+
+  </div>
+
+  <div class="callout">
+    <b>Read this before quoting any Mendeley number.</b> About 42% of its rows are cartel cases. The real world is nowhere
+    near 42% cartels &mdash; that figure comes from <em>how the researchers built the file</em>: they deliberately collected known
+    cartel cases alongside a comparison set. It is a study sample, not a snapshot of reality. So on that dataset a score may
+    only ever be compared against its own guessing level of 0.358, and a Mendeley precision figure must never be presented
+    as a real-world hit rate.
+  </div>
+
+  <div class="callout rose">
+    <b>Garc&iacute;a&rsquo;s dates are not trustworthy, and that changed our design.</b> When we measured the dates in that file we
+    found 36,453 dots stamped 1970 &mdash; the default a computer writes when a date is missing &mdash; another 21,385 with no date
+    at all, and 33 rows reading 1677. Only a few thousand carry a believable year, between 1999 and 2013.
+    That is why this is the one dataset we never split by time. We split it by <em>market</em> instead: train on some
+    countries, test on a country the model has never seen. A dataset&rsquo;s weaknesses should decide how you test it.
+  </div>
+
+  <div class="callout">
+    <b>Only the Bitcoin datasets arrive with ready-made numbers.</b> Elliptic ships 183 pre-computed numbers per payment and
+    the wallet version ships 55. The four contract datasets ship <em>none</em> &mdash; every number the models use there is one we
+    computed ourselves from the network shape. That single fact explains a result we report openly: on Elliptic the
+    old-fashioned decision-tree method wins, because the network information has already been squeezed into columns and
+    handed to it for free.
+  </div>
+</section>
+
+<!-- ═════════ THE SHARED FORMAT ═════════ -->
+<section id="rows">
+  <div class="sec">
+    <h2>What One Row <b>Actually Looks Like</b></h2>
+    <p>All six datasets are converted into the same three tables. After that conversion the system genuinely cannot tell
+       which crime it is looking at &mdash; a bank account and a construction firm arrive as the same kind of object. These are
+       the real column names.</p>
+  </div>
+
+  <div class="schema-grid">
+    <div class="tbl-card">
+      <h6>nodes &mdash; the things</h6>
+      <div class="inner">
+        <table>
+          <tr><td>node_id</td><td>who or what this is</td></tr>
+          <tr><td>node_type</td><td>transaction, address, account, tender, firm, buyer, bid</td></tr>
+          <tr><td>domain</td><td>financial or procurement</td></tr>
+          <tr><td>time_first_seen</td><td>when it first appears</td></tr>
+          <tr><td>raw_features</td><td>ready-made numbers, where the source has any</td></tr>
+          <tr><td>raw_attrs</td><td>anything else the source carried</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="tbl-card">
+      <h6>edges &mdash; the connections</h6>
+      <div class="inner">
+        <table>
+          <tr><td>src</td><td>from which thing</td></tr>
+          <tr><td>dst</td><td>to which thing</td></tr>
+          <tr><td>edge_type</td><td>pays, bids_on, awarded, buys_from</td></tr>
+          <tr><td>timestamp</td><td>when it happened</td></tr>
+          <tr><td>amount</td><td>how much, where the source records it</td></tr>
+          <tr><td>directed</td><td>does direction matter here</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="tbl-card">
+      <h6>labels &mdash; the answers, where they exist</h6>
+      <div class="inner">
+        <table>
+          <tr><td>node_id</td><td>which thing this answer is about</td></tr>
+          <tr><td>label</td><td>illicit, licit, or unknown</td></tr>
+          <tr><td>label_source</td><td>who says so</td></tr>
+          <tr><td>confidence</td><td>how sure that source is</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <b>Why we show you the columns and not the contents.</b> These files hold the names of real companies that were
+    investigated for cartel behaviour. Printing a few of those names onto a slide, next to the word &ldquo;cartel&rdquo;, is exactly
+    the harm this project is built to avoid &mdash; a screening signal is not a finding of guilt and must never be published as
+    one. So the structure is public, and the names stay in the files.
+  </div>
+</section>
+
+<!-- ═════════ COPILOT KNOWLEDGE ═════════ -->
+<section id="kb">
+  <div class="sec">
+    <h2>What the Copilot <b>Actually Knows</b></h2>
+    <p>The assistant has two sources of knowledge and no others. It cannot answer from memory, and it cannot reach anything
+       a person looking at the dashboard could not reach.</p>
+  </div>
+
+  <div class="kb-grid">
+    <div class="layer">
+      <h5>1 &mdash; The reference library (the words)</h5>
+      <p>A small hand-curated set of <b>29 short passages</b>. Each has an id, and any answer using one must quote that id
+      &mdash; so every claim can be traced back to the passage it came from.</p>
+      <table style="margin-top:6px">
+        <tr><td>15</td><td>our own vocabulary &mdash; what a risk score means, what a case is, what counts as a hit</td></tr>
+        <tr><td>5</td><td>FATF money-laundering warning signs</td></tr>
+        <tr><td>5</td><td>OECD bid-rigging warning signs</td></tr>
+        <tr><td>4</td><td>method notes explaining how those two link to our patterns</td></tr>
+      </table>
+      <div class="ids">
+        <span class="id-pill">FATF-STRUCT-01</span><span class="id-pill">FATF-LAYER-01</span>
+        <span class="id-pill">FATF-LAYER-02</span><span class="id-pill">FATF-CIRC-01</span>
+        <span class="id-pill">FATF-SHELL-01</span><span class="id-pill">OECD-ROT-01</span>
+        <span class="id-pill">OECD-COVER-01</span><span class="id-pill">OECD-ALLOC-01</span>
+        <span class="id-pill">OECD-CLUST-01</span><span class="id-pill">OECD-LINK-01</span>
+        <span class="id-pill">CG-RISK-01</span><span class="id-pill">CG-PREC-01</span>
+        <span class="id-pill">CG-FIDELITY-01</span><span class="id-pill">CG-SCREEN-01</span>
+        <span class="id-pill">&hellip;</span>
+      </div>
+      <p style="margin-top:8px"><b>How it searches:</b> plain keyword scoring, run inside our own service, returning the best
+      four passages. No external search service and no internet call.</p>
+    </div>
+
+    <div class="layer two">
+      <h5>2 &mdash; The results themselves (the numbers)</h5>
+      <p>For anything factual, it does not recall &mdash; it <b>looks it up</b>, live, through seven read-only tools. Every lookup
+      appears on screen as it happens.</p>
+      <table style="margin-top:6px">
+        <tr><td>list_tables</td><td>what result tables exist</td></tr>
+        <tr><td>describe_table</td><td>what columns a table has</td></tr>
+        <tr><td>run_sql</td><td>one read-only query, capped at 50 rows</td></tr>
+        <tr><td>list_alerts</td><td>the ranked cases for a dataset</td></tr>
+        <tr><td>get_alert</td><td>one case in full</td></tr>
+        <tr><td>get_explanation</td><td>that case&rsquo;s evidence file</td></tr>
+        <tr><td>get_metrics</td><td>the published scores for a dataset</td></tr>
+      </table>
+      <p style="margin-top:8px"><b>Read-only is enforced, not requested.</b> There is no tool that writes. The assistant
+      physically cannot change a score, a case or a result &mdash; it sits below the trust boundary like everything else.</p>
+    </div>
+  </div>
+
+  <div class="callout rose">
+    <b>It is a searchable library, not a &ldquo;knowledge graph&rdquo; &mdash; get this right on stage.</b> People often assume an assistant
+    like this sits on a knowledge graph. Ours does not, and claiming otherwise is an easy question to get caught on. We did
+    try a vector database early on and removed it: with only 29 passages, plain keyword search returned the same answers,
+    added no dependency, and is far easier to explain and audit.
+    <br><br>
+    There <em>is</em> a graph in this system &mdash; it is the data itself, the dots and lines the models are trained on &mdash; and the
+    assistant reaches it through the read-only lookups above. So the accurate sentence is:
+    <b>&ldquo;a small cited reference library for the words, and read-only queries against the graph for the numbers.&rdquo;</b>
+  </div>
+
+  <div class="figure" style="margin-top:16px">
+  <svg viewBox="0 0 1000 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="How one Copilot answer is produced">
+    <defs>
+      <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z"/></marker>
+    </defs>
+
+    <rect class="bx cy" x="20" y="120" width="170" height="58" rx="9"/>
+    <text class="tt" x="105" y="143" text-anchor="middle">A question</text>
+    <text class="dd" x="105" y="161" text-anchor="middle">typed in plain English</text>
+    <path class="ed" d="M190,138 L246,86" marker-end="url(#a3)"/>
+    <path class="ed" d="M190,160 L246,212" marker-end="url(#a3)"/>
+
+    <rect class="bx gr" x="250" y="46" width="230" height="66" rx="9"/>
+    <text class="tt" x="365" y="69" text-anchor="middle">Search the library</text>
+    <text class="dd" x="365" y="87" text-anchor="middle">keyword scoring &#183; 29 passages</text>
+    <text class="dd" x="365" y="103" text-anchor="middle">returns the best 4, with ids</text>
+
+    <rect class="bx am" x="250" y="186" width="230" height="66" rx="9"/>
+    <text class="tt" x="365" y="209" text-anchor="middle">Look up the results</text>
+    <text class="dd" x="365" y="227" text-anchor="middle">read-only queries &#183; 7 tools</text>
+    <text class="dd" x="365" y="243" text-anchor="middle">every lookup shown on screen</text>
+
+    <path class="ed" d="M480,79 L540,132" marker-end="url(#a3)"/>
+    <path class="ed" d="M480,219 L540,166" marker-end="url(#a3)"/>
+
+    <rect class="bx pu" x="544" y="118" width="180" height="62" rx="9"/>
+    <text class="tt" x="634" y="141" text-anchor="middle">Draft an answer</text>
+    <text class="dd" x="634" y="159" text-anchor="middle">written from what came</text>
+    <text class="dd" x="634" y="174" text-anchor="middle">back, and nothing else</text>
+    <path class="ed" d="M724,149 L776,149" marker-end="url(#a3)"/>
+
+    <rect class="bx ro" x="780" y="96" width="200" height="106" rx="9"/>
+    <text class="tt" x="880" y="119" text-anchor="middle">The guards</text>
+    <text class="dd" x="880" y="137" text-anchor="middle">every number must appear</text>
+    <text class="dd" x="880" y="152" text-anchor="middle">in what was looked up</text>
+    <text class="dd" x="880" y="170" text-anchor="middle">accusing wording rewritten</text>
+    <text class="dd" x="880" y="188" text-anchor="middle">24 of 24 exam questions pass</text>
+
+    <line class="tbl" x1="20" y1="278" x2="980" y2="278"/>
+    <text class="tbt" x="500" y="270" text-anchor="middle">EVERY BOX ON THIS ROW IS READ-ONLY &#183; NOTHING HERE CAN CHANGE A SCORE</text>
+  </svg>
+  </div>
+</section>
+
+<footer>
+  <span><b style="color:var(--ink-2)">CollusionGraph</b> — deep-learning collusion screening · generated from the completed project, July 2026</span>
+  <span class="cav">Screening signal only — this system never determines guilt.</span>
+</footer>
+
+</div>
+
+<script>
+(function () {
+  const root = document.documentElement;
+  const btn = document.getElementById("themeToggle");
+  const icon = document.getElementById("themeIcon");
+  const label = document.getElementById("themeLabel");
+  function apply(theme) {
+    root.setAttribute("data-theme", theme);
+    const light = theme === "light";
+    icon.textContent = light ? "☾" : "☀";
+    label.textContent = light ? "Dark" : "Light";
+    try { localStorage.setItem("cg-arch-theme", theme); } catch (e) {}
+  }
+  let saved = null;
+  try { saved = localStorage.getItem("cg-arch-theme"); } catch (e) {}
+  apply(saved === "dark" ? "dark" : "light");  /* light/airy by default, matching the reference */
+  btn.addEventListener("click", () => apply(root.getAttribute("data-theme") === "light" ? "dark" : "light"));
+})();
+</script>
+</body>
+</html>

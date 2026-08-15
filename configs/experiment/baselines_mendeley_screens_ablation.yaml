@@ -1,0 +1,27 @@
+# §7 step 32 — the −screens-as-features ablation, learned-model direction:
+# B2/B3 with the dataset's precomputed screens ADDED to their inputs
+# (include_precomputed appends the pc_* group). Everything else byte-identical
+# to the published baselines_mendeley_eu.yaml; the published anchors re-measured
+# on this machine 2026-07-20: B2 0.3925 / B3 0.3775 (byte-matched the ledger).
+# Separate output_dir — the published scoreboard stays untouched.
+dataset: mendeley_eu
+domain: procurement
+node_type: firm
+store_root: data/interim
+output_dir: eval_outputs/mendeley_eu/baselines_screens_ablation
+seed: 0
+
+split:
+  train_end: 2013
+
+budgets: [4, 18, 36]
+
+baselines: [b2_xgb, b3_xgb_graph]
+include_precomputed: true
+
+xgb:
+  n_estimators: 400
+  max_depth: 6
+  learning_rate: 0.1
+
+train_label_policy: mendeley_as_of

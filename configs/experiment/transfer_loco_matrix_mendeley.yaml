@@ -1,0 +1,36 @@
+# §7 step 28 — the FULL LOCO matrix on Mendeley (every country takes one turn
+# as the held-out market), under §7 step 29's multi-seed protocol. Each fold
+# runs the published single-fold protocol verbatim (run_loco_transfer), so
+# fold country_5 / seed 0 byte-reproduces eval_outputs/mendeley_eu/
+# transfer_loco_country_5 (val policy picks country_7 there — the published
+# pairing is the policy's own output, pinned by test).
+#
+# Val policy (fixed before any test number was read): smallest other country
+# with >= min_val_per_class confirmed firms per class — group-respecting
+# early stopping that keeps supervision in the loss pool; country_6
+# (8 illicit / 1 licit) is excluded from val duty by the per-class floor but
+# still takes its turn as a test fold (reported with its tiny-pool caveat).
+dataset: mendeley_eu
+store_root: data/interim
+output_dir: eval_outputs/mendeley_eu/transfer_loco_matrix
+loco_matrix: true
+seeds: [0, 1, 2, 3, 4]
+node_type: firm
+min_val_per_class: 3
+
+model:
+  name: rgcn
+  hidden_dim: 64
+  num_layers: 2
+  dropout: 0.3
+
+loss:
+  name: focal
+  gamma: 2.0
+
+lr: 0.01
+weight_decay: 0.0005
+epochs: 300
+patience: 30
+# per-country firm queues are small; k_effective reported when smaller (§4.5)
+budgets: [10, 25, 50]

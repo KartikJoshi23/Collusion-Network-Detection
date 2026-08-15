@@ -1,0 +1,55 @@
+# AMLworld HI-Small injection-recovery — the dataset's DESIGNED role (§4.3 D2:
+# "validating that the detector recovers known injected patterns").
+#
+# Added 2026-07-25. Background: a review asked why AMLworld is not visible in
+# the console. An audit established (a) the Kaggle credentials are present,
+# (b) the data is downloaded and ingested (515,088 accounts / 5,078,345 pays
+# edges), and (c) it trains here on CPU in 52 seconds — so neither credentials
+# nor hardware were ever the blocker.
+#
+# What IS the blocker for a supervised queue, measured:
+#   AMLworld's ground truth is EDGE-level (which transactions launder), rolled
+#   up to accounts. Splitting on account first-seen puts brand-new accounts in
+#   the test half — median degree 3 vs 13 on the train half — so there is
+#   almost no structure left to score, and the tree baselines land BELOW the
+#   prevalence baseline (0.0064 / 0.0062 against 0.0104). A queue built from
+#   that would mislead, so it stays off the dashboard.
+#
+# This config uses AMLworld for what it is actually good at instead: it plants
+# motifs of KNOWN shape into a real 5M-edge financial graph and measures how
+# many the structure-only arms recover. No labels are needed, so the split
+# problem does not arise, and the result is directly comparable with the OCDS
+# procurement study — giving the RQ2 finding a financial counterpart.
+dataset: amlworld_hi_small
+domain: financial
+store_root: data/interim
+output_dir: eval_outputs/amlworld_hi_small/injection_recovery
+
+# Window. NOTE the trap this config already fell into once: the window selects
+# accounts by when they FIRST APPEAR, not by when they are active. AMLworld
+# accounts are heavily front-loaded, so a late window (27,710,892) yielded a
+# population of just 1,832 — far too small to plant into. Cutting at the median
+# first-seen time gives roughly half the network, a population comparable to the
+# OCDS procurement study (163,327).
+split:
+  test_start: 27699868
+  window_end: 27725298
+
+# The five financial families from the §4.4 motif table.
+motifs:
+  cycle: 20
+  fan_in: 20
+  fan_out: 20
+  common_control: 20
+  pass_through: 20
+
+n_bridge_edges: 2
+
+unsupervised:
+  edge_type: pays
+  features: structural
+  hid_dim: 32
+  epochs: 50
+
+budgets: [500, 1000, 2000]
+seed: 0

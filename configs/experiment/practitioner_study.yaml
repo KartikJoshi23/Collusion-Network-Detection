@@ -1,0 +1,23 @@
+# §7 step 31 — practitioner-study packet build (§10.3, RQ3): ~20 alerts
+# sampled across domains/strata, seeded; arms assigned 50/50 in randomized
+# case order (A bundle-only / B bundle+Copilot — MC passed). Elliptic strata
+# by motif coverage; Mendeley by queue position (its recalibrated top-20
+# carries no motif matches — measured 2026-07-16, matcher verified healthy).
+# Protocol, rater instructions, and analysis plan: docs/practitioner_study.md.
+# NOTE: build packets from CURRENT bundles (regenerate via the explanations
+# configs first if this machine's eval_outputs predate the PGExplainer switch).
+study: true
+seed: 0
+output_dir: eval_outputs/practitioner_study
+
+datasets:
+  - dataset: elliptic_pp
+    explanations_dir: eval_outputs/elliptic_pp/explanations
+    strata:
+      - { rule: motif_flagged, n: 5 }
+      - { rule: motif_unflagged, n: 5 }
+  - dataset: mendeley_eu
+    explanations_dir: eval_outputs/mendeley_eu/explanations
+    strata:
+      - { rule: rank_le_10, n: 5 }
+      - { rule: rank_gt_10, n: 5 }

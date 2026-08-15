@@ -1,0 +1,9 @@
+# Canonical §4.5 alert-unit parameters. Experiment configs copy this block
+# verbatim (one YAML = one self-contained reproducible experiment); deviations
+# are the Phase-2 sensitivity analyses (hit-rule fractions, NMS threshold).
+alert_unit:
+  jaccard_threshold: 0.5 # suppress when member-set Jaccard overlap EXCEEDS this
+  max_members: 100 # size cap: a mega-community cannot absorb the budget
+hit_rule:
+  min_confirmed: 1 # primary rule: >=1 confirmed illicit member
+  min_fraction: null # Phase-2 stricter variants: 0.10, 0.25

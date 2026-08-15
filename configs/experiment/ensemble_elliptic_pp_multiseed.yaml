@@ -1,0 +1,24 @@
+# §7 step 29 — multi-seed rerun of the M3 ensemble (published seed-0
+# ensemble_calibrated 0.5246 on this hardware class). Per seed the
+# unsupervised members refit and calibration re-fits; the supervised member
+# REUSES the GATv2 multi-seed campaign's per-seed scores
+# (supervised_scores_root/seed_<s>) — run that campaign first
+# (gnn_elliptic_pp_gatv2_focal_multiseed.yaml). Resumable.
+dataset: elliptic_pp
+store_root: data/interim
+output_dir: eval_outputs/elliptic_pp/ensemble_multiseed
+ensemble_multiseed: true
+seeds: [0, 1, 2, 3, 4]
+supervised_scores_root: eval_outputs/elliptic_pp/gnn_gatv2_focal_multiseed
+
+split:
+  loss_end: 29 # validation pool = confirmed nodes in (loss_end, train_end]
+  train_end: 34
+  test_start: 35
+
+unsupervised:
+  edge_type: pays # homogeneous projection (audit F7: explicit, empty = error)
+  hid_dim: 32
+  epochs: 50
+
+budgets: [50, 100, 200]

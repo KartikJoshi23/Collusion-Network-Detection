@@ -1,0 +1,43 @@
+# §7 step 28 remainder — cross-domain LABEL-EFFICIENCY curve, direction
+# procurement -> financial (the weakly-positive probe direction): at each k
+# labeled target examples, the frozen-source-encoder probe vs the paired
+# no-transfer comparator (probe on the target's own structural features).
+# RQ4: does the transferred encoder pay off when target labels are scarce?
+label_efficiency: true
+store_root: data/interim
+output_dir: eval_outputs/cross_domain/label_efficiency_proc2fin
+seed: 0
+k_grid: [10, 25, 50, 100, 250, 500, 1000]
+n_draws: 5
+
+source:
+  dataset: mendeley_eu
+  store_root: data/interim
+  output_dir: eval_outputs/mendeley_eu/gnn_sage_structural_src
+  seed: 0
+  features: structural
+  node_type: firm
+  split:
+    loss_end: 2010
+    train_end: 2013
+    test_start: 2014
+  model:
+    name: graphsage
+    hidden_dim: 64
+    num_layers: 2
+    dropout: 0.3
+  loss:
+    name: focal
+    gamma: 2.0
+  lr: 0.01
+  weight_decay: 0.0005
+  epochs: 300
+  patience: 30
+  train_label_policy: mendeley_as_of
+  budgets: [4, 18, 36]
+
+target:
+  dataset: elliptic_pp
+  split:
+    train_end: 34
+    test_start: 35

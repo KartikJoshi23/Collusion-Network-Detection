@@ -1,0 +1,27 @@
+# §7 step 20 — ONE LOCO transfer split on procurement (train 6 countries ->
+# test 1), group-respecting early stopping on a held-out TRAIN country.
+# country_5: moderate size, low-ish cartel share (15.8%) — an honest target.
+dataset: mendeley_eu
+store_root: data/interim
+output_dir: eval_outputs/mendeley_eu/transfer_loco_country_5
+seed: 0
+node_type: firm
+test_group: country_5
+val_group: country_7
+
+model:
+  name: rgcn
+  hidden_dim: 64
+  num_layers: 2
+  dropout: 0.3
+
+loss:
+  name: focal
+  gamma: 2.0
+
+lr: 0.01
+weight_decay: 0.0005
+epochs: 300
+patience: 30
+# test-country firm queue is a few hundred firms; k_effective reported if smaller
+budgets: [10, 25, 50]

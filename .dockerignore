@@ -1,0 +1,18 @@
+# Keep the build context tiny — artifacts and data are mounted, never baked
+# into images (except deliberate Lambda variants).
+.git
+.venv
+__pycache__
+*.pyc
+data/
+eval_outputs/
+notebooks/
+reference/
+Gen-AI Chatbot/
+frontend/node_modules/
+paper/
+wandb/
+.mypy_cache
+.ruff_cache
+.pytest_cache
+.env

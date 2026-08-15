@@ -1,0 +1,31 @@
+# §7 step-30 rigor follow-up — the at-scale OCDS injection study over 5 seeds
+# (step-29 bar for headline claims). Protocol byte-identical to the published
+# single-seed config (injection_recovery_ocds_georgia.yaml); per-seed dirs are
+# resumable (a seed whose report exists is loaded, never re-run); aggregate in
+# injection_multiseed.json (mean ± std(ddof=1) per arm × family × budget).
+dataset: ocds_georgia
+domain: procurement
+store_root: data/interim
+output_dir: eval_outputs/ocds_georgia/injection_recovery_multiseed
+seeds: [0, 1, 2, 3, 4]
+
+split:
+  test_start: 2020
+  window_end: 2024
+
+motifs:
+  rotation: 20
+  cover_bid: 20
+  partition: 20
+  common_control: 20
+  coordinated_cluster: 20
+
+n_bridge_edges: 2
+
+unsupervised:
+  edge_type: bids_on
+  features: structural
+  hid_dim: 32
+  epochs: 50
+
+budgets: [500, 1000, 2000]

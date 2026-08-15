@@ -1,0 +1,30 @@
+# Curated financial red-flag indicators (paraphrased from FATF money-laundering
+# indicator lists; §4.4 — one of the two domain-specific artifacts besides the
+# adapters). Each maps to the motif vocabulary the matcher emits.
+framework: FATF
+indicators:
+  - id: FATF-STRUCT-01
+    text: >-
+      Multiple cash deposits or transfers just below reporting thresholds
+      converge on a single account within a short period (structuring/smurfing).
+    motifs: [fan_in]
+  - id: FATF-LAYER-01
+    text: >-
+      Funds are rapidly dispersed from one account to many counterparties with
+      no apparent economic purpose (layering by dispersal).
+    motifs: [fan_out]
+  - id: FATF-LAYER-02
+    text: >-
+      Funds pass through a chain of accounts with little or no balance retained
+      and abnormally short holding times (pass-through/transit accounts).
+    motifs: [pass_through]
+  - id: FATF-CIRC-01
+    text: >-
+      Funds return to their originator after moving through several
+      intermediaries (round-tripping / circular transactions).
+    motifs: [cycle]
+  - id: FATF-SHELL-01
+    text: >-
+      Ostensibly unrelated accounts share owners, agents, addresses, or other
+      identifiers consistent with shell or nominee arrangements.
+    motifs: [common_control]

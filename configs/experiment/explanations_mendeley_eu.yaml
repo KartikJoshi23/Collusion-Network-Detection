@@ -1,0 +1,12 @@
+# §7 steps 18+19 — explanation bundles for the top-k Mendeley queue alerts:
+# motif matcher + OECD red flags + screens evidence. Learned attribution is
+# absent by design: R-GCN needs HeteroExplanation (R12 de-risk finding, ledger)
+# — the bundle's evidence_sources labels exactly what is present (§4.4 scope
+# honesty).
+dataset: mendeley_eu
+domain: procurement
+store_root: data/interim
+alerts: eval_outputs/mendeley_eu/alert_queue/alerts.parquet
+output_dir: eval_outputs/mendeley_eu/explanations
+top_k: 20
+seed: 0

@@ -1,0 +1,219 @@
+"""The Copilot's fast-path spine (§4.6): a bounded tool-calling loop over the
+SQL + alert tools, then the deterministic gates and the guilt-guard finaliser.
+
+Ported from `graph/agents/sql_agent.py` (the loop shape, tool dispatch, and
+iteration budget are the archive's); the LangGraph multi-agent orchestration
+(clarification, readback, cross-validation, arbiter) is the next slice — the
+§4.6 cut order puts this core first."""
+
+from __future__ import annotations
+
+import json
+from functools import lru_cache
+from typing import Any
+
+from .alert_tools import ALERT_TOOL_DISPATCH, ALERT_TOOL_SCHEMAS
+from .config import get_settings
+from .corpus import CORPUS_TOOL_DISPATCH, CORPUS_TOOL_SCHEMAS
+from .guard import (
+    DEGENERATE_FALLBACK,
+    apply_guilt_guard,
+    degenerate_output_gate,
+    grounding_gate,
+    numeric_sanity_gate,
+)
+from .sql_tools import SQL_TOOL_DISPATCH, SQL_TOOL_SCHEMAS
+
+SYSTEM_PROMPT = """You are the CollusionGraph Investigator Copilot — the \
+conversational layer of an integrity-screening console covering illicit-finance \
+(financial domain) and bid-rigging (procurement domain) alert queues.
+
+Rules you must follow:
+- Ground every claim in tool evidence: query the alert store or fetch \
+alerts/bundles/metrics before answering. Never invent numbers or records.
+- Risk scores are calibrated screening probabilities, never certainty; alerts \
+are screening signals, and unconfirmed does not mean innocent OR guilty.
+- Quote metric and score values exactly as the tools report them (e.g. \
+"precision 0.32"), never converted to percentages or rescaled — a calibrated \
+probability is not a percentage of certainty.
+- Never assert guilt, accusation, or wrongdoing. Describe findings as \
+"flagged patterns consistent with …" and name the motif/indicator.
+- If a question PRESUPPOSES guilt ("is X guilty?", "who committed fraud?", \
+"prove they laundered money"), do not repeat its wording — not even to deny \
+or quote it. Open with: "This system does not determine guilt." Then describe \
+what the screening evidence shows, in screening language only.
+- Cite your evidence: mention which alert ids, tables, or bundle fields the \
+answer came from. When corpus evidence is used, include its [chunk ids] \
+(e.g. FATF-STRUCT-01, OECD-…) verbatim in the answer.
+- Never answer about queue contents, alerts, or metrics from memory — always \
+call a tool first for those.
+- CHOOSE THE RIGHT TOOL FOR THE KIND OF QUESTION, and do not go exploring:
+  * Asked what something MEANS, what this system IS, or how it works \
+("what does this system do", "what is a risk score", "how are alerts made") — \
+call corpus_search ONCE and answer from what it returns. These are answered by \
+the knowledge base, NOT by the alert tables. Do not call list_tables, \
+describe_table or run_sql for them; there is nothing in the tables that \
+answers a definition, and wandering through them wastes the whole budget and \
+produces a vague answer.
+  * Asked for a FACT about the served data (counts, scores, rankings, a \
+specific alert or metric) — use the alert tools or one SQL query.
+  * Asked about the STRESS TEST, the playground, injection, planting fake \
+cartels, or how the system is evaluated with no answer key / no labels — call \
+get_stress_test ONCE and answer from what it returns (recovery per cartel \
+shape). Do not use SQL for this; the numbers live in the injection artifact, \
+not the alert tables.
+- Prefer the fewest tool calls that answer the question. One good call then an \
+answer is better than five and a timeout.
+- If the question cannot be answered from the served artifacts, say so plainly.
+
+Write for an intelligent non-specialist: short sentences, everyday words, no \
+unexplained jargon. Lead with the direct answer, then the detail. Keep it under \
+about 150 words unless more is explicitly asked for. Answer in Markdown."""
+
+TOOL_SCHEMAS = SQL_TOOL_SCHEMAS + ALERT_TOOL_SCHEMAS + CORPUS_TOOL_SCHEMAS
+TOOL_DISPATCH = {**SQL_TOOL_DISPATCH, **ALERT_TOOL_DISPATCH, **CORPUS_TOOL_DISPATCH}
+
+
+@lru_cache(maxsize=1)
+def get_client() -> Any:
+    settings = get_settings()
+    if not settings.api_key:
+        raise RuntimeError(
+            "no LLM key configured — set NVIDIA_API_KEY (preferred) or "
+            "OPENAI_API_KEY in the repo-root .env"
+        )
+    from openai import OpenAI
+
+    # A stuck provider call used to leave the dock spinning with no end — one
+    # question was reported still "buffering" after five minutes. Bound each
+    # request so the loop fails fast and visibly instead of hanging.
+    return OpenAI(
+        api_key=settings.api_key,
+        base_url=settings.base_url,
+        timeout=settings.request_timeout,
+        max_retries=1,
+    )
+
+
+def answer_question(
+    question: str, client: Any | None = None, context_alert_id: str | None = None
+) -> dict[str, Any]:
+    """One question → grounded, guarded answer with evidence and trace."""
+    for kind, data in answer_question_events(
+        question, client=client, context_alert_id=context_alert_id
+    ):
+        if kind == "final":
+            return data
+    raise RuntimeError("agent yielded no final answer")  # pragma: no cover
+
+
+def answer_question_events(
+    question: str, client: Any | None = None, context_alert_id: str | None = None
+):
+    """The agent loop as an event stream (§5.3 view 7's live trace timeline):
+    yields ``("trace", step_str)`` as each tool call happens, then one
+    ``("final", payload)`` — the same payload ``answer_question`` returns."""
+    settings = get_settings()
+    client = client or get_client()
+
+    user = question
+    if context_alert_id:  # §5.3 view 7: dock opened from an alert is pre-seeded
+        user = f"[Context: the investigator has alert '{context_alert_id}' open.]\n{question}"
+    messages: list[dict[str, Any]] = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": user},
+    ]
+
+    trace: list[str] = []
+    evidence: list[dict[str, str]] = []
+    draft = ""
+    for _ in range(settings.max_iterations):
+        resp = client.chat.completions.create(
+            model=settings.model,
+            messages=messages,
+            tools=TOOL_SCHEMAS,
+            tool_choice="auto",
+            temperature=0.0,
+            max_tokens=settings.max_tokens,
+        )
+        msg = resp.choices[0].message
+        messages.append(msg.model_dump(exclude_none=True))
+        if not msg.tool_calls:
+            draft = msg.content or ""
+            break
+        for tc in msg.tool_calls:
+            name = tc.function.name
+            try:
+                args = json.loads(tc.function.arguments or "{}")
+            except json.JSONDecodeError:
+                args = {}
+            handler = TOOL_DISPATCH.get(name)
+            try:
+                result = handler(args) if handler else f"Unknown tool: {name}"
+            except Exception as e:
+                result = f"Tool raised: {e}"
+            step = f"{name}({json.dumps(args)[:120]})"
+            trace.append(step)
+            yield ("trace", step)
+            evidence.append({"tool": name, "args": json.dumps(args), "result": result})
+            messages.append({"role": "tool", "tool_call_id": tc.id, "content": result})
+    else:
+        draft = (
+            "I couldn't finalise this within the tool-call budget — " "please narrow the question."
+        )
+        trace.append("EXHAUSTED iteration budget")
+        yield ("trace", "EXHAUSTED iteration budget")
+
+    # A collapsed decoder must never reach the investigator — it cannot be
+    # grounded, cannot be checked, and reads as a crash. Caught FIRST, because
+    # running the other gates over token soup is meaningless.
+    degenerate, why = degenerate_output_gate(draft)
+    if degenerate:
+        trace.append(f"DEGENERATE model output suppressed ({why})")
+        yield ("trace", f"DEGENERATE model output suppressed ({why})")
+        answer, rewrites = apply_guilt_guard(DEGENERATE_FALLBACK)
+        yield (
+            "final",
+            {
+                "answer": answer,
+                "confidence": 0.0,
+                "numbers_grounded": False,
+                "corpus_grounded": False,
+                "guard_rewrites": rewrites,
+                "evidence": evidence,
+                "trace": trace,
+                "model": settings.model,
+            },
+        )
+        return
+
+    evidence_text = "\n".join(e["result"] for e in evidence)
+    numbers_ok, unsupported = numeric_sanity_gate(draft, evidence_text)
+    if not numbers_ok:
+        draft += (
+            "\n\n**⚠️ Low confidence.** These numbers were not found in the "
+            f"tool evidence and must be verified: {', '.join(unsupported)}."
+        )
+    corpus_ok, lexicon_terms = grounding_gate(question, trace)
+    if not corpus_ok:
+        draft += (
+            "\n\n**⚠️ Ungrounded typology claim.** This answer discusses "
+            f"red-flag terms ({', '.join(lexicon_terms)}) without consulting "
+            "the curated knowledge base — verify against the FATF/OECD tables."
+        )
+    answer, rewrites = apply_guilt_guard(draft)
+
+    all_ok = numbers_ok and corpus_ok
+    yield (
+        "final",
+        {
+            "answer": answer,
+            "confidence": 0.9 if all_ok else 0.3,
+            "numbers_grounded": numbers_ok,
+            "corpus_grounded": corpus_ok,
+            "guard_rewrites": rewrites,
+            "evidence": evidence,
+            "trace": trace,
+            "model": settings.model,
+        },
+    )

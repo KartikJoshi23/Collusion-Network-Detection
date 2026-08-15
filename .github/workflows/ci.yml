@@ -1,0 +1,96 @@
+# CI skeleton per implementation-plan.md §7 Week 1 / §9:
+# lint + typecheck + unit & leakage tests + secret scan + frontend build.
+# The frontend job activates automatically once frontend/package.json exists (Week 8).
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch: # manual: the copilot-goldens gate (§4.6/27c, needs a key)
+
+jobs:
+  gitleaks:
+    runs-on: ubuntu-latest
+    # The action reads PR commit metadata via the API on pull_request events;
+    # since the repo went private (2026-07-19) the default token scope 403s
+    # without this explicit grant (first seen on PR #8).
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv sync --locked
+      - run: uv run ruff check backend scripts
+      - run: uv run black --check backend scripts
+      - run: uv run mypy backend/collusiongraph backend/copilot
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv sync --locked
+      - run: uv run pytest backend/tests -v
+      # Leakage tests run inside the suite too; this re-run makes their status
+      # visible as a dedicated step (§9.1 — the tests that protect the paper).
+      - run: uv run pytest backend/tests -m leakage -v
+
+  # §4.6 / §7 27c: the Copilot release gate — MANUAL only (workflow_dispatch):
+  # it spends NIM credits and needs NVIDIA_API_KEY in the repo's Actions
+  # secrets, plus serving artifacts, which CI regenerates as a tiny synthetic
+  # store is NOT valid here — the goldens assert REAL published numbers, so
+  # this job expects a self-hosted/demo runner or the artifacts step to be
+  # added when MC is claimed. Until then it fails fast with a clear message.
+  copilot-goldens:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv sync --locked
+      - name: goldens gate (needs NVIDIA_API_KEY secret + serving artifacts)
+        env:
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+        run: uv run poe copilot-goldens
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Detect frontend
+        id: fe
+        run: echo "exists=$([ -f frontend/package.json ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-node@v4
+        if: steps.fe.outputs.exists == 'true'
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Build & test
+        if: steps.fe.outputs.exists == 'true'
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+          npm run test
+      - name: Skip note
+        if: steps.fe.outputs.exists != 'true'
+        run: echo "frontend/ not scaffolded yet (arrives Week 8) — skipping build"

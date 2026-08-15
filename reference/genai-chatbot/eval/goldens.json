@@ -1,0 +1,614 @@
+[
+  {
+    "id": "G-001",
+    "question": "How many employees are there in total?",
+    "category": "sql-simple",
+    "expected_intent": {
+      "route": "sql",
+      "entities": ["employee"],
+      "ops": ["aggregate:count(*)"]
+    },
+    "expected_sources": ["employees"],
+    "expected_sql_shape": "SELECT COUNT(*) FROM employees",
+    "expected_row_count": 1,
+    "expected_key_values": {"total": 142},
+    "paraphrases": ["how many employees work at TechNova?", "total employee headcount?"]
+  },
+  {
+    "id": "G-002",
+    "question": "How many customers are in Tier 1?",
+    "category": "sql-simple",
+    "expected_intent": {
+      "route": "sql",
+      "entities": ["customer"],
+      "ops": ["filter:tier=Tier 1", "aggregate:count(*)"]
+    },
+    "expected_sources": ["customers"],
+    "expected_sql_shape": "SELECT COUNT(*) FROM customers WHERE tier='Tier 1'",
+    "expected_row_count": 1,
+    "expected_key_values": {"tier": "Tier 1"},
+    "paraphrases": ["number of Tier-1 customers", "count of our top-tier accounts"]
+  },
+  {
+    "id": "G-003",
+    "question": "List all departments with their primary locations.",
+    "category": "sql-simple",
+    "expected_intent": {
+      "route": "sql",
+      "entities": ["department"],
+      "ops": ["project:department_name,primary_location"]
+    },
+    "expected_sources": ["departments"],
+    "expected_sql_shape": "SELECT department_name, primary_location FROM departments",
+    "expected_row_count": 12,
+    "expected_key_values": {},
+    "paraphrases": ["what are our departments and where are they based?", "show each team and its office"]
+  },
+  {
+    "id": "G-004",
+    "question": "What's the highest remediation cost across all incidents?",
+    "category": "sql-simple",
+    "expected_intent": {
+      "route": "sql",
+      "entities": ["incident", "remediation_cost"],
+      "ops": ["aggregate:max(remediation_cost_inr_lakhs)"]
+    },
+    "expected_sources": ["incidents"],
+    "expected_sql_shape": "SELECT MAX(remediation_cost_inr_lakhs) FROM incidents",
+    "expected_row_count": 1,
+    "expected_key_values": {},
+    "paraphrases": ["what's the single most expensive incident to fix?", "max remediation cost"]
+  },
+  {
+    "id": "G-005",
+    "question": "How many vendors have Passed risk status?",
+    "category": "sql-simple",
+    "expected_intent": {
+      "route": "sql",
+      "entities": ["vendor"],
+      "ops": ["filter:risk_status=Passed", "aggregate:count(*)"]
+    },
+    "expected_sources": ["vendors"],
+    "expected_sql_shape": "SELECT COUNT(*) FROM vendors WHERE risk_status='Passed'",
+    "expected_row_count": 1,
+    "expected_key_values": {"risk_status": "Passed"},
+    "paraphrases": ["count of compliant vendors", "how many vendors passed the SIG-Lite review?"]
+  },
+  {
+    "id": "G-006",
+    "question": "Top 5 Tier-1 APAC customers by ARR with their account managers.",
+    "category": "sql-complex",
+    "expected_intent": {
+      "route": "sql",
+      "entities": ["customer", "account_manager", "arr"],
+      "ops": ["filter:tier=Tier 1", "filter:region=APAC", "join:customers->employees", "rank:top-5-by-arr"]
+    },
+    "expected_sources": ["customers", "employees"],
+    "expected_sql_shape": "SELECT c.customer_name, c.arr_inr_lakhs, e.first_name || ' ' || e.last_name AS account_manager FROM customers c JOIN employees e ON c.account_manager_employee_id = e.employee_id WHERE c.tier = 'Tier 1' AND c.region = 'APAC' ORDER BY c.arr_inr_lakhs DESC LIMIT 5",
+    "expected_row_count": 5,
+    "expected_key_values": {"tier": "Tier 1", "region": "APAC"},
+    "paraphrases": ["who are our biggest Tier-1 APAC clients and who manages them?", "top five APAC accounts by ARR in Tier 1 plus their managers"]
+  },
+  {
+    "id": "G-007",
+    "question": "What's the average total CTC for each level?",
+    "category": "sql-complex",
+    "expected_intent": {
+      "route": "sql",
+      "entities": ["salary_record", "level"],
+      "ops": ["group_by:level", "aggregate:avg(total_ctc_inr_lakhs)"]
+    },
+    "expected_sources": ["salary_records"],
+    "expected_sql_shape": "SELECT level, AVG(total_ctc_inr_lakhs) AS avg_ctc FROM salary_records GROUP BY level ORDER BY level",
+    "expected_row_count": 8,
+    "expected_key_values": {},
+    "paraphrases": ["average compensation by seniority", "mean CTC for each employee level"]
+  },
+  {
+    "id": "G-008",
+    "question": "Which employees reported 3 or more incidents?",
+    "category": "sql-complex",
+    "expected_intent": {
+      "route": "sql",
+      "entities": ["employee", "incident"],
+      "ops": ["group_by:reporter_employee_id", "aggregate:count(incident_id)>=3", "join:employees->incidents"]
+    },
+    "expected_sources": ["employees", "incidents"],
+    "expected_sql_shape": "SELECT e.first_name || ' ' || e.last_name AS reporter, COUNT(i.incident_id) AS incident_count FROM incidents i JOIN employees e ON i.reporter_employee_id = e.employee_id GROUP BY e.employee_id, e.first_name, e.last_name HAVING COUNT(i.incident_id) >= 3 ORDER BY incident_count DESC",
+    "expected_row_count": -1,
+    "expected_key_values": {"min_count_per_employee": 3},
+    "paraphrases": ["frequent incident reporters", "who's filed 3+ incidents?"]
+  },
+  {
+    "id": "G-009",
+    "question": "What's the total revenue by region for FY2025-26?",
+    "category": "sql-complex",
+    "expected_intent": {
+      "route": "sql",
+      "entities": ["financial_transaction", "region"],
+      "ops": ["filter:category=Revenue", "filter:period_quarter LIKE 'FY2025-26'", "group_by:region", "aggregate:sum(amount)"]
+    },
+    "expected_sources": ["financial_transactions"],
+    "expected_sql_shape": "SELECT region, SUM(amount) AS total_revenue_cr FROM financial_transactions WHERE category = 'Revenue' AND period_quarter LIKE '%FY2025-26%' GROUP BY region ORDER BY total_revenue_cr DESC",
+    "expected_row_count": 4,
+    "expected_key_values": {},
+    "paraphrases": ["revenue broken down by region this year", "FY25-26 revenue per region"]
+  },
+  {
+    "id": "G-010",
+    "question": "Count of incidents by severity.",
+    "category": "sql-complex",
+    "expected_intent": {
+      "route": "sql",
+      "entities": ["incident", "severity"],
+      "ops": ["group_by:severity", "aggregate:count(*)"]
+    },
+    "expected_sources": ["incidents"],
+    "expected_sql_shape": "SELECT severity, COUNT(*) AS n FROM incidents GROUP BY severity ORDER BY severity",
+    "expected_row_count": 4,
+    "expected_key_values": {},
+    "paraphrases": ["how many incidents per SEV level?", "incident breakdown by severity"]
+  },
+  {
+    "id": "G-011",
+    "question": "Which departments have the highest number of incidents via the services they own?",
+    "category": "sql-complex",
+    "expected_intent": {
+      "route": "sql",
+      "entities": ["department", "service", "incident"],
+      "ops": ["join:departments->products_services->incidents", "group_by:department_name", "aggregate:count(incident_id)", "rank:desc"]
+    },
+    "expected_sources": ["departments", "products_services", "incidents"],
+    "expected_sql_shape": "SELECT d.department_name, COUNT(i.incident_id) AS n FROM departments d JOIN products_services s ON s.owner_department_id = d.department_id JOIN incidents i ON i.affected_service_id = s.service_id GROUP BY d.department_name ORDER BY n DESC",
+    "expected_row_count": -1,
+    "expected_key_values": {},
+    "paraphrases": ["which team owns the most incident-prone services?", "rank departments by incidents on their services"]
+  },
+  {
+    "id": "G-012",
+    "question": "Top 3 account managers by total ARR they manage.",
+    "category": "sql-complex",
+    "expected_intent": {
+      "route": "sql",
+      "entities": ["account_manager", "customer", "arr"],
+      "ops": ["join:employees->customers", "group_by:account_manager_employee_id", "aggregate:sum(arr_inr_lakhs)", "rank:top-3"]
+    },
+    "expected_sources": ["employees", "customers"],
+    "expected_sql_shape": "SELECT e.first_name || ' ' || e.last_name AS manager, SUM(c.arr_inr_lakhs) AS total_arr FROM customers c JOIN employees e ON c.account_manager_employee_id = e.employee_id GROUP BY e.employee_id, e.first_name, e.last_name ORDER BY total_arr DESC LIMIT 3",
+    "expected_row_count": 3,
+    "expected_key_values": {},
+    "paraphrases": ["our top 3 AMs by book of business", "whose ARR footprint is biggest?"]
+  },
+  {
+    "id": "G-013",
+    "question": "Which vendors supply the most assets?",
+    "category": "sql-complex",
+    "expected_intent": {
+      "route": "sql",
+      "entities": ["vendor", "asset"],
+      "ops": ["join:vendors->assets_licenses", "group_by:vendor_name", "aggregate:count(asset_id)", "rank:desc"]
+    },
+    "expected_sources": ["vendors", "assets_licenses"],
+    "expected_sql_shape": "SELECT v.vendor_name, COUNT(a.asset_id) AS asset_count FROM vendors v JOIN assets_licenses a ON a.vendor_id = v.vendor_id GROUP BY v.vendor_name ORDER BY asset_count DESC",
+    "expected_row_count": -1,
+    "expected_key_values": {},
+    "paraphrases": ["vendor asset-supply ranking", "which vendors we buy the most hardware from"]
+  },
+  {
+    "id": "G-014",
+    "question": "List all L8 employees and their count of direct reports.",
+    "category": "sql-very-complex",
+    "expected_intent": {
+      "route": "sql",
+      "entities": ["employee", "manager"],
+      "ops": ["filter:level=L8", "self_join:employees.manager_employee_id=employees.employee_id", "aggregate:count(direct_reports)"]
+    },
+    "expected_sources": ["employees"],
+    "expected_sql_shape": "SELECT boss.first_name || ' ' || boss.last_name AS exec, boss.job_title, COUNT(report.employee_id) AS direct_reports FROM employees boss LEFT JOIN employees report ON report.manager_employee_id = boss.employee_id WHERE boss.level = 'L8' GROUP BY boss.employee_id, boss.first_name, boss.last_name, boss.job_title ORDER BY direct_reports DESC",
+    "expected_row_count": -1,
+    "expected_key_values": {"level": "L8"},
+    "paraphrases": ["how many direct reports does each C-suite exec have?", "L8s and their team sizes"]
+  },
+  {
+    "id": "G-015",
+    "question": "Show quarter-over-quarter revenue growth for APAC.",
+    "category": "sql-very-complex",
+    "expected_intent": {
+      "route": "sql",
+      "entities": ["financial_transaction", "region"],
+      "ops": ["filter:region=APAC", "filter:category=Revenue", "group_by:period_quarter", "window:lag(amount)", "compute:qoq_growth"]
+    },
+    "expected_sources": ["financial_transactions"],
+    "expected_sql_shape": "WITH q AS (SELECT period_quarter, SUM(amount) AS rev FROM financial_transactions WHERE region='APAC' AND category='Revenue' GROUP BY period_quarter) SELECT period_quarter, rev, LAG(rev) OVER (ORDER BY period_quarter) AS prev_rev, ROUND((rev - LAG(rev) OVER (ORDER BY period_quarter)) * 100.0 / LAG(rev) OVER (ORDER BY period_quarter), 2) AS qoq_pct FROM q ORDER BY period_quarter",
+    "expected_row_count": -1,
+    "expected_key_values": {"region": "APAC"},
+    "paraphrases": ["APAC revenue trend QoQ", "how fast is APAC growing quarter by quarter?"]
+  },
+  {
+    "id": "G-016",
+    "question": "For each department, what percentage of employees have completed the DPDP Act training?",
+    "category": "sql-very-complex",
+    "expected_intent": {
+      "route": "sql",
+      "entities": ["department", "employee", "training"],
+      "ops": ["join:departments->employees->training_compliance", "filter:module_name LIKE 'DPDP'", "aggregate:conditional_percentage"]
+    },
+    "expected_sources": ["departments", "employees", "training_compliance"],
+    "expected_sql_shape": "SELECT d.department_name, COUNT(DISTINCT e.employee_id) AS total_emps, COUNT(DISTINCT CASE WHEN t.status='Completed' THEN e.employee_id END) AS completed, ROUND(100.0 * COUNT(DISTINCT CASE WHEN t.status='Completed' THEN e.employee_id END) / NULLIF(COUNT(DISTINCT e.employee_id),0), 1) AS pct FROM departments d JOIN employees e ON e.department_id = d.department_id LEFT JOIN training_compliance t ON t.employee_id = e.employee_id AND t.module_name LIKE 'DPDP%' GROUP BY d.department_name ORDER BY pct DESC",
+    "expected_row_count": 12,
+    "expected_key_values": {},
+    "paraphrases": ["DPDP training completion rate by team", "which departments are most compliant on DPDP?"]
+  },
+  {
+    "id": "G-017",
+    "question": "Top 10 customers by ARR with their percentile rank within their tier.",
+    "category": "sql-very-complex",
+    "expected_intent": {
+      "route": "sql",
+      "entities": ["customer", "arr", "tier"],
+      "ops": ["window:percent_rank() over (partition by tier order by arr)", "rank:top-10"]
+    },
+    "expected_sources": ["customers"],
+    "expected_sql_shape": "SELECT customer_name, tier, arr_inr_lakhs, PERCENT_RANK() OVER (PARTITION BY tier ORDER BY arr_inr_lakhs) AS tier_percentile FROM customers ORDER BY arr_inr_lakhs DESC LIMIT 10",
+    "expected_row_count": 10,
+    "expected_key_values": {},
+    "paraphrases": ["largest customers with how they rank inside their tier", "top 10 ARR with percentile rank in tier"]
+  },
+  {
+    "id": "G-018",
+    "question": "List employees who have never completed any assigned training.",
+    "category": "sql-very-complex",
+    "expected_intent": {
+      "route": "sql",
+      "entities": ["employee", "training"],
+      "ops": ["anti_join:employees vs training_compliance where status='Completed'"]
+    },
+    "expected_sources": ["employees", "training_compliance"],
+    "expected_sql_shape": "SELECT e.employee_id, e.first_name, e.last_name FROM employees e WHERE NOT EXISTS (SELECT 1 FROM training_compliance t WHERE t.employee_id = e.employee_id AND t.status = 'Completed') ORDER BY e.employee_id",
+    "expected_row_count": -1,
+    "expected_key_values": {},
+    "paraphrases": ["who has zero completed trainings?", "employees with no finished modules"]
+  },
+  {
+    "id": "G-019",
+    "question": "What's the maximum counter-offer percentage for retention?",
+    "category": "rag-single-doc",
+    "expected_intent": {
+      "route": "rag",
+      "entities": ["counter-offer", "retention"],
+      "ops": ["retrieve:policy"]
+    },
+    "expected_sources": ["TechNova_Salary_Structure.pdf"],
+    "expected_sql_shape": null,
+    "expected_row_count": null,
+    "expected_key_values": {"answer_contains": "40%"},
+    "paraphrases": ["cap on counter-offers", "how high can we go on a retention counter-offer?"]
+  },
+  {
+    "id": "G-020",
+    "question": "Who are the book-running lead managers for the IPO?",
+    "category": "rag-single-doc",
+    "expected_intent": {
+      "route": "rag",
+      "entities": ["IPO", "BRLM"],
+      "ops": ["retrieve:board_minutes"]
+    },
+    "expected_sources": ["TechNova_Board_Minutes_Q4.pdf"],
+    "expected_sql_shape": null,
+    "expected_row_count": null,
+    "expected_key_values": {"answer_contains": ["Kotak", "Goldman Sachs"]},
+    "paraphrases": ["which banks are leading the IPO?", "appointed BRLMs"]
+  },
+  {
+    "id": "G-021",
+    "question": "How many microservices does the Nova Platform have?",
+    "category": "rag-single-doc",
+    "expected_intent": {
+      "route": "rag",
+      "entities": ["microservice", "platform"],
+      "ops": ["retrieve:architecture_doc"]
+    },
+    "expected_sources": ["TechNova_Platform_Architecture.pdf"],
+    "expected_sql_shape": null,
+    "expected_row_count": null,
+    "expected_key_values": {"answer_contains": "142"},
+    "paraphrases": ["service count on Nova", "how many services make up the platform?"]
+  },
+  {
+    "id": "G-022",
+    "question": "What's the platform's uptime SLA?",
+    "category": "rag-single-doc",
+    "expected_intent": {
+      "route": "rag",
+      "entities": ["uptime", "SLA"],
+      "ops": ["retrieve:architecture_doc"]
+    },
+    "expected_sources": ["TechNova_Platform_Architecture.pdf"],
+    "expected_sql_shape": null,
+    "expected_row_count": null,
+    "expected_key_values": {"answer_contains": "99.97%"},
+    "paraphrases": ["SLA on Nova uptime", "what uptime do we commit to?"]
+  },
+  {
+    "id": "G-023",
+    "question": "What caused incident INC-2025-0847?",
+    "category": "rag-single-doc",
+    "expected_intent": {
+      "route": "rag",
+      "entities": ["incident", "INC-2025-0847"],
+      "ops": ["retrieve:security_incident_report"]
+    },
+    "expected_sources": ["TechNova_Security_Incident_Report.pdf"],
+    "expected_sql_shape": null,
+    "expected_row_count": null,
+    "expected_key_values": {},
+    "paraphrases": ["root cause for the November breach", "what happened with INC-2025-0847?"]
+  },
+  {
+    "id": "G-024",
+    "question": "What's the ESOP vesting schedule?",
+    "category": "rag-single-doc",
+    "expected_intent": {
+      "route": "rag",
+      "entities": ["ESOP", "vesting"],
+      "ops": ["retrieve:salary_structure"]
+    },
+    "expected_sources": ["TechNova_Salary_Structure.pdf"],
+    "expected_sql_shape": null,
+    "expected_row_count": null,
+    "expected_key_values": {"answer_contains": ["4-year", "1-year cliff"]},
+    "paraphrases": ["how long do ESOPs take to vest?", "vesting rules for options"]
+  },
+  {
+    "id": "G-025",
+    "question": "What does TechNova say about data localisation requirements?",
+    "category": "rag-cross-doc",
+    "expected_intent": {
+      "route": "rag",
+      "entities": ["data_localisation", "compliance"],
+      "ops": ["retrieve:cross_doc"]
+    },
+    "expected_sources": ["TechNova_Board_Minutes_Q4.pdf", "TechNova_Product_Roadmap_2026.pdf"],
+    "expected_sql_shape": null,
+    "expected_row_count": null,
+    "expected_key_values": {"answer_contains": ["Vietnam", "Indonesia"]},
+    "paraphrases": ["geopolitical data rules", "APAC data residency constraints"]
+  },
+  {
+    "id": "G-026",
+    "question": "Summarise the Q4 financial highlights and the board's view.",
+    "category": "rag-cross-doc",
+    "expected_intent": {
+      "route": "rag",
+      "entities": ["Q4", "financial", "board"],
+      "ops": ["retrieve:cross_doc"]
+    },
+    "expected_sources": ["TechNova_Board_Minutes_Q4.pdf", "TechNova_Q4_Financial_Report.pdf"],
+    "expected_sql_shape": null,
+    "expected_row_count": null,
+    "expected_key_values": {},
+    "paraphrases": ["what did the board think of Q4 results?", "Q4 financial summary plus board reaction"]
+  },
+  {
+    "id": "G-027",
+    "question": "What security measures relate to the Zero Trust initiative?",
+    "category": "rag-cross-doc",
+    "expected_intent": {
+      "route": "rag",
+      "entities": ["zero_trust", "security"],
+      "ops": ["retrieve:cross_doc"]
+    },
+    "expected_sources": ["TechNova_Board_Minutes_Q4.pdf", "TechNova_Security_Incident_Report.pdf"],
+    "expected_sql_shape": null,
+    "expected_row_count": null,
+    "expected_key_values": {"answer_contains": ["Zero Trust"]},
+    "paraphrases": ["zero-trust rollout details", "what's the zero trust plan?"]
+  },
+  {
+    "id": "G-028",
+    "question": "How does the IT Asset Policy handle hardware refresh cycles?",
+    "category": "rag-cross-doc",
+    "expected_intent": {
+      "route": "rag",
+      "entities": ["it_asset_policy", "refresh"],
+      "ops": ["retrieve:cross_doc"]
+    },
+    "expected_sources": ["TechNova_IT_Asset_Policy.pdf"],
+    "expected_sql_shape": null,
+    "expected_row_count": null,
+    "expected_key_values": {},
+    "paraphrases": ["laptop refresh rules", "hardware lifecycle policy"]
+  },
+  {
+    "id": "G-029",
+    "question": "Which Tier-1 APAC customers' account managers have missed DPDP training, and what does the training policy say about overdue training?",
+    "category": "hybrid",
+    "expected_intent": {
+      "route": "hybrid",
+      "entities": ["customer", "account_manager", "training", "policy"],
+      "ops": ["sql:customers+employees+training_compliance", "rag:training_policy"]
+    },
+    "expected_sources": ["customers", "employees", "training_compliance", "TechNova_Training_Compliance.pdf"],
+    "expected_sql_shape": null,
+    "expected_row_count": null,
+    "expected_key_values": {"tier": "Tier 1", "region": "APAC"},
+    "paraphrases": ["Tier-1 APAC AMs behind on DPDP plus the policy consequences"]
+  },
+  {
+    "id": "G-030",
+    "question": "What did the board say about incident INC-2025-0847, and how many customers were affected?",
+    "category": "hybrid",
+    "expected_intent": {
+      "route": "hybrid",
+      "entities": ["incident", "board", "customers_affected"],
+      "ops": ["sql:incidents", "rag:board_minutes"]
+    },
+    "expected_sources": ["incidents", "TechNova_Board_Minutes_Q4.pdf"],
+    "expected_sql_shape": null,
+    "expected_row_count": null,
+    "expected_key_values": {"incident_ref": "INC-2025-0847"},
+    "paraphrases": ["board discussion on Nov breach + affected customer count"]
+  },
+  {
+    "id": "G-031",
+    "question": "Which vendors have Conditional risk status, and what does policy require in that case?",
+    "category": "hybrid",
+    "expected_intent": {
+      "route": "hybrid",
+      "entities": ["vendor", "risk_status", "policy"],
+      "ops": ["sql:vendors filter risk_status", "rag:vendor_contracts"]
+    },
+    "expected_sources": ["vendors", "TechNova_Vendor_Contracts.pdf"],
+    "expected_sql_shape": null,
+    "expected_row_count": null,
+    "expected_key_values": {"risk_status": "Conditional"},
+    "paraphrases": ["conditional-risk vendors + required controls"]
+  },
+  {
+    "id": "G-032",
+    "question": "Which Critical-tier services have the most incidents, and what domains are they in per the architecture doc?",
+    "category": "hybrid",
+    "expected_intent": {
+      "route": "hybrid",
+      "entities": ["service", "incident", "domain"],
+      "ops": ["sql:products_services+incidents rank", "rag:architecture_doc"]
+    },
+    "expected_sources": ["products_services", "incidents", "TechNova_Platform_Architecture.pdf"],
+    "expected_sql_shape": null,
+    "expected_row_count": null,
+    "expected_key_values": {"criticality_tier": "Critical"},
+    "paraphrases": ["Most incident-prone Critical services with their domains"]
+  },
+  {
+    "id": "G-033",
+    "question": "What's the CEO-to-median pay ratio per the policy, and how does it compare to the actual salary data?",
+    "category": "hybrid",
+    "expected_intent": {
+      "route": "hybrid",
+      "entities": ["ceo", "compensation", "median"],
+      "ops": ["rag:salary_structure", "sql:salary_records aggregate"]
+    },
+    "expected_sources": ["TechNova_Salary_Structure.pdf", "salary_records"],
+    "expected_sql_shape": null,
+    "expected_row_count": null,
+    "expected_key_values": {"answer_contains": ["18.4:1"]},
+    "paraphrases": ["policy stated CEO ratio vs computed", "CEO-to-median vs what data says"]
+  },
+  {
+    "id": "G-034",
+    "question": "Financial Services customers signed after 2024 — and what do our vendor contracts say about financial services?",
+    "category": "hybrid",
+    "expected_intent": {
+      "route": "hybrid",
+      "entities": ["customer", "industry", "vendor_contracts"],
+      "ops": ["sql:customers filter industry+date", "rag:vendor_contracts"]
+    },
+    "expected_sources": ["customers", "TechNova_Vendor_Contracts.pdf"],
+    "expected_sql_shape": null,
+    "expected_row_count": null,
+    "expected_key_values": {"industry": "Financial Services"},
+    "paraphrases": ["recent FS customer list + relevant vendor-contract clauses"]
+  },
+  {
+    "id": "G-035",
+    "question": "What's the Singapore data centre budget, and is there a matching line item in financials?",
+    "category": "hybrid",
+    "expected_intent": {
+      "route": "hybrid",
+      "entities": ["singapore", "budget", "financial_transaction"],
+      "ops": ["rag:board_minutes", "sql:financial_transactions"]
+    },
+    "expected_sources": ["TechNova_Board_Minutes_Q4.pdf", "financial_transactions"],
+    "expected_sql_shape": null,
+    "expected_row_count": null,
+    "expected_key_values": {"answer_contains": ["120"]},
+    "paraphrases": ["approved Singapore DC spend + matching transaction"]
+  },
+  {
+    "id": "G-036",
+    "question": "How many L5+ employees have ESOPs, and what's the vesting schedule they're on?",
+    "category": "hybrid",
+    "expected_intent": {
+      "route": "hybrid",
+      "entities": ["employee", "esop", "vesting"],
+      "ops": ["sql:salary_records count where level>=L5 and esop>0", "rag:salary_structure"]
+    },
+    "expected_sources": ["salary_records", "TechNova_Salary_Structure.pdf"],
+    "expected_sql_shape": null,
+    "expected_row_count": null,
+    "expected_key_values": {},
+    "paraphrases": ["ESOP-holder count (senior) + vesting policy"]
+  },
+  {
+    "id": "G-037",
+    "question": "Show me the expensive vendors.",
+    "category": "ambiguous",
+    "expected_intent": {
+      "route": "clarify",
+      "entities": ["vendor", "expensive"],
+      "ops": [],
+      "ambiguities": [
+        {"field": "metric", "issue": "'expensive' is ambiguous — by annual_committed_spend, sig_lite_score, or something else?", "severity": 0.95}
+      ]
+    },
+    "expected_sources": [],
+    "expected_sql_shape": null,
+    "expected_row_count": null,
+    "expected_key_values": {"must_clarify": true},
+    "paraphrases": ["costly vendors list", "who's costing us the most?"]
+  },
+  {
+    "id": "G-038",
+    "question": "Who are our top employees?",
+    "category": "ambiguous",
+    "expected_intent": {
+      "route": "clarify",
+      "entities": ["employee", "top"],
+      "ops": [],
+      "ambiguities": [
+        {"field": "metric", "issue": "'top' is ambiguous — by level, tenure, performance_rating, or compensation?", "severity": 0.9}
+      ]
+    },
+    "expected_sources": [],
+    "expected_sql_shape": null,
+    "expected_row_count": null,
+    "expected_key_values": {"must_clarify": true},
+    "paraphrases": ["best people we have", "our star performers"]
+  },
+  {
+    "id": "G-039",
+    "question": "What's our revenue this year?",
+    "category": "ambiguous",
+    "expected_intent": {
+      "route": "clarify",
+      "entities": ["revenue", "year"],
+      "ops": [],
+      "ambiguities": [
+        {"field": "timeframe", "issue": "'this year' is ambiguous — calendar 2025, FY2024-25, or FY2025-26?", "severity": 0.85}
+      ]
+    },
+    "expected_sources": [],
+    "expected_sql_shape": null,
+    "expected_row_count": null,
+    "expected_key_values": {"must_clarify": true},
+    "paraphrases": ["annual revenue", "how much did we earn this year?"]
+  },
+  {
+    "id": "G-040",
+    "question": "Which services are risky?",
+    "category": "ambiguous",
+    "expected_intent": {
+      "route": "clarify",
+      "entities": ["service", "risky"],
+      "ops": [],
+      "ambiguities": [
+        {"field": "filter", "issue": "'risky' is ambiguous — by criticality_tier, incident count, or SLA breach?", "severity": 0.9}
+      ]
+    },
+    "expected_sources": [],
+    "expected_sql_shape": null,
+    "expected_row_count": null,
+    "expected_key_values": {"must_clarify": true},
+    "paraphrases": ["high-risk services", "what services should we worry about?"]
+  }
+]

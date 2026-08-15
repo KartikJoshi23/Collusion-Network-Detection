@@ -1,0 +1,32 @@
+# §7 step 32 — component ablation arm B-DIR (−bidirectional edges): the
+# published GATv2-focal protocol with only the original src→dst direction
+# materialized (message passing follows money downstream, never back up).
+# Everything else byte-identical to gnn_elliptic_pp_gatv2_focal.yaml.
+dataset: elliptic_pp
+store_root: data/interim
+output_dir: eval_outputs/elliptic_pp/gnn_gatv2_focal_unidir
+seed: 0
+features: raw
+bidirectional: false
+
+split:
+  loss_end: 29
+  train_end: 34
+  test_start: 35
+
+model:
+  name: gatv2
+  hidden_dim: 64
+  num_layers: 2
+  heads: 4
+  dropout: 0.3
+
+loss:
+  name: focal
+  gamma: 2.0
+
+lr: 0.005
+weight_decay: 0.0005
+epochs: 200
+patience: 20
+budgets: [50, 100, 200]

@@ -1,0 +1,220 @@
+{
+ "nodes": [
+  {
+   "node_id": "bid:ToyAnon:0",
+   "node_type": "bid",
+   "domain": "procurement",
+   "time_first_seen": 2009,
+   "raw_features": null,
+   "raw_attrs": null
+  },
+  {
+   "node_id": "bid:ToyAnon:1",
+   "node_type": "bid",
+   "domain": "procurement",
+   "time_first_seen": 2009,
+   "raw_features": null,
+   "raw_attrs": null
+  },
+  {
+   "node_id": "bid:ToyFirms:0",
+   "node_type": "bid",
+   "domain": "procurement",
+   "time_first_seen": 2003,
+   "raw_features": null,
+   "raw_attrs": null
+  },
+  {
+   "node_id": "bid:ToyFirms:1",
+   "node_type": "bid",
+   "domain": "procurement",
+   "time_first_seen": 2003,
+   "raw_features": null,
+   "raw_attrs": null
+  },
+  {
+   "node_id": "bid:ToyFirms:2",
+   "node_type": "bid",
+   "domain": "procurement",
+   "time_first_seen": 2004,
+   "raw_features": null,
+   "raw_attrs": null
+  },
+  {
+   "node_id": "firm:ToyFirms:1",
+   "node_type": "firm",
+   "domain": "procurement",
+   "time_first_seen": 2003,
+   "raw_features": null,
+   "raw_attrs": null
+  },
+  {
+   "node_id": "firm:ToyFirms:2",
+   "node_type": "firm",
+   "domain": "procurement",
+   "time_first_seen": 2003,
+   "raw_features": null,
+   "raw_attrs": null
+  },
+  {
+   "node_id": "tender:ToyAnon:T5",
+   "node_type": "tender",
+   "domain": "procurement",
+   "time_first_seen": 2009,
+   "raw_features": null,
+   "raw_attrs": null
+  },
+  {
+   "node_id": "tender:ToyFirms:T1",
+   "node_type": "tender",
+   "domain": "procurement",
+   "time_first_seen": 2003,
+   "raw_features": null,
+   "raw_attrs": null
+  },
+  {
+   "node_id": "tender:ToyFirms:T2",
+   "node_type": "tender",
+   "domain": "procurement",
+   "time_first_seen": 2004,
+   "raw_features": null,
+   "raw_attrs": null
+  }
+ ],
+ "edges": [
+  {
+   "src": "bid:ToyAnon:0",
+   "dst": "tender:ToyAnon:T5",
+   "edge_type": "bids_on",
+   "timestamp": 2009,
+   "amount": 90.0,
+   "directed": true,
+   "raw_attrs": "{\"winner\":1,\"number_bids\":2,\"cv\":0.02}"
+  },
+  {
+   "src": "bid:ToyAnon:1",
+   "dst": "tender:ToyAnon:T5",
+   "edge_type": "bids_on",
+   "timestamp": 2009,
+   "amount": 95.0,
+   "directed": true,
+   "raw_attrs": "{\"winner\":0,\"number_bids\":2,\"cv\":0.02}"
+  },
+  {
+   "src": "bid:ToyFirms:0",
+   "dst": "tender:ToyFirms:T1",
+   "edge_type": "bids_on",
+   "timestamp": 2003,
+   "amount": 100.0,
+   "directed": true,
+   "raw_attrs": "{\"winner\":1,\"number_bids\":2,\"cv\":0.05}"
+  },
+  {
+   "src": "bid:ToyFirms:1",
+   "dst": "tender:ToyFirms:T1",
+   "edge_type": "bids_on",
+   "timestamp": 2003,
+   "amount": 110.0,
+   "directed": true,
+   "raw_attrs": "{\"winner\":0,\"number_bids\":2,\"cv\":0.05}"
+  },
+  {
+   "src": "bid:ToyFirms:2",
+   "dst": "tender:ToyFirms:T2",
+   "edge_type": "bids_on",
+   "timestamp": 2004,
+   "amount": 200.0,
+   "directed": true,
+   "raw_attrs": "{\"winner\":1,\"number_bids\":1,\"cv\":0.1}"
+  },
+  {
+   "src": "firm:ToyFirms:1",
+   "dst": "tender:ToyFirms:T1",
+   "edge_type": "bids_on",
+   "timestamp": 2003,
+   "amount": 100.0,
+   "directed": true,
+   "raw_attrs": null
+  },
+  {
+   "src": "firm:ToyFirms:2",
+   "dst": "tender:ToyFirms:T1",
+   "edge_type": "bids_on",
+   "timestamp": 2003,
+   "amount": 110.0,
+   "directed": true,
+   "raw_attrs": null
+  },
+  {
+   "src": "firm:ToyFirms:2",
+   "dst": "tender:ToyFirms:T2",
+   "edge_type": "bids_on",
+   "timestamp": 2004,
+   "amount": 200.0,
+   "directed": true,
+   "raw_attrs": null
+  },
+  {
+   "src": "tender:ToyFirms:T1",
+   "dst": "firm:ToyFirms:1",
+   "edge_type": "awarded",
+   "timestamp": 2003,
+   "amount": 100.0,
+   "directed": true,
+   "raw_attrs": null
+  },
+  {
+   "src": "tender:ToyFirms:T2",
+   "dst": "firm:ToyFirms:2",
+   "edge_type": "awarded",
+   "timestamp": 2004,
+   "amount": 200.0,
+   "directed": true,
+   "raw_attrs": null
+  }
+ ],
+ "labels": [
+  {
+   "node_id": "bid:ToyAnon:0",
+   "label": "licit",
+   "label_source": "garcia_collusive_competitor",
+   "confidence": 1.0
+  },
+  {
+   "node_id": "bid:ToyAnon:1",
+   "label": "licit",
+   "label_source": "garcia_collusive_competitor",
+   "confidence": 1.0
+  },
+  {
+   "node_id": "bid:ToyFirms:0",
+   "label": "illicit",
+   "label_source": "garcia_collusive_competitor",
+   "confidence": 1.0
+  },
+  {
+   "node_id": "bid:ToyFirms:1",
+   "label": "illicit",
+   "label_source": "garcia_collusive_competitor",
+   "confidence": 1.0
+  },
+  {
+   "node_id": "bid:ToyFirms:2",
+   "label": "licit",
+   "label_source": "garcia_collusive_competitor",
+   "confidence": 1.0
+  },
+  {
+   "node_id": "firm:ToyFirms:1",
+   "label": "illicit",
+   "label_source": "garcia_collusive_competitor",
+   "confidence": 1.0
+  },
+  {
+   "node_id": "firm:ToyFirms:2",
+   "label": "illicit",
+   "label_source": "garcia_collusive_competitor",
+   "confidence": 1.0
+  }
+ ]
+}
