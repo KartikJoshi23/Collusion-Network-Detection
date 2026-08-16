@@ -18,6 +18,31 @@
 \usepackage[hidelinks]{hyperref}
 \usepackage{balance}
 
+% --- vector figures (TikZ / pgfplots): publication-grade, compile on Overleaf,
+%     no external images to upload. -----------------------------------------
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,calc,fit,backgrounds}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17}
+
+% figure palette (colour-blind-safe, muted for print)
+\definecolor{cgink}{HTML}{1A1A1A}
+\definecolor{cgmuted}{HTML}{5B6472}
+\definecolor{cgfin}{HTML}{2166AC}   % money — blue
+\definecolor{cgproc}{HTML}{762A83}  % procurement — violet
+\definecolor{cggood}{HTML}{1B7837}
+\definecolor{cgamber}{HTML}{B35806}
+\definecolor{cgbad}{HTML}{B2182B}
+\definecolor{cgline}{HTML}{B8BEC9}
+
+% shared node styles
+\tikzset{
+  cgbox/.style={rectangle, rounded corners=2pt, draw=#1, line width=0.7pt,
+    fill=#1!5, font=\scriptsize, align=center, inner sep=3pt, minimum height=6.5mm},
+  cgflow/.style={-{Stealth[length=4pt]}, draw=cgmuted, line width=0.6pt},
+  cgthin/.style={draw=cgline, line width=0.5pt},
+}
+
 \newcommand{\RQ}[1]{\textbf{RQ#1}}
 \newcommand{\todo}[1]{\textcolor{red}{\textbf{[#1]}}}
 
@@ -209,7 +234,44 @@ serving side needs no accelerator and runs on commodity hardware.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\columnwidth]{fig_pipeline.png}
+\begin{tikzpicture}[node distance=2.6mm and 3mm]
+% offline row
+\node[cgbox=cgmuted] (ds) {Six public\\datasets};
+\node[cgbox=cgink, right=of ds] (ir) {Unified graph\\schema (IR)};
+\node[cgbox=cgfin, right=5mm of ir, yshift=4.5mm] (a1) {Sup.\\GNNs};
+\node[cgbox=cgproc, right=1.2mm of a1] (a2) {Unsup.\\AE};
+\node[cgbox=cgamber, right=1.2mm of a2] (a3) {Struct.\\feats};
+\node[cgbox=cgmuted, right=1.2mm of a3] (a4) {Class.\\base};
+\node[cgbox=cgfin, below=7mm of $(a1)!0.5!(a4)$, minimum width=32mm] (fuse)
+  {Calibrated ensemble fusion};
+\node[cgbox=cggood, below=6mm of fuse, xshift=-11mm, minimum width=30mm] (queue)
+  {Leiden roll-up $\rightarrow$ ranked queue};
+\node[cgbox=cgamber, right=2mm of queue, minimum width=28mm] (expl)
+  {Explanation + motif match};
+% edges
+\draw[cgflow] (ds) -- (ir);
+\foreach \a in {a1,a2,a3,a4} \draw[cgthin] (ir.east) -- (\a.west);
+\foreach \a in {a1,a2,a3,a4} \draw[cgthin] (\a.south) -- (fuse.north);
+\draw[cgflow] (fuse.south) -- (queue.north);
+\draw[cgflow] (fuse.south) -- (expl.north);
+% offline group box
+\begin{scope}[on background layer]
+  \node[draw=cggood, densely dashed, rounded corners=3pt, line width=0.6pt,
+    fill=cggood!3, fit=(ds)(a4)(queue)(expl), inner sep=4pt] (off) {};
+\end{scope}
+\node[anchor=north west, font=\tiny\bfseries, text=cggood]
+  at (off.north west) {\ OFFLINE PIPELINE — trains, writes files, exits};
+% trust boundary
+\node[below=3mm of off.south, font=\tiny\bfseries, text=cgbad] (tb)
+  {TRUST BOUNDARY \quad below: read-only, cannot retrain or alter a score};
+\draw[cgbad, densely dashed, line width=0.7pt]
+  ([yshift=1.6mm]tb.west -| off.west) -- ([yshift=1.6mm]tb.east -| off.east);
+% serving row
+\node[cgbox=cgfin, below=3mm of tb, xshift=-24mm] (api) {Read-only\\API};
+\node[cgbox=cgink, right=2mm of api] (con) {Investigator\\console (7 views)};
+\node[cgbox=cgproc, right=2mm of con] (cop) {GenAI Copilot\\grounded, guarded};
+\draw[cgflow, cgbad] (tb.south) -- (con.north);
+\end{tikzpicture}
 \caption{The unified pipeline. Six datasets enter one graph schema; four
 scoring arms run in parallel and are combined by a calibrated ensemble; scores
 are rolled up into a ranked, de-duplicated, explained queue. Everything below
@@ -289,11 +351,47 @@ behaviour and vice versa.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\columnwidth]{fig_joint_graph.png}
+\begin{tikzpicture}[
+  acct/.style={circle, draw=cgfin, line width=0.8pt, fill=cgfin!8,
+    minimum size=3.4mm, inner sep=0pt},
+  firm/.style={circle, draw=cgproc, line width=0.8pt, fill=cgproc!8,
+    minimum size=3.4mm, inner sep=0pt},
+  tender/.style={rectangle, draw=cgproc, line width=0.7pt, fill=cgproc!5,
+    minimum size=2.8mm, inner sep=0pt},
+  money/.style={-{Stealth[length=3.5pt]}, draw=cgfin, line width=0.6pt},
+  bid/.style={draw=cgproc!70, line width=0.45pt},
+  bridge/.style={-{Stealth[length=4pt]}, draw=cgamber, line width=1pt},
+]
+% financial ring (laundering cycle)
+\foreach \i in {0,...,5} {
+  \node[acct] (f\i) at ({150-\i*60}:8mm) {};
+}
+\foreach \i [evaluate=\i as \j using {int(mod(\i+1,6))}] in {0,...,5}
+  \draw[money] (f\i) -- (f\j);
+\node[font=\tiny\bfseries, text=cgfin] at (0,1.15) {Financial layer (pays)};
+% procurement bipartite cluster (to the right)
+\begin{scope}[xshift=42mm]
+  \foreach \i in {0,1,2} \node[firm] (p\i) at (0,{0.9-\i*0.9}) {};
+  \node[tender] (t0) at (1.5,0.5) {};
+  \node[tender] (t1) at (1.5,-0.5) {};
+  \foreach \i in {0,1,2} \foreach \t in {t0,t1} \draw[bid] (p\i) -- (\t);
+  \node[font=\tiny\bfseries, text=cgproc] at (0.75,1.15)
+    {Procurement layer (bids-on)};
+\end{scope}
+% dual actor bridging both layers
+\node[regular polygon, regular polygon sides=6, draw=cgink, line width=0.9pt,
+  fill=cgamber, minimum size=5mm, inner sep=0pt] (dual) at (21mm,0) {};
+\draw[bridge] (dual) -- (f0);
+\draw[bridge] (dual) to[bend left=8] ($(42mm,0)+(0,0)$);
+\draw[bridge] (dual) to[bend right=8] ($(42mm,0.9)$);
+\node[font=\tiny\bfseries, text=cgamber, below=0.5mm of dual, align=center]
+  {dual actor\\(shared control)};
+\end{tikzpicture}
 \caption{The joint cross-crime graph. A financial layer (money moving through a
 ring of accounts) and a procurement layer (firms bidding on tenders) share a
 \emph{dual actor} via the common-control motif. A joint model message-passes
-across this seam; two siloed detectors cannot.}
+across this seam, raising the prior on a firm in one layer from its behaviour
+in the other; two siloed detectors cannot.}
 \label{fig:joint}
 \end{figure}
 
@@ -410,10 +508,40 @@ deep learning doing something no alternative in our stack can.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.86\columnwidth]{fig_injection_recovery.png}
+\begin{tikzpicture}[x=0.42mm, y=1]
+% rows: {label, pct, std, colour, verdict}
+\def\scalebar{0.42mm}
+\foreach [count=\i] \lab/\pct/\err/\col/\verd in {
+  {Bid-together ring/92.2/17.3/cggood/CAUGHT},
+  {Hidden common owner/57.9/4.3/cgamber/partial},
+  {Market carve-up/17.2/1.2/cgbad/escapes},
+  {Take-turns/8.4/1.5/cgbad/escapes},
+  {Cover bidding/1.0/0.9/cgbad/escapes}} {
+  \pgfmathsetmacro\yy{-\i*5.6}
+  % label (right-aligned, left of the axis)
+  \node[anchor=east, font=\scriptsize] at (-4pt,\yy) {\lab};
+  % bar
+  \fill[\col] (0,\yy-1.6) rectangle (\pct,\yy+1.6);
+  \draw[cgink, line width=0.3pt] (0,\yy-1.6) rectangle (\pct,\yy+1.6);
+  % error bar
+  \draw[cgmuted, line width=0.5pt] (\pct-\err,\yy) -- (\pct+\err,\yy);
+  \draw[cgmuted, line width=0.5pt] (\pct-\err,\yy-1) -- (\pct-\err,\yy+1);
+  \draw[cgmuted, line width=0.5pt] (\pct+\err,\yy-1) -- (\pct+\err,\yy+1);
+  % value + verdict
+  \node[anchor=west, font=\tiny] at (\pct+\err+2,\yy)
+    {\pgfmathprintnumber[fixed,precision=0]{\pct}\%\ \textcolor{\col}{\scshape\verd}};
+}
+% x axis
+\draw[cgmuted, line width=0.5pt] (0,-33.5) -- (100,-33.5);
+\foreach \t in {0,25,50,75,100} {
+  \draw[cgmuted, line width=0.5pt] (\t,-33.5) -- (\t,-35);
+  \node[anchor=north, font=\tiny] at (\t,-35) {\t};
+}
+\node[anchor=north, font=\scriptsize] at (50,-40) {recovered at top 2000 (\%)};
+\end{tikzpicture}
 \caption{Injection recovery on the unlabelled Georgia network (best arm, top
-$2{,}000$, 5 seeds). Structure-only screening catches bid-together coordination
-and is characterisably blind to turn-taking schemes.}
+$2{,}000$, 5 seeds; error bars are $\pm$ std). Structure-only screening catches
+bid-together coordination and is characterisably blind to turn-taking schemes.}
 \label{fig:injection}
 \end{figure}
 
