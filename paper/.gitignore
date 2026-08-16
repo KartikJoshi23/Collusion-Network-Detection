@@ -1,0 +1,11 @@
+# LaTeX build artifacts — regenerate with pdflatex (run twice for refs)
+*.aux
+*.log
+*.out
+*.toc
+*.bbl
+*.blg
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+collusiongraph_paper.pdf
