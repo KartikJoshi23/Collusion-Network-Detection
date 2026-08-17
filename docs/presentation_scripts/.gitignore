@@ -1,0 +1,11 @@
+# LaTeX build artifacts — regenerate with `pdflatex <file>.tex`
+*.aux
+*.log
+*.out
+*.toc
+*.pdf
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+_probe.*
+_s1.*
