@@ -9,6 +9,13 @@
 
 ## Current milestone
 
+> ⚠️ **BEFORE ANY GIT OPERATION, READ "Next actions" ITEM 0a.** `main`'s history
+> was force-pushed away on 2026-08-15 and is a 5-commit orphan; the real
+> 207-commit record hangs on five stale remote branches plus one laptop's reflog.
+> Do not delete those branches, do not `git gc --prune` on master, do not
+> force-push. Content loss from that rewrite was repaired 2026-08-17 (6d709d0);
+> the history repair is a pending user decision. It does **not** block the paper.
+
 > 🔴🔴 **NEXT SESSION STARTS AT "Next actions" ITEM 0 — WRITE THE RESEARCH
 > PAPER FROM SCRATCH, FOLLOWING [`docs/paper_blueprint.md`](docs/paper_blueprint.md).**
 > The blueprint is authoritative: it carries the title, the four RQs, the
@@ -237,6 +244,35 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-08-17 · **HISTORY REWRITE FOUND; THE EIGHT DESTROYED LATEX FILES RESTORED
+  AND RE-VERIFIED BY COMPILATION.** Integration session opened expecting to merge
+  collaborator work and instead found the repository's history gone. `origin/main`
+  is now a **5-commit orphan** rooted at `aeaa04a` ("Convert report to
+  professional format and update .gitignore", 2026-08-15) that shares **no
+  ancestor** with the project — `git merge-base main origin/<any branch>` exits 1.
+  The reflog is unambiguous: `origin/main@{5}` = `0070fe2` (the real tip),
+  `origin/main@{4}` = **forced-update** to `aeaa04a`. 207 commits of M0–MC/M6
+  provenance were replaced by one squashed snapshot; the four paper commits
+  (`b7003a0`..`8e1e87a`) were then written on top of the orphan, and a
+  `pull --rebase` onto it cemented the graft.
+  *Content casualty (now repaired):* the snapshot silently dropped 8 tracked
+  files / 6,658 lines — `docs/internal_report/{.gitignore, README.md,
+  collusiongraph_internal_report.tex}` and `docs/presentation_scripts/{.gitignore,
+  README.md, architecture.tex, dashboard.tex, scriptstyle.sty}` — i.e. exactly the
+  deliverables Next-action 0b sends the stakeholder to. Restored byte-for-byte
+  from the pre-rewrite tip and **compiled, not eyeballed** (the standing rule):
+  pdflatex ×2 each → `dashboard.pdf` 24pp, `architecture.pdf` 18pp,
+  `collusiongraph_internal_report.pdf` 64pp, **0 errors, 0 undefined refs, 0
+  overfull hboxes**. (Page counts exceed the 2026-07-26 entry's 14/59 because the
+  restored versions are the later 07-27 ones.) On disk the internal report's
+  gitignored `.pdf/.aux/.log` had survived while its `.tex` had not — the tell.
+  *No code was lost:* `get_stress_test`, the Stress Test tab, the whole copilot
+  stack and the PROGRESS.md paper-reset entry are all present in the snapshot;
+  the ledger diff `0070fe2..main` is pure addition. Backend suite green on main,
+  **391 passed**. *All five remote branches are fully-merged ancestors of the old
+  main* — zero unmerged work, and they are currently the remote's only copy of the
+  old history. History repair itself is DEFERRED by user decision (see Decision
+  log + Next action 0a) · 6d709d0 · [master]
 - 2026-07-27 · **PAPER WORKSPACE RESET — exploratory draft + figures deleted so
   the next session starts clean from the blueprint.** An off-blueprint IEEEtran
   draft (`paper/collusiongraph_paper.tex`) and its matplotlib figures
@@ -1394,8 +1430,54 @@ still public 2026-07-15 — anonymous clone succeeded).
 - Procurement top-% budgets were resolved manually for Mendeley (4/18/36 = top 1/5/10% of the 363-firm test queue, in the experiment config); automatic percent→k resolution inside `run_eval` remains a nice-to-have.
 - `eval_outputs/` is regenerable and gitignored: scoreboard numbers live in this ledger and PR #3's description; rerun `run_baselines('configs/experiment/baselines_<anchor>.yaml')` to reproduce (seeded, deterministic).
 - AMLworld raw data is absent on laptop-B (Kaggle credentials are per-machine; script reports `blocked` as designed). Financial pack is untested at AMLworld scale (5M edges) — see Next action 5.
+- **Two uncommitted edits sit in master's working tree (2026-08-17), authored
+  before this session and deliberately NOT folded into the recovery commit:**
+  `docs/architecture.html` (the AWS cost tables switch from min–max ranges to a
+  single "Typical total" — ≈$35/mo and ≈$135/mo — with a note that the per-line
+  spans still show the low-to-busy range) and a new untracked
+  `docs/PORTFOLIO.md` (9.6 KB portfolio write-up of the project: the problem,
+  the solution, the stack). Both read as finished rather than half-written, but
+  their provenance is unknown to this session, so they were left for the user to
+  review and commit. Nothing else is mid-implementation on master.
 
 ## Next actions (ordered, self-contained)
+
+0a. ⚠️ **[read before touching git on ANY machine — does NOT block item 0]
+   THE REPO HISTORY IS ORPHANED AND ITS BACKUP IS FRAGILE.**
+   On 2026-08-15 someone force-pushed a re-initialised history over
+   `origin/main`. Current `main` is 5 commits rooted at `aeaa04a` and shares no
+   ancestor with the project's real 207-commit history. Content was recovered in
+   6d709d0; the history was **deliberately left alone** at the user's request.
+
+   *Until the user settles it, three prohibitions hold on every machine:*
+   - **Do NOT delete the five remote branches** (`feat/copilot-stress-link`,
+     `feat/stress-test-tab`, `fix/v3-audit-sweep`, `feat/frontend-v3-overhaul`,
+     `feat/red-team-review-m8`). They hold no unmerged work — every tip is a
+     merged ancestor of the old main — but they are the remote's **only** copy of
+     the pre-rewrite history.
+   - **Do NOT run `git gc --prune`** on the master laptop. Four commits
+     (`0070fe2`, `8742f1c`, `496d971`, `b6c737a`) live nowhere else; they are held
+     by the local tag `pre-rewrite-main` and the reflog, which expires ~2026-11-13.
+   - **Do NOT force-push `main`** from anywhere, and be aware that any clone taken
+     after 2026-08-15 contains only the orphan and will re-push it if forced.
+
+   *To close this out, ask the user to pick one (all are reversible except the
+   third):*
+   (a) **Re-graft, no force-push** — `git merge --allow-unrelated-histories
+       pre-rewrite-main` on `main`; resolve in favour of the current tree
+       (the snapshot is content-complete after 6d709d0, so the merge should be
+       tree-neutral); `git log` regains all 207 commits and other machines simply
+       fast-forward. *Recommended.*
+   (b) **Archive only** — `git push origin pre-rewrite-main` (a tag, additive and
+       safe) and leave `main` flat. Then, and only then, the five branches may be
+       pruned.
+   (c) **Force-push the real history back** with the four paper commits replayed
+       on top. Cleanest result, but rewrites shared `main` a second time and every
+       other laptop must hard-reset or re-clone.
+
+   Whichever is chosen, the branches can be deleted **only after** the old history
+   is on the remote as a tag or as an ancestor of `main` — that is the "secured"
+   the user's approval was conditioned on.
 
 0. 🔴🔴 **START HERE — WRITE THE RESEARCH PAPER FROM SCRATCH.**
    **Read [`docs/paper_blueprint.md`](docs/paper_blueprint.md) in full before
@@ -1584,6 +1666,21 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Decision log
 <!-- - YYYY-MM-DD · decision · rationale · plan section affected -->
+- 2026-08-17 · **[master, user decision] The destroyed CONTENT is restored now;
+  the destroyed HISTORY is left alone for the moment.** Presented four options
+  for the orphaned `main` — (a) re-graft the 207 commits with a
+  `--allow-unrelated-histories` merge, no force-push; (b) restore files only and
+  push a `pre-rewrite-main` archive tag; (c) force-push the real history back with
+  the paper commits replayed on top; (d) restore files only and defer. **The user
+  chose (d).** *Consequence, and it is load-bearing:* until the history question
+  is settled the five stale remote branches **MUST NOT be deleted** — they are the
+  only copy of the pre-rewrite history that exists on the remote. The user
+  separately approved deleting them, but explicitly *"after history is secured"*,
+  and it is not; the precondition is unmet, so nothing was pruned. Four commits
+  (`0070fe2`, `8742f1c`, `496d971`, `b6c737a`, including the merged
+  `fix/demo-launch-and-scores-guard`) exist on the **master laptop alone** and are
+  held only by the local `pre-rewrite-main` tag and the reflog. Affects §7
+  collaboration workflow.
 - 2026-07-25 · **[master] The spoken scripts are held to a STRICTER bar than the
   screen, and the bar is enforced by a checker that fails the build.** The
   brief only asked that SAY THIS blocks avoid a word list. `ui_jargon.py` pass 2
@@ -1839,6 +1936,16 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Known issues
 
+- 🔴 **`main` HAS NO PROJECT HISTORY, AND THE ONLY BACKUP IS FRAGILE.** Since the
+  2026-08-15 force-push, `origin/main` is a 5-commit orphan; the real 207-commit
+  record survives only (i) on the five stale remote branches, and (ii) for the
+  four newest commits, on the **master laptop alone** (`pre-rewrite-main` tag +
+  reflog, and reflogs expire — default 90 days, so ~2026-11-13). **Do not delete
+  the remote branches. Do not run `git gc --prune` on master. Do not force-push
+  `main` from any machine.** Anyone who cloned after 2026-08-15 has only the
+  orphan and will re-push it. Severity: high — this is a research capstone whose
+  reproducibility claims lean on the development record. Fix is queued as Next
+  action 0a; discovered 2026-08-17 during integration.
 - **`motif_type` is null in every stored `alerts.parquet`** — the ranking stage
   writes the queue before the explanation stage runs, so the column can never be
   populated at build time. The serving layer now joins the proven motif in from
