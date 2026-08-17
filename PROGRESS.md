@@ -9,6 +9,27 @@
 
 ## Current milestone
 
+> 🔴🔴 **NEXT SESSION STARTS AT "Next actions" ITEM 0 — WRITE THE RESEARCH
+> PAPER FROM SCRATCH, FOLLOWING [`docs/paper_blueprint.md`](docs/paper_blueprint.md).**
+> The blueprint is authoritative: it carries the title, the four RQs, the
+> section-by-section content plan, the T1–T8 table map (`uv run poe
+> paper-tables`), the figure list (F1–F7), the writing order, and the
+> submission checklist. Read it in full first, then write.
+>
+> **The earlier exploratory paper draft has been DELETED — start clean, do not
+> resurrect it.** Removed 2026-07-27: `paper/collusiongraph_paper.tex` (an
+> off-blueprint IEEEtran draft) and its matplotlib figures
+> (`fig_pipeline.png`, `fig_joint_graph.png`, `fig_injection_recovery.png`,
+> `scripts/paper_figures.py`) — the diagrams were rejected as not
+> publication-grade. The blueprint's own figure plan (F1–F7, mostly Model-Lab
+> chart exports + an architecture figure) supersedes them. A separate research
+> direction was discussed — a **joint cross-crime / "dual-actor" model** (a
+> launderer who also rigs bids); it is NOT in the blueprint's RQ set and is a
+> framing decision to settle with the user before writing (blueprint RQ4 is
+> cross-domain *transfer*, already measured). Authors: Dr. Rachit Garg (mentor),
+> Kartik Joshi, Prem Kukreja, Gagandeep Singh, Samuel Alex. Everything else
+> below is done and green.
+
 > ✅ **SCRIPTS + REPORT NOW ACTUALLY COMPILE [master, 2026-07-26].** A LaTeX
 > toolchain (MiKTeX 25.12) was installed on master — the "no toolchain here"
 > excuse is retired. `pdflatex` builds all three clean:
@@ -216,6 +237,19 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-07-27 · **PAPER WORKSPACE RESET — exploratory draft + figures deleted so
+  the next session starts clean from the blueprint.** An off-blueprint IEEEtran
+  draft (`paper/collusiongraph_paper.tex`) and its matplotlib figures
+  (`fig_pipeline/joint_graph/injection_recovery.png`, `scripts/paper_figures.py`)
+  were written and then REMOVED at the user's instruction: the diagrams were
+  rejected as not publication-grade, and the paper is to be written fresh
+  following [`docs/paper_blueprint.md`](docs/paper_blueprint.md). Lessons banked
+  in Next-action 0: figures are PNGs in root (user uploads to Overleaf, polishes
+  in Canva) — NOT inline TikZ, which broke that workflow; the user compiles the
+  PDF on Overleaf, not locally; a joint cross-crime / dual-actor research
+  direction was scoped (not in the blueprint, experiment unrun) as a framing
+  decision to settle before writing. `paper/` retains only `.gitkeep` + the
+  (gitignored) `tables/` target of `poe paper-tables` · [master]
 - 2026-07-27 · **COPILOT ↔ STRESS TEST LINK — the assistant can now read and
   quote the injection study, and the tab links straight into the dock.**
   *Backend:* new `get_stress_test` tool in `copilot/alert_tools.py` (reads the
@@ -1363,7 +1397,53 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Next actions (ordered, self-contained)
 
-0. 🔴 **[user/stakeholder] READ THE TWO SCRIPTS ALOUD AND SAY WHERE THEY FAIL.**
+0. 🔴🔴 **START HERE — WRITE THE RESEARCH PAPER FROM SCRATCH.**
+   **Read [`docs/paper_blueprint.md`](docs/paper_blueprint.md) in full before
+   writing a line** — it is the authoritative plan and reduces the paper to
+   prose-ifying each block.
+
+   *What the blueprint gives you:* the working title (*"One Stack, Two Ledgers:
+   Budget-Evaluated, Explainable Collusion Screening…"*), target venue (ACM
+   ICAIF, 9–10 pp main + appendix), the four RQs, the abstract skeleton (write
+   LAST), section-by-section content with each claim mapped to the artifact that
+   proves it, the **T1–T8 table map** (`uv run poe paper-tables` →
+   `paper/tables/*.tex`, gitignored/per-machine — regenerate, never retype
+   numbers), the **figure list F1–F7** (mostly Model-Lab chart exports +
+   architecture), the fastest-honest writing order (§11), and the submission
+   checklist (§12).
+
+   *Constraints from the user:*
+   - **13–15 pages max.** LaTeX, **compiled by the user on Overleaf — do NOT
+     build the paper PDF locally** (MiKTeX exists on master, but this is the
+     user's step). Format per blueprint (IEEEtran/ICAIF two-column is fine).
+   - **Figures: save as PNG in the repo root**; the user uploads them to
+     Overleaf and refines them in **Canva** for a premium look. The `.tex`
+     should reference them with `\includegraphics{fig_*.png}`. Do NOT inline
+     TikZ (rejected — it broke the user's PNG→Canva workflow). Prior matplotlib
+     diagrams were rejected as not premium; per the blueprint, results figures
+     come from the Model-Lab SVG/PNG exports. Confirm the figure approach with
+     the user.
+   - **Authors:** Dr. Rachit Garg (mentor), Kartik Joshi, Prem Kukreja,
+     Gagandeep Singh, Samuel Alex. Affiliation is an editable placeholder — ask
+     the user for the institution.
+   - **Every number traced to an artifact/table** (blueprint house rule; no
+     retyped numbers). Regenerate 🔶 tables first (`poe paper-tables`).
+
+   *Framing decision to settle with the user FIRST:* the blueprint's RQ4 is
+   cross-domain **transfer** (done, measured). A newer idea was floated — a
+   **joint cross-crime / "dual-actor" model** (the same actor launders AND rigs
+   bids, linked by the common-control motif; a heterogeneous shared-firm graph;
+   a dual-actor injection experiment comparing a joint model vs two siloed
+   detectors). That experiment is **not yet run** and is **not in the
+   blueprint**. Decide with the user: (a) write the blueprint's paper as-is
+   (fully backed, submittable), or (b) add the joint model as a forward RQ4
+   extension with a clearly-marked pending results section. Recommendation on
+   record: (a) as the spine, (b) as the forward contribution.
+
+   *Do NOT resurrect the deleted draft* (`paper/collusiongraph_paper.tex` and
+   its figures were removed 2026-07-27). Start clean from the blueprint.
+
+0b. **[user/stakeholder] READ THE TWO SCRIPTS ALOUD AND SAY WHERE THEY FAIL.**
    They are written, measured and pushed, in LaTeX, in the reference slide
    format: [`docs/presentation_scripts/dashboard.tex`](docs/presentation_scripts/dashboard.tex)
    (30 slides, ~21 min — **this is the opening of the talk**) and
