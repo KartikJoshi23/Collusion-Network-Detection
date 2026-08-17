@@ -16,8 +16,20 @@
 > force-push. Content loss from that rewrite was repaired 2026-08-17 (6d709d0);
 > the history repair is a pending user decision. It does **not** block the paper.
 
-> 🔴🔴 **NEXT SESSION STARTS AT "Next actions" ITEM 0 — WRITE THE RESEARCH
-> PAPER FROM SCRATCH, FOLLOWING [`docs/paper_blueprint.md`](docs/paper_blueprint.md).**
+> ✅ **THE PAPER IS WRITTEN [master, 2026-08-17, 09c027b].**
+> [`paper/collusiongraph_paper.tex`](paper/collusiongraph_paper.tex) — IEEEtran
+> two-column, 10 pages, compile-verified (0 errors, 0 undefined refs), with
+> seven 400-DPI PNG figures in the repo root regenerated from `eval_outputs/`
+> by [`scripts/paper_figures.py`](scripts/paper_figures.py). The blueprint's
+> measured paper is the spine and the joint cross-crime / dual-actor model is
+> Section VII, explicitly boxed as unrun design. **User actions before
+> submission: supply the affiliation (two `[INSTITUTION]` placeholders) and
+> compile on Overleaf.** Next actions item 0 now holds the follow-ups.
+
+> 🔴🔴 **SUPERSEDED — the brief below produced the paper above; kept for the
+> constraints it records.**
+> **[originally] WRITE THE RESEARCH PAPER FROM SCRATCH, FOLLOWING
+> [`docs/paper_blueprint.md`](docs/paper_blueprint.md).**
 > The blueprint is authoritative: it carries the title, the four RQs, the
 > section-by-section content plan, the T1–T8 table map (`uv run poe
 > paper-tables`), the figure list (F1–F7), the writing order, and the
@@ -244,6 +256,50 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-08-17 · **M8 PAPER WRITTEN FROM THE BLUEPRINT — `.tex` + seven
+  artifact-driven PNG figures, compile-verified.** Next-action 0 delivered.
+  [`paper/collusiongraph_paper.tex`](paper/collusiongraph_paper.tex) is a fresh
+  write; the deleted exploratory draft was NOT resurrected. **The user chose
+  BOTH framings:** option (a), the blueprint's fully-measured paper, is the
+  spine, and option (b), the joint cross-crime / dual-actor model, is
+  Section VII — boxed and labelled *"design and protocol only; this experiment
+  has not been run"*, carrying H1/H2, the merged heterogeneous-graph
+  construction, the dual-actor injection design, and an explicit falsification
+  criterion. **No number in that section is invented.**
+  *Structure:* abstract · intro (EU AI Act 2 Aug 2026 hook + two-ledgers
+  argument) · related work (6 threads) · data + IR (the three degradations
+  recorded, not repaired) · method (4 arms, queue construction, the protocol
+  subsection) · results (RQ1 / queue granularity / RQ2 injection / RQ4 transfer
+  + cross-domain / robustness) · explanation study · the joint extension ·
+  regulatory alignment + ethics · limitations · reproducibility · conclusion ·
+  2 appendices (number→config map, protocol guarantees). IEEEtran two-column,
+  **10 pages**, inside the user's 13–15 ceiling.
+  *Evidence discipline:* `poe paper-tables` was rerun first — **10/10 tables
+  built, zero skips, drift guard green** — and the tables are **INLINED** in the
+  `.tex` (not `\input`) because `paper/tables/` is gitignored and the user
+  compiles on Overleaf. **Two ledger claims were corrected by the artifacts:**
+  the actor-view P@100 0.98 is a *node-level* number (its queue-level P@50 is
+  0.08 — that contrast is now the queue-granularity subsection), and the
+  Mendeley + García explanation bundles carry **zero** proven motifs, reported
+  as a coverage limitation rather than smoothed over.
+  *Figures:* [`scripts/paper_figures.py`](scripts/paper_figures.py) regenerates
+  all seven as **400-DPI PNGs in the repo root** (user uploads to Overleaf,
+  refines in Canva). Times New Roman to match IEEEtran body text, muted
+  colour-blind-safe palette, two-column sizing. **Every plotted value is read
+  from `eval_outputs/`** — a missing artifact makes the script skip that figure
+  loudly and exit non-zero rather than draw an invented one. `fig1` follows the
+  stakeholder-approved vertical numbered-box architecture from
+  `docs/architecture.html`; `fig2` (two ledgers, one structure) and `fig7`
+  (dual actor) are the conceptual diagrams.
+  *Compiled locally as a SYNTAX CHECK only* — the authoritative build is the
+  user's on Overleaf, per the standing constraint. pdflatex ×2: **0 errors, 0
+  undefined references, 10 pages**, only two 4.3 pt overfull boxes left (mono
+  config names in the appendix). **Compiling caught three real faults a
+  brace-check would have missed:** `\rq` collides with a LaTeX kernel command,
+  `\multirow` was used without its package, and five tables overflowed their
+  columns (the dataset table by 113 pt). ⚠️ **User action:** the affiliation is
+  `[INSTITUTION — replace before submission]` and the acknowledgements are a
+  placeholder · 09c027b · [master]
 - 2026-08-17 · **HISTORY REWRITE FOUND; THE EIGHT DESTROYED LATEX FILES RESTORED
   AND RE-VERIFIED BY COMPILATION.** Integration session opened expecting to merge
   collaborator work and instead found the repository's history gone. `origin/main`
@@ -1479,7 +1535,29 @@ still public 2026-07-15 — anonymous clone succeeded).
    is on the remote as a tag or as an ancestor of `main` — that is the "secured"
    the user's approval was conditioned on.
 
-0. 🔴🔴 **START HERE — WRITE THE RESEARCH PAPER FROM SCRATCH.**
+0. ✅ **DONE 2026-08-17 (09c027b) — THE PAPER IS WRITTEN.** See Completed. What
+   remains is user-side and review-side, not writing:
+   - **[user] Supply the affiliation** — the `.tex` says `[INSTITUTION —
+     replace before submission]` in two author blocks, and the
+     acknowledgements section is a placeholder.
+   - **[user] Compile on Overleaf.** Upload `paper/collusiongraph_paper.tex`
+     plus the seven root PNGs (`fig1_architecture.png` …
+     `fig7_dual_actor.png`) into one flat project. Nothing else is needed —
+     tables are inlined, the bibliography is a `thebibliography` block, and
+     there is no `.bib` or `\input` to resolve.
+   - **[any machine] Re-run `uv run python scripts/paper_figures.py`** after any
+     experiment rerun, so the figures never drift from `eval_outputs/`. The
+     script exits non-zero if an artifact it needs is missing.
+   - **[review] Red-team the draft** against the blueprint §12 checklist. Still
+     open on that checklist: the practitioner human phase (M7 gate, unrun — the
+     paper reports this as a limitation), the Zenodo DOI (mint at submission),
+     and venue CFP dates.
+   - **Optional, if a reviewer wants the joint model measured:** Section VII
+     pre-specifies the dual-actor injection experiment. Running it is a real
+     piece of work (merged heterogeneous graph + paired motif injection) and is
+     deliberately NOT claimed anywhere in the current draft.
+
+   *Original brief, retained for reference:*
    **Read [`docs/paper_blueprint.md`](docs/paper_blueprint.md) in full before
    writing a line** — it is the authoritative plan and reduces the paper to
    prose-ifying each block.
