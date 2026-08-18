@@ -534,10 +534,10 @@ training window never saw.
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{fig3_timestep_crater.png}
-\caption{Per-time-step AUC-PR on the Elliptic++ test window, 5-seed mean with
-one standard deviation. Performance is strong through step 42 and collapses to
-the prevalence floor from step 43, the point of a known market shutdown. A
-single aggregate number hides this entirely.}
+\caption{Per-time-step AUC-PR across the Elliptic++ test window, showing the
+5-seed mean and one standard deviation. The model holds up well through step 42,
+then drops to the prevalence floor at step 43 where the market closure lands.
+Quote a single aggregate figure and none of this is visible.}
 \label{fig:crater}
 \end{figure}
 
@@ -649,10 +649,10 @@ over fold prevalence is the only fair comparator.
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{fig4_transfer_lift.png}
-\caption{Transfer lift by held-out fold. Leave-one-market-out on Garc\'ia is
-positive on every market; leave-one-country-out on Mendeley averages $1.17$
-but fails on its largest market. Anything at or below $1.0$ is no better than
-the fold's own base rate.}
+\caption{Transfer lift by held-out fold. Every Garc\'ia market comes out
+positive under leave-one-market-out. Mendeley's leave-one-country-out folds
+average $1.17$ and yet the largest market fails. A bar at or below $1.0$ has
+done no better than the fold's own base rate.}
 \label{fig:transfer}
 \end{figure}
 
@@ -713,10 +713,10 @@ would want it most.
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{fig6_label_efficiency.png}
-\caption{Cross-domain label efficiency. Bars are the gain of a frozen
-source-domain probe over a raw-feature probe at the same label budget.
-Negative almost everywhere below $k \approx 1000$: transfer does not solve the
-cold-start problem in either direction.}
+\caption{Cross-domain label efficiency. Each bar gives the gain of a frozen
+source-domain probe over a raw-feature probe at the same label budget. Below
+$k \approx 1000$ almost every bar is negative, which is to say transfer does
+nothing for the cold-start problem in either direction.}
 \label{fig:labeleff}
 \end{figure}
 
@@ -1071,12 +1071,12 @@ completed before submission.]
 \section{Number-to-Config Map}
 \label{app:repro}
 
-Table~\ref{tab:repro} maps every headline number in this paper to the single
-committed configuration that produces it. A repository hygiene test fails
-continuous integration if this map and the configuration directory disagree in
-either direction, so the mapping cannot silently rot. Each row runs as
-\texttt{collusiongraph <verb> -c configs/experiment/<config>}; outputs land in
-a gitignored results directory and are never committed.
+Table~\ref{tab:repro} ties every headline number in this paper to the one
+committed configuration that produces it. Should this map and the configuration
+directory ever disagree in either direction, a repository hygiene test fails
+continuous integration, so the mapping cannot rot in silence. Run any row as
+\texttt{collusiongraph <verb> -c configs/experiment/<config>}. Outputs land in a
+gitignored results directory and are never committed.
 
 \begin{table}[h]
 \caption{Published number $\rightarrow$ config. Multi-seed rows run seeds 0--4
@@ -1115,17 +1115,17 @@ Config (\texttt{configs/experiment/}) & Produces \\
 
 \section{Protocol Guarantees}
 
-Strict-inductive temporal splits, as-of feature computation,
-leave-one-country/market-out entity isolation, and the alert-unit rules are
-each enforced by a dedicated leakage test rather than by convention. That
-suite runs standalone and as its own continuous-integration step on every
-push, so a change that reintroduces leakage fails the build rather than
-quietly improving a number. Cross-machine byte-reproducibility is verified for
-the tree baselines, the leave-one-country-out fold and the frozen-encoder
-probes. Torch GNN training is deterministic same-machine only; the resulting
-$\pm 0.02$ cross-machine variance is documented and is dominated by the
-$\pm 0.05$ seed variance, which is why every learned number in this paper is
-reported as a multi-seed mean with its standard deviation.
+A dedicated leakage test, not a convention, enforces each of the following:
+strict-inductive temporal splits, as-of feature computation,
+leave-one-country and leave-one-market entity isolation, and the alert-unit
+rules. That suite runs standalone and also as its own continuous-integration
+step on every push. A change that lets leakage back in therefore breaks the
+build instead of quietly improving somebody's number. We verified byte-level
+cross-machine reproducibility for the tree baselines, the leave-one-country-out
+fold and the frozen-encoder probes. Torch GNN training is deterministic on one
+machine only. The $\pm 0.02$ cross-machine variance that follows is documented,
+and $\pm 0.05$ seed variance dominates it, which is why every learned number
+here appears as a multi-seed mean with its standard deviation.
 
 \balance
 
