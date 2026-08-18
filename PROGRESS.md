@@ -256,6 +256,63 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-08-19 · **DEEP AUDIT OF THE PAPER — 72 numbers re-verified against
+  artifacts (0 mismatches) and SIX real defects found and fixed.** The user
+  asked for a rigorous fact-check. Numbers were clean; the errors were in
+  external facts, one overclaim, and one stale gate result.
+  1. 🔴 **EU AI Act date was wrong.** The paper opened on *"On 2 August 2026 the
+     substantive obligations… become enforceable."* That deadline was deferred
+     to **2 December 2027** by the **Digital Omnibus on AI, Regulation (EU)
+     2026/1744** (OJ 24 Jul 2026, in force **27 Jul 2026** — three weeks before
+     the audit). Annex I embedded systems go to 2 Aug 2028.
+  2. 🔴 **EU AI Act scope claim was BACKWARDS.** The paper said Annex III
+     *"explicitly includes fraud detection in financial services"* in the
+     high-risk class. Annex III **5(b) explicitly EXCLUDES** fraud detection
+     from the creditworthiness item. The saving detail: the Commission reads
+     that carve-out narrowly and it does **not** extend to AML/CFT checks — so
+     an AML screener IS in scope. Rewritten to the accurate (and stronger)
+     framing. **Both errors were inherited from `docs/paper_blueprint.md` §2,
+     which still carries the wrong hook — fix it before reuse.**
+  3. 🔴 **Sensitivity claim was backwards.** The paper claimed the Jaccard sweep
+     AND the hit rule both left queues unchanged. The artifact says the
+     opposite pairing: the alert **set** is perfectly invariant to Jaccard
+     0.3–0.7 (254/223 kept, 0 suppressed at every threshold), but the **hit
+     rule moves precision** — requiring a 0.1 confirmed fraction drops
+     financial P@50 0.32→0.28, P@100 0.23→0.21, P@200 0.135→0.125. Now stated
+     with the dependence explicit.
+  4. 🔴 **Copilot gate claim was STALE — and re-running it changed the
+     headline.** The paper claimed *"24/24, grounding 1.0"*. The golden set has
+     since grown to **26** (the stress-test cases). Gate re-run live this
+     session: **grounding 0.923 (24/26), released guilt violations 0, draft
+     rewrites 1/26 vs the 10% ceiling — gate PASSES.** Both misses are g25/g26,
+     the two newest cases over the most recently added tool surface (g25 quoted
+     an ungrounded number; g26 omitted the expected `take-turns`). The abstract
+     no longer claims "perfect grounding"; the finding is written up as
+     tool-surface-dependent degradation plus a new limitation bullet.
+     `eval_outputs/copilot_goldens.json` regenerated.
+  5. **No citations existed at all.** 26 bibitems, zero `\cite{}` in the body.
+     Now 29 keys, cross-checked both directions (0 defined-but-uncited, 0
+     cited-but-undefined).
+  6. **Four citation-metadata errors fixed** by source lookup: Lawal et al. was
+     the wrong journal (IJCNC → **IJNSA 17(5/6)**) with three wrong initials
+     (→ O. Lawal, A. Okolie, C. Obunadike); Viklund's initial (O. → **E. W.**);
+     LineMVGNN's Poon (K. → **C.-H.**, + Kwok/Chow/Choi); GADBench and García
+     Rodríguez expanded to full author lists. Imhof et al.'s result was also
+     mischaracterised as "consistent cross-country degradation" — they in fact
+     transfer at 80–90% (91% on 8 markets, 84% on 12); corrected, with an
+     explicit note that their accuracy figures are **not commensurable** with
+     our budget-first lift numbers.
+  Also fixed: three denominators were being quoted interchangeably (Elliptic
+  ≈2% of all tx vs 0.065 confirmed-only; AMLworld 0.102% of tx vs 0.0104 of
+  accounts; Mendeley 41.9% of contracts vs 0.358 of firms) — now pinned in a
+  new §III-C; `p = 0.001` was the bootstrap **resolution floor** (2/2001), now
+  written `p < 0.001`; the injection table had dropped its ±s.d. while the
+  paper's own protocol section demands dispersion (coordinated-cluster is
+  0.92 ± 0.17, so the ensemble-vs-GAE ordering is inside noise — now said);
+  "six public datasets" was really five datasets in six graph views; and the
+  motif claim is now exact (nine motif types, ten generator families at 100%
+  fixture recall). Build: **0 errors, 0 undefined refs, 0 font warnings**,
+  worst overfull 6.9 pt, 11 pages. Suite 391 green · [master]
 - 2026-08-17 · **M8 PAPER WRITTEN FROM THE BLUEPRINT — `.tex` + seven
   artifact-driven PNG figures, compile-verified.** Next-action 0 delivered.
   [`paper/collusiongraph_paper.tex`](paper/collusiongraph_paper.tex) is a fresh
@@ -2014,6 +2071,23 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Known issues
 
+- **`docs/paper_blueprint.md` §2 still carries the WRONG EU AI Act hook** —
+  "high-risk obligations enforceable 2 Aug 2026 (fraud/AML explicitly in
+  scope)". Both halves are wrong: the date moved to 2 Dec 2027 (Digital
+  Omnibus, Reg. (EU) 2026/1744), and Annex III 5(b) *excludes* fraud detection
+  (the carve-out just doesn't reach AML/CFT). The paper was corrected
+  2026-08-19; **the blueprint was not** — fix it before anyone writes from it
+  again. Found by the paper audit.
+- **`docs/reproducibility.md` quotes a GATv2-wCE multiseed figure that master's
+  artifact does not reproduce.** The doc says `0.4435 ± 0.0615`; master's
+  `gnn_gatv2_wce_multiseed/multiseed.json` gives **0.4388 ± 0.0505** (per-seed
+  0.4869/0.4531/0.4421/0.4584/0.3535, sample s.d.). The paper uses master's
+  artifact. This is plausibly laptop-B's legitimately-different machine result
+  (the ledger records the wce campaign as cross-machine confounded), so it was
+  **deliberately not overwritten** — someone with laptop-B context should
+  confirm which machine the doc is quoting and label it. Note the drift guard
+  (`test_repro_map_matches_configs`) only checks config↔map correspondence, not
+  the quoted values, so it stays green either way. Found 2026-08-19.
 - 🔴 **`main` HAS NO PROJECT HISTORY, AND THE ONLY BACKUP IS FRAGILE.** Since the
   2026-08-15 force-push, `origin/main` is a 5-commit orphan; the real 207-commit
   record survives only (i) on the five stale remote branches, and (ii) for the
