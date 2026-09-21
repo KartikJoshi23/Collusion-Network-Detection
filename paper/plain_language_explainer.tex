@@ -76,7 +76,8 @@ bank's alert system fires when one transfer crosses a threshold, say ``cash
 deposit above X.'' Criminals know the thresholds, so they keep every transfer
 just below them. The result is the worst of both worlds: the system floods
 staff with false alarms on innocent people (industry estimates put 90 to 95
-percent of bank alerts as false), while quietly missing the real networks.
+percent of bank alerts down as false alarms), while quietly missing the real
+networks.
 
 Procurement auditors have it even harder. They check tenders by hand, one at a
 time, on a small sample. Cartels are usually discovered only years later,
@@ -85,7 +86,7 @@ through a complaint or a confession.
 There is a third difficulty: real crime is rare. In the main dataset used in the
 paper, only about 2 percent of transactions are known to be illegal, and most
 records have no label at all. When the thing you are looking for is that rare,
-a system can be ``99 percent accurate'' by simply saying \emph{nothing is
+a system can be ``98 percent accurate'' by simply saying \emph{nothing is
 suspicious}, which is useless.
 
 \subsection{The key idea: two crimes, same footprints}
@@ -103,6 +104,9 @@ the suspicious shapes are the same.
       \textbf{carving up a market} between its members.
 \item A chain of \textbf{shell companies} with hidden common owners looks like
       ``rival'' firms that secretly \textbf{share directors}.
+\item A tight knot of \textbf{pass-through accounts} that hold money for almost
+      no time looks like a tight knot of firms whose \textbf{bid prices cluster}
+      suspiciously close together.
 \end{itemize}
 
 If the shapes are the same, then one system that learns to recognise those
@@ -158,9 +162,9 @@ an explanation is treated as not delivered.
 \item \textbf{Answer questions, but never accuse.}
 An assistant lets an investigator ask things in plain language, such as ``why
 was this group flagged?'' It can only read the published results, it can only
-quote numbers that actually exist in the data, and it is physically prevented
-from saying anyone is guilty. Every answer carries a reminder that the system
-screens cases and does not judge them.
+quote numbers that actually exist in the data, and a filter it cannot bypass
+blocks it from saying anyone is guilty. Every answer carries a reminder that
+the system screens cases and does not judge them.
 \end{enumerate}
 
 \subsection{What the team found}
@@ -240,9 +244,9 @@ Five public datasets were used, no private or classified data at all.
 \textbf{Dataset} & \textbf{Domain} & \textbf{What it is} \\
 \midrule
 Elliptic++ & Banking & About 200,000 real Bitcoin transactions, roughly 2\% marked illegal. The main test bed. Also used in a second form that groups transactions by the wallet behind them. \\
-IBM AMLworld & Banking & Five million synthetic (computer-generated) bank transactions with every laundering scheme labelled. Used to test the system at large scale. \\
-Mendeley EU cartel & Procurement & About 15,600 real contracts across seven European countries, tied to 73 proven cartel cases. The main procurement test bed. \\
-Garc\'ia Rodr\'iguez & Procurement & About 64,000 real bids from six markets (Japan, Italy, Brazil, USA, Switzerland). Used to test whether learning carries from one market to another. \\
+IBM AMLworld & Banking & Five million synthetic (computer-generated) bank transactions with every laundering scheme labelled. Tried as a large-scale test, where the ordinary methods scored below chance; the paper explains why and uses it instead for planting known patterns. \\
+Mendeley EU cartel & Procurement & About 15,600 real contracts across seven European countries, drawn from proven cartel cases so that roughly 42\% are cartel-linked. The main procurement test bed. \\
+Garc\'ia Rodr\'iguez & Procurement & About 64,000 real bids from six markets (Japan, Italy, Brazil, the USA and two Swiss markets). Used to test whether learning carries from one market to another. \\
 OCDS Georgia & Procurement & Real, unlabelled Georgian tender data with about 163,000 entries. Fake cartels were planted into it to see whether the system could find them. \\
 \bottomrule
 \end{tabular}
@@ -258,8 +262,8 @@ just a single dot. Three variants were used:
 \begin{itemize}
 \item \textbf{GraphSAGE}, which summarises what a dot's neighbours look like;
 \item \textbf{GATv2} (graph attention), which learns to pay more attention to
-      the neighbours that matter most; this was the strongest of the three on
-      the banking data;
+      the neighbours that matter most; this is the model the paper reports as
+      its headline deep-learning result on the banking data;
 \item \textbf{R-GCN}, which handles maps where the lines mean different things
       (a payment, a bid, a shared director), used on the procurement data.
 \end{itemize}
@@ -273,8 +277,9 @@ being swamped by the ordinary ones.
 
 \textbf{Unsupervised detectors.} Two methods, \textbf{DOMINANT} and a
 \textbf{graph autoencoder}, learn what a ``normal'' neighbourhood looks like and
-flag anything they cannot reconstruct well. They need no labelled examples,
-which is why they are the only tools that work on the unlabelled Georgian data.
+flag anything they cannot reconstruct well. Together with a simple structural
+baseline, they need no labelled examples, which is why they are the only tools
+that can run on the unlabelled Georgian data.
 
 \textbf{XGBoost.} A gradient-boosted decision-tree method, a mainstream
 machine-learning tool that is not deep learning. It was included as the
