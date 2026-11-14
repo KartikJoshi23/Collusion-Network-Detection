@@ -15,64 +15,49 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import yaml
 from collusiongraph.training import build_alert_queue
 
 REPO = Path(__file__).resolve().parents[1]
 EVAL = REPO / "eval_outputs"
 
-# (dataset, domain, score_run, queue_out, split, budgets, extra) — score runs
-# are whatever this machine has produced; edit to match local run dirs.
+# Each served queue is built from its COMMITTED experiment config, so the demo
+# serves exactly the queue the paper reports. (Until 2026-11 this file carried
+# its own copies of the queue settings. They had drifted to other models,
+# gatv2_multi_s0 and sage_struct_s0, and overwrote the published queue
+# folders; see revision-plan.md, Section 0.2.) "metrics" lists the run
+# metrics the dashboard shows beside each queue.
 DEMOS = [
     {
-        "dataset": "elliptic_pp",
-        "domain": "financial",
-        "scores_dir": "eval_outputs/elliptic_pp/gnn_gatv2_focal_multi",
-        "output_dir": "eval_outputs/elliptic_pp/alert_queue_ensemble",
-        "model_run_id": "gatv2_multi_s0",
-        "split": {"test_start": 35, "train_end": 34},
-        "budgets": [50, 100, 200],
-        "metrics": ["eval_outputs/elliptic_pp/gnn_gatv2_focal_multi/metrics.json"],
+        "config": "configs/experiment/alert_queue_elliptic_pp_ensemble.yaml",
+        "metrics": ["eval_outputs/elliptic_pp/ensemble/ensemble_calibrated/metrics.json"],
     },
     {
-        "dataset": "mendeley_eu",
-        "domain": "procurement",
-        "scores_dir": "eval_outputs/mendeley_eu/gnn_sage_structural_src",
-        "output_dir": "eval_outputs/mendeley_eu/alert_queue",
-        "model_run_id": "sage_struct_s0",
-        "split": {"test_start": 2014, "train_end": 2013},
-        "budgets": [4, 18, 36],
-        "train_label_policy": "mendeley_as_of",
-        "metrics": ["eval_outputs/mendeley_eu/transfer_loco_country_5/metrics.json"],
+        "config": "configs/experiment/alert_queue_mendeley_eu.yaml",
+        "metrics": [
+            "eval_outputs/mendeley_eu/gnn_rgcn_focal_multiseed/seed_0/metrics.json",
+            "eval_outputs/mendeley_eu/transfer_loco_country_5/metrics.json",
+        ],
     },
     # actor-level queue (§7 step 26c): §4.5 reports BOTH queue granularities —
     # the wallet head out-precises the tx head at tight budgets
     {
-        "dataset": "elliptic_pp_actor",
-        "domain": "financial",
-        "scores_dir": "eval_outputs/elliptic_pp_actor/gnn_rgcn_focal",
-        "output_dir": "eval_outputs/elliptic_pp_actor/alert_queue",
-        "model_run_id": "rgcn_actor_s0",
-        "split": {"test_start": 35, "train_end": 34},
-        "budgets": [50, 100, 200],
-        "train_label_policy": "history_as_of",
+        "config": "configs/experiment/alert_queue_elliptic_actor.yaml",
         "metrics": ["eval_outputs/elliptic_pp_actor/gnn_rgcn_focal/metrics.json"],
     },
     # procurement second dataset: García, queued on its strongest LOMO fold
     # (Italy) — entity-disjoint market subgraph, precalibrated fold scores
-    # (no post-2013 temporal window; García is evaluated leave-one-market-out)
     {
-        "dataset": "garcia_rodriguez",
-        "domain": "procurement",
-        "scores_dir": "eval_outputs/garcia_rodriguez/transfer_lomo_matrix/fold_Italy_s0",
-        "output_dir": "eval_outputs/garcia_rodriguez/alert_queue_italy",
-        "model_run_id": "rgcn_lomo_italy_s0",
-        "test_group": "Italy",
-        "precalibrated": True,
-        "scores_file": "scores_test.parquet",
-        "budgets": [10, 25, 50],
+        "config": "configs/experiment/alert_queue_garcia_italy.yaml",
         "metrics": ["eval_outputs/garcia_rodriguez/transfer_lomo_matrix/fold_Italy_s0/run.json"],
     },
 ]
+
+
+def load_demo_config(spec: dict) -> dict:
+    """The committed queue config for one demo entry."""
+    return yaml.safe_load((REPO / spec["config"]).read_text(encoding="utf-8"))
+
 
 # Phase-2 rigor artifacts (§7 steps 28–29, 32) per dataset: name → path.
 # Exists-checked at build time — a machine that has not produced an artifact
@@ -110,50 +95,28 @@ RIGOR = {
 def main() -> int:
     serving: dict[str, dict] = {}
     for spec in DEMOS:
-        scores = REPO / spec["scores_dir"]
-        # honour the spec's own scores_file — a queue built from a non-default
-        # score file (e.g. the calibrated-ensemble parquet) was skipped by this
-        # guard even though build_alert_queue would have found it
-        if not (scores / spec.get("scores_file", "scores_test.parquet")).is_file():
-            print(f"skip {spec['dataset']}: no score run at {spec['scores_dir']}")
+        cfg = load_demo_config(spec)
+        dataset, out = cfg["dataset"], cfg["output_dir"]
+        scores = REPO / cfg["scores_dir"]
+        # honour the config's own scores_file (e.g. the calibrated-ensemble parquet)
+        if not (scores / cfg.get("scores_file", "scores_test.parquet")).is_file():
+            print(f"skip {dataset}: no score run at {cfg['scores_dir']}")
             continue
-        cfg = {
-            "dataset": spec["dataset"],
-            "domain": spec["domain"],
-            "store_root": "data/interim",
-            "scores_dir": spec["scores_dir"],
-            "output_dir": spec["output_dir"],
-            "model_run_id": spec["model_run_id"],
-            "seed": 0,
-            "resolution": 1.0,
-            "min_community_size": 2,
-            "top_p": 0.25,
-            "budgets": spec["budgets"],
-        }
-        # temporal queues carry a split; entity-disjoint LOMO market queues
-        # (García) carry test_group + precalibrated fold scores instead
-        for key in ("split", "train_label_policy", "test_group", "precalibrated", "scores_file"):
-            if key in spec:
-                cfg[key] = spec[key]
         summary = build_alert_queue(cfg)
-        print(f"{spec['dataset']}: {summary['n_alerts']} alerts")
+        print(f"{dataset}: {summary['n_alerts']} alerts (config {spec['config']})")
 
-        expl = REPO / "eval_outputs" / spec["dataset"] / "explanations"
+        expl = REPO / "eval_outputs" / dataset / "explanations"
         # the queue's own metrics ride along: the alert-level precision@budget
         # block feeds the dashboard's measured precision readout (§5.3 view 2)
-        metrics = [*spec["metrics"], f"{spec['output_dir']}/metrics.json"]
+        metrics = [*spec["metrics"], f"{out}/metrics.json"]
         rigor = {
-            name: path
-            for name, path in RIGOR.get(spec["dataset"], {}).items()
-            if (REPO / path).is_file()
+            name: path for name, path in RIGOR.get(dataset, {}).items() if (REPO / path).is_file()
         }
-        serving[spec["dataset"]] = {
-            "domain": spec["domain"],
-            "store_root": "data/interim",
-            "alerts": f"{spec['output_dir']}/alerts.parquet",
-            "explanations": (
-                f"eval_outputs/{spec['dataset']}/explanations" if expl.is_dir() else None
-            ),
+        serving[dataset] = {
+            "domain": cfg["domain"],
+            "store_root": cfg.get("store_root", "data/interim"),
+            "alerts": f"{out}/alerts.parquet",
+            "explanations": (f"eval_outputs/{dataset}/explanations" if expl.is_dir() else None),
             "metrics": [m for m in metrics if (REPO / m).is_file()],
             "rigor": rigor,
         }

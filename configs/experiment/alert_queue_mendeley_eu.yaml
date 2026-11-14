@@ -6,7 +6,12 @@
 dataset: mendeley_eu
 domain: procurement
 store_root: data/interim
-scores_dir: eval_outputs/mendeley_eu/gnn_rgcn_focal
+# Journal revision (2026-11): the seed-0 run of gnn_mendeley_rgcn_multiseed.yaml,
+# whose protocol is identical to gnn_mendeley_rgcn.yaml. The single-seed
+# folder this config used to name was never stored. The previously stored
+# queue was built by scripts/build_demo_artifacts.py from a different model
+# (sage_struct_s0); see revision-plan.md, Section 0.2.
+scores_dir: eval_outputs/mendeley_eu/gnn_rgcn_focal_multiseed/seed_0
 output_dir: eval_outputs/mendeley_eu/alert_queue
 model_run_id: rgcn_focal_s0
 seed: 0
