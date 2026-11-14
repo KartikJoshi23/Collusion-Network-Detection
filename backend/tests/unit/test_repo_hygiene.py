@@ -74,7 +74,9 @@ def test_paper_appendix_configs_exist() -> None:
 
     tex = (REPO_ROOT / "paper" / "collusiongraph_paper.tex").read_text(encoding="utf-8")
     start = tex.index("section{Number-to-Config Map}")
-    end = tex.index("\\end{table}", start)
+    match = re.compile(r"\\end\{table\*?\}").search(tex, start)
+    assert match, "Appendix A table not closed"
+    end = match.start()
     on_disk = {p.stem for p in (REPO_ROOT / "configs" / "experiment").glob("*.yaml")}
     named: list[str] = []
     for line in tex[start:end].splitlines():

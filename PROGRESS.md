@@ -256,6 +256,25 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-11-14 · **JOURNAL REVISION, steps 3.3–3.8 (Part B results and text,
+  B7 still training).** Reproducibility checks R1–R7: trees, LOCO, LOMO and
+  GATv2 seed 0 reproduce master bit for bit; the financial→procurement probe
+  does not (0.2843 here vs 0.2841, same encoder weights). The published queues
+  were rebuilt from their configs (R6), and so were the explanation bundles,
+  which had also come from the drifted demo queues; their counts did not
+  change. *Results* (`paper/revision-results.md`): five-seed trees keep RQ1
+  (B3 0.8123 ± 0.0012 vs GATv2 0.4729 ± 0.0525, every seed pair p at the
+  floor); the trees also collapse at step 43, so the gap sits in steps 35–42;
+  Mendeley transfer pools to lift 0.93, García to 1.36; the frozen probes fall
+  far short of probes on the target's own inputs. *B4 diagnosis:* no label or
+  score bug; Mendeley's structural signal reverses over time; AMLworld's
+  one-hour training window carries almost no signal; a component-size
+  hypothesis was tested and rejected. *Bug fixed:* `baselines_amlworld.yaml`
+  never set the post-window fence the paper describes; rerun with it.
+  *Text:* every Part B marker except B7 filled from artifacts; Appendix A
+  rebuilt (42 rows). New code: label association in the diagnostics,
+  `exclude_features` in the trainer, `run_full_label_comparison`.
+  · [revision laptop, i5-11300H]
 - 2026-11-14 · **JOURNAL REVISION, step 3.1 + Part A (framing) on branch
   `paper/journal-revision`.** Follows `revision-plan.md` (19 brief items) and
   logs each item in `paper/revision-changelog.md`. *Setup:* the co-author-edited

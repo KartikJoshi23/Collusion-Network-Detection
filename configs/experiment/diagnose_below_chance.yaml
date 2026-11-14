@@ -45,10 +45,13 @@ cases:
         windows:
           train: {side: train, until: 27699900}
           test: {side: test, after: 27699900}
+  # the frozen-probe scores of cross_domain_full_label_comparison.yaml (stored
+  # encoder, this machine), so the paper quotes one value for this probe; the
+  # original run's scores (cross_domain_probe_fin2proc.yaml) give 0.2841
   fin2proc_probe:
     dataset: mendeley_eu
     node_type: firm
-    scores: eval_outputs/cross_domain/fin2proc/scores_test.parquet
+    scores: eval_outputs/cross_domain/full_label_comparison/fin2proc/frozen_probe.parquet
     shift: {train_end: 2013, test_start: 2014, features: structural}
   proc2fin_source:
     dataset: mendeley_eu

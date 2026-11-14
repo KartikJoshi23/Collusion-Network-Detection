@@ -1,28 +1,30 @@
 # Revision change log — "One Stack, Two Ledgers"
 
-Format follows Part H of the revision brief. It maps every item in the brief's priority table to what changed. It is updated after each part of the revision. The plan is in `revision-plan.md`.
+Format follows Part H of the revision brief. It maps every item in the brief's priority table to what changed. It is updated after each part of the revision. The plan is in `revision-plan.md`; raw results against the old claims are in `paper/revision-results.md`.
 
 | Item | What changed | Section / page | New numbers (if any) |
 |---|---|---|---|
 | 1 | **Done.** Section I now opens with the problem (false-positive alert load; secret, hard-to-detect cartels), not a date. The AI Act appears later as a standard to meet, not an obligation. Section VIII rewritten; the 5(b) claim removed. Every fact checked against the primary text: OJ texts of Reg. (EU) 2024/1689 and 2026/1744, the Commission draft (para. 309, non-binding, consultation 19 May–23 Jul. 2026), UAE FDL 6/2025 Art. 149 (OG no. 807), OECD. Two brief figures do not match their sources; see Open items. | I; VII (Regulatory, formerly VIII); refs | 95–98% (CEPS 2021, pp. 3, 31); 12.7% of GDP (OECD 2025b, p. 146) |
-| 2 | **Done, two numbers pending.** Two lead contributions (protocol; cross-crime representation with transfer). RQ2 reworded to what was run, and LOCO/LOMO moved under it (V-C). RQ4 limited to the cross-domain probe (V-D). RQ3 rebuilt on fidelity and coverage; its answer waits for R6 and B8. RQ1 answered "no", with the unsupervised cost. | I-A, I-B, V-A, V-C, V-D, VI | +0.0295 (existing artifact) |
+| 2 | **Done.** Two lead contributions (protocol; cross-crime representation with transfer). RQ2 reworded to what was run, and LOCO/LOMO moved under it (V-C). RQ4 limited to the cross-domain probe (V-D). RQ3 rebuilt on fidelity and coverage, and now answered from the rebuilt queue (R6, B8). RQ1 answered "no", with the unsupervised cost. | I-A, I-B, V-A, V-C, V-D, VI | +0.0295 (existing artifact) |
 | 3 | **Done.** Section VII cut to a two-sentence Future Work paragraph in the Conclusion; Fig. 7 removed. | old VII; Conclusion | — |
-| 4 | **In progress.** Rewritten without new numbers: calibration claim, "all four evaluated markets", copilot metric (grounding 24/26), "luck as much as skill", seed-0 label on the bootstrap delta, and the conclusion's "not one finding" overclaim. Marked pending: bootstrap per seed (B2), pooled lift (B5), probe vs raw-feature model (B6), measurement count (B7), Wilson CI. | Abstract, V-A, V-C, V-E, VI, Conclusion | — |
-| 5 | Not started | — | — |
-| 6 | Not started | — | — |
-| 7 | Not started | — | — |
-| 8 | Not started | — | — |
-| 9 | Not started | — | — |
-| 10 | Not started | — | — |
-| 11 | Not started | — | — |
-| 12 | Not started | — | — |
+| 4 | **Done except B7.** All number-bearing rows filled from artifacts: bootstrap per seed pair (B2), pooled lift (B5), probe against models on the target's own inputs (B6), copilot Wilson interval. The measurement count waits for B7. | Abstract, V-A, V-C, V-D, VI, Conclusion | Wilson 95% CI [0.759, 0.979] for 24/26 |
+| 5 | **Text done; figure pending.** New Table "before and after step 43" (tab:t1b). The trees collapse at step 43 too, so the GNN deficit sits in steps 35–42. RQ1 text, Fig. 3 caption and Conclusion say so. Fig. 3 itself is regenerated with the B3 line in Part F. | V-A, Fig. 3, Conclusion | Steps 35–42: GATv2 0.5737 ± 0.0623, B3 0.9259 ± 0.0011 (prev. 0.092); steps 43–49: 0.0391 ± 0.0041, 0.0567 ± 0.0034 (prev. 0.025) |
+| 6 | **Done.** XGBoost with subsample and colsample_bytree 0.8 over seeds 0–4 for every tree row. Tables II, III, IV and VII updated. Bootstrap redone per seed pair and on seed-averaged scores. B3 added to a calibrated fusion: it does not help. | V-A, Tables II–IV, VII | Elliptic B2 0.8039 ± 0.0017, B3 0.8123 ± 0.0012; Mendeley B2 0.3849 ± 0.0099, B3 0.3749 ± 0.0092, B2+screens 0.4547 ± 0.0081, B3+screens 0.3509 ± 0.0058; GATv2 vs B3 −0.264 to −0.391 per seed pair, −0.301 [−0.324, −0.276] seed-averaged; fusion 0.7760 ± 0.0014 vs B3 (≤29) 0.8012 ± 0.0034 |
+| 7 | **Done.** B2-local and B3-local rows in Table II; the "B3 adds only 0.003" paragraph rewritten. | V-A, Table II | B2-local 0.7879 ± 0.0011, B3-local 0.7959 ± 0.0014 |
+| 8 | **Done.** No label or score bug in any case. Mendeley R-GCN, the financial→procurement probe and the procurement source encoder: a temporal reversal (training firms 87–89% cartel-linked; structural features rank licit firms higher before 2011 and cartel firms higher in test). A first hypothesis (component-size shift) was tested and rejected. AMLworld: the one-hour training window carries almost no label signal. **A bug was found and fixed:** the AMLworld config never set the post-window fence that the paper describes; rerun with the fence. The old AMLworld explanation (median degree 3 vs 13) compared the wrong featurisations and was replaced. | V-A (Mendeley), V-E (AMLworld), III-B (prevalence) | R-GCN 1 − score 0.433–0.470; no-component R-GCN 0.2997 ± 0.0015; AMLworld B2 0.0063, B3 0.0062, prevalence 0.0103 (was 0.0064, 0.0062, 0.0104) |
+| 9 | **Done except country names.** Table VI now has fold prevalence, bootstrap 95% CIs on lift, pooled and size-weighted rows; macro lift moved to a table note. Mendeley transfer no longer reads as working: pooled lift 0.93. Country names stay open (see Open items). | V-C, Table VI, Fig. 4 caption, abstract, Conclusion | Mendeley pooled 0.93 ± 0.02, size-weighted 0.99; García pooled 1.36 ± 0.15, size-weighted 1.53; country_2 0.90 [0.87, 0.94] |
+| 10 | **Text done; figure pending.** New Table "probes at full labels" (tab:fulllabel). Encoders never ingest raw features; this is now stated. The abstract's transfer sentence is rewritten. The full-label point goes on Fig. 5 in Part F. | V-D, abstract, Conclusion | Frozen 0.2843 / 0.1502; structural 0.2705 / 0.1084; B2-input probe 0.4752 / 0.2991; B2 0.3849 / 0.8039 |
+| 11 | **Running.** Label-noise curve on five seeds and the five regulariser arms (label smoothing, weight decay, dropout, patience 5, validation on steps 32–34) are training in the background (about 31 GATv2 runs). | — | — |
+| 12 | **Done.** New Table "explainer metrics" (tab:explainers) on the rebuilt queue: PyG sanity, hard-mask Fidelity±, sparsity, time, arm overlap. RQ3 answered. | VI | PGExplainer 49/50 PyG-sane (GNNExplainer 10/50, was 12/50); hard sane 25/50, 22/50, 22/50; Fidelity+ 0.049–0.052; Jaccard overlap 0.65–0.88 |
 | 13 | Not started | — | — |
-| 14 | **In progress.** Done with Part A: D4 ("all four evaluated markets"), D2 (prevalence ranges given per benchmark), D7 (GATv2 named as the only supervised member). | V-A, V-C | 0.29–0.89 (Mendeley folds); 0.25–0.55 (García folds) |
+| 14 | **In progress.** Done: D2, D4, D7 (Part A); queue P@100 0.23 → 0.25 and coverage 7.8% → 7.9% (R6); hit-rule dependence 0.04 → 0.02 (R6); injection figure in Appendix A 0.923 ± 0.162 → 0.92 ± 0.17; D19 label-efficiency wording; the reproducibility statement on probes corrected. | V-B, V-D, V-E, VII-A, App. A | P@50 0.32 → 0.30 under the 0.1 hit rule |
 | 15 | **In progress.** Replaced with verified sources: [22] (now Lannoo and Parlour 2021); [28] retitled as draft guidelines; full Official Journal citations for the AI Act and the Omnibus; UAE law citation corrected (a federal decree-law, not a Central Bank document). Added OECD *Government at a Glance 2025*. | refs | — |
-| 16 | Not started | — | — |
-| 17 | Not started | — | — |
-| 18 | Not started | — | — |
-| 19 | Not started | — | — |
+| 16 | **Partly done.** Abstract redrafted around the new results (about 230 words); the B7 sentence and the availability sentence are pending. Language pass not started. | Abstract | — |
+| 17 | Not started (figures are regenerated in Part F) | — | — |
+| 18 | Not started (after the journal is confirmed) | — | — |
+| 19 | Not started (author decision) | — | — |
+
+Appendix A was rebuilt for the new runs: 42 rows, each naming an existing config (checked by the repository hygiene test).
 
 ## Open items and disagreements with the brief
 
@@ -30,4 +32,7 @@ Format follows Part H of the revision brief. It maps every item in the brief's p
 2. **OECD figures (A1).** Neither "13% of GDP" nor "20% or more" appears in the OECD 2025 Guidelines; I checked the full 31-page text. The procurement share is now 12.7% of GDP (2023), from *Government at a Glance 2025*, p. 146. The 20% price-reduction estimate could not be traced to any primary OECD document, only to secondary sources, so it was removed.
 3. **"Cartels found only after the fact" (A1).** The OECD 2025 Guidelines support "negotiated in secret and hard to detect" (pp. 7, 23), and detection through red flags, leniency and whistleblowers (pp. 12, 14). The opening is worded to that, not to "only after the fact".
 4. **"therules" (Part F).** Not in the source. It comes from extracting text from the PDF at a page break.
-5. **Decisions reserved for Dr. Garg:** target journal, rater study, availability wording, disclosure of earlier versions, the A1 stance, co-author approval.
+5. **Country names (B5) cannot be done as written.** The Mendeley record (DOI 10.17632/f3y4nrn3s6.2) names the seven countries (Bulgaria, France, Hungary, Latvia, Portugal, Spain, Sweden), but the data code them country_1 to country_7 and publish no key. The per-code case counts in the data (2, 15, 7, 14, 14, 2, 5) do not match the per-country counts in the publisher's working paper (10, 2, 8, 19, 11, 17, 23), so the codes cannot be mapped without guessing. The paper says the release does not identify the codes.
+6. **Explanation bundles came from the wrong queue.** The bundles behind the first version's Section VI counts were built from the drifted demo queues (revision-plan.md, Section 0.2). Rebuilt from the committed queues, the counts are unchanged (15/50, 1 implausible, 0/20). The paper text does not narrate this; whether to disclose it belongs with item 19.
+7. **Probe reproducibility.** The first version claimed byte-level cross-machine reproducibility for the frozen probes. With the stored encoder weights, procurement → financial reproduces exactly, but financial → procurement gives 0.2843 here against 0.2841 on the original machine. The paper now uses 0.2843 throughout (from `cross_domain_full_label_comparison.yaml`) and states the difference in Section VII.
+8. **Decisions reserved for Dr. Garg:** target journal, rater study, availability wording (the abstract carries a marker), disclosure of earlier versions (item 19; see also items 6 and 7), the A1 stance, co-author approval.
