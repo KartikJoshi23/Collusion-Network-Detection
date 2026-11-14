@@ -1,9 +1,10 @@
-"""Generate the paper's figures as print-resolution PNGs in the repository root.
+"""Generate the paper's figures as vector PDFs in ``paper/figures/``.
 
-The paper is compiled on Overleaf by the user, who uploads these PNGs alongside
-the ``.tex`` and may refine them in Canva -- so every figure is a self-contained
-raster at 400 DPI, sized for a two-column IEEEtran page (3.45 in single column,
-7.16 in double column) and typeset in Times to match the body text.
+Each figure is sized for a two-column IEEEtran page (3.45 in single column,
+7.16 in double column) and printed at 100%, so every piece of text is at least
+8 pt on the page. Series are told apart by line style, marker or hatching as
+well as colour, so the figures stay readable in greyscale. Fonts are embedded
+as TrueType (``pdf.fonttype`` 42).
 
 Every number plotted here is READ FROM AN ARTIFACT under ``eval_outputs/``.
 Nothing is hard-coded from memory: if an artifact is missing the figure that
@@ -32,7 +33,7 @@ from matplotlib.lines import Line2D
 
 REPO = Path(__file__).resolve().parents[1]
 EVAL = REPO / "eval_outputs"
-OUT = REPO  # figures live in the repo root: the user uploads them to Overleaf
+OUT = REPO / "paper" / "figures"  # uploaded to Overleaf with the .tex
 
 # --- house style -----------------------------------------------------------
 # Muted, colour-blind-safe, and deliberately low-saturation: the figures sit
@@ -58,12 +59,12 @@ plt.rcParams.update(
         "font.family": "serif",
         "font.serif": ["Times New Roman", "STIXGeneral", "DejaVu Serif"],
         "mathtext.fontset": "stix",
-        "font.size": 8.0,
+        "font.size": 8.5,
         "axes.titlesize": 8.5,
-        "axes.labelsize": 8.0,
-        "xtick.labelsize": 7.2,
-        "ytick.labelsize": 7.2,
-        "legend.fontsize": 7.2,
+        "axes.labelsize": 8.5,
+        "xtick.labelsize": 8.0,
+        "ytick.labelsize": 8.0,
+        "legend.fontsize": 8.0,
         "axes.edgecolor": RULE,
         "axes.linewidth": 0.6,
         "axes.labelcolor": INK,
@@ -76,9 +77,11 @@ plt.rcParams.update(
         "ytick.major.size": 2.5,
         "grid.color": "#e6e8eb",
         "grid.linewidth": 0.5,
+        "hatch.color": "white",
+        "hatch.linewidth": 0.7,
         "legend.frameon": False,
-        "figure.dpi": 400,
-        "savefig.dpi": 400,
+        "pdf.fonttype": 42,
+        "ps.fonttype": 42,
         "savefig.bbox": "tight",
         "savefig.pad_inches": 0.02,
     }
@@ -100,11 +103,12 @@ def _tidy(ax: plt.Axes, *, grid: str = "y") -> None:
         ax.set_axisbelow(True)
 
 
-def _save(fig: plt.Figure, name: str) -> None:
-    path = OUT / name
+def _save(fig: plt.Figure, stem: str) -> None:
+    OUT.mkdir(parents=True, exist_ok=True)
+    path = OUT / f"{stem}.pdf"
     fig.savefig(path, facecolor="white")
     plt.close(fig)
-    print(f"  wrote {name}  ({path.stat().st_size / 1024:.0f} KB)")
+    print(f"  wrote {path.name}  ({path.stat().st_size / 1024:.0f} KB)")
 
 
 # --------------------------------------------------------------------------
@@ -112,12 +116,12 @@ def _save(fig: plt.Figure, name: str) -> None:
 #      in docs/architecture.html: vertical, numbered, small boxes, airy)
 # --------------------------------------------------------------------------
 def fig_architecture() -> None:
-    fig, ax = plt.subplots(figsize=(DOUBLE, 5.0))
+    fig, ax = plt.subplots(figsize=(DOUBLE, 5.7))
     ax.set_xlim(0, 100)
     ax.set_ylim(0, 100)
     ax.axis("off")
 
-    def box(x, y, w, h, title, *, sub=None, fc=FILL_A, ec=NAVY, mono=False, ts=7.5, ss=6.1):
+    def box(x, y, w, h, title, *, sub=None, fc=FILL_A, ec=NAVY, ts=9.0, ss=8.0):
         """Draw a box spanning y..y+h, title in the upper half, subtitle below it."""
         ax.add_patch(
             mpatches.FancyBboxPatch(
@@ -131,40 +135,19 @@ def fig_architecture() -> None:
                 zorder=3,
             )
         )
-        if sub is None:
+        ax.text(x + w / 2, y + h * 0.67, title, ha="center", va="center", fontsize=ts, zorder=4)
+        if sub is not None:
             ax.text(
                 x + w / 2,
-                y + h / 2,
-                title,
+                y + h * 0.27,
+                sub,
                 ha="center",
                 va="center",
-                fontsize=ts,
-                color=INK,
+                fontsize=ss,
+                color=MUTED,
+                linespacing=1.45,
                 zorder=4,
             )
-            return
-        ax.text(
-            x + w / 2,
-            y + h * 0.66,
-            title,
-            ha="center",
-            va="center",
-            fontsize=ts,
-            color=INK,
-            zorder=4,
-        )
-        ax.text(
-            x + w / 2,
-            y + h * 0.27,
-            sub,
-            ha="center",
-            va="center",
-            fontsize=ss,
-            color=MUTED,
-            linespacing=1.5,
-            family="monospace" if mono else "serif",
-            zorder=4,
-        )
 
     def arrow(x1, y1, x2, y2):
         ax.annotate(
@@ -184,9 +167,9 @@ def fig_architecture() -> None:
     # ---- offline cluster: encloses stages 1-7 -----------------------------
     ax.add_patch(
         mpatches.FancyBboxPatch(
-            (1.5, 14.0),
+            (1.5, 14.6),
             97,
-            84.0,
+            83.9,
             boxstyle="round,pad=0,rounding_size=1.4",
             linewidth=0.6,
             edgecolor="#cfd9cf",
@@ -196,73 +179,53 @@ def fig_architecture() -> None:
     )
     ax.text(
         4.0,
-        95.6,
+        96.2,
         "OFFLINE  ·  DEEP-LEARNING PIPELINE  ·  writes files, then exits",
-        fontsize=6.1,
+        fontsize=8,
         color="#5c7a5c",
         va="center",
     )
 
+    main_x, main_w = 21, 58  # the central column of boxes
     box(
-        28,
-        85.5,
-        44,
-        7.0,
+        main_x,
+        86.0,
+        main_w,
+        7.4,
         "1.  Data ingestion adapters",
-        sub="6 public datasets · 2 domains · checksum-verified",
+        sub="5 public datasets · 6 graph views · 2 domains · checksum-verified",
     )
-    arrow(50, 85.5, 50, 83.0)
+    arrow(50, 86.0, 50, 83.6)
     box(
-        28,
-        75.5,
-        44,
-        7.5,
+        main_x,
+        76.0,
+        main_w,
+        7.6,
         "2.  Unified graph schema (IR)",
         sub="typed nodes · edges · labels · time-safe inductive splits",
     )
 
     # fan out to four parallel arms
-    ax.plot([50, 50], [75.5, 72.6], color=MUTED, linewidth=0.6, zorder=2)
-    for cx in (13.5, 37.5, 61.5, 85.5):
-        ax.plot([50, cx], [72.6, 72.6], color=MUTED, linewidth=0.6, zorder=2)
-        arrow(cx, 72.6, cx, 70.2)
+    arm_w = 23.5
+    arm_x = (1.5, 26.0, 50.5, 75.0)
+    centres = [x + arm_w / 2 for x in arm_x]
+    ax.plot([50, 50], [76.0, 73.2], color=MUTED, linewidth=0.6, zorder=2)
+    for cx in centres:
+        ax.plot([50, cx], [73.2, 73.2], color=MUTED, linewidth=0.6, zorder=2)
+        arrow(cx, 73.2, cx, 70.9)
 
     arms = [
-        (
-            3.0,
-            "3a.  Supervised GNNs",
-            "GATv2 · SAGE · R-GCN\nfocal loss (~2% positives)",
-            FILL_B,
-            TEAL,
-        ),
-        (
-            27.0,
-            "3b.  Unsupervised arm",
-            "DOMINANT · GAE · floor\nno labels required",
-            FILL_B,
-            TEAL,
-        ),
-        (
-            51.0,
-            "3c.  Graph features",
-            "degree · motifs · k-core\nbid screens · ratios",
-            FILL_B,
-            TEAL,
-        ),
-        (
-            75.0,
-            "3d.  Baselines & checks",
-            "XGBoost yardstick\ninjection · leakage suite",
-            FILL_C,
-            AMBER,
-        ),
+        ("3a.  Supervised GNNs", "GATv2, SAGE, R-GCN\nfocal loss; 2% of tx illicit", FILL_B, TEAL),
+        ("3b.  Unsupervised arm", "DOMINANT, GAE, floor\nno labels required", FILL_B, TEAL),
+        ("3c.  Graph features", "degree, motifs, k-core\nbid screens, ratios", FILL_B, TEAL),
+        ("3d.  Baselines & checks", "XGBoost yardstick\ninjection, leakage suite", FILL_C, AMBER),
     ]
-    for x, title, sub, fc, ec in arms:
+    for x, (title, sub, fc, ec) in zip(arm_x, arms, strict=True):
         ax.add_patch(
             mpatches.FancyBboxPatch(
-                (x, 58.5),
-                22,
-                11.7,
+                (x, 58.6),
+                arm_w,
+                12.3,
                 boxstyle="round,pad=0,rounding_size=1.0",
                 linewidth=0.7,
                 edgecolor=ec,
@@ -270,129 +233,111 @@ def fig_architecture() -> None:
                 zorder=3,
             )
         )
-        ax.text(x + 11, 67.2, title, ha="center", va="center", fontsize=7.1, color=INK, zorder=4)
+        ax.text(x + arm_w / 2, 67.9, title, ha="center", va="center", fontsize=8.8, zorder=4)
         ax.text(
-            x + 11,
-            62.4,
+            x + arm_w / 2,
+            62.6,
             sub,
             ha="center",
             va="center",
-            fontsize=6.0,
+            fontsize=8.0,
             color=MUTED,
-            linespacing=1.55,
+            linespacing=1.45,
             zorder=4,
         )
 
-    for cx in (13.5, 37.5, 61.5, 85.5):
-        ax.plot([cx, cx], [58.5, 55.8], color=MUTED, linewidth=0.6, zorder=2)
-        ax.plot([cx, 50], [55.8, 55.8], color=MUTED, linewidth=0.6, zorder=2)
-    arrow(50, 55.8, 50, 53.3)
+    for cx in centres:
+        ax.plot([cx, cx], [58.6, 56.0], color=MUTED, linewidth=0.6, zorder=2)
+        ax.plot([cx, 50], [56.0, 56.0], color=MUTED, linewidth=0.6, zorder=2)
+    arrow(50, 56.0, 50, 53.6)
 
     box(
-        28,
+        main_x,
         46.0,
-        44,
-        7.0,
+        main_w,
+        7.6,
         "4.  Calibrated ensemble fusion",
         sub="isotonic per member → one comparable risk score per node",
     )
-    arrow(50, 46.0, 50, 43.5)
+    arrow(50, 46.0, 50, 43.6)
     box(
-        28,
+        main_x,
         36.0,
-        44,
-        7.5,
+        main_w,
+        7.6,
         "5.  Leiden communities → ranked alert queue",
         sub="254 financial + 223 procurement alerts · NMS · fixed budget",
     )
-    arrow(50, 36.0, 50, 33.5)
+    arrow(50, 36.0, 50, 33.6)
     box(
-        28,
-        26.5,
-        44,
-        7.0,
+        main_x,
+        26.0,
+        main_w,
+        7.6,
         "6.  Explanation layer",
         sub="PGExplainer subgraph · motif matcher · FATF / OECD citations",
         fc=FILL_C,
         ec=AMBER,
     )
-    arrow(50, 26.5, 50, 24.0)
+    arrow(50, 26.0, 50, 23.6)
     box(
-        26,
-        16.5,
-        48,
-        7.0,
+        main_x,
+        16.0,
+        main_w,
+        7.6,
         "7.  Artifact store — plain files",
-        sub="alerts.parquet · explanations/*.json · metrics · serving.json",
+        sub="alerts · explanation bundles · metrics · serving index",
         fc=FILL_C,
         ec=AMBER,
-        mono=True,
-        ss=5.6,
     )
 
     # ---- trust boundary ---------------------------------------------------
     ax.text(
-        50,
-        12.4,
-        "T R U S T   B O U N D A R Y",
-        ha="center",
-        va="center",
-        fontsize=5.9,
-        color=BRICK,
-        zorder=5,
+        50, 13.1, "T R U S T   B O U N D A R Y", ha="center", va="center", fontsize=8, color=BRICK
     )
-    ax.plot([2, 98], [10.9, 10.9], color=BRICK, linewidth=0.7, linestyle=(0, (4, 2.5)), zorder=2)
+    ax.plot([2, 98], [11.6, 11.6], color=BRICK, linewidth=0.7, linestyle=(0, (4, 2.5)), zorder=2)
     ax.text(
         50,
-        9.4,
-        "above: writes files, then exits   ·   below: read-only — cannot retrain"
-        " or change a score",
+        9.6,
+        "above: writes files, then exits   ·   below: read-only, cannot retrain or change a score",
         ha="center",
         va="center",
-        fontsize=5.9,
+        fontsize=8,
         color=MUTED,
         zorder=5,
     )
 
-    ax.plot([27, 73], [7.9, 7.9], color=MUTED, linewidth=0.6, zorder=2)
-    ax.plot([50, 50], [9.4, 7.9], color=MUTED, linewidth=0.6, zorder=2)
-    arrow(27, 7.9, 27, 6.6)
-    arrow(73, 7.9, 73, 6.6)
-
     box(
-        2,
+        1.5,
         0.2,
-        49,
-        6.4,
+        47.5,
+        7.0,
         "8.  FastAPI serving layer — read-only",
         sub="/alerts · /subgraph · /explanations · /metrics · /rigor",
         fc=FILL_A,
         ec=NAVY,
-        mono=True,
-        ts=7.1,
-        ss=5.3,
+        ts=8.8,
     )
     box(
-        55,
+        51.0,
         0.2,
-        43,
-        6.4,
+        47.5,
+        7.0,
         "9.  Investigator console + guarded copilot",
-        sub="ranked queue · evidence dossier · SELECT-only agent",
+        sub="ranked queue, evidence dossier, SELECT-only agent",
         fc="#f3eef7",
         ec=PLUM,
-        ts=7.1,
-        ss=5.9,
+        ts=8.8,
     )
 
-    _save(fig, "fig1_architecture.png")
+    _save(fig, "fig1_architecture")
 
 
 # --------------------------------------------------------------------------
 # F2 -- two ledgers, one structure (the conceptual bridge)
 # --------------------------------------------------------------------------
 def fig_two_ledgers() -> None:
-    fig, ax = plt.subplots(figsize=(DOUBLE, 3.05))
+    fig, ax = plt.subplots(figsize=(DOUBLE, 3.25))
     ax.set_xlim(0, 100)
     ax.set_ylim(0, 46)
     ax.axis("off")
@@ -473,155 +418,192 @@ def fig_two_ledgers() -> None:
 
     for i, (sig, fin, proc, kind) in enumerate(panels):
         cx = 10 + i * 20
-        ax.text(cx, 43.5, sig, ha="center", va="center", fontsize=7.4, color=INK)
+        ax.text(cx, 43.6, sig, ha="center", va="center", fontsize=9.0, color=INK)
         ax.plot([cx - 8.4, cx + 8.4], [41.0, 41.0], color=RULE, linewidth=0.6)
         glyph(cx, 29.5, kind)
-        ax.text(cx, 17.2, "FINANCIAL", ha="center", va="center", fontsize=5.6, color=NAVY)
-        ax.text(cx, 13.6, fin, ha="center", va="center", fontsize=6.6, color=INK)
-        ax.text(cx, 7.6, "PROCUREMENT", ha="center", va="center", fontsize=5.6, color=AMBER)
-        ax.text(cx, 4.0, proc, ha="center", va="center", fontsize=6.6, color=INK)
+        ax.text(cx, 17.4, "FINANCIAL", ha="center", va="center", fontsize=8.0, color=NAVY)
+        ax.text(cx, 13.5, fin, ha="center", va="center", fontsize=8.0, color=INK)
+        ax.text(cx, 7.9, "PROCUREMENT", ha="center", va="center", fontsize=8.0, color=AMBER)
+        ax.text(cx, 4.0, proc, ha="center", va="center", fontsize=8.0, color=INK)
         if i:
             ax.plot([cx - 10, cx - 10], [1.5, 41.5], color="#e9ebee", linewidth=0.5)
 
-    _save(fig, "fig2_two_ledgers.png")
+    _save(fig, "fig2_two_ledgers")
 
 
 # --------------------------------------------------------------------------
-# F3 -- per-time-step AUC-PR: the step-43 distribution shift
+# F3 -- per-time-step AUC-PR: the step-43 distribution shift, GNN and trees
 # --------------------------------------------------------------------------
 def fig_timestep() -> None:
-    seeds = range(5)
     per_seed: list[dict[str, dict[str, float]]] = []
-    for s in seeds:
+    for s in range(5):
         m = _load(f"elliptic_pp/gnn_gatv2_focal_multiseed/seed_{s}/metrics.json")
         per_seed.append(m["node_level"]["per_time_step"])
+    trees = _load("elliptic_pp/baselines_multiseed/baselines_multiseed.json")
+    b3 = trees["baselines"]["b3_xgb_graph"]["per_time_step"]
 
     steps = sorted({int(k) for d in per_seed for k in d})
-    mean, lo, hi, prev = [], [], [], []
+    g_mean, g_sd, b_mean, b_sd, prev = [], [], [], [], []
     for st in steps:
         vals = [d[str(st)]["auc_pr"] for d in per_seed if str(st) in d]
-        mean.append(float(np.mean(vals)))
-        lo.append(float(np.mean(vals) - np.std(vals)))
-        hi.append(float(np.mean(vals) + np.std(vals)))
-        prev.append(
-            float(np.mean([d[str(st)]["prevalence_baseline"] for d in per_seed if str(st) in d]))
-        )
+        g_mean.append(float(np.mean(vals)))
+        g_sd.append(float(np.std(vals, ddof=1)))  # sample SD, as in the tables
+        b_mean.append(float(b3[str(st)]["auc_pr_mean"]))
+        b_sd.append(float(b3[str(st)]["auc_pr_std"]))
+        prev.append(float(b3[str(st)]["prevalence_baseline"]))
+    g_mean_a, g_sd_a = np.array(g_mean), np.array(g_sd)
+    b_mean_a, b_sd_a = np.array(b_mean), np.array(b_sd)
 
-    fig, ax = plt.subplots(figsize=(SINGLE, 2.25))
-    ax.fill_between(steps, lo, hi, color=NAVY, alpha=0.13, linewidth=0)
-    ax.plot(
-        steps, mean, color=NAVY, linewidth=1.15, label="GATv2-focal (5-seed mean $\\pm$ 1 s.d.)"
+    fig, ax = plt.subplots(figsize=(SINGLE, 2.75))
+    ax.axvspan(42.5, max(steps) + 0.5, color=BRICK, alpha=0.06, linewidth=0)
+    ax.fill_between(
+        steps, b_mean_a - b_sd_a, b_mean_a + b_sd_a, color=TEAL, alpha=0.18, linewidth=0
+    )
+    ax.fill_between(
+        steps, g_mean_a - g_sd_a, g_mean_a + g_sd_a, color=NAVY, alpha=0.15, linewidth=0
     )
     ax.plot(
-        steps, prev, color=MUTED, linewidth=0.8, linestyle=(0, (3, 2)), label="prevalence baseline"
+        steps,
+        b_mean,
+        color=TEAL,
+        linewidth=1.15,
+        linestyle=(0, (4, 1.6)),
+        marker="s",
+        markersize=2.6,
+        label="B3 XGBoost + graph (5-seed mean $\\pm$ 1 s.d.)",
     )
-
-    crater = steps.index(43)
-    ax.axvspan(42.5, max(steps) + 0.5, color=BRICK, alpha=0.055, linewidth=0)
-    ax.annotate(
+    ax.plot(
+        steps,
+        g_mean,
+        color=NAVY,
+        linewidth=1.15,
+        marker="o",
+        markersize=2.6,
+        label="GATv2-focal (5-seed mean $\\pm$ 1 s.d.)",
+    )
+    ax.plot(steps, prev, color=MUTED, linewidth=0.9, linestyle=(0, (1, 1.4)), label="prevalence")
+    ax.text(
+        46.0,
+        0.62,
         "dark-market\nshutdown at $t{=}43$",
-        xy=(43, mean[crater]),
-        xytext=(44.6, 0.62),
-        fontsize=6.4,
+        fontsize=8,
         color=BRICK,
         ha="center",
-        linespacing=1.35,
-        arrowprops={
-            "arrowstyle": "-|>",
-            "color": BRICK,
-            "linewidth": 0.55,
-            "connectionstyle": "arc3,rad=-0.25",
-            "shrinkB": 2,
-        },
+        va="center",
+        linespacing=1.3,
     )
     ax.set_xlabel("Elliptic++ time step (test window)")
     ax.set_ylabel("AUC-PR")
-    ax.set_ylim(0, 1.0)
+    ax.set_ylim(0, 1.03)
     ax.set_xlim(min(steps) - 0.4, max(steps) + 0.4)
-    ax.legend(loc="upper left", bbox_to_anchor=(-0.02, 1.06), handlelength=1.6)
+    ax.legend(loc="lower left", bbox_to_anchor=(-0.02, 1.0), handlelength=2.2, ncol=1)
     _tidy(ax)
-    _save(fig, "fig3_timestep_crater.png")
+    _save(fig, "fig3_timestep_crater")
 
 
 # --------------------------------------------------------------------------
-# F4 -- transfer lift, both procurement matrices
+# F4 -- transfer lift per held-out fold, with bootstrap 95% intervals
 # --------------------------------------------------------------------------
-def _matrix_folds(rel: str) -> list[tuple[str, float]]:
-    """Return (held-out group, lift) for every completed fold of a transfer matrix.
-
-    Lift -- not raw AUC-PR -- is the cross-fold comparator: the folds have very
-    different prevalences (0.25 to 0.89), so raw AUC-PR is not comparable across
-    them. ``lift_mean`` is written by the matrix runner; it is recomputed from
-    the mean AUC-PR and the fold prevalence only if that key is absent.
-    """
-    doc = _load(rel)
-    out: list[tuple[str, float]] = []
-    for fold in doc["folds"]:
-        if fold.get("status") != "completed":
-            continue
-        lift = fold.get("lift_mean")
-        if lift is None:
-            lift = float(fold["auc_pr_mean"]) / float(fold["prevalence_baseline"])
-        out.append((str(fold["test_group"]), float(lift)))
-    return out
-
-
 def fig_transfer() -> None:
-    a = _matrix_folds("mendeley_eu/transfer_loco_matrix/matrix.json")
-    b = _matrix_folds("garcia_rodriguez/transfer_lomo_matrix/matrix.json")
-    fig, ax = plt.subplots(figsize=(DOUBLE * 0.80, 2.45))
+    pooled = _load("transfer_pooled/transfer_pooled.json")["matrices"]
+    mend = pooled["mendeley_loco"]["folds"]
+    garc = pooled["garcia_lomo"]["folds"]
+    largest = max(mend, key=lambda f: f["n_confirmed_test"])
 
-    labels = [n.replace("country_", "C") for n, _ in a] + [n for n, _ in b]
-    lifts = [v for _, v in a] + [v for _, v in b]
-    colors = [NAVY] * len(a) + [TEAL] * len(b)
-    xs = list(range(len(a))) + [i + len(a) + 1.0 for i in range(len(b))]
-
-    ax.bar(xs, lifts, width=0.68, color=colors, linewidth=0, zorder=3)
-    ax.axhline(1.0, color=BRICK, linewidth=0.8, linestyle=(0, (3, 2)), zorder=4)
-    ax.text(xs[-1] + 0.95, 1.03, "no transfer", fontsize=6.2, color=BRICK, va="bottom", ha="right")
-
-    worst = int(np.argmin(lifts[: len(a)]))
-    ax.annotate(
-        f"largest market\nfails ({lifts[worst]:.2f})",
-        xy=(xs[worst], lifts[worst]),
-        xytext=(xs[worst] - 0.1, 1.88),
-        fontsize=6.3,
-        color=BRICK,
-        ha="center",
-        linespacing=1.35,
-        arrowprops={"arrowstyle": "-|>", "color": BRICK, "linewidth": 0.55, "shrinkB": 2},
+    fig, ax = plt.subplots(figsize=(SINGLE, 2.6))
+    xs: list[float] = []
+    labels: list[str] = []
+    for i, f in enumerate(mend):
+        x = float(i)
+        xs.append(x)
+        labels.append(str(f["test_group"]).replace("country_", "C"))
+        colour = BRICK if f is largest else NAVY
+        ax.bar(x, f["lift_mean"], width=0.66, color=colour, linewidth=0, zorder=3)
+    for j, f in enumerate(garc):
+        x = len(mend) + 0.8 + j
+        xs.append(x)
+        labels.append(str(f["test_group"]))
+        ax.bar(
+            x,
+            f["lift_mean"],
+            width=0.66,
+            color=TEAL,
+            hatch="////",
+            edgecolor="white",
+            linewidth=0,
+            zorder=3,
+        )
+    folds = mend + garc
+    lifts = np.array([f["lift_mean"] for f in folds])
+    lo = np.array([f["lift_ci_low"] for f in folds])
+    hi = np.array([f["lift_ci_high"] for f in folds])
+    ax.errorbar(
+        xs,
+        lifts,
+        yerr=[lifts - lo, hi - lifts],
+        fmt="none",
+        ecolor=INK,
+        elinewidth=0.6,
+        capsize=1.6,
+        capthick=0.6,
+        zorder=4,
     )
-
+    ax.axhline(1.0, color=MUTED, linewidth=0.8, linestyle=(0, (3, 2)), zorder=2)
     ax.set_xticks(xs)
-    ax.set_xticklabels(labels, rotation=0, fontsize=6.4)
+    ax.set_xticklabels(labels, rotation=45, ha="right", rotation_mode="anchor")
     ax.set_ylabel("lift over fold prevalence")
-    ax.set_ylim(0, 2.15)
-    ax.set_xlim(-0.75, xs[-1] + 1.05)
+    ax.set_ylim(0, max(2.5, float(hi.max()) + 0.1))
+    ax.set_xlim(xs[0] - 0.6, xs[-1] + 0.6)
     ax.legend(
         handles=[
-            mpatches.Patch(color=NAVY, label="Mendeley EU — leave-one-country-out"),
-            mpatches.Patch(color=TEAL, label="García — leave-one-market-out"),
+            mpatches.Patch(color=NAVY, label="Mendeley EU, leave one country out"),
+            mpatches.Patch(color=BRICK, label="largest Mendeley fold"),
+            mpatches.Patch(
+                facecolor=TEAL,
+                hatch="////",
+                edgecolor="white",
+                label="García, leave one market out",
+            ),
+            Line2D(
+                [],
+                [],
+                color=MUTED,
+                linewidth=0.8,
+                linestyle=(0, (3, 2)),
+                label="base rate (lift 1)",
+            ),
         ],
-        loc="upper right",
-        bbox_to_anchor=(1.02, 1.09),
-        handlelength=1.2,
+        loc="lower left",
+        bbox_to_anchor=(-0.02, 1.0),
+        handlelength=1.3,
         ncol=1,
     )
     _tidy(ax)
-    _save(fig, "fig4_transfer_lift.png")
+    _save(fig, "fig4_transfer_lift")
 
 
 # --------------------------------------------------------------------------
-# F5 -- label-noise: the validation-blindness diagnostic
+# F5 -- label noise: the validation-blindness diagnostic
 # --------------------------------------------------------------------------
+def _noise_curve() -> tuple[list[dict[str, Any]], int]:
+    """The five-seed curve once its run has finished; the stored three-seed
+    curve until then. Returns the curve and its seed count."""
+    five = EVAL / "elliptic_pp" / "label_noise_curve_5seed" / "noise_curve.json"
+    if five.is_file():
+        doc = json.loads(five.read_text(encoding="utf-8"))
+        return doc["curve"], len(doc["seeds"])
+    doc = _load("elliptic_pp/label_noise_curve/noise_curve.json")
+    return doc["curve"], len(doc["seeds"])
+
+
 def fig_label_noise() -> None:
-    curve = _load("elliptic_pp/label_noise_curve/noise_curve.json")["curve"]
+    curve, n_seeds = _noise_curve()
     rates = [c["rate"] * 100 for c in curve]
     test = [c["auc_pr_mean"] for c in curve]
     sd = [c["auc_pr_std"] for c in curve]
     val = [c["val_auc_pr_mean"] for c in curve]
 
-    fig, ax = plt.subplots(figsize=(SINGLE, 2.25))
+    fig, ax = plt.subplots(figsize=(SINGLE, 2.6))
     ax.errorbar(
         rates,
         test,
@@ -633,7 +615,7 @@ def fig_label_noise() -> None:
         capsize=2.0,
         elinewidth=0.6,
         capthick=0.6,
-        label="test AUC-PR (3-seed)",
+        label=f"test AUC-PR ({n_seeds}-seed mean $\\pm$ 1 s.d.)",
         zorder=4,
     )
     ax.plot(
@@ -644,255 +626,101 @@ def fig_label_noise() -> None:
         marker="s",
         markersize=3.0,
         linestyle=(0, (4, 2)),
-        label="validation AUC-PR",
+        label="validation AUC-PR (mean)",
         zorder=4,
     )
-
-    ax.annotate(
-        "",
-        xy=(20, test[-1]),
-        xytext=(20, val[-1]),
-        arrowprops={"arrowstyle": "<->", "color": MUTED, "linewidth": 0.55},
-        zorder=3,
-    )
     ax.text(
-        19.2,
-        (test[-1] + val[-1]) / 2,
-        "model selection\nlooks at the wrong\ncurve",
-        fontsize=6.2,
+        11.5,
+        0.93,
+        "validation falls\nwhile test rises",
+        fontsize=8,
         color=MUTED,
-        ha="right",
+        ha="left",
         va="center",
-        linespacing=1.4,
+        linespacing=1.3,
     )
-
-    ax.set_xlabel("training labels randomly flipped (\\%)")
+    ax.set_xlabel("training labels randomly flipped (%)")
     ax.set_ylabel("AUC-PR")
     ax.set_xticks(rates)
-    ax.set_ylim(0.35, 1.02)
-    ax.legend(loc="lower left", bbox_to_anchor=(-0.02, -0.03), handlelength=1.7)
+    ax.set_xticklabels([f"{r:g}" for r in rates])
+    ax.set_ylim(0.3, 1.02)
+    ax.legend(loc="lower left", bbox_to_anchor=(-0.02, 1.0), handlelength=2.0, ncol=1)
     _tidy(ax)
-    _save(fig, "fig5_label_noise.png")
+    _save(fig, "fig5_label_noise")
 
 
 # --------------------------------------------------------------------------
-# F6 -- cross-domain label efficiency, both directions
+# F6 -- cross-domain label efficiency, both directions, with the full-label point
 # --------------------------------------------------------------------------
 def fig_label_efficiency() -> None:
+    full = _load("cross_domain/full_label_comparison/full_label_comparison.json")["directions"]
     specs = [
         (
             "cross_domain/label_efficiency_proc2fin/label_efficiency.json",
+            "proc2fin",
             "procurement $\\rightarrow$ financial",
             NAVY,
         ),
         (
             "cross_domain/label_efficiency_fin2proc/label_efficiency.json",
+            "fin2proc",
             "financial $\\rightarrow$ procurement",
             TEAL,
         ),
     ]
-    fig, axes = plt.subplots(1, 2, figsize=(DOUBLE * 0.72, 2.3), sharey=False)
-    for ax, (rel, title, colour) in zip(axes, specs, strict=True):
-        rows = [r for r in _load(rel)["curve"] if r.get("status") == "completed"]
+    fig, axes = plt.subplots(2, 1, figsize=(SINGLE, 3.7))
+    for ax, (rel, key, title, colour) in zip(axes, specs, strict=True):
+        doc = _load(rel)
+        rows = [r for r in doc["curve"] if r.get("status") == "completed"]
         ks = [int(r["k"]) for r in rows]
         gain = [float(r["transfer_gain_mean"]) for r in rows]
-        pos = [g if g >= 0 else 0 for g in gain]
-        neg = [g if g < 0 else 0 for g in gain]
-        ax.bar(range(len(ks)), pos, width=0.62, color=colour, linewidth=0, zorder=3)
-        ax.bar(range(len(ks)), neg, width=0.62, color=BRICK, alpha=0.75, linewidth=0, zorder=3)
+        xs = list(range(len(ks)))
+        ax.bar(xs, gain, width=0.62, color=colour, linewidth=0, zorder=3)
+        paired = full[key]["paired"]["frozen_probe_vs_structural_probe"]
+        x_full = len(ks) + 0.4
+        ax.bar(
+            x_full,
+            paired["delta"],
+            width=0.62,
+            color=colour,
+            hatch="////",
+            edgecolor="white",
+            linewidth=0,
+            zorder=3,
+        )
+        ax.errorbar(
+            [x_full],
+            [paired["delta"]],
+            yerr=[
+                [paired["delta"] - paired["delta_ci_low"]],
+                [paired["delta_ci_high"] - paired["delta"]],
+            ],
+            fmt="none",
+            ecolor=INK,
+            elinewidth=0.6,
+            capsize=1.8,
+            capthick=0.6,
+            zorder=4,
+        )
         ax.axhline(0, color=MUTED, linewidth=0.7, zorder=4)
-        ax.set_xticks(range(len(ks)))
-        ax.set_xticklabels([str(k) for k in ks])
-        ax.set_title(title, pad=4)
-        ax.set_xlabel("target-domain labels $k$")
+        ax.set_xticks([*xs, x_full])
+        n_full = int(full[key]["n_probe_train"])
+        ax.set_xticklabels([f"{k:,}" for k in ks] + [f"all\n({n_full:,})"])
+        ax.set_title(title, pad=3)
+        ax.set_ylabel("transfer gain")
         _tidy(ax)
-    axes[0].set_ylabel("transfer gain in AUC-PR")
-    fig.legend(
-        handles=[
-            Line2D(
-                [],
-                [],
-                color=MUTED,
-                linewidth=0.7,
-                label="gain $=0$: the frozen source probe adds nothing",
-            ),
-        ],
-        loc="lower center",
-        bbox_to_anchor=(0.5, -0.09),
-        handlelength=1.8,
-    )
-    fig.tight_layout()
-    _save(fig, "fig6_label_efficiency.png")
-
-
-# --------------------------------------------------------------------------
-# F7 -- the joint cross-crime (dual-actor) design: forward extension
-# --------------------------------------------------------------------------
-def fig_dual_actor() -> None:
-    fig, ax = plt.subplots(figsize=(DOUBLE, 2.75))
-    ax.set_xlim(0, 100)
-    ax.set_ylim(0, 40)
-    ax.axis("off")
-
-    ax.add_patch(
-        mpatches.FancyBboxPatch(
-            (1.5, 20.5),
-            45,
-            18,
-            boxstyle="round,pad=0,rounding_size=1.0",
-            linewidth=0.7,
-            edgecolor=NAVY,
-            facecolor="#fbfcfe",
-            zorder=1,
-        )
-    )
-    ax.text(3.6, 36.6, "FINANCIAL LEDGER", fontsize=6.0, color=NAVY, va="center")
-    ax.add_patch(
-        mpatches.FancyBboxPatch(
-            (1.5, 1.5),
-            45,
-            17,
-            boxstyle="round,pad=0,rounding_size=1.0",
-            linewidth=0.7,
-            edgecolor=AMBER,
-            facecolor="#fefcf7",
-            zorder=1,
-        )
-    )
-    ax.text(3.6, 16.6, "PROCUREMENT LEDGER", fontsize=6.0, color=AMBER, va="center")
-
-    rs = np.random.RandomState(7)
-    fin_nodes = [(8 + rs.uniform(0, 30), 24 + rs.uniform(0, 9)) for _ in range(7)]
-    proc_nodes = [(8 + rs.uniform(0, 30), 5 + rs.uniform(0, 8)) for _ in range(7)]
-
-    def link(p, q, colour, arrow=True, lw=0.55, style="arc3,rad=0.15"):
-        ax.annotate(
-            "",
-            xy=q,
-            xytext=p,
-            zorder=3,
-            arrowprops={
-                "arrowstyle": "-|>" if arrow else "-",
-                "color": colour,
-                "linewidth": lw,
-                "connectionstyle": style,
-                "shrinkA": 2.4,
-                "shrinkB": 2.4,
-            },
-        )
-
-    for i in range(len(fin_nodes)):
-        link(fin_nodes[i], fin_nodes[(i + 2) % len(fin_nodes)], "#a9b6c6")
-    for i in range(len(proc_nodes)):
-        link(proc_nodes[i], proc_nodes[(i + 3) % len(proc_nodes)], "#d6c49a", arrow=False)
-    ax.scatter(*zip(*fin_nodes, strict=False), color=NAVY, s=11, zorder=5, linewidths=0)
-    ax.scatter(*zip(*proc_nodes, strict=False), color=AMBER, s=11, zorder=5, linewidths=0)
-
-    # the dual actor: one entity present in both ledgers
-    ax.scatter([26], [27.5], color=BRICK, s=42, zorder=7, linewidths=0, marker="D")
-    ax.scatter([26], [9.5], color=BRICK, s=42, zorder=7, linewidths=0, marker="D")
-    ax.annotate(
-        "",
-        xy=(26, 9.5),
-        xytext=(26, 27.5),
-        zorder=6,
-        arrowprops={
-            "arrowstyle": "-",
-            "color": BRICK,
-            "linewidth": 1.0,
-            "linestyle": (0, (2.5, 1.8)),
-            "shrinkA": 4,
-            "shrinkB": 4,
-        },
-    )
-    ax.text(
-        28.0,
-        19.5,
-        "shared-control edge  ·  same beneficial owner",
-        fontsize=6.2,
-        color=BRICK,
-        va="center",
-        ha="left",
-    )
-
-    ax.annotate(
-        "",
-        xy=(56, 20),
-        xytext=(47.5, 20),
-        zorder=6,
-        arrowprops={"arrowstyle": "-|>", "color": MUTED, "linewidth": 0.7},
-    )
-    ax.text(51.7, 21.4, "join", fontsize=6.0, color=MUTED, ha="center")
-
-    ax.add_patch(
-        mpatches.FancyBboxPatch(
-            (56, 22.5),
-            42,
-            12,
-            boxstyle="round,pad=0,rounding_size=0.9",
-            linewidth=0.7,
-            edgecolor=PLUM,
-            facecolor="#f6f2f8",
-            zorder=3,
-        )
-    )
-    ax.text(77, 31.4, "JOINT MODEL  (proposed)", ha="center", fontsize=7.0, color=INK)
-    ax.text(
-        77,
-        26.5,
-        "one heterogeneous graph over both ledgers;\n"
-        "R-GCN shares parameters across relation types",
-        ha="center",
-        va="center",
-        fontsize=6.2,
-        color=MUTED,
-        linespacing=1.4,
-    )
-
-    ax.add_patch(
-        mpatches.FancyBboxPatch(
-            (56, 6.0),
-            42,
-            12,
-            boxstyle="round,pad=0,rounding_size=0.9",
-            linewidth=0.7,
-            edgecolor=MUTED,
-            facecolor="#f7f8f9",
-            zorder=3,
-        )
-    )
-    ax.text(77, 14.9, "SILOED BASELINE  (this paper)", ha="center", fontsize=7.0, color=INK)
-    ax.text(
-        77,
-        10.0,
-        "two independent detectors, one per ledger;\n" "the shared-control edge is never observed",
-        ha="center",
-        va="center",
-        fontsize=6.2,
-        color=MUTED,
-        linespacing=1.4,
-    )
-
-    ax.annotate(
-        "",
-        xy=(77, 22.0),
-        xytext=(77, 18.5),
-        zorder=6,
-        arrowprops={"arrowstyle": "<->", "color": BRICK, "linewidth": 0.7},
-    )
-    ax.text(78.4, 20.25, "H1: recall of dual actors", fontsize=6.2, color=BRICK, va="center")
-
-    _save(fig, "fig7_dual_actor.png")
+    axes[1].set_xlabel("target-domain labels $k$")
+    fig.tight_layout(h_pad=0.8)
+    _save(fig, "fig6_label_efficiency")
 
 
 FIGURES = {
-    "fig1_architecture.png": fig_architecture,
-    "fig2_two_ledgers.png": fig_two_ledgers,
-    "fig3_timestep_crater.png": fig_timestep,
-    "fig4_transfer_lift.png": fig_transfer,
-    "fig5_label_noise.png": fig_label_noise,
-    "fig6_label_efficiency.png": fig_label_efficiency,
-    "fig7_dual_actor.png": fig_dual_actor,
+    "fig1_architecture": fig_architecture,
+    "fig2_two_ledgers": fig_two_ledgers,
+    "fig3_timestep_crater": fig_timestep,
+    "fig4_transfer_lift": fig_transfer,
+    "fig5_label_noise": fig_label_noise,
+    "fig6_label_efficiency": fig_label_efficiency,
 }
 
 

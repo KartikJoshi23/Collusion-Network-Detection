@@ -4,11 +4,12 @@
 %
 %  COMPILING ON OVERLEAF
 %  ---------------------
-%  Upload this .tex together with the six PNG figures that live in the
-%  repository root:
-%      fig1_architecture.png        fig5_label_noise.png
-%      fig2_two_ledgers.png         fig6_label_efficiency.png
-%      fig3_timestep_crater.png     fig4_transfer_lift.png
+%  Upload this .tex together with the folder paper/figures/, which holds the
+%  six vector figures (regenerate them with
+%  `uv run python scripts/paper_figures.py`):
+%      figures/fig1_architecture.pdf      figures/fig4_transfer_lift.pdf
+%      figures/fig2_two_ledgers.pdf       figures/fig5_label_noise.pdf
+%      figures/fig3_timestep_crater.pdf   figures/fig6_label_efficiency.pdf
 %  Everything else is self-contained -- the tables are inlined, so there
 %  is nothing to \input and no external .bib to resolve.
 %
@@ -108,7 +109,7 @@ fan-in stars. Layering and market allocation are fan-out stars. Shell-company ch
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\textwidth]{fig2_two_ledgers.png}
+\includegraphics[width=\textwidth]{figures/fig2_two_ledgers.pdf}
 \caption{Two ledgers, one structure. Five collusion mechanisms, the graph
 signature each leaves behind, and the domain-specific name it goes by on
 either side. The correspondence is the premise of the shared stack: only the
@@ -327,7 +328,7 @@ a score.
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=0.94\textwidth]{fig1_architecture.png}
+\includegraphics[width=\textwidth]{figures/fig1_architecture.pdf}
 \caption{The shared stack. Stages 1--7 run offline and terminate, writing
 Parquet and JSON artifacts; stages 8--9 serve those artifacts read-only. The
 same nine stages run for both domains; only the ingestion adapters and the
@@ -509,12 +510,12 @@ itself defeats both.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\columnwidth]{fig3_timestep_crater.png}
-\caption{Per-time-step AUC-PR across the Elliptic++ test window, showing the
-5-seed mean and one standard deviation for GATv2-focal and B3. Both models hold
-up through step 42 and fall towards the prevalence floor at step 43, where the
-market closure lands. A single aggregate figure hides this.
-\PENDING{Fig.~3: regenerate with the B3 line and the sample standard deviation}}
+\includegraphics[width=\columnwidth]{figures/fig3_timestep_crater.pdf}
+\caption{Per-time-step AUC-PR across the Elliptic++ test window for
+GATv2-focal and B3: 5-seed means, with shaded bands of one sample standard
+deviation. Both models hold up through step 42 and fall towards the prevalence
+floor at step 43, where the market closure lands. A single aggregate figure
+hides this.}
 \label{fig:crater}
 \end{figure}
 
@@ -618,13 +619,13 @@ prevalence is therefore the only fair comparator.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\columnwidth]{fig4_transfer_lift.png}
+\includegraphics[width=\columnwidth]{figures/fig4_transfer_lift.pdf}
 \caption{Transfer lift by held-out fold, with bootstrap 95\% intervals. All
 four Garc\'ia markets beat their base rate under leave-one-market-out. On
-Mendeley's leave-one-country-out folds the pooled lift is $0.93$, and the
-largest market falls below $1.0$. A bar at or below $1.0$ has done no better
-than the fold's own base rate.
-\PENDING{Fig.~4: regenerate with intervals and corrected labels}}
+Mendeley's leave-one-country-out folds (C1--C7, the release's country codes)
+the pooled lift is $0.93$, and the largest fold, C2 with 750 of 1,001 firms,
+falls below $1.0$. A bar at or below $1.0$ has done no better than the fold's
+own base rate.}
 \label{fig:transfer}
 \end{figure}
 
@@ -783,14 +784,14 @@ cold-start solution.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\columnwidth]{fig6_label_efficiency.png}
+\includegraphics[width=\columnwidth]{figures/fig6_label_efficiency.pdf}
 \caption{Cross-domain label efficiency. Each bar gives the gain of a frozen
 source-domain probe over a probe trained on the target's own structural
-features, at the same label budget (five draws per budget). Below 1,000 labels,
-ten of twelve bars are negative and the other two lie within one standard
-deviation of zero. Transfer does not help the cold-start problem in either
-direction.
-\PENDING{Fig.~5: regenerate with the full-label point of Table~\ref{tab:fulllabel}}}
+features, at the same label budget (five draws per budget). The hatched bar
+uses every training label (Table~\ref{tab:fulllabel}), with its paired
+bootstrap 95\% interval. Below 1,000 labels, ten of twelve bars are negative
+and the other two lie within one standard deviation of zero. Transfer does not
+help the cold-start problem in either direction.}
 \label{fig:labeleff}
 \end{figure}
 
@@ -855,7 +856,7 @@ The curves move apart.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\columnwidth]{fig5_label_noise.png}
+\includegraphics[width=\columnwidth]{figures/fig5_label_noise.pdf}
 \caption{Label-noise robustness on Elliptic++ (GATv2-focal, 3 seeds per rate).
 Corrupting training labels \emph{improves} test AUC-PR while validation
 collapses. Model selection on validation is optimising against the wrong
