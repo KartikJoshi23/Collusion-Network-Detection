@@ -1,0 +1,535 @@
+# Number manifest for paper/collusiongraph_paper.tex.
+#
+# Each entry names a number as printed in the manuscript (v), the artifact
+# that holds it (file, under the repository root), the key path into it and
+# the format used to print it. scripts/audit/verify_numbers.py recomputes the
+# printed string from the artifact, confirms it appears in the manuscript,
+# and lists decimals that no entry or allow item explains. Every artifact is
+# produced by a committed config (Appendix A; docs/reproducibility.md).
+#
+# Key paths: dots separate keys; "*" fans out over a mapping or list; reduce
+# folds the matches (min, max, mean, stdev, sum, count); op combines with a
+# second source b (sub, div, add); scale multiplies the result.
+
+numbers:
+  # ------------------------------------------------------------ Elliptic++
+  - id: elliptic_b1
+    file: eval_outputs/elliptic_pp/baselines/scoreboard.json
+    items:
+      - {id: auc, v: "0.0576", key: baselines.b1_rules.auc_pr}
+      - {id: p100, v: "0.00", key: "baselines.b1_rules.precision@100", fmt: "{:.2f}"}
+  - id: elliptic_trees
+    file: eval_outputs/elliptic_pp/baselines_multiseed/baselines_multiseed.json
+    items:
+      - {id: b2, v: "0.8039", key: baselines.b2_xgb.auc_pr_mean}
+      - {id: b2_sd, v: "0.0017", key: baselines.b2_xgb.auc_pr_std}
+      - {id: b3, v: "0.8123", key: baselines.b3_xgb_graph.auc_pr_mean}
+      - {id: b3_sd, v: "0.0012", key: baselines.b3_xgb_graph.auc_pr_std}
+      - {id: p100, v: "1.00", key: "baselines.b3_xgb_graph.precision@100_mean", fmt: "{:.2f}"}
+      - {id: p100_sd, v: "0.00", key: "baselines.b3_xgb_graph.precision@100_std", fmt: "{:.2f}"}
+      - {id: prevalence, v: "0.065", key: prevalence_baseline, fmt: "{:.3f}"}
+  - id: elliptic_local
+    file: eval_outputs/elliptic_pp/baselines_local_multiseed/baselines_multiseed.json
+    items:
+      - {id: b2, v: "0.7879", key: baselines.b2_xgb.auc_pr_mean}
+      - {id: b2_sd, v: "0.0011", key: baselines.b2_xgb.auc_pr_std}
+      - {id: b3, v: "0.7959", key: baselines.b3_xgb_graph.auc_pr_mean}
+      - {id: b3_sd, v: "0.0014", key: baselines.b3_xgb_graph.auc_pr_std}
+  - id: aggregates_gain
+    v: "0.016"
+    fmt: "{:.3f}"
+    file: eval_outputs/elliptic_pp/baselines_multiseed/baselines_multiseed.json
+    key: baselines.b2_xgb.auc_pr_mean
+    op: sub
+    b: {file: eval_outputs/elliptic_pp/baselines_local_multiseed/baselines_multiseed.json, key: baselines.b2_xgb.auc_pr_mean}
+  - id: graph_features_gain
+    v: "0.008"
+    fmt: "{:.3f}"
+    file: eval_outputs/elliptic_pp/baselines_multiseed/baselines_multiseed.json
+    key: baselines.b3_xgb_graph.auc_pr_mean
+    op: sub
+    b: {file: eval_outputs/elliptic_pp/baselines_multiseed/baselines_multiseed.json, key: baselines.b2_xgb.auc_pr_mean}
+  - id: gatv2
+    file: eval_outputs/elliptic_pp/gnn_gatv2_focal_multiseed/multiseed.json
+    items:
+      - {id: auc, v: "0.4729", key: aggregate.auc_pr_mean}
+      - {id: auc_sd, v: "0.0525", key: aggregate.auc_pr_std}
+      - {id: sd_rounded, v: "0.05", key: aggregate.auc_pr_std, fmt: "{:.2f}"}
+      - {id: p100, v: "0.8120", key: "aggregate.precision@100_mean"}
+      - {id: p100_sd, v: "0.2383", key: "aggregate.precision@100_std"}
+  - id: gatv2_wce
+    file: eval_outputs/elliptic_pp/gnn_gatv2_wce_multiseed/multiseed.json
+    items:
+      - {id: auc, v: "0.4388", key: aggregate.auc_pr_mean}
+      - {id: auc_sd, v: "0.0505", key: aggregate.auc_pr_std}
+      - {id: p100, v: "0.7240", key: "aggregate.precision@100_mean"}
+      - {id: p100_sd, v: "0.1466", key: "aggregate.precision@100_std"}
+  - id: focal_cost
+    v: "-0.0341"
+    file: eval_outputs/elliptic_pp/gnn_gatv2_wce_multiseed/multiseed.json
+    key: aggregate.auc_pr_mean
+    op: sub
+    b: {file: eval_outputs/elliptic_pp/gnn_gatv2_focal_multiseed/multiseed.json, key: aggregate.auc_pr_mean}
+  - id: focal_gain_text
+    v: "0.034"
+    fmt: "{:.3f}"
+    file: eval_outputs/elliptic_pp/gnn_gatv2_focal_multiseed/multiseed.json
+    key: aggregate.auc_pr_mean
+    op: sub
+    b: {file: eval_outputs/elliptic_pp/gnn_gatv2_wce_multiseed/multiseed.json, key: aggregate.auc_pr_mean}
+  - id: ensemble
+    file: eval_outputs/elliptic_pp/ensemble_multiseed/ensemble_multiseed.json
+    items:
+      - {id: dominant, v: "0.0410", key: members.dominant.auc_pr_mean}
+      - {id: dominant_sd, v: "0.0003", key: members.dominant.auc_pr_std}
+      - {id: calibrated, v: "0.4434", key: members.ensemble_calibrated.auc_pr_mean}
+      - {id: calibrated_sd, v: "0.0501", key: members.ensemble_calibrated.auc_pr_std}
+      - {id: rank, v: "0.0511", key: members.ensemble_rank.auc_pr_mean}
+      - {id: rank_sd, v: "0.0019", key: members.ensemble_rank.auc_pr_std}
+      - {id: floor, v: "0.0547", key: members.floor.auc_pr_mean}
+      - {id: floor_sd, v: "0.0000", key: members.floor.auc_pr_std}
+      - {id: gae, v: "0.0386", key: members.gae.auc_pr_mean}
+      - {id: gae_sd, v: "0.0001", key: members.gae.auc_pr_std}
+  - id: unsup_cost
+    v: "0.0295"
+    file: eval_outputs/elliptic_pp/ensemble_multiseed/ensemble_multiseed.json
+    key: members.supervised.auc_pr_mean
+    op: sub
+    b: {file: eval_outputs/elliptic_pp/ensemble_multiseed/ensemble_multiseed.json, key: members.ensemble_calibrated.auc_pr_mean}
+  - id: significance
+    file: eval_outputs/elliptic_pp/significance/significance_multiseed.json
+    fmt: "{:.3f}"
+    items:
+      - {id: gat_dmin, v: "-0.391", key: comparisons.gatv2_vs_xgb_graph.delta_min}
+      - {id: gat_dmax, v: "-0.264", key: comparisons.gatv2_vs_xgb_graph.delta_max}
+      - {id: gat_cilo, v: "-0.416", key: comparisons.gatv2_vs_xgb_graph.ci_low_min}
+      - {id: gat_cihi, v: "-0.238", key: comparisons.gatv2_vs_xgb_graph.ci_high_max}
+      - {id: gat_avg, v: "-0.301", key: comparisons.gatv2_vs_xgb_graph.seed_averaged.delta}
+      - {id: gat_avg_lo, v: "-0.324", key: comparisons.gatv2_vs_xgb_graph.seed_averaged.delta_ci_low}
+      - {id: gat_avg_hi, v: "-0.276", key: comparisons.gatv2_vs_xgb_graph.seed_averaged.delta_ci_high}
+      - {id: gat_p, v: "0.001", key: comparisons.gatv2_vs_xgb_graph.p_value_max}
+      - {id: cal_dmin, v: "0.342", key: comparisons.calibrated_vs_rank_fusion.delta_min}
+      - {id: cal_dmax, v: "0.471", key: comparisons.calibrated_vs_rank_fusion.delta_max}
+      - {id: cal_cilo, v: "0.314", key: comparisons.calibrated_vs_rank_fusion.ci_low_min}
+      - {id: cal_cihi, v: "0.500", key: comparisons.calibrated_vs_rank_fusion.ci_high_max}
+      - {id: cal_avg, v: "0.444", key: comparisons.calibrated_vs_rank_fusion.seed_averaged.delta}
+      - {id: cal_avg_lo, v: "0.413", key: comparisons.calibrated_vs_rank_fusion.seed_averaged.delta_ci_low}
+      - {id: cal_avg_hi, v: "0.474", key: comparisons.calibrated_vs_rank_fusion.seed_averaged.delta_ci_high}
+  - id: fusion_b3
+    file: eval_outputs/elliptic_pp/fusion_gatv2_b3_multiseed/fusion_multiseed.json
+    items:
+      - {id: b3, v: "0.8012", key: aggregate.b3.auc_pr_mean}
+      - {id: b3_sd, v: "0.0034", key: aggregate.b3.auc_pr_std}
+      - {id: fused, v: "0.7760", key: aggregate.fused.auc_pr_mean}
+      - {id: fused_sd, v: "0.0014", key: aggregate.fused.auc_pr_std}
+  - id: step43
+    file: eval_outputs/derived/derived_numbers.json
+    items:
+      - {id: gat_pre, v: "0.5737", key: items.gatv2_steps_35_42.auc_pr_mean}
+      - {id: gat_pre_sd, v: "0.0623", key: items.gatv2_steps_35_42.auc_pr_std}
+      - {id: gat_post, v: "0.0391", key: items.gatv2_steps_43_49.auc_pr_mean}
+      - {id: gat_post_sd, v: "0.0041", key: items.gatv2_steps_43_49.auc_pr_std}
+      - {id: b3_pre, v: "0.9259", key: items.b3_steps_35_42.auc_pr_mean}
+      - {id: b3_pre_sd, v: "0.0011", key: items.b3_steps_35_42.auc_pr_std}
+      - {id: b3_post, v: "0.0567", key: items.b3_steps_43_49.auc_pr_mean}
+      - {id: b3_post_sd, v: "0.0034", key: items.b3_steps_43_49.auc_pr_std}
+      - {id: prev_pre, v: "0.092", key: items.gatv2_steps_35_42.prevalence, fmt: "{:.3f}"}
+      - {id: prev_post, v: "0.025", key: items.gatv2_steps_43_49.prevalence, fmt: "{:.3f}"}
+  - id: seed0_arms
+    file: eval_outputs/elliptic_pp/gnn_gatv2_focal/run.json
+    items:
+      - {id: headline, v: "0.5492", key: node_level.auc_pr}
+  - id: unidir
+    file: eval_outputs/elliptic_pp/gnn_gatv2_focal_unidir/run.json
+    items:
+      - {id: auc, v: "0.3549", key: node_level.auc_pr}
+      - {id: delta, v: "-0.1943", key: node_level.auc_pr, op: sub, b: {file: eval_outputs/elliptic_pp/gnn_gatv2_focal/run.json, key: node_level.auc_pr}}
+      - {id: delta3, v: "-0.194", key: node_level.auc_pr, fmt: "{:.3f}", op: sub, b: {file: eval_outputs/elliptic_pp/gnn_gatv2_focal/run.json, key: node_level.auc_pr}}
+      - {id: delta3_abs, v: "0.194", key: node_level.auc_pr, fmt: "{:.3f}", scale: -1, op: sub, b: {file: eval_outputs/elliptic_pp/gnn_gatv2_focal/run.json, key: node_level.auc_pr}}
+  - id: multi
+    file: eval_outputs/elliptic_pp/gnn_gatv2_focal_multi/run.json
+    items:
+      - {id: auc, v: "0.3781", key: node_level.auc_pr}
+      - {id: delta, v: "-0.1711", key: node_level.auc_pr, op: sub, b: {file: eval_outputs/elliptic_pp/gnn_gatv2_focal/run.json, key: node_level.auc_pr}}
+  - id: line
+    file: eval_outputs/elliptic_pp/gnn_gatv2_focal_line/run.json
+    items:
+      - {id: auc, v: "0.4986", key: node_level.auc_pr}
+      - {id: delta, v: "-0.0506", key: node_level.auc_pr, op: sub, b: {file: eval_outputs/elliptic_pp/gnn_gatv2_focal/run.json, key: node_level.auc_pr}}
+  - id: context_fusion
+    file: eval_outputs/elliptic_pp/gnn_gatv2_focal_cf/run.json
+    items:
+      - {id: auc, v: "0.3242", key: node_level.auc_pr}
+      - {id: delta, v: "-0.2250", key: node_level.auc_pr, op: sub, b: {file: eval_outputs/elliptic_pp/gnn_gatv2_focal/run.json, key: node_level.auc_pr}}
+  - id: label_noise_3seed
+    file: eval_outputs/elliptic_pp/label_noise_curve/noise_curve.json
+    items:
+      - {id: clean, v: "0.4827", key: curve.0.auc_pr_mean}
+      - {id: clean_sd, v: "0.0616", key: curve.0.auc_pr_std}
+      - {id: r20, v: "0.5978", key: curve.3.auc_pr_mean}
+      - {id: r20_sd, v: "0.0248", key: curve.3.auc_pr_std}
+      - {id: val_clean, v: "0.9418", key: curve.0.val_auc_pr_mean}
+      - {id: val_r20, v: "0.5692", key: curve.3.val_auc_pr_mean}
+
+  # ------------------------------------------------------------ queues
+  - id: financial_queue
+    file: eval_outputs/elliptic_pp/alert_queue_ensemble/metrics.json
+    fmt: "{:.2f}"
+    items:
+      - {id: p50, v: "0.32", key: "alert_level.queue.@50.precision"}
+      - {id: p100, v: "0.25", key: "alert_level.queue.@100.precision"}
+      - {id: p200, v: "0.135", key: "alert_level.queue.@200.precision", fmt: "{:.3f}"}
+      - {id: coverage50, v: "7.9", key: "alert_level.illicit_coverage.@50", scale: 100, fmt: "{:.1f}"}
+  - id: financial_hit_rule
+    file: eval_outputs/elliptic_pp/sensitivity/sensitivity.json
+    fmt: "{:.2f}"
+    items:
+      - {id: p50, v: "0.30", key: "results.1.queue.@50.precision"}
+      - {id: p100, v: "0.23", key: "results.1.queue.@100.precision"}
+      - {id: p200, v: "0.125", key: "results.1.queue.@200.precision", fmt: "{:.3f}"}
+  - id: procurement_queue
+    file: eval_outputs/mendeley_eu/alert_queue/metrics.json
+    fmt: "{:.2f}"
+    items:
+      - {id: p4, v: "0.50", key: "alert_level.queue.@4.precision"}
+  - id: procurement_hit_rule
+    v: "0.33"
+    fmt: "{:.2f}"
+    file: eval_outputs/mendeley_eu/sensitivity/sensitivity.json
+    key: "results.*.queue.@18.precision"
+    reduce: min
+  - id: actor
+    file: eval_outputs/elliptic_pp_actor/gnn_rgcn_focal/run.json
+    items:
+      - {id: auc, v: "0.2473", key: node_level.auc_pr}
+      - {id: prev, v: "0.053", key: node_level.prevalence_baseline, fmt: "{:.3f}"}
+      - {id: prev_pct, v: "5.3", key: node_level.prevalence_baseline, fmt: "{:.1f}", scale: 100}
+      - {id: p100, v: "0.98", key: "node_level.precision@100", fmt: "{:.2f}"}
+      - {id: lift, v: "4.7", key: node_level.auc_pr, fmt: "{:.1f}", op: div, b: {file: eval_outputs/elliptic_pp_actor/gnn_rgcn_focal/run.json, key: node_level.prevalence_baseline}}
+  - id: actor_queue
+    v: "0.08"
+    fmt: "{:.2f}"
+    file: eval_outputs/elliptic_pp_actor/alert_queue/metrics.json
+    key: "alert_level.queue.@50.precision"
+
+  # ------------------------------------------------------------ Mendeley
+  - id: mendeley_det
+    file: eval_outputs/mendeley_eu/baselines/scoreboard.json
+    items:
+      - {id: b1, v: "0.3426", key: baselines.b1_rules.auc_pr}
+      - {id: b1_p18, v: "0.47", key: "baselines.b1_rules.precision@18", fmt: "{:.2f}"}
+      - {id: b4, v: "0.3811", key: baselines.b4_screens.auc_pr}
+      - {id: b4_p18, v: "0.78", key: "baselines.b4_screens.precision@18", fmt: "{:.2f}"}
+  - id: mendeley_b4_screens
+    file: eval_outputs/mendeley_eu/baselines_b4_precomputed/scoreboard.json
+    items:
+      - {id: auc, v: "0.3874", key: baselines.b4_screens.auc_pr}
+      - {id: p18, v: "0.50", key: "baselines.b4_screens.precision@18", fmt: "{:.2f}"}
+  - id: mendeley_trees
+    file: eval_outputs/mendeley_eu/baselines_multiseed/baselines_multiseed.json
+    items:
+      - {id: b2, v: "0.3849", key: baselines.b2_xgb.auc_pr_mean}
+      - {id: b2_sd, v: "0.0099", key: baselines.b2_xgb.auc_pr_std}
+      - {id: b2_p18, v: "0.22", key: "baselines.b2_xgb.precision@18_mean", fmt: "{:.2f}"}
+      - {id: b2_p18_sd, v: "0.00", key: "baselines.b2_xgb.precision@18_std", fmt: "{:.2f}"}
+      - {id: b3, v: "0.3749", key: baselines.b3_xgb_graph.auc_pr_mean}
+      - {id: b3_sd, v: "0.0092", key: baselines.b3_xgb_graph.auc_pr_std}
+      - {id: b3_p18, v: "0.57", key: "baselines.b3_xgb_graph.precision@18_mean", fmt: "{:.2f}"}
+      - {id: b3_p18_sd, v: "0.06", key: "baselines.b3_xgb_graph.precision@18_std", fmt: "{:.2f}"}
+      - {id: prevalence, v: "0.358", key: prevalence_baseline, fmt: "{:.3f}"}
+  - id: mendeley_screens
+    file: eval_outputs/mendeley_eu/baselines_screens_ablation_multiseed/baselines_multiseed.json
+    items:
+      - {id: b2, v: "0.4547", key: baselines.b2_xgb.auc_pr_mean}
+      - {id: b2_sd, v: "0.0081", key: baselines.b2_xgb.auc_pr_std}
+      - {id: b2_p18, v: "0.66", key: "baselines.b2_xgb.precision@18_mean", fmt: "{:.2f}"}
+      - {id: b2_p18_sd, v: "0.06", key: "baselines.b2_xgb.precision@18_std", fmt: "{:.2f}"}
+      - {id: b3, v: "0.3509", key: baselines.b3_xgb_graph.auc_pr_mean}
+      - {id: b3_sd, v: "0.0058", key: baselines.b3_xgb_graph.auc_pr_std}
+      - {id: b3_p18, v: "0.20", key: "baselines.b3_xgb_graph.precision@18_mean", fmt: "{:.2f}"}
+      - {id: b3_p18_sd, v: "0.03", key: "baselines.b3_xgb_graph.precision@18_std", fmt: "{:.2f}"}
+  - id: screens_gain
+    v: "0.0698"
+    file: eval_outputs/mendeley_eu/baselines_screens_ablation_multiseed/baselines_multiseed.json
+    key: baselines.b2_xgb.auc_pr_mean
+    op: sub
+    b: {file: eval_outputs/mendeley_eu/baselines_multiseed/baselines_multiseed.json, key: baselines.b2_xgb.auc_pr_mean}
+  - id: rgcn
+    file: eval_outputs/mendeley_eu/gnn_rgcn_focal_multiseed/multiseed.json
+    items:
+      - {id: auc, v: "0.2808", key: aggregate.auc_pr_mean}
+      - {id: auc_sd, v: "0.0087", key: aggregate.auc_pr_std}
+      - {id: p18, v: "0.07", key: "aggregate.precision@18_mean", fmt: "{:.2f}"}
+      - {id: p18_sd, v: "0.04", key: "aggregate.precision@18_std", fmt: "{:.2f}"}
+      - {id: val_min, v: "0.94", key: per_seed.*.best_val_auc_pr, reduce: min, fmt: "{:.2f}"}
+      - {id: val_max, v: "0.95", key: per_seed.*.best_val_auc_pr, reduce: max, fmt: "{:.2f}"}
+  - id: rgcn_nocomm
+    file: eval_outputs/mendeley_eu/gnn_rgcn_focal_nocomm_multiseed/multiseed.json
+    items:
+      - {id: auc, v: "0.2997", key: aggregate.auc_pr_mean}
+      - {id: auc_sd, v: "0.0015", key: aggregate.auc_pr_std}
+
+  # ------------------------------------------------------------ B4 diagnoses
+  - id: diagnoses
+    file: eval_outputs/diagnostics/below_chance/diagnostics.json
+    items:
+      - {id: rgcn_inv_min, v: "0.43", key: cases.mendeley_rgcn.score_checks.*.auc_pr_inverted, reduce: min, fmt: "{:.2f}"}
+      - {id: rgcn_inv_max, v: "0.47", key: cases.mendeley_rgcn.score_checks.*.auc_pr_inverted, reduce: max, fmt: "{:.2f}"}
+      - {id: loss_degree, v: "0.38", key: cases.mendeley_rgcn.label_association.windows.loss.roc_auc.degree_total, fmt: "{:.2f}"}
+      - {id: test_degree, v: "0.61", key: cases.mendeley_rgcn.label_association.windows.test.roc_auc.degree_total, fmt: "{:.2f}"}
+      - {id: val_prev, v: "0.89", key: cases.mendeley_rgcn.label_association.windows.val.prevalence, fmt: "{:.2f}"}
+      - {id: aml_b2_inv, v: "0.0211", key: cases.amlworld_trees.score_checks.b2_xgb.auc_pr_inverted}
+      - {id: aml_b3_inv, v: "0.0239", key: cases.amlworld_trees.score_checks.b3_xgb_graph.auc_pr_inverted}
+      - {id: aml_train_min, v: "0.49", key: cases.amlworld_trees.label_association.windows.train.roc_auc.*, reduce: min, fmt: "{:.2f}"}
+      - {id: aml_train_max, v: "0.54", key: cases.amlworld_trees.label_association.windows.train.roc_auc.*, reduce: max, fmt: "{:.2f}"}
+      - {id: aml_test_max, v: "0.74", key: cases.amlworld_trees.label_association.windows.test.roc_auc.*, reduce: max, fmt: "{:.2f}"}
+  - id: amlworld
+    file: eval_outputs/amlworld_hi_small/baselines/scoreboard.json
+    items:
+      - {id: b2, v: "0.0063", key: baselines.b2_xgb.auc_pr}
+      - {id: b3, v: "0.0062", key: baselines.b3_xgb_graph.auc_pr}
+      - {id: prevalence, v: "0.0103", key: baselines.b2_xgb.prevalence_baseline}
+  - id: amlworld_laundering_share
+    v: "0.102"
+    fmt: "{:.3f}"
+    file: data/interim/amlworld_hi_small/meta.json
+    key: n_laundering_edges
+    op: div
+    b: {file: data/interim/amlworld_hi_small/meta.json, key: n_edges}
+    scale: 100
+
+  # ------------------------------------------------------------ B5 transfer
+  - id: fold_prevalence_range
+    file: eval_outputs/mendeley_eu/transfer_loco_matrix/matrix.json
+    fmt: "{:.2f}"
+    items:
+      - {id: mendeley_min, v: "0.29", key: folds.*.prevalence_baseline, reduce: min}
+      - {id: mendeley_max, v: "0.89", key: folds.*.prevalence_baseline, reduce: max}
+  - id: garcia_prevalence_range
+    file: eval_outputs/garcia_rodriguez/transfer_lomo_matrix/matrix.json
+    fmt: "{:.2f}"
+    items:
+      - {id: min, v: "0.25", key: folds.*.prevalence_baseline, reduce: min}
+      - {id: max, v: "0.55", key: folds.*.prevalence_baseline, reduce: max}
+  - id: loco_folds
+    file: eval_outputs/mendeley_eu/transfer_loco_matrix/matrix.json
+    items:
+      - {id: c1, v: "0.8664", key: folds.0.auc_pr_mean}
+      - {id: c1_sd, v: "0.0224", key: folds.0.auc_pr_std}
+      - {id: c2, v: "0.6464", key: folds.1.auc_pr_mean}
+      - {id: c2_sd, v: "0.0182", key: folds.1.auc_pr_std}
+      - {id: c3, v: "0.4983", key: folds.2.auc_pr_mean}
+      - {id: c3_sd, v: "0.0603", key: folds.2.auc_pr_std}
+      - {id: c4, v: "0.7427", key: folds.3.auc_pr_mean}
+      - {id: c4_sd, v: "0.0812", key: folds.3.auc_pr_std}
+      - {id: c5, v: "0.7630", key: folds.4.auc_pr_mean}
+      - {id: c5_sd, v: "0.0473", key: folds.4.auc_pr_std}
+      - {id: c6, v: "0.9527", key: folds.5.auc_pr_mean}
+      - {id: c6_sd, v: "0.0346", key: folds.5.auc_pr_std}
+      - {id: c7, v: "0.8091", key: folds.6.auc_pr_mean}
+      - {id: c7_sd, v: "0.0060", key: folds.6.auc_pr_std}
+  - id: lomo_folds
+    file: eval_outputs/garcia_rodriguez/transfer_lomo_matrix/matrix.json
+    items:
+      - {id: america, v: "0.3894", key: folds.0.auc_pr_mean}
+      - {id: america_sd, v: "0.1080", key: folds.0.auc_pr_std}
+      - {id: brazil, v: "0.5063", key: folds.1.auc_pr_mean}
+      - {id: brazil_sd, v: "0.1161", key: folds.1.auc_pr_std}
+      - {id: italy, v: "0.7858", key: folds.2.auc_pr_mean}
+      - {id: italy_sd, v: "0.0585", key: folds.2.auc_pr_std}
+      - {id: japan, v: "0.4295", key: folds.3.auc_pr_mean}
+      - {id: japan_sd, v: "0.0223", key: folds.3.auc_pr_std}
+  - id: mendeley_pooled
+    file: eval_outputs/transfer_pooled/transfer_pooled.json
+    fmt: "{:.2f}"
+    items:
+      - {id: c1_prev, v: "0.77", key: matrices.mendeley_loco.folds.0.prevalence}
+      - {id: c1_lift, v: "1.13", key: matrices.mendeley_loco.folds.0.lift_mean}
+      - {id: c1_lo, v: "1.03", key: matrices.mendeley_loco.folds.0.lift_ci_low}
+      - {id: c1_hi, v: "1.22", key: matrices.mendeley_loco.folds.0.lift_ci_high}
+      - {id: c2_prev, v: "0.72", key: matrices.mendeley_loco.folds.1.prevalence}
+      - {id: c2_lift, v: "0.90", key: matrices.mendeley_loco.folds.1.lift_mean}
+      - {id: c2_lo, v: "0.87", key: matrices.mendeley_loco.folds.1.lift_ci_low}
+      - {id: c2_hi, v: "0.94", key: matrices.mendeley_loco.folds.1.lift_ci_high}
+      - {id: c3_prev, v: "0.29", key: matrices.mendeley_loco.folds.2.prevalence}
+      - {id: c3_lift, v: "1.74", key: matrices.mendeley_loco.folds.2.lift_mean}
+      - {id: c3_lo, v: "1.24", key: matrices.mendeley_loco.folds.2.lift_ci_low}
+      - {id: c3_hi, v: "2.36", key: matrices.mendeley_loco.folds.2.lift_ci_high}
+      - {id: c4_prev, v: "0.72", key: matrices.mendeley_loco.folds.3.prevalence}
+      - {id: c4_lift, v: "1.03", key: matrices.mendeley_loco.folds.3.lift_mean}
+      - {id: c4_lo, v: "0.96", key: matrices.mendeley_loco.folds.3.lift_ci_low}
+      - {id: c4_hi, v: "1.10", key: matrices.mendeley_loco.folds.3.lift_ci_high}
+      - {id: c5_prev, v: "0.67", key: matrices.mendeley_loco.folds.4.prevalence}
+      - {id: c5_lift, v: "1.14", key: matrices.mendeley_loco.folds.4.lift_mean}
+      - {id: c5_lo, v: "1.04", key: matrices.mendeley_loco.folds.4.lift_ci_low}
+      - {id: c5_hi, v: "1.26", key: matrices.mendeley_loco.folds.4.lift_ci_high}
+      - {id: c6_prev, v: "0.89", key: matrices.mendeley_loco.folds.5.prevalence}
+      - {id: c6_lift, v: "1.07", key: matrices.mendeley_loco.folds.5.lift_mean}
+      - {id: c6_lo, v: "1.02", key: matrices.mendeley_loco.folds.5.lift_ci_low}
+      - {id: c6_hi, v: "1.11", key: matrices.mendeley_loco.folds.5.lift_ci_high}
+      - {id: c7_prev, v: "0.69", key: matrices.mendeley_loco.folds.6.prevalence}
+      - {id: c7_lift, v: "1.17", key: matrices.mendeley_loco.folds.6.lift_mean}
+      - {id: c7_lo, v: "0.95", key: matrices.mendeley_loco.folds.6.lift_ci_low}
+      - {id: c7_hi, v: "1.36", key: matrices.mendeley_loco.folds.6.lift_ci_high}
+      - {id: pooled_prev, v: "0.69", key: matrices.mendeley_loco.pooled_prevalence}
+      - {id: pooled_auc, v: "0.6404", key: matrices.mendeley_loco.pooled_per_seed.*.auc_pr, reduce: mean, fmt: "{:.4f}"}
+      - {id: pooled_auc_sd, v: "0.0153", key: matrices.mendeley_loco.pooled_per_seed.*.auc_pr, reduce: stdev, fmt: "{:.4f}"}
+      - {id: pooled_lift, v: "0.93", key: matrices.mendeley_loco.pooled_lift_mean}
+      - {id: pooled_lift_sd, v: "0.02", key: matrices.mendeley_loco.pooled_lift_std}
+      - {id: weighted, v: "0.99", key: matrices.mendeley_loco.size_weighted_lift}
+      - {id: macro, v: "1.17", key: matrices.mendeley_loco.macro_lift}
+  - id: garcia_pooled
+    file: eval_outputs/transfer_pooled/transfer_pooled.json
+    fmt: "{:.2f}"
+    items:
+      - {id: america_prev, v: "0.25", key: matrices.garcia_lomo.folds.0.prevalence}
+      - {id: america_lift, v: "1.56", key: matrices.garcia_lomo.folds.0.lift_mean}
+      - {id: america_lo, v: "1.19", key: matrices.garcia_lomo.folds.0.lift_ci_low}
+      - {id: america_hi, v: "2.03", key: matrices.garcia_lomo.folds.0.lift_ci_high}
+      - {id: brazil_prev, v: "0.29", key: matrices.garcia_lomo.folds.1.prevalence}
+      - {id: brazil_lift, v: "1.77", key: matrices.garcia_lomo.folds.1.lift_mean}
+      - {id: brazil_lo, v: "1.53", key: matrices.garcia_lomo.folds.1.lift_ci_low}
+      - {id: brazil_hi, v: "2.04", key: matrices.garcia_lomo.folds.1.lift_ci_high}
+      - {id: italy_prev, v: "0.55", key: matrices.garcia_lomo.folds.2.prevalence}
+      - {id: italy_lift, v: "1.43", key: matrices.garcia_lomo.folds.2.lift_mean}
+      - {id: italy_lo, v: "1.40", key: matrices.garcia_lomo.folds.2.lift_ci_low}
+      - {id: italy_hi, v: "1.47", key: matrices.garcia_lomo.folds.2.lift_ci_high}
+      - {id: japan_prev, v: "0.28", key: matrices.garcia_lomo.folds.3.prevalence}
+      - {id: japan_lift, v: "1.53", key: matrices.garcia_lomo.folds.3.lift_mean}
+      - {id: japan_lo, v: "1.43", key: matrices.garcia_lomo.folds.3.lift_ci_low}
+      - {id: japan_hi, v: "1.66", key: matrices.garcia_lomo.folds.3.lift_ci_high}
+      - {id: pooled_prev, v: "0.36", key: matrices.garcia_lomo.pooled_prevalence}
+      - {id: pooled_auc, v: "0.4827", key: matrices.garcia_lomo.pooled_per_seed.*.auc_pr, reduce: mean, fmt: "{:.4f}"}
+      - {id: pooled_auc_sd, v: "0.0544", key: matrices.garcia_lomo.pooled_per_seed.*.auc_pr, reduce: stdev, fmt: "{:.4f}"}
+      - {id: pooled_lift, v: "1.36", key: matrices.garcia_lomo.pooled_lift_mean}
+      - {id: pooled_lift_sd, v: "0.15", key: matrices.garcia_lomo.pooled_lift_std}
+      - {id: weighted, v: "1.53", key: matrices.garcia_lomo.size_weighted_lift}
+      - {id: macro, v: "1.57", key: matrices.garcia_lomo.macro_lift}
+
+  # ------------------------------------------------------------ B6 probes
+  - id: full_label
+    file: eval_outputs/cross_domain/full_label_comparison/full_label_comparison.json
+    items:
+      - {id: f2p_prev, v: "0.358", key: directions.fin2proc.prevalence_baseline, fmt: "{:.3f}"}
+      - {id: p2f_prev, v: "0.065", key: directions.proc2fin.prevalence_baseline, fmt: "{:.3f}"}
+      - {id: f2p_frozen, v: "0.2843", key: directions.fin2proc.comparators.frozen_probe.auc_pr_ci.auc_pr}
+      - {id: f2p_frozen_lo, v: "0.268", key: directions.fin2proc.comparators.frozen_probe.auc_pr_ci.ci_low, fmt: "{:.3f}"}
+      - {id: f2p_frozen_hi, v: "0.311", key: directions.fin2proc.comparators.frozen_probe.auc_pr_ci.ci_high, fmt: "{:.3f}"}
+      - {id: f2p_struct, v: "0.2705", key: directions.fin2proc.comparators.structural_probe.auc_pr_ci.auc_pr}
+      - {id: f2p_struct_lo, v: "0.255", key: directions.fin2proc.comparators.structural_probe.auc_pr_ci.ci_low, fmt: "{:.3f}"}
+      - {id: f2p_struct_hi, v: "0.293", key: directions.fin2proc.comparators.structural_probe.auc_pr_ci.ci_high, fmt: "{:.3f}"}
+      - {id: f2p_b2in, v: "0.4752", key: directions.fin2proc.comparators.b2_inputs_probe.auc_pr_ci.auc_pr}
+      - {id: f2p_b2in_lo, v: "0.421", key: directions.fin2proc.comparators.b2_inputs_probe.auc_pr_ci.ci_low, fmt: "{:.3f}"}
+      - {id: f2p_b2in_hi, v: "0.545", key: directions.fin2proc.comparators.b2_inputs_probe.auc_pr_ci.ci_high, fmt: "{:.3f}"}
+      - {id: p2f_frozen, v: "0.1502", key: directions.proc2fin.comparators.frozen_probe.auc_pr_ci.auc_pr}
+      - {id: p2f_frozen3, v: "0.150", key: directions.proc2fin.comparators.frozen_probe.auc_pr_ci.auc_pr, fmt: "{:.3f}"}
+      - {id: p2f_frozen_lo, v: "0.135", key: directions.proc2fin.comparators.frozen_probe.auc_pr_ci.ci_low, fmt: "{:.3f}"}
+      - {id: p2f_frozen_hi, v: "0.169", key: directions.proc2fin.comparators.frozen_probe.auc_pr_ci.ci_high, fmt: "{:.3f}"}
+      - {id: p2f_struct, v: "0.1084", key: directions.proc2fin.comparators.structural_probe.auc_pr_ci.auc_pr}
+      - {id: p2f_struct_lo, v: "0.100", key: directions.proc2fin.comparators.structural_probe.auc_pr_ci.ci_low, fmt: "{:.3f}"}
+      - {id: p2f_struct_hi, v: "0.118", key: directions.proc2fin.comparators.structural_probe.auc_pr_ci.ci_high, fmt: "{:.3f}"}
+      - {id: p2f_b2in, v: "0.2991", key: directions.proc2fin.comparators.b2_inputs_probe.auc_pr_ci.auc_pr}
+      - {id: p2f_b2in3, v: "0.299", key: directions.proc2fin.comparators.b2_inputs_probe.auc_pr_ci.auc_pr, fmt: "{:.3f}"}
+      - {id: p2f_b2in_lo, v: "0.280", key: directions.proc2fin.comparators.b2_inputs_probe.auc_pr_ci.ci_low, fmt: "{:.3f}"}
+      - {id: p2f_b2in_hi, v: "0.322", key: directions.proc2fin.comparators.b2_inputs_probe.auc_pr_ci.ci_high, fmt: "{:.3f}"}
+      - {id: p2f_gain, v: "0.042", key: directions.proc2fin.paired.frozen_probe_vs_structural_probe.delta, fmt: "{:.3f}"}
+      - {id: p2f_gain_lo, v: "0.026", key: directions.proc2fin.paired.frozen_probe_vs_structural_probe.delta_ci_low, fmt: "{:.3f}"}
+      - {id: p2f_gain_hi, v: "0.059", key: directions.proc2fin.paired.frozen_probe_vs_structural_probe.delta_ci_high, fmt: "{:.3f}"}
+  - id: original_fin2proc_probe
+    v: "0.2841"
+    file: eval_outputs/cross_domain/fin2proc/run.json
+    key: node_level.auc_pr
+  - id: probe_lift
+    v: "2.3"
+    fmt: "{:.1f}"
+    file: eval_outputs/derived/derived_numbers.json
+    key: items.proc2fin_probe_lift.value
+  - id: label_efficiency
+    fmt: "{:.3f}"
+    file: eval_outputs/cross_domain/label_efficiency_proc2fin/label_efficiency.json
+    items:
+      - {id: k100_gain, v: "0.002", key: curve.3.transfer_gain_mean}
+      - {id: k1000_gain, v: "0.013", key: curve.6.transfer_gain_mean}
+  - id: label_efficiency_f2p
+    v: "0.002"
+    fmt: "{:.3f}"
+    file: eval_outputs/cross_domain/label_efficiency_fin2proc/label_efficiency.json
+    key: curve.5.transfer_gain_mean
+
+  # ------------------------------------------------------------ B8, RQ3
+  - id: explainers
+    file: eval_outputs/elliptic_pp/explainer_metrics/explainer_ablation.json
+    items:
+      - {id: pg_fplus, v: "0.052", key: arms.pg_explainer.hard_fidelity_plus_mean, fmt: "{:.3f}"}
+      - {id: gnn_fplus, v: "0.049", key: arms.gnn_explainer.hard_fidelity_plus_mean, fmt: "{:.3f}"}
+      - {id: att_fplus, v: "0.049", key: arms.attention.hard_fidelity_plus_mean, fmt: "{:.3f}"}
+      - {id: pg_fminus, v: "-0.006", key: arms.pg_explainer.hard_fidelity_minus_mean, fmt: "{:.3f}"}
+      - {id: gnn_fminus, v: "0.000", key: arms.gnn_explainer.hard_fidelity_minus_mean, fmt: "{:.3f}"}
+      - {id: att_fminus, v: "0.000", key: arms.attention.hard_fidelity_minus_mean, fmt: "{:.3f}"}
+      - {id: pg_sparsity, v: "0.12", key: arms.pg_explainer.sparsity_mean, fmt: "{:.2f}"}
+      - {id: gnn_sparsity, v: "0.29", key: arms.gnn_explainer.sparsity_mean, fmt: "{:.2f}"}
+      - {id: att_sparsity, v: "0.01", key: arms.attention.sparsity_mean, fmt: "{:.2f}"}
+      - {id: pg_seconds, v: "18.1", key: arms.pg_explainer.seconds, fmt: "{:.1f}"}
+      - {id: gnn_seconds, v: "57.8", key: arms.gnn_explainer.seconds, fmt: "{:.1f}"}
+      - {id: att_seconds, v: "0.6", key: arms.attention.seconds, fmt: "{:.1f}"}
+      - {id: overlap_min, v: "0.65", key: arm_overlap_jaccard.*, reduce: min, fmt: "{:.2f}"}
+      - {id: overlap_max, v: "0.88", key: arm_overlap_jaccard.*, reduce: max, fmt: "{:.2f}"}
+  - id: copilot_wilson
+    file: eval_outputs/derived/derived_numbers.json
+    fmt: "{:.3f}"
+    items:
+      - {id: proportion, v: "0.923", key: items.copilot_grounding_wilson.proportion}
+      - {id: low, v: "0.759", key: items.copilot_grounding_wilson.ci_low}
+      - {id: high, v: "0.979", key: items.copilot_grounding_wilson.ci_high}
+
+  # ------------------------------------------------------------ RQ2 injection
+  - id: injection
+    file: eval_outputs/ocds_georgia/injection_recovery_multiseed/injection_multiseed.json
+    fmt: "{:.2f}"
+    items:
+      - {id: cc_dominant, v: "0.37", key: "recovery_multiseed.dominant.coordinated_cluster.recall@2000.mean"}
+      - {id: cc_dominant_sd, v: "0.15", key: "recovery_multiseed.dominant.coordinated_cluster.recall@2000.std"}
+      - {id: cc_rank, v: "0.92", key: "recovery_multiseed.ensemble_rank.coordinated_cluster.recall@2000.mean"}
+      - {id: cc_rank_sd, v: "0.17", key: "recovery_multiseed.ensemble_rank.coordinated_cluster.recall@2000.std"}
+      - {id: cc_floor, v: "0.12", key: "recovery_multiseed.floor.coordinated_cluster.recall@2000.mean"}
+      - {id: cc_floor_sd, v: "0.00", key: "recovery_multiseed.floor.coordinated_cluster.recall@2000.std"}
+      - {id: cc_gae, v: "0.91", key: "recovery_multiseed.gae.coordinated_cluster.recall@2000.mean"}
+      - {id: cc_gae_sd, v: "0.12", key: "recovery_multiseed.gae.coordinated_cluster.recall@2000.std"}
+      - {id: ctl_dominant, v: "0.58", key: "recovery_multiseed.dominant.common_control.recall@2000.mean"}
+      - {id: ctl_dominant_sd, v: "0.04", key: "recovery_multiseed.dominant.common_control.recall@2000.std"}
+      - {id: ctl_rank, v: "0.44", key: "recovery_multiseed.ensemble_rank.common_control.recall@2000.mean"}
+      - {id: ctl_rank_sd, v: "0.02", key: "recovery_multiseed.ensemble_rank.common_control.recall@2000.std"}
+      - {id: ctl_floor, v: "0.43", key: "recovery_multiseed.floor.common_control.recall@2000.mean"}
+      - {id: ctl_floor_sd, v: "0.00", key: "recovery_multiseed.floor.common_control.recall@2000.std"}
+      - {id: ctl_gae, v: "0.47", key: "recovery_multiseed.gae.common_control.recall@2000.mean"}
+      - {id: ctl_gae_sd, v: "0.02", key: "recovery_multiseed.gae.common_control.recall@2000.std"}
+      - {id: part_dominant, v: "0.17", key: "recovery_multiseed.dominant.partition.recall@2000.mean"}
+      - {id: part_dominant_sd, v: "0.01", key: "recovery_multiseed.dominant.partition.recall@2000.std"}
+      - {id: part_rank, v: "0.03", key: "recovery_multiseed.ensemble_rank.partition.recall@2000.mean"}
+      - {id: part_rank_sd, v: "0.03", key: "recovery_multiseed.ensemble_rank.partition.recall@2000.std"}
+      - {id: part_gae, v: "0.05", key: "recovery_multiseed.gae.partition.recall@2000.mean"}
+      - {id: part_gae_sd, v: "0.01", key: "recovery_multiseed.gae.partition.recall@2000.std"}
+      - {id: rot_dominant, v: "0.08", key: "recovery_multiseed.dominant.rotation.recall@2000.mean"}
+      - {id: rot_dominant_sd, v: "0.01", key: "recovery_multiseed.dominant.rotation.recall@2000.std"}
+      - {id: rot_gae, v: "0.04", key: "recovery_multiseed.gae.rotation.recall@2000.mean"}
+      - {id: rot_gae_sd, v: "0.01", key: "recovery_multiseed.gae.rotation.recall@2000.std"}
+      - {id: cover_dominant, v: "0.01", key: "recovery_multiseed.dominant.cover_bid.recall@2000.mean"}
+      - {id: cover_gae, v: "0.01", key: "recovery_multiseed.gae.cover_bid.recall@2000.mean"}
+
+allow:
+  - reason: protocol parameters (Jaccard grid, hit-rule fractions, the default NMS threshold, the lift reference line, the copilot gate threshold)
+    values: ["0.1", "0.25", "0.3", "0.4", "0.5", "0.6", "0.7", "1.0", "0.9"]
+  - reason: licence version numbers in Table I
+    values: ["1.0", "3.0", "4.0"]
+  - reason: dataset facts from the publishers' files, recorded in the datasheets (Mendeley contract-level cartel share 6,548 of 15,616; García market shares 11.3 to 81.8 percent)
+    values: ["41.9", "11.3", "81.8"]
+  - reason: AMLworld post-window laundering share, counted from the stored edges during the revision (655 of 1,108 = 0.5912)
+    values: ["59.1"]
+  - reason: literature figures quoted with their citation (OECD Government at a Glance 2025, p. 146; Lin et al. 2026 accuracy and wavelet contribution)
+    values: ["12.7", "0.98", "0.01"]
+  - reason: machine-class difference of the seed-0 GATv2 run from the July 2026 ledger (0.5492 against 0.5318); no stored artifact on this machine
+    values: ["0.02"]
+  - reason: "D24 open: the normalisation-fix figures come from the July 2026 ledger; gnn_elliptic_pp_gatv2_focal_pergraphnorm_multiseed.yaml will replace them"
+    values: ["0.693", "0.532"]
+  - reason: the copilot example of a broken figure ("0.32" rewritten as "32%")
+    values: ["0.32"]

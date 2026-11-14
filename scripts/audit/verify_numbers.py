@@ -1,159 +1,160 @@
-"""Check the report's quoted numbers against the actual stored artifacts."""
+"""Check every result number in the paper against the artifact that holds it.
 
+Reads ``paper/numbers_manifest.yaml``. Each entry names the printed value, the
+artifact file (JSON, under the repository root), a key path into it and the
+format used to print it. The checker recomputes the printed string from the
+artifact and confirms that the string appears in the manuscript. It then lists
+every decimal number in the manuscript body that no entry and no allowlist
+item explains.
+
+Key paths are dot-separated. ``*`` matches every key of a mapping or every
+item of a list, and ``reduce`` (min, max, mean, sum, count) folds the matches
+to one value. ``op`` combines the value with a second source ``b`` (sub, div,
+add). ``scale`` multiplies the result (for example 100 for a percentage).
+
+Usage::
+
+    uv run python scripts/audit/verify_numbers.py            # report, exit 1 on any failure
+    uv run python scripts/audit/verify_numbers.py --strict   # also fail on unlisted numbers
+
+The artifacts are gitignored, so this runs on a machine that holds
+``eval_outputs/``; it is not part of CI.
+"""
+
+from __future__ import annotations
+
+import argparse
 import json
+import re
+import statistics
+import sys
 from pathlib import Path
+from typing import Any
 
-ROOT = Path(r"D:/MAIB/Term - 3/Deep Learning/Collusion-Network-Detection")
+import yaml
 
-
-def load(rel):
-    p = ROOT / rel
-    return json.loads(p.read_text(encoding="utf-8")) if p.is_file() else None
-
-
-checks = []
+REPO = Path(__file__).resolve().parents[2]
+# a leading minus counts unless it is the second dash of a range ("11.3--81.8")
+NUMBER = re.compile(r"(?<![\w.])(?:(?<!-)-)?\d+\.\d+(?![\d])")
 
 
-def chk(name, claimed, actual, tol=0.0006):
-    if actual is None:
-        checks.append((name, claimed, "ARTIFACT MISSING", "?"))
-        return
-    ok = abs(claimed - actual) <= tol
-    checks.append((name, claimed, round(actual, 4), "OK" if ok else "*** MISMATCH ***"))
+def resolve(obj: Any, path: str) -> list[Any]:
+    """All values at a dot path; ``*`` fans out over mappings and lists."""
+    current = [obj]
+    for part in path.split("."):
+        nxt: list[Any] = []
+        for node in current:
+            if part == "*":
+                nxt.extend(node.values() if isinstance(node, dict) else node)
+            elif isinstance(node, list):
+                nxt.append(node[int(part)])
+            else:
+                nxt.append(node[part])
+        current = nxt
+    return current
 
 
-# Elliptic baselines
-sb = load("eval_outputs/elliptic_pp/baselines/scoreboard.json")
-if sb:
-    b = sb["baselines"]
-    chk("B1 rules AUC-PR", 0.0576, b["b1_rules"]["auc_pr"])
-    chk("B2 XGB AUC-PR", 0.8076, b["b2_xgb"]["auc_pr"])
-    chk("B3 XGB-Graph AUC-PR", 0.8104, b["b3_xgb_graph"]["auc_pr"])
+REDUCERS = {
+    "min": min,
+    "max": max,
+    "mean": statistics.mean,
+    "stdev": statistics.stdev,
+    "sum": sum,
+    "count": len,
+}
 
-# Mendeley baselines
-mb = load("eval_outputs/mendeley_eu/baselines/scoreboard.json")
-if mb:
-    b = mb["baselines"]
-    chk("Mendeley B1", 0.3426, b["b1_rules"]["auc_pr"])
-    chk("Mendeley B2", 0.3925, b["b2_xgb"]["auc_pr"])
-    chk("Mendeley B3", 0.3775, b["b3_xgb_graph"]["auc_pr"])
-    chk("Mendeley B4", 0.3811, b["b4_screens"]["auc_pr"])
-ms = load("eval_outputs/mendeley_eu/baselines_screens_ablation/scoreboard.json")
-if ms:
-    chk("Mendeley B2+screens", 0.4558, ms["baselines"]["b2_xgb"]["auc_pr"])
 
-# GNN multiseed
-f = load("eval_outputs/elliptic_pp/gnn_gatv2_focal_multiseed/multiseed.json")
-if f:
-    chk("GATv2-focal 5-seed mean", 0.4729, f["aggregate"]["auc_pr_mean"])
-    chk("GATv2-focal 5-seed std", 0.0525, f["aggregate"]["auc_pr_std"])
-    chk("GATv2-focal P@100 mean", 0.812, f["aggregate"]["precision@100_mean"], 0.002)
-w = load("eval_outputs/elliptic_pp/gnn_gatv2_wce_multiseed/multiseed.json")
-if w:
-    chk("GATv2-wce 5-seed mean", 0.4388, w["aggregate"]["auc_pr_mean"])
-    chk("GATv2-wce 5-seed std", 0.0505, w["aggregate"]["auc_pr_std"])
-    chk("GATv2-wce P@100 mean", 0.724, w["aggregate"]["precision@100_mean"], 0.002)
+def value_of(source: dict[str, Any], cache: dict[str, Any]) -> float:
+    path = source["file"]
+    if path not in cache:
+        cache[path] = json.loads((REPO / path).read_text(encoding="utf-8"))
+    values = resolve(cache[path], str(source["key"]))
+    if "reduce" in source:
+        return float(REDUCERS[source["reduce"]](values))
+    if len(values) != 1:
+        raise ValueError(f"{source['key']} matched {len(values)} values; add a reduce")
+    return float(values[0])
 
-# ensemble
-e = load("eval_outputs/elliptic_pp/ensemble_multiseed/ensemble_multiseed.json")
-if e:
-    m = e["members"]
-    chk("calibrated ensemble", 0.4434, m["ensemble_calibrated"]["auc_pr_mean"])
-    chk("rank fusion", 0.0511, m["ensemble_rank"]["auc_pr_mean"])
-    chk("rank fusion std", 0.0019, m["ensemble_rank"]["auc_pr_std"])
-    chk("supervised (=-unsup arm)", 0.4729, m["supervised"]["auc_pr_mean"])
 
-# seed-0 ablation arms
-for d, claimed in [
-    ("gnn_gatv2_focal", 0.5492),
-    ("gnn_gatv2_focal_unidir", 0.3549),
-    ("gnn_gatv2_focal_multi", 0.3781),
-    ("gnn_gatv2_focal_line", 0.4986),
-]:
-    r = load(f"eval_outputs/elliptic_pp/{d}/run.json")
-    chk(f"seed0 {d}", claimed, r["node_level"]["auc_pr"] if r else None)
+def compute(entry: dict[str, Any], cache: dict[str, Any]) -> float:
+    value = value_of(entry, cache)
+    if "op" in entry:
+        other = value_of(entry["b"], cache)
+        value = {"sub": value - other, "div": value / other, "add": value + other}[entry["op"]]
+    return value * float(entry.get("scale", 1))
 
-# Mendeley R-GCN
-rg = load("eval_outputs/mendeley_eu/gnn_rgcn_focal_multiseed/multiseed.json")
-if rg:
-    chk("R-GCN 5-seed mean", 0.2808, rg["aggregate"]["auc_pr_mean"])
-    chk("R-GCN 5-seed std", 0.0087, rg["aggregate"]["auc_pr_std"])
 
-# OCDS injection
-inj = load("eval_outputs/ocds_georgia/injection_recovery_multiseed/injection_multiseed.json")
-if inj:
-    rec = inj["recovery_multiseed"]
-    chk(
-        "coordinated_cluster rank-fusion @2000",
-        0.9225,
-        rec["ensemble_rank"]["coordinated_cluster"]["recall@2000"]["mean"],
-    )
-    chk("floor common_control @2000", 0.4286, rec["floor"]["common_control"]["recall@2000"]["mean"])
-    chk("floor common_control std", 0.0, rec["floor"]["common_control"]["recall@2000"]["std"])
-    best = lambda mo: max(rec[a][mo]["recall@2000"]["mean"] for a in rec if mo in rec[a])
-    chk("rotation best-arm @2000", 0.084, best("rotation"), 0.001)
-    chk("partition best-arm @2000", 0.172, best("partition"), 0.001)
-    chk("cover_bid best-arm @2000", 0.010, best("cover_bid"), 0.001)
-    tot = sum(rec["floor"][m]["n_members"] for m in rec["floor"])
-    chk("planted members total", 940, tot, 0)
-    chk("population", 163327, inj["population"], 0)
+LENGTH = re.compile(
+    r"\d*\.?\d+(?:pt|em|ex|mm|cm|in|bp)\b|\d*\.?\d+\\(?:textwidth|columnwidth|linewidth)"
+)
 
-# transfer
-lo = load("eval_outputs/mendeley_eu/transfer_loco_matrix/matrix.json")
-if lo:
-    chk("Mendeley macro lift", 1.17, lo["summary"]["macro_lift_mean"], 0.006)
-    worst = min(f["lift_mean"] for f in lo["folds"] if f.get("status") == "completed")
-    chk("Mendeley worst fold lift", 0.90, worst, 0.006)
-lm = load("eval_outputs/garcia_rodriguez/transfer_lomo_matrix/matrix.json")
-if lm:
-    chk("Garcia macro lift", 1.57, lm["summary"]["macro_lift_mean"], 0.006)
 
-# label noise
-ln = load("eval_outputs/elliptic_pp/label_noise_curve/noise_curve.json")
-if ln:
-    top = max(ln["curve"], key=lambda c: c["rate"])
-    chk("label-noise 20% test AUC-PR", 0.5978, top["auc_pr_mean"], 0.001)
+def manuscript_body(tex: str) -> str:
+    """The text between \\begin{document} and the bibliography, with comments
+    and LaTeX lengths (2.5pt, 0.94\\textwidth) removed."""
+    body = tex[tex.index(r"\begin{document}") : tex.index(r"\begin{thebibliography}")]
+    kept = []
+    for line in body.splitlines():
+        cut = re.split(r"(?<!\\)%", line, maxsplit=1)[0]
+        kept.append(LENGTH.sub(" ", cut))
+    return "\n".join(kept)
 
-# significance
-sg = load("eval_outputs/elliptic_pp/significance/significance.json")
-if sg:
-    for c in sg["comparisons"].values():
-        print(
-            f"  significance: {c['label_a']} vs {c['label_b']}  "
-            f"delta={c['delta']:+.3f} CI[{c['delta_ci_low']:.3f},{c['delta_ci_high']:.3f}] p={c['p_value']}"
-        )
 
-print()
-w = max(len(c[0]) for c in checks)
-bad = 0
-for name, claimed, actual, status in checks:
-    if status != "OK":
-        bad += 1
-    print(f"{name:<{w}}  report={claimed:<12} artifact={actual:<12} {status}")
-print(f"\n{len(checks) - bad}/{len(checks)} quoted numbers verified against artifacts")
+def expand(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Groups share ``file`` (and optionally fmt, reduce, scale) across
+    ``items``; each item carries its own id, printed value and key."""
+    out: list[dict[str, Any]] = []
+    for entry in entries:
+        if "items" not in entry:
+            out.append(entry)
+            continue
+        shared = {k: v for k, v in entry.items() if k not in ("items", "id")}
+        for item in entry["items"]:
+            out.append({**shared, **item, "id": f"{entry['id']}.{item['id']}"})
+    return out
 
-# --- AMLworld (added 2026-07-25) -------------------------------------------
-amlb = load("eval_outputs/amlworld_hi_small/baselines/scoreboard.json")
-if amlb:
-    b = amlb["baselines"]
-    chk("AMLworld B2 AUC-PR", 0.0064, b["b2_xgb"]["auc_pr"], 0.0001)
-    chk("AMLworld B3 AUC-PR", 0.0062, b["b3_xgb_graph"]["auc_pr"], 0.0001)
-    chk("AMLworld prevalence", 0.0104, b["b2_xgb"]["prevalence_baseline"], 0.0001)
 
-amli = load("eval_outputs/amlworld_hi_small/injection_recovery/injection_recovery_report.json")
-if amli:
-    chk("AMLworld injection population", 262921, amli["population"], 0)
-    chk("AMLworld planted members", 640, amli["n_injected_members"], 0)
-    rec = amli["recovery"]
-    get = lambda arm, mo: next((x["recall@2000"] for x in rec[arm] if x["motif_type"] == mo), None)
-    chk("AMLworld floor common_control@2000", 0.5625, get("floor", "common_control"))
-    for mo in ("cycle", "fan_in", "fan_out", "pass_through"):
-        best = max(get(a, mo) or 0.0 for a in rec)
-        chk(f"AMLworld {mo} best-arm@2000", 0.0, best, 1e-9)
+def check(manifest_path: Path, tex_path: Path) -> tuple[list[str], list[str]]:
+    manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+    body = manuscript_body(tex_path.read_text(encoding="utf-8"))
+    present = NUMBER.findall(body)
+    cache: dict[str, Any] = {}
+    failures: list[str] = []
+    explained: set[str] = set()
+    for entry in expand(manifest["numbers"]):
+        printed = str(entry["v"])
+        try:
+            got = str(entry.get("fmt", "{:.4f}")).format(compute(entry, cache))
+            if got.startswith("-") and float(got) == 0:
+                got = got[1:]  # a rounded negative zero prints as 0
+        except (KeyError, IndexError, ValueError, FileNotFoundError) as exc:
+            failures.append(f"{entry['id']}: cannot read artifact ({exc})")
+            continue
+        if got != printed:
+            failures.append(f"{entry['id']}: artifact gives {got}, manifest prints {printed}")
+        if printed not in present:
+            failures.append(f"{entry['id']}: {printed} not found in the manuscript")
+        explained.add(printed)
+    for item in manifest.get("allow", []):
+        explained.update(str(v) for v in item["values"])
+    unlisted = sorted({n for n in present if n not in explained}, key=lambda s: float(s))
+    return failures, unlisted
 
-w = max(len(c[0]) for c in checks)
-bad2 = sum(1 for c in checks if c[3] != "OK")
-print(f"\n--- with AMLworld: {len(checks) - bad2}/{len(checks)} verified ---")
-for name, claimed, actual, status in checks:
-    if status != "OK":
-        print(f"  MISMATCH {name}: report={claimed} artifact={actual}")
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--manifest", default=str(REPO / "paper" / "numbers_manifest.yaml"))
+    parser.add_argument("--tex", default=str(REPO / "paper" / "collusiongraph_paper.tex"))
+    parser.add_argument("--strict", action="store_true", help="fail on unlisted numbers too")
+    args = parser.parse_args()
+    failures, unlisted = check(Path(args.manifest), Path(args.tex))
+    for line in failures:
+        print(f"FAIL  {line}")
+    if unlisted:
+        print(f"UNLISTED ({len(unlisted)}): {' '.join(unlisted)}")
+    print(f"{len(failures)} failure(s), {len(unlisted)} unlisted number(s)")
+    return 1 if failures or (args.strict and unlisted) else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
