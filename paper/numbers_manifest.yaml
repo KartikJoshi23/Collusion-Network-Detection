@@ -533,3 +533,5 @@ allow:
     values: ["0.693", "0.532"]
   - reason: the copilot example of a broken figure ("0.32" rewritten as "32%")
     values: ["0.32"]
+  - reason: hyperparameters copied from the committed configs into Appendix C (learning rate, subsample and column fractions); checked against the configs during the revision
+    values: ["0.005", "0.8"]

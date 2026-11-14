@@ -344,8 +344,10 @@ Four arms score every node and are fused afterwards.
 banks actually deploy. B2 is XGBoost on node features. B3 is XGBoost on node
 features together with graph-derived ones, meaning degrees, k-core, motif counts
 and neighbourhood aggregates. B3 follows the GADBench recipe and is the yardstick
-that matters. On the procurement side we add B4, the classical screens tier of
-coefficient of variation, price spread, kurtosis and relative distance.
+that matters. On the procurement side we add B4, a transparent screens
+composite over award screens: a firm's number of awards, its market share and
+the concentration of its buyers. The bid-price screens of the cartel
+literature need the losing bids, which the Mendeley release does not contain.
 
 \textbf{Supervised graph neural networks.} GraphSAGE~\cite{sage},
 GATv2~\cite{gatv2} and R-GCN~\cite{rgcn}, all direction-aware: the graph is
@@ -388,7 +390,7 @@ A bounded language-model agent answers analyst questions using the published art
 \subsection{Evaluation protocol}
 \label{sec:protocol}
 
-Each rule below changed a headline number at some point while we were building the system, which is why we treat the protocol as a result in its own way.
+Each rule below changed a headline number at some point while we were building the system, which is why we treat the protocol as a result in its own way. Appendix~\ref{app:methods} gives every split, feature, rule and hyperparameter.
 
 \begin{itemize}
 \item \textbf{Strict inductive splits.} Test nodes and their edges stay unseen during training. Temporal splits fence the boundary; entity splits (LOCO, LOMO) hold out whole countries or markets.
@@ -1185,6 +1187,144 @@ deterministic on one machine, and its results depend on the machine class
 (Section~\ref{sec:reproducibility}). Seed variance of about $\pm 0.05$
 dominates the machine difference, which is why every learned number here
 appears as a multi-seed mean with its standard deviation.
+
+\section{Experimental Details}
+\label{app:methods}
+
+This appendix gives every setting needed to judge fairness without the
+repository. Each value was read from the committed configs and code.
+
+\textbf{Splits.} Elliptic++ is split by time step. The training graph holds
+steps 1--34. The loss uses the confirmed nodes of steps 1--29, and early
+stopping uses validation AUC-PR on the confirmed nodes of steps 30--34, so
+validation is temporal and never a random sample of training nodes. The test
+window is steps 35--49. Mendeley is split by the year a firm first appears:
+training holds firms first seen up to 2013, and the test set holds the 363
+confirmed firms first seen from 2014. The R-GCN takes its loss on firms first
+seen up to 2010 and validates on 2011--2013; the trees train on all firms up
+to 2013. A firm counts as cartel-linked once it holds an award the release
+marks as cartel. Training labels use only awards dated up to the cut, so later
+findings cannot leak into training targets; test labels use the full record.
+AMLworld splits accounts by first appearance, with the post-window tail
+removed. Leave-one-country-out (Mendeley) and leave-one-market-out (Garc\'ia)
+hold out one country or market at a time and score it on its own subgraph.
+Early stopping uses the smallest other group with at least three confirmed
+firms per class: \texttt{country\_7} validates every Mendeley fold except its
+own, which \texttt{country\_1} validates, and America validates every
+Garc\'ia fold except its own, which Brazil validates. Each fold runs five
+seeds.
+
+\textbf{Features.} Elliptic++ carries 183 node columns: the time step, 93
+local features, 72 one-hop aggregates and 17 Elliptic++ additions, which
+include in- and out-degree and BTC amounts. B2 uses all 183 columns and a
+money-flow pack computed from the transaction edges (counts and timing; the
+Elliptic++ edges carry no amounts). B2-local keeps the time step and the 93
+local features only. On Mendeley, B2 uses the award screens of B4. B3 adds two
+groups to B2's inputs. The first is a structural template: in-, out- and
+total degree, mutual-dyad degree, clustering, k-core, triangles, burstiness,
+the size of the node's connected component, and its degree relative to that
+component. The second is the mean of each column over a node's neighbours (the
+raw columns on Elliptic++, the structural template on Mendeley). The
+``+screens'' rows add the publisher's precomputed screens: the mean and
+minimum bids per lot and the mean relative value. Every feature derived from
+history is computed as of the training cut for training nodes and on the full
+graph for test nodes.
+
+\textbf{Rule and screen baselines.} B1 scores a node by the share of rules it
+triggers. Each threshold is a percentile fitted on training nodes only.
+Elliptic++ uses five rules: in-degree and out-degree above their 99th
+percentiles, velocity above its 95th, median holding time below its 5th, and
+mutual-dyad degree above its 99th. Mendeley uses three: number of awards,
+market share and buyer concentration, each above its 95th percentile. B4
+averages direction-adjusted z-scores of its screens.
+
+\textbf{Models and training.} Table~\ref{tab:hparams} lists the network
+settings. Every graph network trains full batch on the CPU with Adam and
+weight decay $5 \times 10^{-4}$. The loss is focal with $\gamma = 2$ and no
+$\alpha$ weighting; weighted cross-entropy is the ablation arm. Training stops
+early on validation AUC-PR, and the best validation epoch is kept. XGBoost
+uses 400 trees of depth 6, learning rate 0.1, the histogram method, and a
+positive-class weight equal to the ratio of negatives to positives. Its
+five-seed rows subsample rows and columns at 0.8.
+
+\begin{table}[h]
+\caption{Network settings. Every network uses two layers, Adam and weight decay
+$5 \times 10^{-4}$; GATv2 uses four attention heads. ``Folds'' are the LOCO
+and LOMO folds; ``probe'' rows are the cross-domain source encoders. ``Pat.''
+is the early-stopping patience in epochs.}
+\label{tab:hparams}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lrrrrr}
+\toprule
+Model (data) & Hidden & Dropout & LR & Epochs & Pat. \\
+\midrule
+GATv2 (Elliptic++) & 64 & 0.3 & 0.005 & 200 & 20 \\
+R-GCN (Mendeley, folds) & 64 & 0.3 & 0.01 & 300 & 30 \\
+R-GCN (actor graph) & 64 & 0.3 & 0.005 & 120 & 15 \\
+SAGE probe (Elliptic++) & 64 & 0.3 & 0.005 & 200 & 20 \\
+SAGE probe (Mendeley) & 64 & 0.3 & 0.01 & 300 & 30 \\
+DOMINANT, GAE & 32 & --- & --- & 50 & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Tuning.} No model received a hyperparameter search. The trees run
+standard settings, and the graph networks run fixed, hand-chosen settings with
+early stopping. The tuning budgets are therefore equal, at zero. Because the
+trees win every comparison they enter, no positive claim rests on beating an
+under-tuned baseline.
+
+\textbf{Unlabelled nodes.} Unlabelled nodes (77\% of Elliptic++
+transactions) carry structure in message passing but never enter a loss.
+Every metric uses confirmed nodes only. In a queue, an unlabelled member counts
+neither towards a hit nor towards a group's confirmed members, and a hit needs
+at least one confirmed illicit member.
+
+\textbf{Fusion.} The fused members are GATv2, the only supervised member,
+DOMINANT, GAE and the structural floor. Each member is isotonic-calibrated on
+the confirmed nodes of steps 30--34, and the fused score is the equal-weight
+mean of the calibrated scores. Rank fusion averages rank percentiles. The
+GATv2 and B3 fusion trains B3 on steps 1--29, so that steps 30--34 can
+calibrate it.
+
+\textbf{Alert queue.} Leiden runs at resolution 1.0 (seed 0) on the
+test-window subgraph, and single-node communities are dropped. A group's score
+is the mean of its highest calibrated member score and the mean score of its
+top quarter of members. Groups above 100 members are excluded (64 on
+Elliptic++), and Jaccard non-maximum suppression runs at 0.5. The financial
+budgets are 50, 100 and 200 groups: a review capacity of 100, with one step
+either side. The procurement budgets are 4, 18 and 36, the top 1, 5 and 10\%
+of the 363 test firms.
+
+\textbf{Cross-domain probe.} Each source encoder is a two-layer GraphSAGE
+trained on its own domain's structural template. No encoder sees raw features,
+so the 183 Elliptic++ columns and the procurement screens never meet an
+encoder. Each graph is z-scored with statistics from its own training period.
+The frozen encoder embeds the target graph, and a class-balanced logistic
+regression (L-BFGS, at most 2,000 iterations) is fitted on the target's
+training-period nodes and scored on its test period.
+
+\textbf{Copilot.} The agent uses \texttt{nvidia/nemotron-3-super-120b-a12b}
+through NVIDIA NIM at temperature 0, with at most 4,096 tokens per call, and
+\texttt{nvidia/nemotron-3-nano-30b-a3b} as a validator. Its prompts live in
+\texttt{backend/copilot/agent.py}. The 26 golden cases cover SQL questions
+(8), retrieval (4), explanation bundles (3), guardrails (3), honesty (3),
+metrics (2), the stress test (2) and alert tools (1). The gate result in
+Section~\ref{sec:rq3} comes from a run on 19 August 2026.
+
+\textbf{Compute.} Every run used the CPU and full-batch training, on two
+laptops with 11th-generation Intel Core processors (i7-1195G7 and i5-11300H;
+4 cores, 8 threads, 16 GB of memory). One GATv2 run takes 14 to 38 minutes,
+depending on machine load. The five-seed trees take about six minutes on
+Elliptic++ and under a minute on Mendeley, and a Mendeley R-GCN seed takes a
+few seconds.
+
+\textbf{Code and data availability.} \PENDING{L3: repository URL and
+availability wording, an author decision} The datasets are public and are
+downloaded from their canonical sources (Table~\ref{tab:data}). No raw or
+modified data is redistributed.
 
 \balance
 
