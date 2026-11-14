@@ -1,0 +1,36 @@
+# Revision brief item B7, step 2: an alternative temporal validation window.
+# The loss uses steps 1-31 and early stopping uses steps 32-34 (headline: loss
+# 1-29, validation 30-34). Test steps 35-49 are unchanged; seeds 0-4.
+budgets:
+- 50
+- 100
+- 200
+dataset: elliptic_pp
+epochs: 200
+features: raw
+loss:
+  gamma: 2.0
+  name: focal
+lr: 0.005
+model:
+  dropout: 0.3
+  heads: 4
+  hidden_dim: 64
+  name: gatv2
+  num_layers: 2
+multiseed: true
+output_dir: eval_outputs/elliptic_pp/gnn_gatv2_focal_valwin_multiseed
+patience: 20
+per_time_step: true
+seeds:
+- 0
+- 1
+- 2
+- 3
+- 4
+split:
+  loss_end: 31
+  test_start: 35
+  train_end: 34
+store_root: data/interim
+weight_decay: 0.0005

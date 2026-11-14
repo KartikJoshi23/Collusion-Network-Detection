@@ -20,15 +20,21 @@ def focal_loss(
     targets: torch.Tensor,
     gamma: float = 2.0,
     alpha: float | None = None,
+    label_smoothing: float = 0.0,
 ) -> torch.Tensor:
     """Binary focal loss on logits (Lin et al. 2017): CE scaled by (1-p_t)^γ.
 
     ``gamma=0`` recovers (α-weighted) cross-entropy exactly — the property the
     unit tests pin. ``alpha`` is the positive-class weight ∈ (0, 1); None means
-    unweighted.
+    unweighted. ``label_smoothing`` = ε moves the cross-entropy targets to
+    y(1 − ε) + ε/2. The focal weight keeps the hard targets, and ε = 0
+    reproduces the published loss exactly (revision brief item B7).
     """
+    if not 0.0 <= label_smoothing < 1.0:
+        raise ValueError(f"label_smoothing must be in [0, 1), got {label_smoothing}")
     targets = targets.float()
-    ce = F.binary_cross_entropy_with_logits(logits, targets, reduction="none")
+    soft = targets * (1.0 - label_smoothing) + 0.5 * label_smoothing
+    ce = F.binary_cross_entropy_with_logits(logits, soft, reduction="none")
     p = torch.sigmoid(logits)
     p_t = p * targets + (1 - p) * (1 - targets)
     loss = ce * (1 - p_t).pow(gamma)
@@ -53,7 +59,10 @@ def make_loss(name: str, **kwargs: float) -> LossFn:
     if name == "focal":
         gamma = kwargs.get("gamma", 2.0)
         alpha = kwargs.get("alpha")
-        return lambda logits, targets: focal_loss(logits, targets, gamma=gamma, alpha=alpha)
+        smoothing = float(kwargs.get("label_smoothing", 0.0))
+        return lambda logits, targets: focal_loss(
+            logits, targets, gamma=gamma, alpha=alpha, label_smoothing=smoothing
+        )
     if name == "weighted_ce":
         return weighted_ce_loss
     raise ValueError(f"unknown loss {name!r} (expected 'focal' or 'weighted_ce')")

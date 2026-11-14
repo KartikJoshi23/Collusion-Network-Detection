@@ -118,6 +118,13 @@ the run outputs once each run completes; nothing here is typed from memory.
 | `diagnose_below_chance.yaml` | below-chance diagnostics for four cases (item B4) |
 | `transfer_pooled_lift.yaml` | pooled and size-weighted lift, per-fold 95% CIs (item B5) |
 | `derived_numbers.yaml` | copilot grounding Wilson CI, probe lift, pre/post-step-43 AUC-PR (items A3, B1) |
+| `label_noise_elliptic_pp_5seed.yaml` | label-noise curve on seeds 0–4, Fig. 6 (item B7). Seeds 0–2 reuse the stored master runs, since this machine reproduces master's GATv2 bit for bit (check R7); seeds 3–4 are new |
+| `gnn_elliptic_pp_gatv2_focal_ls_multiseed.yaml` | regulariser arm: label smoothing ε = 0.1 (item B7) |
+| `gnn_elliptic_pp_gatv2_focal_wd_multiseed.yaml` | regulariser arm: weight decay 5e-3 (item B7) |
+| `gnn_elliptic_pp_gatv2_focal_do_multiseed.yaml` | regulariser arm: dropout 0.5 (item B7) |
+| `gnn_elliptic_pp_gatv2_focal_es_multiseed.yaml` | regulariser arm: early-stopping patience 5 (item B7) |
+| `gnn_elliptic_pp_gatv2_focal_valwin_multiseed.yaml` | alternative temporal validation window, steps 32–34 (item B7) |
+| `explainer_metrics_elliptic_pp.yaml` | Fidelity+, Fidelity−, sparsity and arm overlap for three explainers on the rebuilt queue (item B8) |
 
 ## 4. Seeds & determinism (measured, not assumed)
 

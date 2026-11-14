@@ -1,0 +1,30 @@
+# Revision brief item B8: standard explainer metrics (Fidelity+, Fidelity-,
+# sparsity) for PGExplainer, GNNExplainer and attention on the same 50 alerts.
+# Same protocol as explainer_ablation_elliptic_pp.yaml: the stored seed-0
+# GATv2 checkpoint, a 2-hop ego window, the top 20 edges. It runs on the queue
+# rebuilt from alert_queue_elliptic_pp_ensemble.yaml (check R6). The output
+# adds per-arm sparsity, both sanity rates, the implausible counts, and the
+# overlap between arms' chosen edges.
+dataset: elliptic_pp
+domain: financial
+store_root: data/interim
+alerts: eval_outputs/elliptic_pp/alert_queue_ensemble/alerts.parquet
+member_scores: eval_outputs/elliptic_pp/ensemble/scores_ensemble_calibrated.parquet
+output_dir: eval_outputs/elliptic_pp/explainer_metrics
+top_k: 50
+seed: 0
+supervised_model:
+  name: gatv2
+  checkpoint: eval_outputs/elliptic_pp/gnn_gatv2_focal/model.pt
+  features: raw
+  hidden_dim: 64
+  num_layers: 2
+  heads: 4
+  dropout: 0.3
+arms: [gnn_explainer, pg_explainer, attention]
+num_hops: 2
+explainer_epochs: 100
+top_edges: 20
+pg:
+  train_epochs: 30
+  lr: 0.003

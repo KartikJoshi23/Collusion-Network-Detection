@@ -178,13 +178,14 @@ def run_explainer_ablation(config: dict[str, Any] | str | Path) -> dict[str, Any
     per_node: list[dict[str, Any]] = []
     for nid in targets:
         sub, target_idx = _ego(data, index_of[nid], num_hops)
+        n_ego = int(sub.edge_index.shape[1])
         for arm in arms:
             pairs = kept_pairs.get(arm, {}).get(nid)
             if pairs is None:
                 continue
-            fid_plus, fid_minus = hard_fidelity(
-                model, sub, target_idx, _mask_from_pairs(sub, pairs)
-            )
+            mask = _mask_from_pairs(sub, pairs)
+            fid_plus, fid_minus = hard_fidelity(model, sub, target_idx, mask)
+            n_masked = int(mask.sum())
             row: dict[str, Any] = {
                 "node_id": nid,
                 "arm": arm,
@@ -192,6 +193,11 @@ def run_explainer_ablation(config: dict[str, Any] | str | Path) -> dict[str, Any
                 "hard_fidelity_minus": fid_minus,
                 "hard_sane": fid_plus >= fid_minus,
                 "n_kept_edges": len(pairs),
+                # revision brief item B8: sparsity = share of the ego window's
+                # edges the explanation leaves out
+                "n_ego_edges": n_ego,
+                "n_kept_mask_edges": n_masked,
+                "sparsity": 1.0 - n_masked / n_ego if n_ego else None,
             }
             pyg = pyg_explanations.get(arm, {}).get(nid)
             if pyg is not None:
@@ -213,11 +219,44 @@ def run_explainer_ablation(config: dict[str, Any] | str | Path) -> dict[str, Any
         }
         if any("pyg_sane" in r for r in rows):
             out["pyg_sane_rate"] = statistics.mean(1.0 if r.get("pyg_sane") else 0.0 for r in rows)
+            out["pyg_fidelity_plus_mean"] = statistics.mean(
+                r["pyg_fidelity_plus"] for r in rows if "pyg_fidelity_plus" in r
+            )
+            out["pyg_fidelity_minus_mean"] = statistics.mean(
+                r["pyg_fidelity_minus"] for r in rows if "pyg_fidelity_minus" in r
+            )
+            out["n_pyg_implausible"] = sum(1 for r in rows if r.get("pyg_sane") is False)
+        sparsities = [r["sparsity"] for r in rows if r.get("sparsity") is not None]
+        if sparsities:
+            out["sparsity_mean"] = statistics.mean(sparsities)
+        out["n_hard_implausible"] = sum(1 for r in rows if not r["hard_sane"])
         return out
+
+    def _overlap(a: str, b: str) -> float | None:
+        """Mean Jaccard overlap of two arms' kept edge sets over shared nodes."""
+        shared = [n for n in targets if n in kept_pairs.get(a, {}) and n in kept_pairs.get(b, {})]
+        if not shared:
+            return None
+        scores = []
+        for n in shared:
+            sa, sb = set(kept_pairs[a][n]), set(kept_pairs[b][n])
+            union = sa | sb
+            scores.append(len(sa & sb) / len(union) if union else 1.0)
+        return statistics.mean(scores)
 
     report = {
         "dataset": dataset,
         "arms": {arm: _summary(arm) for arm in arms},
+        "arm_overlap_jaccard": {
+            f"{a}|{b}": _overlap(a, b) for i, a in enumerate(arms) for b in arms[i + 1 :]
+        },
+        "definitions": {
+            "hard_fidelity_plus": "p_full - p_without_explanation (necessity)",
+            "hard_fidelity_minus": "p_full - p_explanation_only (sufficiency)",
+            "sane": "fidelity_plus >= fidelity_minus for the node (PyG or hard masks)",
+            "implausible": "not sane; the bundle flag fidelity_sane = false",
+            "sparsity": "1 - kept edges / edges in the num_hops ego window",
+        },
         "config": {
             "top_k": cfg.get("top_k", 50),
             "num_hops": num_hops,

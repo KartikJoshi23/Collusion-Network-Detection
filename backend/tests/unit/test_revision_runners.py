@@ -464,3 +464,31 @@ class TestDispatch:
     )
     def test_new_shapes(self, cfg, kind) -> None:
         assert select_train_runner(cfg) == kind
+
+
+class TestLabelSmoothing:
+    def test_zero_smoothing_is_the_published_loss(self) -> None:
+        import torch
+        from collusiongraph.training.losses import focal_loss, make_loss
+
+        torch.manual_seed(0)
+        logits = torch.randn(32)
+        targets = (torch.rand(32) > 0.7).long()
+        base = focal_loss(logits, targets, gamma=2.0)
+        assert torch.equal(focal_loss(logits, targets, gamma=2.0, label_smoothing=0.0), base)
+        assert torch.equal(make_loss("focal", gamma=2.0)(logits, targets), base)
+
+    def test_smoothing_softens_the_targets(self) -> None:
+        import torch
+        import torch.nn.functional as F
+        from collusiongraph.training.losses import focal_loss, make_loss
+
+        logits = torch.tensor([4.0, -4.0])
+        targets = torch.tensor([1, 0])
+        # gamma = 0 reduces focal loss to plain BCE on the softened targets
+        smoothed = focal_loss(logits, targets, gamma=0.0, label_smoothing=0.1)
+        expected = F.binary_cross_entropy_with_logits(logits, torch.tensor([0.95, 0.05]))
+        assert torch.allclose(smoothed, expected)
+        assert make_loss("focal", gamma=0.0, label_smoothing=0.1)(logits, targets) == smoothed
+        with pytest.raises(ValueError):
+            focal_loss(logits, targets, label_smoothing=1.0)

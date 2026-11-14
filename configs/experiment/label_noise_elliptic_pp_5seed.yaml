@@ -1,0 +1,40 @@
+# Revision brief item B7: the label-noise curve on five seeds instead of three.
+# Identical to label_noise_elliptic_pp.yaml except for the seeds. The rate-0
+# runs use the headline protocol, so the clean anchor is a five-seed mean.
+dataset: elliptic_pp
+store_root: data/interim
+output_dir: eval_outputs/elliptic_pp/label_noise_curve_5seed
+label_noise_curve: true
+rates:
+- 0.0
+- 0.05
+- 0.1
+- 0.2
+seeds:
+- 0
+- 1
+- 2
+- 3
+- 4
+features: raw
+split:
+  loss_end: 29
+  train_end: 34
+  test_start: 35
+model:
+  name: gatv2
+  hidden_dim: 64
+  num_layers: 2
+  heads: 4
+  dropout: 0.3
+loss:
+  name: focal
+  gamma: 2.0
+lr: 0.005
+weight_decay: 0.0005
+epochs: 200
+patience: 20
+budgets:
+- 50
+- 100
+- 200
