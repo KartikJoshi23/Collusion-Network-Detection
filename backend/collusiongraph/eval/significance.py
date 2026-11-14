@@ -14,7 +14,9 @@ convention (p is never exactly 0 from a finite bootstrap).
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import polars as pl
@@ -22,6 +24,9 @@ import polars as pl
 from collusiongraph.schema import GraphStore, Label
 
 from .metrics import auc_pr
+from .report import load_config
+
+METHOD = "stratified paired bootstrap, add-one-smoothed two-sided p (eval/significance.py)"
 
 
 def _stratified_indices(rng: np.random.Generator, y: np.ndarray) -> np.ndarray:
@@ -140,3 +145,95 @@ def compare_score_files(
         "n_only_a": frame_a.height - merged.height,
         "n_only_b": frame_b.height - merged.height,
     }
+
+
+def _seed_averaged_scores(paths: list[Path]) -> pl.DataFrame:
+    """Per-node mean score over several seed runs (nodes scored by every run)."""
+    merged: pl.DataFrame | None = None
+    for i, path in enumerate(paths):
+        frame = pl.read_parquet(path).select("node_id", pl.col("score").alias(f"_s{i}"))
+        merged = frame if merged is None else merged.join(frame, on="node_id", how="inner")
+    if merged is None:
+        raise ValueError("seed averaging needs at least one score file")
+    cols = [c for c in merged.columns if c != "node_id"]
+    return merged.select("node_id", pl.mean_horizontal(cols).alias("score"))
+
+
+def run_significance(config: dict[str, Any] | str | Path) -> dict[str, Any]:
+    """Config-driven paired bootstrap (revision brief item B2; Table III).
+
+    ``comparisons`` maps a name to ``{label_a, label_b, scores_a, scores_b}``.
+    Without ``seeds`` each comparison is one ``compare_score_files`` call, and
+    the output keeps the published ``significance.json`` schema. With
+    ``seeds``, the score paths are templates containing ``{seed}``. Every
+    seed pair is then bootstrapped, the range of deltas is reported, and
+    ``seed_averaged: true`` adds one comparison on per-node mean scores.
+    Every comparison uses the same bootstrap ``seed`` for comparability.
+    """
+    cfg = load_config(config)
+    store_root = cfg.get("store_root", "data/interim")
+    dataset: str = cfg["dataset"]
+    n_boot = int(cfg.get("n_boot", 2000))
+    alpha = float(cfg.get("alpha", 0.05))
+    boot_seed = int(cfg.get("seed", 0))
+    out_dir = Path(cfg["output_dir"])
+    seeds = cfg.get("seeds")
+    comparisons: dict[str, dict[str, Any]] = cfg["comparisons"]
+
+    results: dict[str, Any] = {}
+    for name, spec in comparisons.items():
+        labels = {"label_a": spec.get("label_a", "a"), "label_b": spec.get("label_b", "b")}
+        if seeds is None:
+            res = compare_score_files(
+                store_root, dataset, spec["scores_a"], spec["scores_b"], n_boot, alpha, boot_seed
+            )
+            results[name] = {**labels, **res}
+            continue
+        seed_list = [int(s) for s in seeds]
+        paths_a = [Path(str(spec["scores_a"]).format(seed=s)) for s in seed_list]
+        paths_b = [Path(str(spec["scores_b"]).format(seed=s)) for s in seed_list]
+        per_seed: list[dict[str, Any]] = [
+            {"seed": s, **compare_score_files(store_root, dataset, a, b, n_boot, alpha, boot_seed)}
+            for s, a, b in zip(seed_list, paths_a, paths_b, strict=True)
+        ]
+        deltas = [r["delta"] for r in per_seed]
+        mean_a = float(np.mean([r["auc_pr_a"] for r in per_seed]))
+        mean_b = float(np.mean([r["auc_pr_b"] for r in per_seed]))
+        entry: dict[str, Any] = {
+            **labels,
+            "per_seed": per_seed,
+            "delta_min": float(min(deltas)),
+            "delta_max": float(max(deltas)),
+            "ci_low_min": float(min(r["delta_ci_low"] for r in per_seed)),
+            "ci_high_max": float(max(r["delta_ci_high"] for r in per_seed)),
+            "p_value_max": float(max(r["p_value"] for r in per_seed)),
+            "mean_auc_pr_a": mean_a,
+            "mean_auc_pr_b": mean_b,
+            "difference_of_means": mean_a - mean_b,
+        }
+        if cfg.get("seed_averaged"):
+            out_dir.mkdir(parents=True, exist_ok=True)
+            avg_a = out_dir / f"{name}_a_seed_mean.parquet"
+            avg_b = out_dir / f"{name}_b_seed_mean.parquet"
+            _seed_averaged_scores(paths_a).write_parquet(avg_a)
+            _seed_averaged_scores(paths_b).write_parquet(avg_b)
+            entry["seed_averaged"] = compare_score_files(
+                store_root, dataset, avg_a, avg_b, n_boot, alpha, boot_seed
+            )
+        results[name] = entry
+
+    report: dict[str, Any] = {
+        "kind": "paired_significance" if seeds is None else "paired_significance_multiseed",
+        "dataset": dataset,
+        "n_boot": n_boot,
+        "seed": boot_seed,
+        "method": METHOD,
+        **({"seeds": [int(s) for s in seeds]} if seeds is not None else {}),
+        "comparisons": results,
+    }
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_file = cfg.get("output_file", "significance.json")
+    (out_dir / out_file).write_text(
+        json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
+    return report

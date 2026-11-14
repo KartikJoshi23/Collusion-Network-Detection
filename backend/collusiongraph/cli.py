@@ -41,8 +41,10 @@ _INGEST_DEFAULTS = {
 
 def select_train_runner(cfg: dict[str, Any]) -> str:
     """Dispatch a training config on its distinguishing shape (pure, testable)."""
+    if cfg.get("supervised_fusion"):
+        return "supervised_fusion"
     if "baselines" in cfg:
-        return "baselines"
+        return "baselines_multiseed" if cfg.get("multiseed") else "baselines"
     if "motifs" in cfg:
         return "injection_recovery"
     if "supervised_scores_dir" in cfg and "model" not in cfg:
@@ -84,7 +86,9 @@ def _cmd_train(args: argparse.Namespace) -> int:
         run_injection_recovery,
         train_gnn,
     )
+    from collusiongraph.training.fusion_run import run_supervised_fusion
     from collusiongraph.training.multiseed import (
+        run_baselines_multiseed,
         run_ensemble_multiseed,
         run_label_noise,
         run_multiseed,
@@ -98,6 +102,8 @@ def _cmd_train(args: argparse.Namespace) -> int:
 
     runners = {
         "baselines": run_baselines,
+        "baselines_multiseed": run_baselines_multiseed,
+        "supervised_fusion": run_supervised_fusion,
         "injection_recovery": run_injection_recovery,
         "ensemble": run_ensemble,
         "gnn": train_gnn,
@@ -144,6 +150,21 @@ def _cmd_eval(args: argparse.Namespace) -> int:
     from collusiongraph.eval import load_config, run_eval, run_sensitivity
 
     cfg = load_config(args.config)
+    # revision brief: config-driven analyses over stored artifacts (no training)
+    analyses = {
+        "significance": ("collusiongraph.eval.significance", "run_significance"),
+        "diagnostics": ("collusiongraph.eval.diagnostics", "run_below_chance_diagnostics"),
+        "transfer_pooled": ("collusiongraph.eval.transfer_summary", "run_transfer_pooled"),
+        "derived_numbers": ("collusiongraph.eval.derived", "run_derived_numbers"),
+    }
+    for key, (module_name, fn_name) in analyses.items():
+        if cfg.get(key):
+            import importlib
+
+            report = getattr(importlib.import_module(module_name), fn_name)(cfg)
+            print(f"[{key}] written to {cfg['output_dir']}")
+            print(json.dumps(report, indent=2, default=str)[:2000])
+            return 0
     if cfg.get("study"):  # §7 step 31: practitioner-study packet build (§10.3)
         from collusiongraph.eval.study import build_study_packets
 

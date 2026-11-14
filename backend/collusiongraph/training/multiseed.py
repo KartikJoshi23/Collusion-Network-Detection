@@ -24,6 +24,7 @@ import numpy as np
 
 from collusiongraph.eval import load_config
 
+from .baseline_run import run_baselines
 from .trainer import train_gnn
 
 
@@ -96,6 +97,115 @@ def run_multiseed(config: dict[str, Any] | str | Path) -> dict[str, Any]:
     }
     out_root.mkdir(parents=True, exist_ok=True)
     (out_root / "multiseed.json").write_text(
+        json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
+    return report
+
+
+def _baseline_protocol(cfg: dict[str, Any], seed: int) -> dict[str, Any]:
+    """The fields that must agree before a stored seed run may be reused."""
+    return {
+        "dataset": cfg["dataset"],
+        "baselines": sorted(cfg["baselines"]),
+        "feature_set": cfg.get("feature_set", "full"),
+        "include_precomputed": bool(cfg.get("include_precomputed")),
+        "seed": seed,
+    }
+
+
+def _per_step_aggregate(boards: list[dict[str, Any]], name: str) -> dict[str, Any]:
+    """Mean ± std (ddof=1) of per-time-step AUC-PR across seeds, when present."""
+    per_seed = [b["baselines"][name].get("per_time_step") for b in boards]
+    if not all(per_seed):
+        return {}
+    steps = sorted({int(s) for d in per_seed for s in d}, key=int)
+    out: dict[str, Any] = {}
+    for step in steps:
+        cells = [d[str(step)] for d in per_seed if str(step) in d]
+        values = [c["auc_pr"] for c in cells]
+        out[str(step)] = {
+            "auc_pr_mean": float(np.mean(values)),
+            "auc_pr_std": float(np.std(values, ddof=1)) if len(values) > 1 else 0.0,
+            "prevalence_baseline": cells[0]["prevalence_baseline"],
+            "n_confirmed": cells[0].get("n_confirmed"),
+        }
+    return out
+
+
+def run_baselines_multiseed(config: dict[str, Any] | str | Path) -> dict[str, Any]:
+    """Revision brief item B2: the tree baselines over several seeds.
+
+    Each seed is an ordinary ``run_baselines`` call that differs only in
+    ``seed`` and ``output_dir``. The seed reaches XGBoost's ``random_state``,
+    so the runs differ only when the config sets ``subsample`` or
+    ``colsample_*`` below 1.0. Resumable like ``run_multiseed``:
+    ``scoreboard.json`` is written last, so it marks a completed seed, and a
+    guard refuses to reuse a seed directory from another protocol.
+    Writes ``baselines_multiseed.json`` with mean ± std (ddof=1) per baseline.
+    """
+    cfg = load_config(config)
+    if not cfg.get("multiseed"):
+        raise ValueError("run_baselines_multiseed expects a config with multiseed: true")
+    seeds = [int(s) for s in cfg["seeds"]]
+    if len(set(seeds)) != len(seeds):
+        raise ValueError("duplicate entries in seeds")
+    out_root = Path(cfg["output_dir"])
+    base = {k: v for k, v in cfg.items() if k not in ("multiseed", "seeds", "seed", "output_dir")}
+
+    boards: list[dict[str, Any]] = []
+    for seed in seeds:
+        seed_dir = out_root / f"seed_{seed}"
+        marker = seed_dir / "scoreboard.json"
+        if marker.is_file():
+            board = json.loads(marker.read_text(encoding="utf-8"))
+            found = {
+                "dataset": board.get("dataset"),
+                "baselines": sorted(board.get("baselines", {})),
+                "feature_set": board.get("feature_set", "full"),
+                "include_precomputed": bool(board.get("include_precomputed")),
+                "seed": board.get("seed"),
+            }
+            if found != _baseline_protocol(cfg, seed):
+                raise ValueError(
+                    f"refusing to resume {seed_dir}: existing scoreboard.json is from a "
+                    f"different protocol ({found} != {_baseline_protocol(cfg, seed)})"
+                )
+            boards.append(board)
+            continue
+        boards.append(run_baselines({**base, "seed": seed, "output_dir": str(seed_dir)}))
+
+    per_baseline: dict[str, Any] = {}
+    for name in cfg["baselines"]:
+        rows = [b["baselines"][name] for b in boards]
+        keys = [
+            k
+            for k, v in rows[0].items()
+            if isinstance(v, (int, float)) and (k == "auc_pr" or "@" in k)
+        ]
+        entry: dict[str, Any] = {"auc_pr_per_seed": [r["auc_pr"] for r in rows]}
+        for key in keys:
+            values = [r[key] for r in rows]
+            entry[f"{key}_mean"] = float(np.mean(values))
+            entry[f"{key}_std"] = float(np.std(values, ddof=1)) if len(values) > 1 else 0.0
+        per_step = _per_step_aggregate(boards, name)
+        if per_step:
+            entry["per_time_step"] = per_step
+        per_baseline[name] = entry
+    first = boards[0]["baselines"][cfg["baselines"][0]]
+    report = {
+        "kind": "multiseed_baselines",
+        "dataset": cfg["dataset"],
+        "seeds": seeds,
+        "feature_set": cfg.get("feature_set", "full"),
+        "include_precomputed": bool(cfg.get("include_precomputed")),
+        "xgb": cfg.get("xgb", {}),
+        "split": cfg.get("split"),
+        "n_confirmed": first.get("n_confirmed"),
+        "prevalence_baseline": first.get("prevalence_baseline"),
+        "baselines": per_baseline,
+    }
+    out_root.mkdir(parents=True, exist_ok=True)
+    (out_root / "baselines_multiseed.json").write_text(
         json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
     )
     return report

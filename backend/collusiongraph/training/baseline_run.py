@@ -48,12 +48,39 @@ def raw_feature_frame(nodes: pl.DataFrame, n_features: int) -> pl.DataFrame:
     )
 
 
+# Weber et al. (2019) split Elliptic's 166 features into 94 "local" ones (the
+# time step plus 93 per-transaction attributes) and 72 one-hop aggregates.
+# Elliptic++ keeps those names and appends 17 more columns.
+LOCAL_FEATURE_PREFIXES: tuple[str, ...] = ("Time step", "Local_feature_")
+
+
+def local_raw_columns(
+    feature_names: list[str] | None, prefixes: tuple[str, ...] = LOCAL_FEATURE_PREFIXES
+) -> list[str]:
+    """The ``raw_i`` columns whose dataset feature name is a local feature.
+
+    Raises when the dataset carries no feature names or none match, so a
+    "local" run can never silently fall back to the full feature set."""
+    if not feature_names:
+        raise ValueError("feature_set 'local' needs the dataset's feature_names in meta")
+    cols = [
+        f"raw_{i}"
+        for i, name in enumerate(feature_names)
+        if any(str(name).startswith(p) for p in prefixes)
+    ]
+    if not cols:
+        raise ValueError(f"no raw feature matches the local prefixes {prefixes}")
+    return cols
+
+
 def assemble_features(
     domain: str,
     nodes: pl.DataFrame,
     edges: pl.DataFrame,
     as_of: int | None,
     n_raw_features: int = 0,
+    feature_set: str = "full",
+    feature_names: list[str] | None = None,
 ) -> tuple[pl.DataFrame, dict[str, list[str]]]:
     """Per-node feature table + the column groups the baselines select from.
 
@@ -64,12 +91,30 @@ def assemble_features(
     (procurement only; ledger 2026-07-16 deferred item). Deliberately NOT part
     of ``tabular``: B2/B3 inputs stay byte-identical to the published M1 runs —
     B4 configs (and future ablations) opt in by naming ``pc_*`` columns.
+
+    ``feature_set="local"`` (financial only; revision brief item B3) restricts
+    ``tabular`` to the local raw columns. Everything derived from edges moves
+    to ``graph``: the money-flow pack, the structural template, and the
+    neighbour means, which are taken over the local columns only. The default
+    ``"full"`` leaves every published input unchanged.
     """
+    if feature_set not in ("full", "local"):
+        raise ValueError(f"unknown feature_set {feature_set!r} (expected 'full' or 'local')")
+    if feature_set == "local" and domain != "financial":
+        raise ValueError("feature_set 'local' is defined for the financial domain only")
     structural = structural_features(nodes, edges, as_of=as_of)
     struct_cols = [c for c in structural.columns if c != "node_id"]
 
     precomputed = None
-    if domain == "financial":
+    money_flow_cols: list[str] = []
+    if domain == "financial" and feature_set == "local":
+        local_cols = local_raw_columns(feature_names)
+        raw_local = raw_feature_frame(nodes, n_raw_features).select(["node_id", *local_cols])
+        money_flow = financial_features(nodes, edges, as_of=as_of)
+        money_flow_cols = [c for c in money_flow.columns if c != "node_id"]
+        tabular = raw_local.join(money_flow, on="node_id", how="left")
+        neighbor_base = raw_local
+    elif domain == "financial":
         tabular = raw_feature_frame(nodes, n_raw_features)
         tabular = tabular.join(
             financial_features(nodes, edges, as_of=as_of), on="node_id", how="left"
@@ -95,11 +140,11 @@ def assemble_features(
     if precomputed is not None:
         features = features.join(precomputed, on="node_id", how="left")
         pc_cols = [c for c in precomputed.columns if c != "node_id"]
-    tabular_cols = [c for c in tabular.columns if c != "node_id"]
+    tabular_cols = [c for c in tabular.columns if c != "node_id" and c not in money_flow_cols]
     nbr_cols = [c for c in neighbors.columns if c != "node_id"]
     return features, {
         "tabular": tabular_cols,
-        "graph": struct_cols + nbr_cols,
+        "graph": struct_cols + money_flow_cols + nbr_cols,
         "precomputed": pc_cols,
     }
 
@@ -134,10 +179,26 @@ def run_baselines(config: dict[str, Any] | str | Path) -> dict[str, Any]:
     )
 
     n_raw = meta.get("n_features", 0)
+    feature_set = cfg.get("feature_set", "full")
+    feature_names = meta.get("feature_names")
     train_view, groups = assemble_features(
-        domain, nodes, edges, as_of=split_cfg["train_end"], n_raw_features=n_raw
+        domain,
+        nodes,
+        edges,
+        as_of=split_cfg["train_end"],
+        n_raw_features=n_raw,
+        feature_set=feature_set,
+        feature_names=feature_names,
     )
-    test_view, _ = assemble_features(domain, nodes, edges, as_of=None, n_raw_features=n_raw)
+    test_view, _ = assemble_features(
+        domain,
+        nodes,
+        edges,
+        as_of=None,
+        n_raw_features=n_raw,
+        feature_set=feature_set,
+        feature_names=feature_names,
+    )
 
     node_type = cfg.get("node_type")
     prefix = f"{node_type}:" if node_type else ""
@@ -182,6 +243,7 @@ def run_baselines(config: dict[str, Any] | str | Path) -> dict[str, Any]:
         "split": split.report,
         "n_train_labeled": train_labeled.height,
         "n_test_scored": test_features.height,
+        "feature_set": feature_set,
         "baselines": {},
     }
 
@@ -233,6 +295,7 @@ def run_baselines(config: dict[str, Any] | str | Path) -> dict[str, Any]:
                 "store_root": str(store.root),
                 "budgets": cfg["budgets"],
                 "node_scores": str(scores_path),
+                "per_time_step": cfg.get("per_time_step", False),
                 "output_dir": str(out_dir / name),
             }
         )
