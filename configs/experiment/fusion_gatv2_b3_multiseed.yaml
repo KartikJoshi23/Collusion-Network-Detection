@@ -1,0 +1,22 @@
+# Revision brief item B2 (optional part): add the strongest model, B3, to a
+# calibrated fusion. It uses the same isotonic calibrated_fusion as the
+# published ensemble, applied to the two supervised members. GATv2 uses its
+# stored per-seed validation (steps 30-34) and test scores. B3 comes from
+# baselines_elliptic_pp_calib_multiseed.yaml (trained on steps 1-29). The
+# fusion and both members are evaluated on the same test nodes (steps 35-49).
+supervised_fusion: true
+dataset: elliptic_pp
+store_root: data/interim
+output_dir: eval_outputs/elliptic_pp/fusion_gatv2_b3_multiseed
+seeds: [0, 1, 2, 3, 4]
+split:
+  loss_end: 29
+  train_end: 34
+  test_start: 35
+members:
+  gatv2:
+    val: eval_outputs/elliptic_pp/gnn_gatv2_focal_multiseed/seed_{seed}/scores_val.parquet
+    test: eval_outputs/elliptic_pp/gnn_gatv2_focal_multiseed/seed_{seed}/scores_test.parquet
+  b3:
+    scores: eval_outputs/elliptic_pp/baselines_calib_multiseed/seed_{seed}/scores/b3_xgb_graph.parquet
+budgets: [50, 100, 200]

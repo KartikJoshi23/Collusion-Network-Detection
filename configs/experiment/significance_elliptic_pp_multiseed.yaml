@@ -1,0 +1,27 @@
+# Revision brief item B2: the paired bootstrap for every seed pair, plus one
+# comparison on per-node seed-averaged scores. GATv2 seed s is paired with the
+# seeded B3 of baselines_elliptic_pp_multiseed.yaml, and calibrated fusion
+# seed s with rank fusion seed s (ensemble_elliptic_pp_multiseed.yaml). The
+# output reports the range of deltas, the CI extremes and the difference of
+# multi-seed means.
+significance: true
+dataset: elliptic_pp
+store_root: data/interim
+output_dir: eval_outputs/elliptic_pp/significance
+output_file: significance_multiseed.json
+n_boot: 2000
+alpha: 0.05
+seed: 0
+seeds: [0, 1, 2, 3, 4]
+seed_averaged: true
+comparisons:
+  gatv2_vs_xgb_graph:
+    label_a: GATv2-focal (raw)
+    label_b: B3 XGB-graph (seeded)
+    scores_a: eval_outputs/elliptic_pp/gnn_gatv2_focal_multiseed/seed_{seed}/scores_test.parquet
+    scores_b: eval_outputs/elliptic_pp/baselines_multiseed/seed_{seed}/scores/b3_xgb_graph.parquet
+  calibrated_vs_rank_fusion:
+    label_a: ensemble_calibrated
+    label_b: ensemble_rank
+    scores_a: eval_outputs/elliptic_pp/ensemble_multiseed/seed_{seed}/scores_ensemble_calibrated.parquet
+    scores_b: eval_outputs/elliptic_pp/ensemble_multiseed/seed_{seed}/scores_ensemble_rank.parquet

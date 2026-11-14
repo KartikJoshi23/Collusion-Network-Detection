@@ -1,0 +1,22 @@
+# Table III as published: the two seed-0 paired bootstraps. Before this config
+# no committed code wrote significance.json (revision plan, item D15). It must
+# reproduce the stored values exactly (check R8): the bootstrap is seeded and
+# uses no torch.
+significance: true
+dataset: elliptic_pp
+store_root: data/interim
+output_dir: eval_outputs/elliptic_pp/significance
+n_boot: 2000
+alpha: 0.05
+seed: 0
+comparisons:
+  gatv2_vs_xgb_graph:
+    label_a: GATv2-focal (raw)
+    label_b: B3 XGB-graph
+    scores_a: eval_outputs/elliptic_pp/gnn_gatv2_focal/scores_test.parquet
+    scores_b: eval_outputs/elliptic_pp/baselines/scores/b3_xgb_graph.parquet
+  calibrated_vs_rank_fusion:
+    label_a: ensemble_calibrated
+    label_b: ensemble_rank
+    scores_a: eval_outputs/elliptic_pp/ensemble/scores_ensemble_calibrated.parquet
+    scores_b: eval_outputs/elliptic_pp/ensemble/scores_ensemble_rank.parquet

@@ -1,0 +1,18 @@
+# Revision brief item B5: pooled lift (all held-out firms ranked together, per
+# seed), size-weighted lift, and a stratified bootstrap 95% CI per fold, for
+# both procurement transfer matrices. It reads the stored per-fold, per-seed
+# score files of transfer_loco_matrix_mendeley.yaml and
+# transfer_lomo_matrix_garcia.yaml. Nothing is retrained.
+transfer_pooled: true
+store_root: data/interim
+output_dir: eval_outputs/transfer_pooled
+n_boot: 2000
+alpha: 0.05
+seed: 0
+matrices:
+  mendeley_loco:
+    dataset: mendeley_eu
+    matrix_dir: eval_outputs/mendeley_eu/transfer_loco_matrix
+  garcia_lomo:
+    dataset: garcia_rodriguez
+    matrix_dir: eval_outputs/garcia_rodriguez/transfer_lomo_matrix

@@ -100,6 +100,25 @@ Demo/serving artifacts rebuild with `uv run poe demo-artifacts` (twice — the
 second pass wires explanations into `serving.json`); the Copilot goldens gate
 is `uv run poe copilot-goldens` (needs `NVIDIA_API_KEY`).
 
+### Journal revision (2026-11, branch `paper/journal-revision`)
+
+Added for the revision brief (`revision-plan.md`). Values are filled in from
+the run outputs once each run completes; nothing here is typed from memory.
+
+| Config | Produces |
+|---|---|
+| `baselines_elliptic_pp_multiseed.yaml` | B2, B3 over seeds 0–4 (subsample/colsample 0.8) with per-step metrics: Tables II, III; Fig. 3 (items B1, B2) |
+| `baselines_elliptic_pp_local_multiseed.yaml` | B2-local, B3-local (94 local columns): Table II rows (item B3) |
+| `baselines_mendeley_eu_multiseed.yaml` | Mendeley B2, B3 over seeds 0–4: Table IV (item B2) |
+| `baselines_mendeley_screens_ablation_multiseed.yaml` | Mendeley B2+screens, B3+screens over seeds 0–4: Table IV (item B2) |
+| `baselines_elliptic_pp_calib_multiseed.yaml` | B3 trained on steps 1–29, input to the fusion below (item B2) |
+| `fusion_gatv2_b3_multiseed.yaml` | GATv2 + B3 calibrated fusion vs each member (item B2) |
+| `significance_elliptic_pp.yaml` | Table III seed-0 bootstrap, the committed source of the stored `significance.json` |
+| `significance_elliptic_pp_multiseed.yaml` | paired bootstrap for every seed pair, plus seed-averaged scores (item B2) |
+| `diagnose_below_chance.yaml` | below-chance diagnostics for four cases (item B4) |
+| `transfer_pooled_lift.yaml` | pooled and size-weighted lift, per-fold 95% CIs (item B5) |
+| `derived_numbers.yaml` | copilot grounding Wilson CI, probe lift, pre/post-step-43 AUC-PR (items A3, B1) |
+
 ## 4. Seeds & determinism (measured, not assumed)
 
 - Every config carries an explicit `seed:`; multi-seed campaigns run seeds

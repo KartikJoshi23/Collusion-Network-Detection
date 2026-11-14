@@ -1,0 +1,44 @@
+# Derived numbers the revised paper quotes, computed from stored artifacts so
+# that none is typed by hand: the copilot grounding interval (A3), the lift
+# over prevalence of the procurement-to-financial probe, and the B1 pre- and
+# post-step-43 AUC-PR for GATv2-focal (stored five-seed scores) and for the
+# seeded B3 of baselines_elliptic_pp_multiseed.yaml.
+derived_numbers: true
+output_dir: eval_outputs/derived
+items:
+  copilot_grounding_wilson:
+    op: wilson
+    rate: {file: eval_outputs/copilot_goldens.json, key: grounded_rate}
+    n: {file: eval_outputs/copilot_goldens.json, key: n_goldens}
+  proc2fin_probe_lift:
+    op: ratio
+    a: {file: eval_outputs/cross_domain/proc2fin/run.json, key: node_level.auc_pr}
+    b: {file: eval_outputs/cross_domain/proc2fin/run.json, key: node_level.prevalence_baseline}
+  gatv2_steps_35_42:
+    op: window_auc_pr
+    dataset: elliptic_pp
+    store_root: data/interim
+    scores: eval_outputs/elliptic_pp/gnn_gatv2_focal_multiseed/seed_{seed}/scores_test.parquet
+    seeds: [0, 1, 2, 3, 4]
+    steps: [35, 42]
+  gatv2_steps_43_49:
+    op: window_auc_pr
+    dataset: elliptic_pp
+    store_root: data/interim
+    scores: eval_outputs/elliptic_pp/gnn_gatv2_focal_multiseed/seed_{seed}/scores_test.parquet
+    seeds: [0, 1, 2, 3, 4]
+    steps: [43, 49]
+  b3_steps_35_42:
+    op: window_auc_pr
+    dataset: elliptic_pp
+    store_root: data/interim
+    scores: eval_outputs/elliptic_pp/baselines_multiseed/seed_{seed}/scores/b3_xgb_graph.parquet
+    seeds: [0, 1, 2, 3, 4]
+    steps: [35, 42]
+  b3_steps_43_49:
+    op: window_auc_pr
+    dataset: elliptic_pp
+    store_root: data/interim
+    scores: eval_outputs/elliptic_pp/baselines_multiseed/seed_{seed}/scores/b3_xgb_graph.parquet
+    seeds: [0, 1, 2, 3, 4]
+    steps: [43, 49]

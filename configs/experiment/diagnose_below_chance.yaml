@@ -1,0 +1,32 @@
+# Revision brief item B4: diagnose the results that sit below their prevalence
+# baseline. For each case it reports the AUC-PR of the score and of its
+# inversion, the label encoding, split facts, and train-versus-test feature
+# distributions, with each side featurised as the models saw it. It reads
+# stored scores only. The proc2fin_source case is not in the brief: the source
+# encoder of the probe also scores below prevalence on its own Mendeley test set.
+diagnostics: true
+store_root: data/interim
+output_dir: eval_outputs/diagnostics/below_chance
+cases:
+  mendeley_rgcn:
+    dataset: mendeley_eu
+    node_type: firm
+    scores: eval_outputs/mendeley_eu/gnn_rgcn_focal_multiseed/seed_{seed}/scores_test.parquet
+    seeds: [0, 1, 2, 3, 4]
+    shift: {train_end: 2013, test_start: 2014, features: structural}
+  amlworld_trees:
+    dataset: amlworld_hi_small
+    node_type: acct
+    scores:
+      b2_xgb: eval_outputs/amlworld_hi_small/baselines/scores/b2_xgb.parquet
+      b3_xgb_graph: eval_outputs/amlworld_hi_small/baselines/scores/b3_xgb_graph.parquet
+    shift: {train_end: 27699900, test_start: 27699901, features: degree}
+  fin2proc_probe:
+    dataset: mendeley_eu
+    node_type: firm
+    scores: eval_outputs/cross_domain/fin2proc/scores_test.parquet
+    shift: {train_end: 2013, test_start: 2014, features: structural}
+  proc2fin_source:
+    dataset: mendeley_eu
+    node_type: firm
+    scores: eval_outputs/mendeley_eu/gnn_sage_structural_src/scores_test.parquet

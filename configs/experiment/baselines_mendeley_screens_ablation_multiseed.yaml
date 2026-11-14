@@ -1,0 +1,22 @@
+# Revision brief item B2: the +screens tree rows of Table IV over five seeds,
+# so every XGBoost row in the table carries a dispersion. Otherwise identical
+# to baselines_mendeley_screens_ablation.yaml.
+dataset: mendeley_eu
+domain: procurement
+node_type: firm
+store_root: data/interim
+output_dir: eval_outputs/mendeley_eu/baselines_screens_ablation_multiseed
+multiseed: true
+seeds: [0, 1, 2, 3, 4]
+split:
+  train_end: 2013
+budgets: [4, 18, 36]
+baselines: [b2_xgb, b3_xgb_graph]
+include_precomputed: true
+xgb:
+  n_estimators: 400
+  max_depth: 6
+  learning_rate: 0.1
+  subsample: 0.8
+  colsample_bytree: 0.8
+train_label_policy: mendeley_as_of
