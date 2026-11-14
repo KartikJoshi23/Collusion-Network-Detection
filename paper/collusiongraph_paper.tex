@@ -1,4 +1,4 @@
-﻿% =====================================================================
+% =====================================================================
 %  One Stack, Two Ledgers
 %  CollusionGraph -- research paper, written from docs/paper_blueprint.md
 %
@@ -43,12 +43,12 @@ Across Illicit-Finance and Procurement Networks}
 % compressed on the shared @spjain.org domain, which is the conventional way to
 % keep a five-author list on two lines.
 \author{%
-\IEEEauthorblockN{Kartik Joshi, Prem Kukreja, Gagandeep Singh,
-Samuel Alex, and Rachit Garg}
+\IEEEauthorblockN{Rachit Garg, Kartik Joshi, Prem Kukreja, Gagandeep Singh,
+and Samuel Alex}
 \IEEEauthorblockA{\textit{SP Jain School of Global Management}\\
 Dubai, United Arab Emirates\\
-\texttt{\{kartik.as25dxb025,\,prem.as25dxb029,\,gagandeep.as25dxb032,}\\
-\texttt{samuel.as25dxb031,\,rachit.garg\}@spjain.org}}
+\texttt{\{rachit.garg,\,kartik.as25dxb025,\,prem.as25dxb029,\,gagandeep.as25dxb032,}\\
+\texttt{samuel.as25dxb031\}@spjain.org}}
 }
 
 \maketitle
@@ -73,46 +73,25 @@ lands at $0.90$, below the rate you would get by guessing. Across domains the
 picture is lopsided. A frozen procurement encoder lifts financial screening
 $2.31\times$ over prevalence, the reverse direction falls below prevalence
 altogether, and in neither direction does transfer pay for itself at fewer than
-about a thousand target labels. One negative result deserves its own sentence:
-flipping 20\% of our training labels \emph{raised} test AUC-PR from $0.483$ to
-$0.598$ while validation fell from $0.942$ to $0.569$, which makes the blind
-spot in shift-era model selection hard to argue with. We also ship the working
-system, since a screening result nobody can act on is not much of a result:
-PGExplainer subgraphs matched to motifs and cited against FATF and OECD red
-flags, a console that reviews at a fixed budget, and a bounded LLM assistant
-that clears a 26-case golden gate at $0.92$ grounding with no
-guilt-attributing output released. Code, configs, seeds, five datasheets, a
-model card and a number-to-config map accompany the paper. The system triages;
-it does not decide guilt.
+about a thousand target labels. One result we found interesting was: If 20\% of our training labels were flipped, it resulted in an increase of our test AUC-PR from 0.483 to 0.598 and our validation fell from 0.942 to 0.569, this makes the blind spot in the shift-era model selection hard to disagree with.
+We shipped the working system, as a screening result that no one can act on is not really a desired result: PGExplainer subgraphs matched to motifs and cited against FATF and OECD red flags, which is a console that reviews at a fixed budget and an LLM assistant that successfully solves a complex 26-case golden gate with a high accuracy of 0.92 while completely avoiding the generation of outputs that falsely shift blame or guilt. Code, configurations, seeds, five data sheets, a model card, and a number-to-ConfigMap accompanying the paper. The system prioritizes cases, leaving final decision for human oversight.
+
+	
 \end{abstract}
 
 \begin{IEEEkeywords}
-graph neural networks, anomaly detection, anti-money laundering, bid rigging,
-class imbalance, explainability, transfer learning, evaluation protocol
+graph neural networks (GNN), anomaly detection, anti-money laundering (AML), bid rigging, class imbalance, transfer learning, evaluation protocol.
 \end{IEEEkeywords}
 
 % =====================================================================
 \section{Introduction}
 % =====================================================================
 
-Obligations for stand-alone high-risk systems under the EU AI Act now bite from
-2 December 2027. They were originally due on 2 August 2026, and the Digital
-Omnibus on AI (Regulation (EU) 2026/1744, in force 27 July 2026) pushed them
-back~\cite{aiact,omnibus}. Moving the date does not soften the requirement.
-Explainability, human oversight, logging and auditability become legal
-properties of a deployed system, and a screening model has to be able to say
-\emph{why} it raised a flag in terms a reviewer can check and a regulator can
-audit.
+From 2nd December 2027, the obligations for a stand-alone high-risk system under the EU AI Act begin. These Obligations were previously to be in affect from the 2nd August 2026 and Digital Omnibus on AI (Regulation (EU) 2026/1744, for the 27th July 2026) pushed them back~\cite{aiact,omnibus}.  Moving the date doesn't reduce the need. Explain ability, Human oversight, logging and auditability become legal attributes of a deployed system and a screening model has to be able to say
+\emph{why} a flag was raised in terms a reviewer can check and a regulator can audit. 
 
-Whether a given system falls inside that regime is subtler than it is usually
-reported, and the detail matters here. Annex III~5(b) treats creditworthiness
-assessment as high-risk but carves out systems built to detect financial
-fraud~\cite{aiact}. The carve-out is narrower than it first appears. Commission
-guidance requires fraud detection to be the system's main intended purpose and
-declines to stretch the exemption over anti-money-laundering or
-counter-terrorist-financing work~\cite{eccguidance}. An AML screener of the kind
-we describe therefore sits inside the regime that a pure fraud-scoring product
-sits outside of, with roughly two years to get ready.
+Whether a given system falls inside that regime is more subtle than it usually being reported, and the detail matters here. The Annex III~5(b) treats creditworthiness assessment as high-risk but carves out systems built to detect financial frauds~\cite{aiact}. The carve-out is more narrow than it first appears.
+Commission guidance requires fraud detection to be the system’s main purpose and doesn't allow any organizations to use any legal loophole to expand their activities into anti money-laundering or counter-terrorist-financing work~\cite{eccguidance}. This kind of AML screener sits inside the regime that a pure fraud-scoring product sits outside of, with roughly two years to get ready. 
 
 The deadline lands on two enforcement worlds that have never shared a toolchain.
 Inside banks, anti-money-laundering (AML) teams run transaction-monitoring rules
@@ -122,26 +101,13 @@ Competition authorities and procurement auditors work the other side, checking
 tenders by hand, one at a time, across a small sample, and usually learning
 about a cartel only afterwards through a complaint or a leniency application.
 
-The two worlds are closer than their literatures suggest. One wire transfer of a
-modest sum is unremarkable. Twelve accounts passing the same money around a
-circle inside 72 hours is laundering. One bid is procedurally clean: the tender
-was advertised, bids arrived, a winner was declared. Five firms that quietly
-take turns winning, price their losing bids in an implausibly tight band, and
-turn out to share directors and a registered address are a cartel. The
-individual record is innocent in both settings and the network is not.
-Participants in both keep every record under whatever threshold the rules check,
-which pushes the offence up a level into the topology. Confirmed positives, in
-both, are rare against a very large volume of ordinary activity.
+Both worlds are much closer than we realize. A single small bank wire transfer does not look suspicious or unusual, but twelve accounts passing the same money around a circle within 72 hours is the laundering process. One bid is technically clean: the tender was advertised, bid arrived, a winner is declared, but five companies that quietly take turns winning contracts, while their losing bids are suspiciously close in price and turn out to share directors and a registered address may indicate a cartel. A single record on its own may look innocent in both cases, but the overall network is not. For both cases, participants keep all the records below the threshold that the rules look for, so the suspicious activity only becomes clear when we look at the overall network. Confirmed cases are quite rare as compared to the large volume of normal activity.
 
 Fig.~\ref{fig:ledgers} makes the correspondence concrete. Five mechanisms recur
 across the two domains and each collapses to one graph signature. Laundering
 cycles and bid rotation are directed cycles. Smurfing and cover bidding are
-fan-in stars. Layering and market allocation are fan-out stars. Shell-company
-chains and shared directorships are dense co-attribute subgraphs. Pass-through
-clusters and clustered bid prices are tight communities with odd edge
-attributes. If the correspondence holds, one stack ought to serve both ledgers,
-and the question of whether a learned sense of ``collusion structure'' survives
-the crossing becomes something you can measure instead of assert.
+fan-in stars. Layering and market allocation are fan-out stars. Shell-company chains and the shared directorships form dense subgraphs based on common attributes. Pass-through clusters and closely grouped bid prices form tight communities with unusual edge attributes. If this correspondence holds, one model should be able to work with both types of ledgers, which would allow us to measure whether a learned understanding of ``collusion structure'' carries over between them instead of simply assuming that it does.
+
 
 \begin{figure*}[t]
 \centering
@@ -200,26 +166,14 @@ and have not run (Section~\ref{sec:joint}).
 
 \textbf{Graph anomaly detection and benchmarks.} The survey by Ma et
 al.~\cite{ma2023} supplies the node/edge/subgraph taxonomy we work inside.
-GADBench~\cite{gadbench} is the uncomfortable reference point: over 29 models
-and ten datasets, tree ensembles with plain neighbourhood aggregation match or
-beat graph neural networks purpose-built for the task. Our \RQ{1} result
-reproduces that ordering on Elliptic++, under a protocol strict enough that we
-think the reproduction is worth reporting on its own.
+GADBench~\cite{gadbench} is the uncomfortable reference point: over 29 models and ten datasets, tree ensembles with plain neighborhood aggregation match or even outperform graph neural networks designed specifically for the task. Our \RQ{1} result shows the same pattern on Elliptic++, using a strict evaluation protocol that we think makes the reproduction worth reporting on its own.
 
 \textbf{AML with graph neural networks.} Motie and Raahemi~\cite{motie2024}
 survey the field. LineMVGNN~\cite{linemv2025} adds a line-graph view to two-way
 message passing so that direction of money flow is preserved. Lawal et
 al.~\cite{lawal2025} run GNNExplainer over Elliptic and write mainly about what
-fails, showing how imbalance, sparse structure and noisy labels together block
-reliable learning; that is the clearest published warning that headline accuracy
-means little at this prevalence. The AMLworld line~\cite{multignn} finds
-bidirectional message passing decisive, which we reproduce independently at
-$-0.194$ AUC-PR once reverse edges are removed, the largest single-component
-effect we measured. Near-perfect Elliptic numbers are best read against the
-ablations in the same papers: one wavelet-temporal graph
-transformer~\cite{lin2026} reports about $0.98$ accuracy while conceding that
-its wavelet features contribute roughly $0.01$ and are ``not strictly
-indispensable''.
+fails, showing how imbalance, sparse structure, and noisy labels together block
+reliable learning; this is the clearest published warning that high accuracy means very little when the actual prevalence is this low. The AMLworld line~\cite{multignn} finds bidirectional message passing to be decisive, which we independently reproduce at $-0.194$ AUC-PR once the reverse edges are removed; this is the largest single-component effect we measured. Near-perfect Elliptic results are best read with the ablation results in the same papers: one wavelet-temporal graph transformer~\cite{lin2026} reports about $0.98$ accuracy while also noting that its wavelet features contribute roughly $0.01$ and are ``not strictly indispensable''.
 
 \textbf{Cartel detection.} The screens tradition of coefficient of variation,
 price spread and kurtosis is long established, and the benchmarks that get
@@ -415,45 +369,23 @@ For each alert the system returns four things: the minimal responsible subgraph
 from PGExplainer~\cite{pgexplainer}, which we adopted over
 GNNExplainer~\cite{gnnexplainer} after the fidelity ablation in
 Section~\ref{sec:rq3}; the matched motif; the attributes supporting it; and the
-particular FATF or OECD red-flag indicator that the shape corresponds to. An
-alert that arrives without an explanation does not count as delivered.
+particular FATF or OECD red-flag indicator that the shape corresponds to. If an alert arrives without an explanation, it doesn't count as delivered.
 
 \subsection{Guarded copilot}
 
-A bounded language-model agent answers analyst questions over the published
-artifacts. It is constrained by construction: a SELECT-only allowlist over
-read-only views, a numeric sanity gate that rejects any figure not present in
-the underlying rows, a guilt-language guard, and an immutable caveat on every
-response. Its release gate is a golden set of 26 cases graded for grounding
-and for released-output violations, with a zero-tolerance bar on what ships and
-a separate ceiling on draft rewrites.
+A bounded language-model agent answers analyst questions using the published artifacts. It is constrained by design: a SELECT-only allowlist over read-only views, a numeric sanity check that rejects any figure that is not present in the underlying rows, a guilt-language guard, and a disclaimer included in every response. Its release gate is a golden set of 26 cases, graded for grounding and violations in the released output, with zero tolerance for anything that ships and a separate limit for drafted rewrites.
 
 \subsection{Evaluation protocol}
 \label{sec:protocol}
 
-Each clause below changed a headline number at some point while we were
-building the system, which is why we treat the protocol as a result in its own
-right.
+Each rule below changed a headline number at some point while we were building the system, which is why we treat the protocol as a result in its own way.
 
 \begin{itemize}
-\item \textbf{Strict inductive splits.} Test nodes and their edges stay unseen
-during training. Temporal splits fence the boundary; entity splits (LOCO, LOMO)
-hold out whole countries or markets.
-\item \textbf{Frozen train-time normalisation.} We compute feature statistics
-on train and freeze them. Recomputing on test amounts to inadvertent test-time
-adaptation, and removing it pulled our own headline GATv2 number down from
-$0.693$ to $0.532$, widening the true gap to the tree baseline. Every figure we
-report is post-fix.
-\item \textbf{Budget-first, tie-aware metrics.} Precision@$k$ at budgets a real
-team would work, with ties handled explicitly, alongside AUC-PR, which is the
-right summary under this degree of imbalance~\cite{saito2015} and is always
-quoted against its own fold's prevalence baseline.
-\item \textbf{Multi-seed with dispersion.} Five seeds, reported as
-mean~$\pm$~standard deviation. Seed variance of about $\pm 0.05$ swamps
-cross-machine variance of about $\pm 0.02$, which makes a single-seed comparison
-across two machines uninterpretable. Our own previously published seed-0 GATv2
-figure of $0.5492$ happens to be the best of the five. The defensible number is
-$0.4729 \pm 0.0525$, and that is the one we quote.
+\item \textbf{Strict inductive splits.} Test nodes and their edges stay unseen during training. Temporal splits fence the boundary; entity splits (LOCO, LOMO) hold out whole countries or markets.
+\item \textbf{Frozen train-time normalisation.} We compute feature statistics on training and freeze them. Recomputation on the test set leads to unintentional test-time adaptation, and removing it pulled our own headline GATv2 number down from
+$0.693$ to $0.532$, making the gap to the tree baseline larger. Every figure we report is after the fix.
+\item \textbf{Budget-first, tie-aware metrics.} Precision@$k$ at budgets a real team would use, with ties handled carefully, along with AUC-PR, which is the right summary under this level of class imbalance~\cite{saito2015} and is always quoted against its own fold’s prevalence baseline.
+\item \textbf{Multi-seed with dispersion.} Five seeds, reported as mean~$\pm$~standard deviation. The seed variance is about $\pm 0.05$ , which is much higher than the cross-machine variance of about $\pm 0.02$, . This means that comparing two machines using only one seed would not give us a reliable comparison. Our own previously published seed-0 GATv2 figure of $0.5492$ happens to be the best of the five. The more reliable number is $0.4729 \pm 0.0525$, and that is the one we quote.
 \item \textbf{Paired stratified bootstrap} over identical confirmed test nodes
 for every headline comparison, at 2,000 resamples.
 \end{itemize}
@@ -518,21 +450,15 @@ Calibrated vs.\ rank & $+0.471$ & $[0.440, 0.499]$ & $<0.001$ \\
 \end{tabular}
 \end{table}
 
-Two points deserve separating. The tree baseline is not winning because the
-graph carries no information. B3 beats B2 by only $0.8104$ to $0.8076$, so most
+The tree baseline is not winning as the
+graph carries no information as B3 beats B2 by only $0.8104$ to $0.8076$, so most
 of its strength sits in the node features, and what the deep models fail at is
-converting structure into generalisation once the distribution moves. The
-second point is arguably the more useful one for practitioners: the biggest
+converting structure into generalisation once distribution moves. The biggest
 effect in Table~\ref{tab:t3} has nothing to do with model choice. Calibrating
 ensemble members before fusing them buys $+0.471$ AUC-PR over rank fusion,
 roughly an order of magnitude more than any architectural decision we tried.
 
-Fig.~\ref{fig:crater} explains where the graph model's average goes. Through
-step 42 the model tracks well above prevalence; from step 43 onward it
-collapses to the floor. Step 43 is the point at which a dark-market closure
-enters the Elliptic timeline, a discontinuity noted since the dataset's
-original release~\cite{weber2019}: the test window contains a regime the
-training window never saw.
+Fig.~\ref{fig:crater} shows where the graph model’s average goes. Through step 42, the model tracks well above prevalence, but from step 43 onward it drops to the floor. Step 43 is where a dark-market closure enters the Elliptic timeline, a change that has been noted since the dataset’s original release ~\cite{weber2019}: This means the test window contains a regime that was never seen during training.
 
 \begin{figure}[t]
 \centering
@@ -544,8 +470,7 @@ Quote a single aggregate figure and none of this is visible.}
 \label{fig:crater}
 \end{figure}
 
-The procurement anchor in Table~\ref{tab:t2} preserves the ordering and makes
-the graph model look worse still. R-GCN scores $0.2808 \pm 0.0087$ against a
+The procurement anchor in Table~\ref{tab:t2} keeps the same ordering and makes the graph model look even worse. R-GCN scores $0.2808 \pm 0.0087$ against a
 prevalence of $0.358$: stable across seeds, and below what guessing would give
 you. Our best firm-level configuration is a tree with the publisher's own
 precomputed screens bolted on, at $0.4558$. The uncomfortable headline for this
@@ -593,15 +518,14 @@ the illicit population in its top 50. Procurement yields 223 alerts from 1,283
 communities at precision@4 of $0.50$.
 
 The lesson for practice is that node-level ranking quality and queue-level
-precision are not substitutes for one another. Report only the first and you may
-be describing a product nobody can use. We report both.
+precision are not substitutes for one another. Reporting only the first does not show whether the model is useful for real-world triage. We report both.
 
 \subsection{RQ2: injection recovery separates flow motifs from award motifs}
 \label{sec:injection}
 
 Because confirmed cartels are scarce, we plant known motifs into the
 unlabelled 163,327-node OCDS Georgia window and measure recovery at a fixed
-budget. Table~\ref{tab:t6} is the result, and it splits cleanly.
+budget. Table~\ref{tab:t6} shows a clear difference between the two types of motifs.
 
 \begin{table}[t]
 \caption{Injected-member recall@2000 on the OCDS Georgia window (population
@@ -626,8 +550,7 @@ Cover bid & $0.01 \pm 0.01$ & $0.00 \pm 0.00$ & $0.00 \pm 0.00$ & $0.01 \pm 0.01
 \end{tabular}
 \end{table}
 
-Motifs that alter the shape of the graph come back: coordinated clusters at
-$0.92$ recall, common control at $0.58$. Motifs that alter only who wins stay
+Motifs that change the shape of the graph are detected more easily, with coordinated clusters reaching $0.92$ recall and common control reaching $0.58$. Motifs that alter only who wins stay
 nearly invisible. Rotation, cover bidding and market partition never exceed
 $0.17$ under any method we tried. No amount of tuning will fix this, because the
 limitation is structural. Bid rotation leaves the co-bidding topology almost
@@ -729,11 +652,7 @@ nothing for the cold-start problem in either direction.}
 Table~\ref{tab:t7} collects the component ablations, and two conventions govern
 how to read it. A ``$-$'' row takes a component out of the adopted model, so its
 delta is the cost of removal. A ``$+$'' row adds a variant we evaluated and did
-not adopt, so its delta is a rejection margin. Those are different quantities
-and should not be compared with one another; only the ``$-$'' rows can support a
-claim about which component matters most. Each delta is measured against the
-reference sharing its basis, and we never difference a seed-0 result against a
-multi-seed mean.
+not adopt, so its delta is a rejection margin. These are different measures and should not be compared directly; only the ``$-$'' rows show how much each component affects the model. Each delta is measured against the reference result with the same setup, and we never compare a seed-0 result with a multi-seed mean.
 
 \begin{table}[t]
 \caption{Component ablations. ``$-$'' rows are ablation costs; ``$+$'' rows
@@ -761,31 +680,20 @@ Mendeley B2 XGBoost & det. & $0.3925$ & ref. \\
 \end{tabular}
 \end{table}
 
-Direction-awareness is the component that earns its place. Dropping reverse
-edges costs $0.194$ AUC-PR, which reproduces the AMLworld finding on a different
-dataset and by a different team. Focal loss is worth a real but second-order
-$0.034$. Extra input channels hurt us every time we tried them: structural,
-line-graph and context-fusion arms all landed below raw features alone. We read
-that as an interaction between model capacity and distribution shift, not as
-evidence that those channels carry no information in general.
+Direction-awareness is the component that makes the biggest difference. Dropping reverse edges reduces AUC-PR by $0.194$. This matches the AMLworld finding, even though it was tested on a different dataset by a different team. Focal loss gives a smaller improvement of $0.034$. Extra input channels reduced performance every time we tried them: the structural, line-graph and context-fusion variants all performed worse than using the raw features alone.
+We see this as an interaction between model capacity and distribution shift, not as evidence that these channels carry no information in general.
+
 
 \textbf{Protocol sensitivity, and where it is not flat.} We swept the Jaccard
 suppression threshold over $\{0.3, 0.4, 0.5, 0.6, 0.7\}$ crossed with three
-hit-rule settings. The two axes do not behave alike, and rolling them into a
-single robustness claim would misrepresent both.
+hit-rule settings.The two axes give different results, so we do not combine them into one robustness claim.
 
-Suppression leaves the alert set entirely alone. At every threshold the
-financial queue keeps all 254 alerts and the procurement queue all 223, with
-none suppressed anywhere in the grid. The communities barely overlap, so
-non-maximum suppression never binds, and the published queues owe nothing to a
-tuned deduplication setting.
+Suppression does not change the alert set. At every threshold, the financial queue keeps all 254 alerts and the procurement queue keeps all 223, with none suppressed anywhere in the grid. The communities barely overlap, so non-maximum suppression does not affect the results. This means the published queues are not dependent on a tuned de-duplication setting.
 
-The hit rule is a different story. Our published queue counts a group as a hit
-when at least one member is confirmed. Require instead that a confirmed fraction
-of $0.1$ of the members be confirmed and financial precision@50 falls from
-$0.32$ to $0.28$, with P@100 going $0.23$ to $0.21$ and P@200 $0.135$ to
+The hit rule is different. Our published queue counts a group as a hit when at least one member is confirmed. If we instead require $0.1$ of the members to be confirmed, financial precision@50 falls from
+$0.32$ to $0.28$, while P@100 falls from $0.23$ to $0.21$ and P@200 from $0.135$ to
 $0.125$. Tightening further to $0.25$ costs nothing beyond that. Procurement
-stays flat on both axes, holding P@18 at $0.33$ throughout. So about $0.04$ of
+stays flat on both axes, with P@18 remaining at $0.33$ throughout. So about $0.04$ of
 our headline queue precision rests on a definitional choice. We report the
 looser rule and state the dependence, since presenting the number as though no
 choice were involved would not be true.
@@ -856,36 +764,14 @@ and the three Garc\'ia Italy alerts are simply too small, often just two firms,
 to contain a shape the matcher can prove. That is a coverage limitation and we
 would rather record it than paper over it with a weaker claim.
 
-\textbf{Copilot gate.} The release gate grades 26 golden cases against two
-separate bars. The first is zero-tolerance and applies to released output: no
-guilt-attributing language may ship, and a deterministic guard rather than a
-prompt enforces it. The second is a $0.9$ threshold on grounding, under which
-every number the assistant quotes must appear in the rows it actually read. The
-gate passes. Grounding comes in at $0.923$, or 24 of 26; released guilt
-violations at zero; draft rewrites at 1 of 26 against a $10\%$ ceiling.
+\textbf{Copilot gate.} The release gate checks 26 golden cases against two separate requirements. The first has zero tolerance and applies to the released output: no guilt-attributing language can be released, and a deterministic guard enforces this instead of relying on a prompt. The second requires a grounding score of $0.9$, meaning every number quoted by the assistant must appear in the rows it actually read. The gate passes. Grounding is  $0.923$, or 24 of 26 cases; released guilt violations are at zero, while draft rewrites have 1 of 26 cases against a  $10\%$ ceiling.
 
-We report the two grounding misses instead of rounding them away, because they
-are not scattered at random. Both are the newest cases in the set and both
-exercise the tool we added most recently, the injection-study reader. One quoted
-a recall figure absent from the rows it had retrieved; the other dropped an
-expected motif name from an answer that was otherwise well grounded. Growing the
-golden set from 24 to 26 left the older cases untouched and broke the new ones.
-For a bounded agent whose tool surface has just widened, that is the failure you
-would predict, and it argues for extending the golden set with every new tool
-instead of leaning on a past perfect score.
+We report the two grounding misses instead of hiding them through rounding because they aren't random. Both are the newest cases in the set, and both use the tool we added most recently, the injection-study reader. One quoted a recall figure that was not present in the rows it had retrieved; the other left out an expected motif name from an answer that was otherwise well grounded. Growing the golden set from 24 to 26 left the older cases untouched but exposed problems in the new ones. For a bounded agent whose tool surface has just been expanded, this is a useful failure to find. It also shows why the golden set should be extended whenever a new tool is added instead of relying on a previously perfect score.
 
-Two earlier failures were fixed with prompt rules and not model changes. The
-agent once echoed a guilt-presupposing question in its own words while denying
-the premise, and once reformatted a metric from $0.32$ to ``32\%'' in a way that
-broke traceability back to the artifact. What holds the released-output bar is
-the deterministic guard, not the model's willingness to comply.
+Two earlier failures were fixed with prompt rules and did not need model changes. The agent once repeated a question presuming guilt in its own words while denying the premise. In another case, it changed a metric from  $0.32$ to ``32\%'' in a way that broke traceability back to the artifact. The deterministic guard, rather than the model simply following instructions, is what keeps the released-output bar at zero.
 
 \textbf{Practitioner phase.} The instrument, the rater packets and the scoring
-rubric are built and released. \textbf{The human study has not been run.} We
-report the protocol and record the absence of practitioner judgements as a
-limitation; substituting our own judgement for theirs would defeat the point of
-asking. Our pre-registered fallback is a panel of rubric-trained graduate raters
-including at least one domain expert, reported as exactly that.
+rubric are built and released. \textbf{The human study has not been run.}We report the protocol and record the absence of practitioner judgements as a limitation. Using our own judgement in their place would defeat the purpose of the study. Our pre-registered fallback is a panel of rubric-trained graduate raters, including at least one domain expert, and we will report it as a fallback.
 
 % =====================================================================
 \section{A Joint Cross-Crime Extension}
@@ -893,18 +779,11 @@ including at least one domain expert, reported as exactly that.
 % =====================================================================
 
 \noindent\fbox{\parbox{0.95\columnwidth}{\small \textbf{Status: design and
-protocol only.} This section specifies an experiment we have \emph{not run}. It
-reports no results and contains no measured number. We include it because the
-design falls out of the paper's premise, and because writing it down in advance
-is what stops it becoming a post-hoc story later.}}
+protocol only.} This section describes an experiment we have  \emph{not run}. It reports no results and contains no measured numbers. We include it because the design follows from the paper’s premise, and because we want to define the experiment before seeing any results.}}
 
 \medskip
 
-Everything above treats the two domains as two evaluation surfaces for one
-stack. The same architecture trains separately on each ledger, and \RQ{4} asks
-whether a representation survives the trip between them. There is a blind spot
-in that framing: it quietly assumes the offender populations do not overlap, as
-though the launderer and the bid rigger were always different people.
+Everything above treats the two domains as separate evaluation settings for the same stack. The same architecture is trained separately on each ledger, and \RQ{4} asks whether a learned representation carries over from one to the other. However, this approach assumes that the offender populations do not overlap, as if the launderer and the bid rigger were always different people.
 
 They need not be. A firm winning rigged public contracts has proceeds to place,
 and one beneficial owner can sit behind both the bidding entity and the accounts
@@ -939,9 +818,7 @@ first-class edge type instead of a feature bolted on. For the siloed baseline we
 train the same architecture per ledger with the shared-control edges deleted, so
 what the comparison isolates is the join and not model capacity.
 
-\textbf{Ground truth.} No public dataset links a confirmed cartel firm to a
-confirmed laundering account, and that absence is the whole reason the
-experiment remains unrun. The workable substitute is a dual-actor injection
+\textbf{Ground truth.} No public dataset links a confirmed cartel firm to a confirmed laundering account. This is why the experiment has not been run. The workable substitute is a dual-actor injection
 study: plant paired motifs, a procurement rotation clique and a financial
 layering chain, sharing a controlled entity, vary the fraction of dual actors,
 then measure recall of the planted pairs under joint and siloed models. It
@@ -989,7 +866,7 @@ guilt-language guard.
 for human investigation. We target the maturity of a validated prototype, TRL
 3--4, on public and synthetic data, and we used no personal or classified data
 at any point. We say so in the paper for the same reason the system says so on
-every response. A screening score misread as an accusation does real harm, and
+every response. Misreading a screening score as an accusation does real harm, and
 the language guarding against that is part of the design.
 
 % =====================================================================
@@ -997,27 +874,15 @@ the language guarding against that is part of the design.
 % =====================================================================
 
 \begin{itemize}
-\item \textbf{The Elliptic shift dominates the financial results}, and
-validation selection cannot see it, as four separate measurements show. Read
-test numbers on this benchmark as regime-dependent.
-\item \textbf{Anonymised features limit what an explanation can say.} Elliptic's
-features carry no names, so financial explanations stay structural.
-Amount-level narratives exist only on AMLworld, which is synthetic.
-\item \textbf{Mendeley is case-control.} Lift is the comparator, not raw AUC-PR,
-and nothing about population-level precision follows from it.
-\item \textbf{Garc\'ia identity coverage reaches four of six markets}, so
-co-bidding identity graphs do not span the whole benchmark.
-\item \textbf{Award-pattern motifs recover badly} (rotation, cover bidding,
-partition), which caps what we can claim on the procurement side specifically.
+\item \textbf{The Elliptic shift has a strong effect on the financial results}, and validation selection cannot detect it, as shown by four separate measurements. Test numbers on this benchmark should therefore be read as dependent on the regime.
+\item \textbf{Anonymised features limit what an explanation can say.} Elliptic’s features don't contain names, so financial explanations remain structural. Amount-level explanations are only available on AMLworld, which is synthetic.
+\item \textbf{Mendeley is case-control.} Lift is the appropriate comparator instead of raw AUC-PR, and it does not tell us anything about population-level precision
+\item \textbf{Garc\'ia identity coverage reaches four of six markets}, so the co-bidding identity graphs do not cover the whole benchmark.
+\item \textbf{Award-pattern motifs recover badly} especially rotation, cover bidding and partition. This limits what we can claim about the procurement side specifically.
 \item \textbf{The copilot's grounding is imperfect and depends on its tool
-surface.} Grounding stands at $0.923$ on the current 26-case gate, both misses
-falling on the tool we added last. The released-output guarantee is
-deterministic and holds at zero violations, but grounding is a statistical bar
-and should be expected to dip whenever the agent gains tools faster than the
-golden set grows.
+surface.} Grounding stands at $0.923$ on the current 26-case gate, with both misses occurring on the tool we added last. The released-output guarantee is deterministic and has zero violations, but grounding is a statistical measure and may drop when the agent gains new tools faster than the golden set grows.
 \item \textbf{The practitioner study's human phase has not been run}, leaving
-\RQ{3} resting on fidelity and coverage measurements instead of practitioner
-judgement.
+\RQ{3} currently relies on fidelity and coverage measurements rather than practitioner judgement.
 \item \textbf{The joint cross-crime experiment is unrun} (Section~\ref{sec:joint}).
 \item \textbf{Compute envelope.} Everything published here ran on CPU,
 full-batch. Neighbour-sampled minibatch training on the five-million-edge
