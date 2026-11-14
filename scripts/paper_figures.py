@@ -522,7 +522,8 @@ def fig_transfer() -> None:
     for j, f in enumerate(garc):
         x = len(mend) + 0.8 + j
         xs.append(x)
-        labels.append(str(f["test_group"]))
+        # the publisher's README describes the "America" file as the USA market
+        labels.append(str(f["test_group"]).replace("America", "USA"))
         ax.bar(
             x,
             f["lift_mean"],
