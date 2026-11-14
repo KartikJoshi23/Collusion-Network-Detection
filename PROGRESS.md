@@ -256,6 +256,22 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-11-15 · **JOURNAL REVISION, Parts C, E and F (B7, D24, D25 still
+  training).** *Figures:* vector PDFs in `paper/figures/` (8 pt minimum,
+  greyscale-safe), Fig. 3 with the B3 line, Fig. 4 with interval whiskers,
+  the label-efficiency figure with its full-label point, Fig. 7 removed; the
+  root PNGs are gone. *Part C:* new Appendix C with every split, feature,
+  rule and hyperparameter re-read from the configs. *Part E:* 60 references,
+  each checked against Crossref, DataCite, arXiv, the publisher or the
+  official text (`paper/references_check.md`, `paper/references.bib`); the
+  reverse-message-passing finding is re-attributed to Egressy et al. (AAAI
+  2024). *Part F:* abstract in the brief's order, Section I rewritten,
+  long sentences split elsewhere. *Part D:* D3 (USA), D26 (B4 described as
+  it runs), D27 (515,088 AMLworld accounts). *Tooling:* the number manifest
+  and checker (0 failures, 0 unlisted), the table builders on the revision
+  artifacts, a declarations draft with a flagged AI-use statement. The
+  laptop slept 23:10–01:53; the training processes survived and resumed.
+  · [revision laptop, i5-11300H]
 - 2026-11-14 · **JOURNAL REVISION, steps 3.3–3.8 (Part B results and text,
   B7 still training).** Reproducibility checks R1–R7: trees, LOCO, LOMO and
   GATv2 seed 0 reproduce master bit for bit; the financial→procurement probe
