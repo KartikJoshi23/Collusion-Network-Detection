@@ -78,6 +78,15 @@ def fixture_tree(tmp_path: Path) -> Path:
     return tmp_path
 
 
+def _tree(auc: float, sd: float, p18: float, p18_sd: float) -> dict:
+    return {
+        "auc_pr_mean": auc,
+        "auc_pr_std": sd,
+        "precision@18_mean": p18,
+        "precision@18_std": p18_sd,
+    }
+
+
 def ablation_tree(tmp_path: Path) -> Path:
     """Minimal artifact set for the component-ablation table (§7 step 32)."""
     for run_dir, auc in [
@@ -100,7 +109,7 @@ def ablation_tree(tmp_path: Path) -> Path:
     _write(
         tmp_path,
         "eval_outputs/elliptic_pp/gnn_gatv2_wce_multiseed/multiseed.json",
-        {"aggregate": {"auc_pr_mean": 0.4435, "auc_pr_std": 0.0615}},
+        {"aggregate": {"auc_pr_mean": 0.4388, "auc_pr_std": 0.0505}},
     )
     _write(
         tmp_path,
@@ -115,13 +124,160 @@ def ablation_tree(tmp_path: Path) -> Path:
     _write(
         tmp_path,
         "eval_outputs/mendeley_eu/baselines/scoreboard.json",
-        {"baselines": {"b2_xgb": {"auc_pr": 0.3925, "precision@18": 0.2222}}},
+        {"baselines": {"b1_rules": {"auc_pr": 0.3426, "precision@18": 0.4698}}},
     )
     _write(
         tmp_path,
-        "eval_outputs/mendeley_eu/baselines_screens_ablation/scoreboard.json",
-        {"baselines": {"b2_xgb": {"auc_pr": 0.4558, "precision@18": 0.6111}}},
+        "eval_outputs/mendeley_eu/baselines_multiseed/baselines_multiseed.json",
+        {"baselines": {"b2_xgb": _tree(0.3849, 0.0099, 0.2222, 0.0)}},
     )
+    _write(
+        tmp_path,
+        "eval_outputs/mendeley_eu/baselines_screens_ablation_multiseed/baselines_multiseed.json",
+        {"baselines": {"b2_xgb": _tree(0.4547, 0.0081, 0.6556, 0.0609)}},
+    )
+    return tmp_path
+
+
+def revision_tree(tmp_path: Path) -> Path:
+    """Artifacts of the journal-revision tables (items B1, B2, B5, B6, B7, B8)."""
+    _write(
+        tmp_path,
+        "eval_outputs/derived/derived_numbers.json",
+        {
+            "items": {
+                "gatv2_steps_35_42": {
+                    "n_confirmed": 9983,
+                    "prevalence": 0.0916,
+                    "auc_pr_mean": 0.5737,
+                    "auc_pr_std": 0.0623,
+                },
+                "b3_steps_35_42": {
+                    "n_confirmed": 9983,
+                    "prevalence": 0.0916,
+                    "auc_pr_mean": 0.9259,
+                    "auc_pr_std": 0.0011,
+                },
+                "gatv2_steps_43_49": {
+                    "n_confirmed": 6687,
+                    "prevalence": 0.0253,
+                    "auc_pr_mean": 0.0391,
+                    "auc_pr_std": 0.0041,
+                },
+                "b3_steps_43_49": {
+                    "n_confirmed": 6687,
+                    "prevalence": 0.0253,
+                    "auc_pr_mean": 0.0567,
+                    "auc_pr_std": 0.0034,
+                },
+            }
+        },
+    )
+    _write(
+        tmp_path,
+        "eval_outputs/transfer_pooled/transfer_pooled.json",
+        {
+            "n_boot": 2000,
+            "matrices": {
+                "mendeley_loco": {
+                    "folds": [
+                        {
+                            "test_group": "country_2",
+                            "n_confirmed_test": 750,
+                            "prevalence": 0.716,
+                            "lift_mean": 0.903,
+                            "lift_ci_low": 0.874,
+                            "lift_ci_high": 0.939,
+                        }
+                    ],
+                    "n_confirmed_pooled": 1001,
+                    "pooled_prevalence": 0.689,
+                    "pooled_lift_mean": 0.929,
+                    "pooled_lift_std": 0.022,
+                    "size_weighted_lift": 0.991,
+                    "macro_lift": 1.170,
+                }
+            },
+        },
+    )
+    _write(
+        tmp_path,
+        "eval_outputs/elliptic_pp/significance/significance_multiseed.json",
+        {
+            "n_boot": 2000,
+            "comparisons": {
+                "gatv2_vs_b3": {
+                    "label_a": "GATv2",
+                    "label_b": "B3",
+                    "delta_min": -0.3908,
+                    "delta_max": -0.2641,
+                    "ci_low_min": -0.4156,
+                    "ci_high_max": -0.2381,
+                    "p_value_max": 0.0009995,
+                    "seed_averaged": {
+                        "delta": -0.3006,
+                        "delta_ci_low": -0.3236,
+                        "delta_ci_high": -0.2761,
+                        "p_value": 0.0009995,
+                    },
+                }
+            },
+        },
+    )
+    _write(
+        tmp_path,
+        "eval_outputs/cross_domain/full_label_comparison/full_label_comparison.json",
+        {
+            "directions": {
+                "proc2fin": {
+                    "direction": "mendeley_eu -> elliptic_pp",
+                    "prevalence_baseline": 0.065,
+                    "comparators": {
+                        "frozen_probe": {
+                            "auc_pr_ci": {"auc_pr": 0.1502, "ci_low": 0.1354, "ci_high": 0.1686}
+                        }
+                    },
+                    "in_domain_reference": {
+                        "baseline": "b2_xgb",
+                        "auc_pr_mean": 0.8039,
+                        "auc_pr_std": 0.0017,
+                    },
+                }
+            }
+        },
+    )
+    _write(
+        tmp_path,
+        "eval_outputs/elliptic_pp/explainer_metrics/explainer_ablation.json",
+        {
+            "arms": {
+                "pg_explainer": {
+                    "n_nodes": 50,
+                    "n_pyg_implausible": 1,
+                    "n_hard_implausible": 25,
+                    "hard_fidelity_plus_mean": 0.0525,
+                    "hard_fidelity_minus_mean": -0.0063,
+                    "sparsity_mean": 0.1198,
+                    "seconds": 18.08,
+                },
+                "attention": {
+                    "n_nodes": 50,
+                    "n_hard_implausible": 28,
+                    "hard_fidelity_plus_mean": 0.0486,
+                    "hard_fidelity_minus_mean": -0.0005,
+                    "sparsity_mean": 0.0052,
+                    "seconds": 0.59,
+                },
+            }
+        },
+    )
+    curve = {
+        "seeds": [0, 1, 2],
+        "curve": [
+            {"rate": 0.0, "auc_pr_mean": 0.4827, "auc_pr_std": 0.0616, "val_auc_pr_mean": 0.9418}
+        ],
+    }
+    _write(tmp_path, "eval_outputs/elliptic_pp/label_noise_curve/noise_curve.json", curve)
     return tmp_path
 
 
@@ -132,13 +288,13 @@ def test_ablation_deltas_are_formed_within_a_basis(tmp_path) -> None:
     assert "ablations" in report["built"]
     md = (out / "ablations.md").read_text(encoding="utf-8")
     # multi-seed arm: Δ against the multi-seed reference, not the seed-0 one
-    assert "| − focal loss (weighted CE) | 5 seeds | 0.4435 ± 0.0615 | -0.0294 |" in md
+    assert "| − focal loss (weighted CE) | 5 seeds | 0.4388 ± 0.0505 | -0.0341 |" in md
     # seed-0 arm: Δ against the seed-0 reference (the RT-1 separation)
     assert "| − bidirectional edges | seed 0 | 0.3549 | -0.1943 |" in md
     # ensemble composition: both operands copied from the one multiseed artifact
     assert "| − unsupervised members | 5 seeds | 0.4729 ± 0.0525 | +0.0295 |" in md
-    # deterministic procurement arm
-    assert "| + dataset screens | deterministic | 0.4558 | +0.0633 |" in md
+    # procurement arm: the five-seed tree rows (journal revision)
+    assert "| + dataset screens | 5 seeds | 0.4547 ± 0.0081 | +0.0698 |" in md
     # every basis block opens with its own reference row
     assert md.count("| reference |") == 4
 
@@ -157,7 +313,7 @@ def test_mendeley_screens_rows_name_the_mechanism_not_the_baseline(tmp_path) -> 
     """b4_screens is already the structural screen composite, so a bare '+screens'
     suffix renders 'b4_screens +screens' — a reviewer reads that as a duplication.
     The suffix must name what is actually added: the publisher's pc_* columns."""
-    ablation_tree(tmp_path)  # supplies baselines + screens_ablation scoreboards
+    ablation_tree(tmp_path)  # supplies the deterministic and five-seed scoreboards
     _write(
         tmp_path,
         "eval_outputs/mendeley_eu/baselines_b4_precomputed/scoreboard.json",
@@ -180,14 +336,16 @@ def test_mendeley_screens_rows_name_the_mechanism_not_the_baseline(tmp_path) -> 
     md = (out / "mendeley_headline.md").read_text(encoding="utf-8")
     assert "b4_screens +screens" not in md
     assert "| b4_screens +dataset screens | 0.3874 (det.) | 0.50 |" in md
-    assert "| b2_xgb +dataset screens | 0.4558 (det.) | 0.61 |" in md
+    assert "| b2_xgb +dataset screens | 0.4547 ± 0.0081 | 0.66 ± 0.06 |" in md
+    assert "| b1_rules | 0.3426 (det.) | 0.47 |" in md
+    assert "| b2_xgb | 0.3849 ± 0.0099 | 0.22 ± 0.00 |" in md
     assert "pc_* screen" in md  # the caption says what was added
 
 
 def test_builds_available_and_skips_missing_with_reason(tmp_path) -> None:
     fixture_tree(tmp_path)
     report = build_paper_tables(root=tmp_path, out_dir=tmp_path / "paper" / "tables")
-    assert set(report["built"]) == {"injection_ocds", "loco_mendeley", "significance"}
+    assert set(report["built"]) == {"injection_ocds", "loco_mendeley", "significance_seed0"}
     # everything else is skipped with the missing artifact path recorded
     assert "elliptic_headline" in report["skipped"]
     assert "missing artifact" in report["skipped"]["elliptic_headline"]
@@ -210,11 +368,56 @@ def test_values_are_copied_and_formatted_exactly(tmp_path) -> None:
     assert "| country_5 | 60 | 0.667 | 0.7625 ± 0.0470 | 1.14 |" in matrix_md
     assert "skipped_no_val_group" in matrix_md  # incomplete folds shown, not dropped
     assert "Macro lift 1.17." in matrix_md
-    sig_md = (out / "significance.md").read_text(encoding="utf-8")
+    sig_md = (out / "significance_seed0.md").read_text(encoding="utf-8")
     assert "| ensemble_calibrated vs ensemble_rank | +0.471 | [0.440, 0.499] | 0.001 |" in sig_md
     inj_md = (out / "injection_ocds.md").read_text(encoding="utf-8")
     assert "| cover_bid | 0.0000 ± 0.0000 | 0.2500 ± 0.0500 |" in inj_md
     assert "163,327" in inj_md
+
+
+def test_revision_tables_copy_their_artifacts(tmp_path) -> None:
+    revision_tree(tmp_path)
+    out = tmp_path / "paper" / "tables"
+    report = build_paper_tables(root=tmp_path, out_dir=out)
+    for name in ("step43", "transfer_pooled", "significance", "full_label", "explainer_metrics"):
+        assert name in report["built"], name
+    step = (out / "step43.md").read_text(encoding="utf-8")
+    assert "| 35–42 | 9983 | 0.092 | 0.5737 ± 0.0623 | 0.9259 ± 0.0011 |" in step
+    assert "| 43–49 | 6687 | 0.025 | 0.0391 ± 0.0041 | 0.0567 ± 0.0034 |" in step
+    pooled = (out / "transfer_pooled.md").read_text(encoding="utf-8")
+    assert "| mendeley_loco: country_2 | 750 | 0.72 | 0.90 [0.87, 0.94] |" in pooled
+    assert "| mendeley_loco: pooled | 1001 | 0.69 | 0.93 ± 0.02 |" in pooled
+    assert "| mendeley_loco: size-weighted | — | — | 0.99 |" in pooled
+    sig = (out / "significance.md").read_text(encoding="utf-8")
+    assert "| GATv2 vs B3, seed pairs | -0.391 to -0.264 | [-0.416, -0.238] | ≤ 0.001 |" in sig
+    assert "| GATv2 vs B3, seed-averaged | -0.301 | [-0.324, -0.276] | 0.001 |" in sig
+    full = (out / "full_label.md").read_text(encoding="utf-8")
+    assert "| mendeley_eu -> elliptic_pp | frozen_probe | 0.1502 [0.135, 0.169] | 0.065 |" in full
+    assert "| mendeley_eu -> elliptic_pp | b2_xgb (5 seeds) | 0.8039 ± 0.0017 | 0.065 |" in full
+    expl = (out / "explainer_metrics.md").read_text(encoding="utf-8")
+    assert "| pg_explainer | 49/50 | 0.052 | -0.006 | 25/50 | 0.12 | 18.1 |" in expl
+    assert "| attention | — | 0.049 | -0.001 | 22/50 | 0.01 | 0.6 |" in expl
+
+
+def test_label_noise_prefers_the_five_seed_curve(tmp_path) -> None:
+    revision_tree(tmp_path)
+    out = tmp_path / "paper" / "tables"
+    build_paper_tables(root=tmp_path, out_dir=out)
+    assert "3 seeds per rate" in (out / "label_noise.md").read_text(encoding="utf-8")
+    _write(
+        tmp_path,
+        "eval_outputs/elliptic_pp/label_noise_curve_5seed/noise_curve.json",
+        {
+            "seeds": [0, 1, 2, 3, 4],
+            "curve": [
+                {"rate": 0.0, "auc_pr_mean": 0.4729, "auc_pr_std": 0.0525, "val_auc_pr_mean": 0.94}
+            ],
+        },
+    )
+    build_paper_tables(root=tmp_path, out_dir=out)
+    md = (out / "label_noise.md").read_text(encoding="utf-8")
+    assert "5 seeds per rate" in md
+    assert "| 0% | 0.4729 ± 0.0525 | 0.9400 |" in md
 
 
 def test_latex_escapes_and_structure() -> None:

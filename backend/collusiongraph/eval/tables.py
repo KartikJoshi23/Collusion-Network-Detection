@@ -1,4 +1,4 @@
-"""Paper tables from harness artifacts (§7 step 33, M8).
+"""Paper tables from harness artifacts (§7 step 33, M8; journal revision).
 
 Every table is COPIED from a stored eval artifact — the harness is the single
 source of truth; nothing here re-derives a number (the same rule the frontend
@@ -34,6 +34,10 @@ def _ms(mean: float, std: float) -> str:
     return f"{mean:.4f} ± {std:.4f}"
 
 
+def _ms2(mean: float, std: float) -> str:
+    return f"{mean:.2f} ± {std:.2f}"
+
+
 def _multiseed_row(payload: dict[str, Any], label: str, k: int) -> Row:
     agg = payload["aggregate"]
     return [
@@ -43,12 +47,32 @@ def _multiseed_row(payload: dict[str, Any], label: str, k: int) -> Row:
     ]
 
 
+def _tree_rows(payload: dict[str, Any], suffix: str, k: int) -> list[Row]:
+    """Five-seed tree rows from a baselines_multiseed artifact."""
+    return [
+        [
+            name + suffix,
+            _ms(m["auc_pr_mean"], m["auc_pr_std"]),
+            _ms2(m[f"precision@{k}_mean"], m[f"precision@{k}_std"]),
+        ]
+        for name, m in sorted(payload["baselines"].items())
+    ]
+
+
 def elliptic_headline(root: Path) -> Table:
     sb = _load(root, "eval_outputs/elliptic_pp/baselines/scoreboard.json")["baselines"]
-    rows: list[Row] = [
-        [name, f"{m['auc_pr']:.4f} (det.)", f"{m['precision@100']:.2f}"]
-        for name, m in sorted(sb.items())
-    ]
+    b1 = sb["b1_rules"]
+    rows: list[Row] = [["b1_rules", f"{b1['auc_pr']:.4f} (det.)", f"{b1['precision@100']:.2f}"]]
+    rows += _tree_rows(
+        _load(root, "eval_outputs/elliptic_pp/baselines_local_multiseed/baselines_multiseed.json"),
+        ", local",
+        100,
+    )
+    rows += _tree_rows(
+        _load(root, "eval_outputs/elliptic_pp/baselines_multiseed/baselines_multiseed.json"),
+        "",
+        100,
+    )
     rows.append(
         _multiseed_row(
             _load(root, "eval_outputs/elliptic_pp/gnn_gatv2_focal_multiseed/multiseed.json"),
@@ -69,33 +93,43 @@ def elliptic_headline(root: Path) -> Table:
     return (
         ["Model", "AUC-PR", "P@100"],
         rows,
-        "Elliptic++ node-level results (test steps 35–49, prevalence 0.065). "
-        "Rule/tree baselines are deterministic; GNN/ensemble rows are 5-seed mean ± std.",
+        "Elliptic++ node-level results (test steps 35–49, prevalence 0.065). The rule "
+        "baseline is deterministic; tree, GNN and ensemble rows are 5-seed mean ± std. "
+        "'local' rows use only the 94 local columns.",
     )
 
 
 def mendeley_headline(root: Path) -> Table:
-    rows: list[Row] = []
     # " +dataset screens" = the publisher's OWN precomputed pc_* screens added to
     # that baseline's inputs. Not to be confused with b4_screens, whose name refers
     # to its structural screen composite (n_awards / market_share / buyer_hhi) —
     # "b4_screens +screens" would read as a duplication.
-    for rel, suffix in [
-        ("eval_outputs/mendeley_eu/baselines/scoreboard.json", ""),
-        (
-            "eval_outputs/mendeley_eu/baselines_screens_ablation/scoreboard.json",
-            " +dataset screens",
+    sb = _load(root, "eval_outputs/mendeley_eu/baselines/scoreboard.json")["baselines"]
+    rows: list[Row] = [
+        [name, f"{sb[name]['auc_pr']:.4f} (det.)", f"{sb[name]['precision@18']:.2f}"]
+        for name in ("b1_rules", "b4_screens")
+        if name in sb
+    ]
+    rows += _tree_rows(
+        _load(root, "eval_outputs/mendeley_eu/baselines_multiseed/baselines_multiseed.json"),
+        "",
+        18,
+    )
+    rows += _tree_rows(
+        _load(
+            root,
+            "eval_outputs/mendeley_eu/baselines_screens_ablation_multiseed/baselines_multiseed.json",
         ),
-        (
-            "eval_outputs/mendeley_eu/baselines_b4_precomputed/scoreboard.json",
-            " +dataset screens",
-        ),
-    ]:
-        sb = _load(root, rel)["baselines"]
-        rows += [
-            [name + suffix, f"{m['auc_pr']:.4f} (det.)", f"{m['precision@18']:.2f}"]
-            for name, m in sorted(sb.items())
-        ]
+        " +dataset screens",
+        18,
+    )
+    b4s = _load(root, "eval_outputs/mendeley_eu/baselines_b4_precomputed/scoreboard.json")[
+        "baselines"
+    ]
+    rows += [
+        [name + " +dataset screens", f"{m['auc_pr']:.4f} (det.)", f"{m['precision@18']:.2f}"]
+        for name, m in sorted(b4s.items())
+    ]
     rows.append(
         _multiseed_row(
             _load(root, "eval_outputs/mendeley_eu/gnn_rgcn_focal_multiseed/multiseed.json"),
@@ -107,7 +141,8 @@ def mendeley_headline(root: Path) -> Table:
         ["Model", "AUC-PR", "P@18"],
         rows,
         "Mendeley EU firm-level results (within case-control sample, prevalence 0.358). "
-        "Lift-style reading applies; see the datasheet for the sample caveat. "
+        "Lift-style reading applies; see the datasheet for the sample caveat. Rule and "
+        "screen rows are deterministic; tree and R-GCN rows are 5-seed mean ± std. "
         "'+dataset screens' rows add the publisher's own precomputed pc_* screen "
         "columns to that baseline's inputs.",
     )
@@ -151,7 +186,73 @@ def lomo_garcia(root: Path) -> Table:
     )
 
 
+def transfer_pooled(root: Path) -> Table:
+    """Revision item B5: per-fold lift with bootstrap CIs, pooled and size-weighted."""
+    payload = _load(root, "eval_outputs/transfer_pooled/transfer_pooled.json")
+    rows: list[Row] = []
+    for key, matrix in payload["matrices"].items():
+        for f in matrix["folds"]:
+            rows.append(
+                [
+                    f"{key}: {f['test_group']}",
+                    str(f["n_confirmed_test"]),
+                    f"{f['prevalence']:.2f}",
+                    f"{f['lift_mean']:.2f} [{f['lift_ci_low']:.2f}, {f['lift_ci_high']:.2f}]",
+                ]
+            )
+        rows.append(
+            [
+                f"{key}: pooled",
+                str(matrix["n_confirmed_pooled"]),
+                f"{matrix['pooled_prevalence']:.2f}",
+                _ms2(matrix["pooled_lift_mean"], matrix["pooled_lift_std"]),
+            ]
+        )
+        rows.append([f"{key}: size-weighted", "—", "—", f"{matrix['size_weighted_lift']:.2f}"])
+        rows.append([f"{key}: macro", "—", "—", f"{matrix['macro_lift']:.2f}"])
+    return (
+        ["Fold", "n", "Prevalence", "Lift [95% CI]"],
+        rows,
+        "Transfer lift by held-out fold with stratified bootstrap 95% CIs on the "
+        f"seed-averaged scores ({payload['n_boot']} resamples); pooled rows score all "
+        "held-out firms together (mean ± std over seeds).",
+    )
+
+
 def significance(root: Path) -> Table:
+    """Revision item B2: per-seed-pair range and seed-averaged comparison."""
+    payload = _load(root, "eval_outputs/elliptic_pp/significance/significance_multiseed.json")
+    rows: list[Row] = []
+    for c in payload["comparisons"].values():
+        name = f"{c['label_a']} vs {c['label_b']}"
+        rows.append(
+            [
+                f"{name}, seed pairs",
+                f"{c['delta_min']:+.3f} to {c['delta_max']:+.3f}",
+                f"[{c['ci_low_min']:.3f}, {c['ci_high_max']:.3f}]",
+                f"≤ {c['p_value_max']:.3f}",
+            ]
+        )
+        avg = c["seed_averaged"]
+        rows.append(
+            [
+                f"{name}, seed-averaged",
+                f"{avg['delta']:+.3f}",
+                f"[{avg['delta_ci_low']:.3f}, {avg['delta_ci_high']:.3f}]",
+                f"{avg['p_value']:.3f}",
+            ]
+        )
+    return (
+        ["Comparison", "Δ AUC-PR", "95% CI", "p"],
+        rows,
+        "Paired-bootstrap comparisons over identical confirmed test nodes "
+        f"({payload['n_boot']} resamples, stratified). 'Seed pairs' rows give the range of "
+        "the per-seed deltas and the envelope of their intervals; 'seed-averaged' rows "
+        "compare scores averaged over the seeds.",
+    )
+
+
+def significance_seed0(root: Path) -> Table:
     payload = _load(root, "eval_outputs/elliptic_pp/significance/significance.json")
     rows = [
         [
@@ -172,17 +273,106 @@ def significance(root: Path) -> Table:
     )
 
 
+def step43(root: Path) -> Table:
+    """Revision item B1: AUC-PR before and after the step-43 market closure."""
+    items = _load(root, "eval_outputs/derived/derived_numbers.json")["items"]
+    rows: list[Row] = []
+    for window in ("35_42", "43_49"):
+        g, b = items[f"gatv2_steps_{window}"], items[f"b3_steps_{window}"]
+        rows.append(
+            [
+                window.replace("_", "–"),
+                str(g["n_confirmed"]),
+                f"{g['prevalence']:.3f}",
+                _ms(g["auc_pr_mean"], g["auc_pr_std"]),
+                _ms(b["auc_pr_mean"], b["auc_pr_std"]),
+            ]
+        )
+    return (
+        ["Steps", "n", "Prevalence", "GATv2-focal", "B3"],
+        rows,
+        "AUC-PR before and after the step-43 market closure (5 seeds, mean ± std).",
+    )
+
+
+def full_label(root: Path) -> Table:
+    """Revision item B6: cross-domain probes at full labels."""
+    payload = _load(
+        root, "eval_outputs/cross_domain/full_label_comparison/full_label_comparison.json"
+    )
+    rows: list[Row] = []
+    for d in payload["directions"].values():
+        for comp, c in d["comparators"].items():
+            ci = c["auc_pr_ci"]
+            rows.append(
+                [
+                    d["direction"],
+                    comp,
+                    f"{ci['auc_pr']:.4f} [{ci['ci_low']:.3f}, {ci['ci_high']:.3f}]",
+                    f"{d['prevalence_baseline']:.3f}",
+                ]
+            )
+        ref = d.get("in_domain_reference")
+        if ref:
+            rows.append(
+                [
+                    d["direction"],
+                    f"{ref['baseline']} (5 seeds)",
+                    _ms(ref["auc_pr_mean"], ref["auc_pr_std"]),
+                    f"{d['prevalence_baseline']:.3f}",
+                ]
+            )
+    return (
+        ["Direction", "Model", "AUC-PR [95% CI]", "Prevalence"],
+        rows,
+        "Cross-domain probes at full labels, on the published probe pools; frozen "
+        "probes use the stored source encoders.",
+    )
+
+
+def explainer_metrics(root: Path) -> Table:
+    """Revision item B8: standard explainer metrics on the rebuilt queue."""
+    payload = _load(root, "eval_outputs/elliptic_pp/explainer_metrics/explainer_ablation.json")
+    rows: list[Row] = []
+    for arm, s in payload["arms"].items():
+        n = s["n_nodes"]
+        pyg = f"{n - s['n_pyg_implausible']}/{n}" if "n_pyg_implausible" in s else "—"
+        rows.append(
+            [
+                arm,
+                pyg,
+                f"{s['hard_fidelity_plus_mean']:.3f}",
+                f"{s['hard_fidelity_minus_mean']:.3f}",
+                f"{n - s['n_hard_implausible']}/{n}",
+                f"{s['sparsity_mean']:.2f}",
+                f"{s['seconds']:.1f}",
+            ]
+        )
+    return (
+        ["Arm", "PyG sane", "Fid+", "Fid−", "Hard sane", "Sparsity", "Seconds"],
+        rows,
+        "Explainer metrics on the top members of the highest-ranked financial alerts.",
+    )
+
+
 def label_noise(root: Path) -> Table:
-    payload = _load(root, "eval_outputs/elliptic_pp/label_noise_curve/noise_curve.json")
+    """The five-seed curve once its run has finished; the three-seed curve until then."""
+    try:
+        payload = _load(root, "eval_outputs/elliptic_pp/label_noise_curve_5seed/noise_curve.json")
+    except FileNotFoundError:
+        payload = _load(root, "eval_outputs/elliptic_pp/label_noise_curve/noise_curve.json")
     rows = [
-        [f"{c['rate']:.0%}", _ms(c["auc_pr_mean"], c["auc_pr_std"])]
+        [
+            f"{c['rate']:.0%}",
+            _ms(c["auc_pr_mean"], c["auc_pr_std"]),
+            f"{c['val_auc_pr_mean']:.4f}",
+        ]
         for c in sorted(payload["curve"], key=lambda c: c["rate"])
     ]
     return (
-        ["Train-label flip rate", "Test AUC-PR"],
+        ["Train-label flip rate", "Test AUC-PR", "Validation AUC-PR"],
         rows,
-        "Label-noise robustness (GATv2-focal, 3 seeds per rate). Test AUC-PR RISES "
-        "with train noise while validation collapses — the val-blindness diagnostic.",
+        f"Label-noise robustness (GATv2-focal, {len(payload['seeds'])} seeds per rate).",
     )
 
 
@@ -308,17 +498,23 @@ def ablations(root: Path) -> Table:
         value = _run_auc_pr(root, run_dir)
         rows.append([label, "seed 0", f"{value:.4f}", f"{value - ref0:+.4f}"])
 
-    b2 = _load(root, "eval_outputs/mendeley_eu/baselines/scoreboard.json")["baselines"]["b2_xgb"]
-    b2s = _load(root, "eval_outputs/mendeley_eu/baselines_screens_ablation/scoreboard.json")[
+    # journal revision: the procurement arm compares the five-seed tree rows
+    b2 = _load(root, "eval_outputs/mendeley_eu/baselines_multiseed/baselines_multiseed.json")[
         "baselines"
     ]["b2_xgb"]
-    rows.append(["Mendeley B2 XGBoost", "deterministic", f"{b2['auc_pr']:.4f}", "reference"])
+    b2s = _load(
+        root,
+        "eval_outputs/mendeley_eu/baselines_screens_ablation_multiseed/baselines_multiseed.json",
+    )["baselines"]["b2_xgb"]
+    rows.append(
+        ["Mendeley B2 XGBoost", "5 seeds", _ms(b2["auc_pr_mean"], b2["auc_pr_std"]), "reference"]
+    )
     rows.append(
         [
             "+ dataset screens",
-            "deterministic",
-            f"{b2s['auc_pr']:.4f}",
-            f"{b2s['auc_pr'] - b2['auc_pr']:+.4f}",
+            "5 seeds",
+            _ms(b2s["auc_pr_mean"], b2s["auc_pr_std"]),
+            f"{b2s['auc_pr_mean'] - b2['auc_pr_mean']:+.4f}",
         ]
     )
 
@@ -350,7 +546,12 @@ TABLES: dict[str, Callable[[Path], Table]] = {
     "mendeley_headline": mendeley_headline,
     "loco_mendeley": loco_mendeley,
     "lomo_garcia": lomo_garcia,
+    "transfer_pooled": transfer_pooled,
     "significance": significance,
+    "significance_seed0": significance_seed0,
+    "step43": step43,
+    "full_label": full_label,
+    "explainer_metrics": explainer_metrics,
     "label_noise": label_noise,
     "injection_ocds": injection_ocds,
     "label_efficiency_proc2fin": label_efficiency_proc2fin,
@@ -367,6 +568,7 @@ _TEX_ESCAPE = str.maketrans(
         "→": r"$\to$",
         "−": r"$-$",  # U+2212, the ablation arms' minus sign
         "–": "--",
+        "≤": r"$\leq$",
     }
 )
 
