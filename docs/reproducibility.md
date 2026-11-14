@@ -144,9 +144,16 @@ the run outputs once each run completes; nothing here is typed from memory.
   probe pipeline, not encoder retraining.
 - **Torch GNN training is machine-class dependent:** measured GATv2 seed-0
   0.5492 (master class) vs 0.5318 (laptop-C), a ±0.02 machine-class
-  variance. The revision laptop (Intel i5-11300H) reproduces master's
-  seed-0 GATv2 bit for bit (check R7: test AUC-PR 0.5492089151328867, best
-  epoch 121).
+  variance. The revision laptop (Intel Core i5-11300H, 4 cores / 8
+  threads, 16 GB, CPU only) reproduces master's GATv2 bit for bit: seed 0
+  in check R7 (test AUC-PR 0.5492089151328867, best epoch 121), and seeds 3
+  and 4 as the rate-0 points of `label_noise_elliptic_pp_5seed.yaml`
+  (identical test scores, maximum difference 0.0), while two other trainings
+  ran in parallel. The main machine reported by the user is an Intel Core
+  i7-1195G7 (4 cores / 8 threads, 16 GB). Both are 11th-generation Intel
+  Core (Tiger Lake) parts, which is consistent with the bit-identical
+  results. Its NVIDIA MX450 is not used: every published number is a CPU
+  run, and GPU arithmetic would not match.
 - **Seed variance (±0.05) dominates machine variance (±0.02)** — the paper
   quotes multi-seed means with stds, never a best seed. Where a comparison
   crosses machines (the wce campaign), the ledger records the confound.
