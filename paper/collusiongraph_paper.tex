@@ -176,25 +176,39 @@ released with the code.
 
 \textbf{Graph anomaly detection and benchmarks.} The survey by Ma et
 al.~\cite{ma2023} supplies the node/edge/subgraph taxonomy we work inside.
-GADBench~\cite{gadbench} is the uncomfortable reference point: over 29 models and ten datasets, tree ensembles with plain neighborhood aggregation match or even outperform graph neural networks designed specifically for the task. Our \RQ{1} result shows the same pattern on Elliptic++, using a strict evaluation protocol that we think makes the reproduction worth reporting on its own.
+GADBench~\cite{gadbench} is the uncomfortable reference point: over 29 models and ten datasets, tree ensembles with plain neighborhood aggregation match or even outperform graph neural networks designed specifically for the task. BOND~\cite{liu2022bond} benchmarks the unsupervised detectors in the same way. Our \RQ{1} result shows the same pattern on Elliptic++, using a strict evaluation protocol that we think makes the reproduction worth reporting on its own.
 
 \textbf{AML with graph neural networks.} Motie and Raahemi~\cite{motie2024}
 survey the field. LineMVGNN~\cite{linemv2025} adds a line-graph view to two-way
-message passing so that direction of money flow is preserved. Lawal et
-al.~\cite{lawal2025} run GNNExplainer over Elliptic and write mainly about what
-fails, showing how imbalance, sparse structure, and noisy labels together block
-reliable learning; this is the clearest published warning that high accuracy means very little when the actual prevalence is this low. The AMLworld line~\cite{multignn} finds bidirectional message passing to be decisive, which we independently reproduce at $-0.194$ AUC-PR once the reverse edges are removed; this is the largest single-component effect we measured. Near-perfect Elliptic results are best read with the ablation results in the same papers: one wavelet-temporal graph transformer~\cite{lin2026} reports about $0.98$ accuracy while also noting that its wavelet features contribute roughly $0.01$ and are ``not strictly indispensable''.
+message passing so that direction of money flow is preserved. Weber et
+al.\ found that a random forest beat their graph convolutional network on the
+original Elliptic data, and that every method, a random forest included,
+failed after a dark-market shutdown at time step 43~\cite{weber2019}. Our
+\RQ{1} result confirms both findings under a stricter protocol.
+LaundroGraph learns self-supervised representations of customer--transaction
+graphs for anti-money laundering~\cite{cardoso2022}. Egressy et al.\ add
+reverse message passing, port numbering and ego identifiers to standard
+message passing and report gains of up to 30\% in minority-class F1 on
+anti-money-laundering data~\cite{egressy2024}. Removing the reverse edges from
+our direction-aware graphs costs $0.194$ AUC-PR, the largest single-component
+effect we measured. Near-perfect Elliptic results are best read with the ablation results in the same papers: one wavelet-temporal graph transformer~\cite{lin2026} reports about $0.98$ accuracy while also noting that its wavelet features contribute roughly $0.01$ and are ``not strictly indispensable''.
 
 \textbf{Cartel detection.} The screens tradition of coefficient of variation,
-price spread and kurtosis is long established, and the benchmarks that get
-reused come from Garc\'ia Rodr\'iguez et al.~\cite{garcia2022} and the Mendeley
-EU cartel release~\cite{mendeley2025}. Recent cartel GNN work posts strong
+price spread and kurtosis is long established and has been tested on real
+cartel cases~\cite{imhof2018}. Huber and Imhof combine such screens with
+machine learning~\cite{huber2019}, and statistical tests can single out groups
+of colluding bidders~\cite{conley2016}. Corruption-risk indicators built from
+procurement records~\cite{fazekas2020} and network analyses of contracting
+markets~\cite{wachs2021} extend the approach to corruption more broadly. The
+benchmarks that get reused come from Garc\'ia Rodr\'iguez et
+al.~\cite{garcia2022} and the Mendeley EU cartel release~\cite{mendeley2025}. Recent cartel GNN work posts strong
 cross-market numbers. Graph attention networks over tender--firm graphs spanning
 13 markets in seven countries transfer at 80--90\% accuracy, peaking at 91\% on
 an eight-market configuration and settling at 84\% once extended to
 12~\cite{imhof2025}. Relational GCNs with an explicit zero-shot phase attack
 out-of-distribution generalisation head on~\cite{gomes2024}, and a systematic
-mapping study names the real-world-validation gap~\cite{epjds2025}. We want to
+mapping study finds few methods applied in real systems to detect new
+cases~\cite{epjds2025}. We want to
 be careful here: those accuracy figures and our budget-first lift numbers are
 different metrics computed on differently sampled data, so we make no claim to
 beat them. What our matrices contribute is the shape of the degradation. It is
@@ -202,18 +216,25 @@ uneven across markets, and on the harder of the two benchmarks the market that
 fails is the biggest one.
 
 \textbf{Evaluation-protocol critiques.} A recurring complaint is that
-graph-anomaly results are inflated by leakage, by transductive splits, and by a
-mismatch between the unit that gets scored and the unit a human reviews. Our
+machine-learning results, graph results among them, are inflated by
+leakage~\cite{kaufman2012,kapoor2023}, by evaluation on a single fixed
+split~\cite{shchur2018}, and by a mismatch between the unit that gets scored and
+the unit a human reviews. Our
 transaction-versus-actor disagreement in Section~\ref{sec:granularity} measures
 the third of those directly.
 
 \textbf{Transfer and graph foundation models.} The graph-foundation-model
-literature asks whether one representation can serve many graphs. \RQ{4} puts
+literature asks whether one representation can serve many
+graphs~\cite{liu2025gfm,mao2024}. Pre-training on graph structure can transfer
+across graphs~\cite{qiu2020gcc}, but it can also transfer
+negatively~\cite{hu2020}. \RQ{4} puts
 that question to two enforcement domains in a form that can come back negative,
 and in one direction it does.
 
 \textbf{LLM-augmented explanation.} Several groups now pair language models with
-graph explanations to produce narratives an analyst can read. We kept ours on a
+graph explanations to produce narratives an analyst can read~\cite{cedro2026}.
+Retrieval ties generated answers to source records~\cite{lewis2020}, but
+hallucination remains a known risk~\cite{ji2023}. We kept ours on a
 short leash: read-only SQL over published artifacts, a numeric sanity gate, and
 a guard on guilt-attributing language. The aim is an assistant that helps a
 reviewer participate without inviting them to defer.
@@ -243,16 +264,16 @@ Section~\ref{sec:prevalence} for which denominator each evaluation uses.}
 \label{tab:data}
 \centering
 \footnotesize
-\setlength{\tabcolsep}{4pt}
+\setlength{\tabcolsep}{2.5pt}
 \begin{tabular}{llllll}
 \toprule
 Dataset & Domain & Scale & Positives & Role & Licence \\
 \midrule
-Elliptic++ (tx graph)~\cite{elliptic,weber2019} & Financial & 203,769 nodes, 234,355 edges, 49 steps & $\approx$2\% illicit & \textsc{anchor} & research use \\
-Elliptic++ (actor graph)~\cite{elliptic} & Financial & test window: 292,102 wallets, 966,352 edges & 5.3\% (test window) & granularity & research use \\
-IBM AMLworld HI-Small & Financial & 5,078,345 tx, 515,080 accounts & 0.102\% laundering & \textsc{scale} & CDLA-Sharing-1.0 \\
-Mendeley EU cartel & Procurement & 15,616 contracts, 7 countries, 2004--21 & 41.9\% (case-control) & \textsc{anchor} & CC BY-NC 3.0 \\
-Garc\'ia Rodr\'iguez et al. & Procurement & 64,348 bids, 9,781 tenders, 6 markets & 11.3--81.8\% by market & transfer & CC BY-NC-ND 4.0 \\
+Elliptic++ (tx graph)~\cite{elmougy2023,weber2019} & Financial & 203,769 nodes, 234,355 edges, 49 steps & $\approx$2\% illicit & \textsc{anchor} & research use \\
+Elliptic++ (actor graph)~\cite{elmougy2023} & Financial & test window: 292,102 wallets, 966,352 edges & 5.3\% (test window) & granularity & research use \\
+IBM AMLworld HI-Small~\cite{altman2023} & Financial & 5,078,345 tx, 515,088 accounts & 0.102\% laundering & \textsc{scale} & CDLA-Sharing-1.0 \\
+Mendeley EU cartel~\cite{mendeleydata2025} & Procurement & 15,616 contracts, 7 countries, 2004--21 & 41.9\% (case-control) & \textsc{anchor} & CC BY-NC 3.0 \\
+Garc\'ia Rodr\'iguez et al.~\cite{garcia2022} & Procurement & 64,348 bids, 9,781 tenders, 6 markets & 11.3--81.8\% by market & transfer & CC BY-NC-ND 4.0 \\
 OCDS Georgia (OpenTender) & Procurement & 163,327-node window & unlabelled & \textsc{population} & CC BY-NC-SA 4.0 \\
 \bottomrule
 \end{tabular}
@@ -341,7 +362,7 @@ red-flag vocabularies differ.}
 Four arms score every node and are fused afterwards.
 
 \textbf{Baselines.} B1 is a rule engine in the spirit of the threshold logic
-banks actually deploy. B2 is XGBoost on node features. B3 is XGBoost on node
+banks actually deploy. B2 is XGBoost~\cite{chen2016} on node features. B3 is XGBoost on node
 features together with graph-derived ones, meaning degrees, k-core, motif counts
 and neighbourhood aggregates. B3 follows the GADBench recipe and is the yardstick
 that matters. On the procurement side we add B4, a transparent screens
@@ -355,12 +376,14 @@ built with explicit reverse edges so that message passing can distinguish
 sending from receiving. Focal loss~\cite{focal} is the default given the
 imbalance; weighted cross-entropy is the ablation arm.
 
-\textbf{Unsupervised arm.} DOMINANT~\cite{dominant} and a graph autoencoder
+\textbf{Unsupervised arm.} DOMINANT~\cite{dominant} and a graph
+autoencoder~\cite{kipf2016}
 score structural reconstruction error, plus a deterministic structural floor.
 These require no labels and are the only arms available on the unlabelled OCDS
 population~\cite{ocds}.
 
-\textbf{Fusion.} We isotonically calibrate each member on validation before
+\textbf{Fusion.} We isotonically calibrate~\cite{zadrozny2002} each member on
+validation before
 fusing, so the combined score behaves like a comparable probability instead of
 an arbitrary blend of ranks. The gap between calibrated and rank fusion turned
 out to be one of the largest effects we measured anywhere in the paper.
@@ -399,7 +422,8 @@ $0.693$ to $0.532$, making the gap to the tree baseline larger. Every figure we 
 \PENDING{D24: replace with the five-seed per-graph normalisation measurement}
 \item \textbf{Budget-first, tie-aware metrics.} Precision@$k$ at budgets a real team would use, with ties handled carefully, along with AUC-PR, which is the right summary under this level of class imbalance~\cite{saito2015} and is always quoted against its own fold’s prevalence baseline.
 \item \textbf{Multi-seed with dispersion.} Five seeds, reported as mean~$\pm$~standard deviation. The seed variance is about $\pm 0.05$ , which is much higher than the cross-machine variance of about $\pm 0.02$, . This means that comparing two machines using only one seed would not give us a reliable comparison. Our own previously published seed-0 GATv2 figure of $0.5492$ happens to be the best of the five. The more reliable number is $0.4729 \pm 0.0525$, and that is the one we quote.
-\item \textbf{Paired stratified bootstrap} over identical confirmed test nodes
+\item \textbf{Paired stratified bootstrap}~\cite{efron1993} over identical
+confirmed test nodes
 for every headline comparison, at 2,000 resamples.
 \end{itemize}
 
@@ -503,7 +527,8 @@ drops to the floor. Step 43 is where a dark-market closure enters the Elliptic
 timeline, a change noted since the dataset's original
 release~\cite{weber2019}. The test window therefore contains a regime that
 training never saw. The trees collapse at the same step
-(Table~\ref{tab:t1b}). In steps 35--42, B3 reaches $0.9259 \pm 0.0011$ against
+(Table~\ref{tab:t1b}), as every method did in the original
+study~\cite{weber2019}. In steps 35--42, B3 reaches $0.9259 \pm 0.0011$ against
 $0.5737 \pm 0.0623$ for GATv2, at a prevalence of $0.092$. In steps 43--49 the
 prevalence drops to $0.025$, and both models fall close to it: B3 to
 $0.0567 \pm 0.0034$ and GATv2 to $0.0391 \pm 0.0041$. The gap between trees and
@@ -831,7 +856,7 @@ Mendeley B2 XGBoost & 5 seeds & $0.3849 \pm 0.0099$ & ref. \\
 \end{tabular}
 \end{table}
 
-Direction-awareness is the component that makes the biggest difference. Dropping reverse edges reduces AUC-PR by $0.194$. This matches the AMLworld finding, even though it was tested on a different dataset by a different team. Focal loss gives a smaller improvement of $0.034$. Extra input channels reduced performance every time we tried them: the structural, line-graph and context-fusion variants all performed worse than using the raw features alone.
+Direction-awareness is the component that makes the biggest difference. Dropping reverse edges reduces AUC-PR by $0.194$. This is in line with the gains Egressy et al.\ report from reverse message passing~\cite{egressy2024}, on a different dataset and by a different team. Focal loss gives a smaller improvement of $0.034$. Extra input channels reduced performance every time we tried them: the structural, line-graph and context-fusion variants all performed worse than using the raw features alone.
 We see this as an interaction between model capacity and distribution shift, not as evidence that these channels carry no information in general.
 
 
@@ -906,22 +931,23 @@ red-flag pattern; on the procurement queues none do.
 top members of the 50 highest-ranked financial alerts, comparing GNNExplainer,
 PGExplainer and raw attention (Table~\ref{tab:explainers}). Each arm keeps the
 20 highest-scoring edges of a two-hop window around the node. Under PyG's
-fidelity measure, PGExplainer returned sane attributions on 49 of the 50 nodes,
+fidelity measure~\cite{fey2019}, PGExplainer returned sane attributions on 49 of the 50 nodes,
 where GNNExplainer managed 10, and it took under a third of the time. We
 adopted it. Its bundles carry an implausible-fidelity flag on 1 of 50 alerts,
 against 40 of 50 for GNNExplainer.
 
 A uniform test gives a less flattering picture. We remove or keep the chosen
 edges outright and measure the change in the model's probability for its own
-prediction. Fidelity+ is the drop when the explanation is removed; Fidelity$-$
-is the drop when only the explanation is kept. Under this test the three arms
+prediction. Following the standard definitions~\cite{yuan2023,agarwal2023},
+Fidelity+ is the drop when the explanation is removed; Fidelity$-$ is the drop
+when only the explanation is kept. Under this test the three arms
 are close. Fidelity+ ranges from $0.049$ to $0.052$, and 22 to 25 of the 50
 explanations of each arm pass (Fidelity+ $\geq$ Fidelity$-$). Sparsity is low
 because most two-hop windows hold few more edges than the 20 kept, and
 attention keeps almost every edge. The arms also largely agree on which edges
 matter: the mean Jaccard overlap of their edge sets runs from $0.65$ to $0.88$.
-Attention, popular because it looks like interpretability for free, matches
-GNNExplainer under this test.
+Attention, popular because it looks like interpretability for
+free~\cite{jain2019}, matches GNNExplainer under this test.
 
 \begin{table}[t]
 \caption{Explainer metrics on the top members of the 50 highest-ranked
@@ -958,7 +984,7 @@ and the three Garc\'ia Italy alerts are simply too small, often just two firms,
 to contain a shape the matcher can prove. That is a coverage limitation and we
 would rather record it than paper over it with a weaker claim.
 
-\textbf{Copilot gate.} The release gate checks 26 golden cases against two separate requirements. The first has zero tolerance and applies to the released output: no guilt-attributing language can be released, and a deterministic guard enforces this instead of relying on a prompt. The second requires a grounding score of $0.9$, meaning every number quoted by the assistant must appear in the rows it actually read. The gate passes. Grounding is 24 of 26 cases ($0.923$; Wilson 95\% CI $[0.759, 0.979]$); released guilt violations are at zero, while draft rewrites have 1 of 26 cases against a $10\%$ ceiling. The interval is wide: with 26 cases, its lower bound sits below the $0.9$ threshold, so the gate cannot show that grounding exceeds it.
+\textbf{Copilot gate.} The release gate checks 26 golden cases against two separate requirements. The first has zero tolerance and applies to the released output: no guilt-attributing language can be released, and a deterministic guard enforces this instead of relying on a prompt. The second requires a grounding score of $0.9$, meaning every number quoted by the assistant must appear in the rows it actually read. The gate passes. Grounding is 24 of 26 cases ($0.923$; Wilson 95\% CI~\cite{wilson1927} $[0.759, 0.979]$); released guilt violations are at zero, while draft rewrites have 1 of 26 cases against a $10\%$ ceiling. The interval is wide: with 26 cases, its lower bound sits below the $0.9$ threshold, so the gate cannot show that grounding exceeds it.
 
 We report the two grounding misses instead of hiding them through rounding because they aren't random. Both are the newest cases in the set, and both use the tool we added most recently, the injection-study reader. One quoted a recall figure that was not present in the rows it had retrieved; the other left out an expected motif name from an answer that was otherwise well grounded. Growing the golden set from 24 to 26 left the older cases untouched but exposed problems in the new ones. For a bounded agent whose tool surface has just been expanded, this is a useful failure to find. It also shows why the golden set should be extended whenever a new tool is added instead of relying on a previously perfect score.
 
@@ -1053,7 +1079,8 @@ configuration that does not exist. The other keeps the full map in the
 repository documentation in step with the configuration directory in both
 directions.
 Alongside it go pinned dependencies and a Python version, per-dataset checksum
-manifests recording licences, five datasheets, a model card, and every table
+manifests recording licences, five datasheets~\cite{gebru2021}, a model
+card~\cite{mitchell2019}, and every table
 here as a regeneration target. We verified byte-level cross-machine
 reproducibility for the tree baselines, the leave-one-country-out fold and the
 leave-one-market-out matrix. With the stored encoder weights, the
@@ -1329,37 +1356,66 @@ modified data is redistributed.
 \balance
 
 \begin{thebibliography}{00}
-\bibitem{ma2023} X. Ma \emph{et al.}, ``A comprehensive survey on graph anomaly detection with deep learning,'' \emph{IEEE Trans. Knowl. Data Eng.}, vol.~35, no.~12, pp.~12012--12038, 2023.
-\bibitem{gadbench} J. Tang, F. Hua, Z. Gao, P. Zhao, and J. Li, ``GADBench: Revisiting and benchmarking supervised graph anomaly detection,'' in \emph{Adv. Neural Inf. Process. Syst.}, vol.~36, 2023, pp.~29628--29653.
-\bibitem{motie2024} S. Motie and B. Raahemi, ``Financial fraud detection using graph neural networks: A systematic review,'' \emph{Expert Syst. Appl.}, 2024.
-\bibitem{lawal2025} O. Lawal, A. Okolie, and C. Obunadike, ``An explainable graph neural network framework for anti-money laundering in cryptocurrency transactions using the Elliptic dataset,'' \emph{Int. J. Netw. Secur. Appl.}, vol.~17, no.~5/6, 2025.
-\bibitem{linemv2025} C.-H. Poon, J. Kwok, C. Chow, and J.-H. Choi, ``LineMVGNN: Anti-money laundering with line-graph-assisted multi-view graph neural networks,'' \emph{AI}, vol.~6, no.~4, art.~69, 2025, doi:10.3390/ai6040069.
-\bibitem{lin2026} Y. Lin \emph{et al.}, ``Detecting illicit transactions in Bitcoin: A wavelet-temporal graph transformer approach for anti-money laundering,'' \emph{Sci. Rep.}, vol.~16, art.~1548, 2026, doi:10.1038/s41598-025-23901-3.
-\bibitem{multignn} E. Altman \emph{et al.}, ``Realistic synthetic financial transactions for anti-money laundering models,'' in \emph{NeurIPS}, 2023, arXiv:2306.16424.
-\bibitem{elliptic} Y. Elmougy and L. Liu, ``Elliptic++: A new financial dataset for graph anomaly detection,'' arXiv:2306.06108, 2023.
-\bibitem{weber2019} M. Weber \emph{et al.}, ``Anti-money laundering in Bitcoin: Experimenting with graph convolutional networks for financial forensics,'' in \emph{KDD Workshop on Anomaly Detection in Finance}, 2019.
-\bibitem{garcia2022} M. J. Garc\'ia Rodr\'iguez, V. Rodr\'iguez-Montequ\'in, P. Ballesteros-P\'erez, P. E. D. Love, and R. Signor, ``Collusion detection in public procurement auctions with machine learning algorithms,'' \emph{Autom. Constr.}, vol.~133, art.~104047, 2022.
-\bibitem{mendeley2025} ``Public procurement cartels: A large-sample testing of screens using machine learning,'' \emph{Int. J. Ind. Organ.}, 2025. Dataset: Mendeley Data f3y4nrn3s6/2.
-\bibitem{imhof2025} D. Imhof, E. W. Viklund, and M. Huber, ``Catching bid-rigging cartels with graph attention neural networks,'' arXiv:2507.12369, 2025.
-\bibitem{gomes2024} L. Gomes, J. Kueck, M. Mattes, M. Spindler, and A. Zaytsev, ``Collusion detection with graph neural networks,'' arXiv:2410.07091, 2024.
-\bibitem{epjds2025} ``Detection of fraud in public procurement using data-driven methods: A systematic mapping study,'' \emph{EPJ Data Sci.}, 2025.
-\bibitem{pgexplainer} D. Luo \emph{et al.}, ``Parameterized explainer for graph neural network,'' in \emph{NeurIPS}, 2020.
-\bibitem{gnnexplainer} R. Ying \emph{et al.}, ``GNNExplainer: Generating explanations for graph neural networks,'' in \emph{NeurIPS}, 2019.
-\bibitem{leiden} V. A. Traag, L. Waltman, and N. J. van Eck, ``From Louvain to Leiden: Guaranteeing well-connected communities,'' \emph{Sci. Rep.}, vol.~9, art.~5233, 2019.
-\bibitem{gatv2} S. Brody, U. Alon, and E. Yahav, ``How attentive are graph attention networks?'' in \emph{ICLR}, 2022.
-\bibitem{sage} W. Hamilton, Z. Ying, and J. Leskovec, ``Inductive representation learning on large graphs,'' in \emph{NeurIPS}, 2017.
-\bibitem{rgcn} M. Schlichtkrull \emph{et al.}, ``Modeling relational data with graph convolutional networks,'' in \emph{ESWC}, 2018.
-\bibitem{focal} T.-Y. Lin \emph{et al.}, ``Focal loss for dense object detection,'' in \emph{ICCV}, 2017.
-\bibitem{lannoo2021} K. Lannoo and R. Parlour, ``Anti-money laundering in the EU: Time to get serious,'' CEPS-ECRI Task Force Report, Centre for European Policy Studies, Brussels, Jan. 2021.
-\bibitem{saito2015} T. Saito and M. Rehmsmeier, ``The precision-recall plot is more informative than the ROC plot when evaluating binary classifiers on imbalanced datasets,'' \emph{PLoS ONE}, vol.~10, no.~3, 2015.
-\bibitem{dominant} K. Ding \emph{et al.}, ``Deep anomaly detection on attributed networks,'' in \emph{SDM}, 2019.
+\bibitem{lannoo2021} K. Lannoo and R. Parlour, ``Anti-money laundering in the EU: Time to get serious,'' CEPS-ECRI Task Force Report, Centre for European Policy Studies, Brussels, Belgium, Jan. 2021.
 \bibitem{oecd2025} OECD, \emph{OECD Guidelines for Fighting Bid Rigging in Public Procurement (2025 Update)}. Paris, France: OECD Publishing, 2025, doi:10.1787/cbe05a56-en.
-\bibitem{oecdgaag2025} OECD, \emph{Government at a Glance 2025}. Paris, France: OECD Publishing, 2025, doi:10.1787/0efd0bcd-en.
 \bibitem{aiact} ``Regulation (EU) 2024/1689 of the European Parliament and of the Council of 13 June 2024 laying down harmonised rules on artificial intelligence (Artificial Intelligence Act),'' \emph{Official Journal of the European Union}, L series, 12 Jul. 2024.
 \bibitem{omnibus} ``Regulation (EU) 2026/1744 of the European Parliament and of the Council of 8 July 2026 amending Regulations (EU) 2024/1689, (EU) 2018/1139 and (EU) 2023/1230 as regards the simplification of the implementation of harmonised rules on artificial intelligence (Digital Omnibus on AI),'' \emph{Official Journal of the European Union}, L series, 24 Jul. 2026.
 \bibitem{eccguidance} European Commission, ``Draft Commission guidelines on the classification of high-risk AI systems,'' draft for targeted stakeholder consultation, 19 May 2026 (consultation closed 23 Jul. 2026; not binding). [Online]. Available: \url{https://digital-strategy.ec.europa.eu/en/library/draft-commission-guidelines-classification-high-risk-ai-systems}
+\bibitem{ma2023} X. Ma, J. Wu, S. Xue, J. Yang, C. Zhou, Q. Z. Sheng, H. Xiong, and L. Akoglu, ``A comprehensive survey on graph anomaly detection with deep learning,'' \emph{IEEE Trans. Knowl. Data Eng.}, vol.~35, no.~12, pp.~12012--12038, 2023, doi:10.1109/TKDE.2021.3118815.
+\bibitem{gadbench} J. Tang, F. Hua, Z. Gao, P. Zhao, and J. Li, ``GADBench: Revisiting and benchmarking supervised graph anomaly detection,'' in \emph{Adv. Neural Inf. Process. Syst.}, vol.~36, 2023, pp.~29628--29653, doi:10.52202/075280-1289.
+\bibitem{liu2022bond} K. Liu \emph{et al.}, ``BOND: Benchmarking unsupervised outlier node detection on static attributed graphs,'' in \emph{Adv. Neural Inf. Process. Syst.}, vol.~35, 2022, pp.~27021--27035, doi:10.52202/068431-1959.
+\bibitem{motie2024} S. Motie and B. Raahemi, ``Financial fraud detection using graph neural networks: A systematic review,'' \emph{Expert Syst. Appl.}, vol.~240, art.~122156, 2024, doi:10.1016/j.eswa.2023.122156.
+\bibitem{linemv2025} C.-H. Poon, J. Kwok, C. Chow, and J.-H. Choi, ``LineMVGNN: Anti-money laundering with line-graph-assisted multi-view graph neural networks,'' \emph{AI}, vol.~6, no.~4, art.~69, 2025, doi:10.3390/ai6040069.
+\bibitem{weber2019} M. Weber, G. Domeniconi, J. Chen, D. K. I. Weidele, C. Bellei, T. Robinson, and C. E. Leiserson, ``Anti-money laundering in Bitcoin: Experimenting with graph convolutional networks for financial forensics,'' presented at the KDD Workshop on Anomaly Detection in Finance, Anchorage, AK, USA, 2019, arXiv:1908.02591.
+\bibitem{cardoso2022} M. Cardoso, P. Saleiro, and P. Bizarro, ``LaundroGraph: Self-supervised graph representation learning for anti-money laundering,'' in \emph{Proc. 3rd ACM Int. Conf. AI in Finance (ICAIF)}, 2022, pp.~130--138, doi:10.1145/3533271.3561727.
+\bibitem{egressy2024} B. Egressy, L. von Niederh\"ausern, J. Blanu\v{s}a, E. Altman, R. Wattenhofer, and K. Atasu, ``Provably powerful graph neural networks for directed multigraphs,'' in \emph{Proc. AAAI Conf. Artif. Intell.}, vol.~38, no.~10, 2024, pp.~11838--11846, doi:10.1609/aaai.v38i10.29069.
+\bibitem{lin2026} Z. Lin \emph{et al.}, ``Detecting illicit transactions in Bitcoin: A wavelet-temporal graph transformer approach for anti-money laundering,'' \emph{Sci. Rep.}, vol.~16, art.~1548, 2026, doi:10.1038/s41598-025-23901-3.
+\bibitem{imhof2018} D. Imhof, Y. Karag\"ok, and S. Rutz, ``Screening for bid rigging---Does it work?'' \emph{J. Competition Law Econ.}, vol.~14, no.~2, pp.~235--261, 2018, doi:10.1093/joclec/nhy006.
+\bibitem{huber2019} M. Huber and D. Imhof, ``Machine learning with screens for detecting bid-rigging cartels,'' \emph{Int. J. Ind. Organ.}, vol.~65, pp.~277--301, 2019, doi:10.1016/j.ijindorg.2019.04.002.
+\bibitem{conley2016} T. G. Conley and F. Decarolis, ``Detecting bidders groups in collusive auctions,'' \emph{Amer. Econ. J.: Microecon.}, vol.~8, no.~2, pp.~1--38, 2016, doi:10.1257/mic.20130254.
+\bibitem{fazekas2020} M. Fazekas and G. Kocsis, ``Uncovering high-level corruption: Cross-national objective corruption risk indicators using public procurement data,'' \emph{Brit. J. Political Sci.}, vol.~50, no.~1, pp.~155--164, 2020, doi:10.1017/S0007123417000461.
+\bibitem{wachs2021} J. Wachs, M. Fazekas, and J. Kert\'esz, ``Corruption risk in contracting markets: A network science perspective,'' \emph{Int. J. Data Sci. Anal.}, vol.~12, no.~1, pp.~45--60, 2021, doi:10.1007/s41060-019-00204-1.
+\bibitem{garcia2022} M. J. Garc\'ia Rodr\'iguez, V. Rodr\'iguez-Montequ\'in, P. Ballesteros-P\'erez, P. E. D. Love, and R. Signor, ``Collusion detection in public procurement auctions with machine learning algorithms,'' \emph{Autom. Constr.}, vol.~133, art.~104047, 2022, doi:10.1016/j.autcon.2021.104047.
+\bibitem{mendeley2025} M. Fazekas, B. T\'oth, J. Wachs, and A. Abdou, ``Public procurement cartels: A large-sample testing of screens using machine learning,'' \emph{Int. J. Ind. Organ.}, vol.~104, art.~103228, 2026, doi:10.1016/j.ijindorg.2025.103228.
+\bibitem{imhof2025} D. Imhof, E. W. Viklund, and M. Huber, ``Catching bid-rigging cartels with graph attention neural networks,'' arXiv:2507.12369, 2025.
+\bibitem{gomes2024} L. Gomes, J. Kueck, M. Mattes, M. Spindler, and A. Zaytsev, ``Collusion detection with graph neural networks,'' arXiv:2410.07091, 2024.
+\bibitem{epjds2025} E. Schneider dos Santos, M. Machado dos Santos, M. Castro, and J. Tyska Carvalho, ``Detection of fraud in public procurement using data-driven methods: A systematic mapping study,'' \emph{EPJ Data Sci.}, vol.~14, art.~52, 2025, doi:10.1140/epjds/s13688-025-00569-3.
+\bibitem{kaufman2012} S. Kaufman, S. Rosset, C. Perlich, and O. Stitelman, ``Leakage in data mining: Formulation, detection, and avoidance,'' \emph{ACM Trans. Knowl. Discov. Data}, vol.~6, no.~4, pp.~1--21, 2012, doi:10.1145/2382577.2382579.
+\bibitem{kapoor2023} S. Kapoor and A. Narayanan, ``Leakage and the reproducibility crisis in machine-learning-based science,'' \emph{Patterns}, vol.~4, no.~9, art.~100804, 2023, doi:10.1016/j.patter.2023.100804.
+\bibitem{shchur2018} O. Shchur, M. Mumme, A. Bojchevski, and S. G\"unnemann, ``Pitfalls of graph neural network evaluation,'' arXiv:1811.05868, 2018.
+\bibitem{liu2025gfm} J. Liu \emph{et al.}, ``Graph foundation models: Concepts, opportunities and challenges,'' \emph{IEEE Trans. Pattern Anal. Mach. Intell.}, vol.~47, no.~6, pp.~5023--5044, 2025, doi:10.1109/TPAMI.2025.3548729.
+\bibitem{mao2024} H. Mao \emph{et al.}, ``Position: Graph foundation models are already here,'' in \emph{Proc. 41st Int. Conf. Mach. Learn. (ICML)}, PMLR vol.~235, 2024, pp.~34670--34692.
+\bibitem{qiu2020gcc} J. Qiu \emph{et al.}, ``GCC: Graph contrastive coding for graph neural network pre-training,'' in \emph{Proc. 26th ACM SIGKDD Int. Conf. Knowl. Discov. Data Min.}, 2020, pp.~1150--1160, doi:10.1145/3394486.3403168.
+\bibitem{hu2020} W. Hu, B. Liu, J. Gomes, M. Zitnik, P. Liang, V. Pande, and J. Leskovec, ``Strategies for pre-training graph neural networks,'' in \emph{Proc. Int. Conf. Learn. Represent. (ICLR)}, 2020.
+\bibitem{cedro2026} M. Cedro and D. Martens, ``GraphXAIN: Narratives to explain graph neural networks,'' in \emph{Explainable Artificial Intelligence} (Commun. Comput. Inf. Sci.). Cham, Switzerland: Springer, 2026, pp.~91--114, doi:10.1007/978-3-032-08327-2\_5.
+\bibitem{lewis2020} P. Lewis \emph{et al.}, ``Retrieval-augmented generation for knowledge-intensive NLP tasks,'' in \emph{Adv. Neural Inf. Process. Syst.}, vol.~33, 2020.
+\bibitem{ji2023} Z. Ji \emph{et al.}, ``Survey of hallucination in natural language generation,'' \emph{ACM Comput. Surv.}, vol.~55, no.~12, pp.~1--38, 2023, doi:10.1145/3571730.
+\bibitem{elmougy2023} Y. Elmougy and L. Liu, ``Demystifying fraudulent transactions and illicit nodes in the Bitcoin network for financial forensics,'' in \emph{Proc. 29th ACM SIGKDD Conf. Knowl. Discov. Data Min. (KDD)}, 2023, pp.~3979--3990, doi:10.1145/3580305.3599803.
+\bibitem{altman2023} E. Altman, J. Blanu\v{s}a, L. von Niederh\"ausern, B. Egressy, A. Anghel, and K. Atasu, ``Realistic synthetic financial transactions for anti-money laundering models,'' in \emph{Adv. Neural Inf. Process. Syst.}, vol.~36, 2023, pp.~29851--29874, doi:10.52202/075280-1300.
+\bibitem{mendeleydata2025} M. Fazekas, J. Wachs, B. T\'oth, and A. Abdou, ``Public procurement cartels: A large-sample testing of screens using machine learning -- Dataset,'' Mendeley Data, V2, 2025, doi:10.17632/f3y4nrn3s6.2.
+\bibitem{chen2016} T. Chen and C. Guestrin, ``XGBoost: A scalable tree boosting system,'' in \emph{Proc. 22nd ACM SIGKDD Int. Conf. Knowl. Discov. Data Min.}, 2016, pp.~785--794, doi:10.1145/2939672.2939785.
+\bibitem{sage} W. L. Hamilton, Z. Ying, and J. Leskovec, ``Inductive representation learning on large graphs,'' in \emph{Adv. Neural Inf. Process. Syst.}, vol.~30, 2017.
+\bibitem{gatv2} S. Brody, U. Alon, and E. Yahav, ``How attentive are graph attention networks?'' in \emph{Proc. Int. Conf. Learn. Represent. (ICLR)}, 2022.
+\bibitem{rgcn} M. Schlichtkrull, T. N. Kipf, P. Bloem, R. van den Berg, I. Titov, and M. Welling, ``Modeling relational data with graph convolutional networks,'' in \emph{The Semantic Web (ESWC 2018)}, Lecture Notes in Computer Science, vol.~10843. Cham, Switzerland: Springer, 2018, pp.~593--607, doi:10.1007/978-3-319-93417-4\_38.
+\bibitem{focal} T.-Y. Lin, P. Goyal, R. Girshick, K. He, and P. Doll\'ar, ``Focal loss for dense object detection,'' in \emph{Proc. IEEE Int. Conf. Comput. Vis. (ICCV)}, 2017, pp.~2999--3007, doi:10.1109/ICCV.2017.324.
+\bibitem{dominant} K. Ding, J. Li, R. Bhanushali, and H. Liu, ``Deep anomaly detection on attributed networks,'' in \emph{Proc. SIAM Int. Conf. Data Min. (SDM)}, 2019, pp.~594--602, doi:10.1137/1.9781611975673.67.
+\bibitem{kipf2016} T. N. Kipf and M. Welling, ``Variational graph auto-encoders,'' presented at the NIPS Workshop on Bayesian Deep Learning, 2016, arXiv:1611.07308.
+\bibitem{ocds} Open Contracting Partnership, ``Open Contracting Data Standard.'' [Online]. Available: \url{https://standard.open-contracting.org}
+\bibitem{zadrozny2002} B. Zadrozny and C. Elkan, ``Transforming classifier scores into accurate multiclass probability estimates,'' in \emph{Proc. 8th ACM SIGKDD Int. Conf. Knowl. Discov. Data Min.}, 2002, pp.~694--699, doi:10.1145/775047.775151.
+\bibitem{leiden} V. A. Traag, L. Waltman, and N. J. van Eck, ``From Louvain to Leiden: Guaranteeing well-connected communities,'' \emph{Sci. Rep.}, vol.~9, art.~5233, 2019, doi:10.1038/s41598-019-41695-z.
+\bibitem{pgexplainer} D. Luo, W. Cheng, D. Xu, W. Yu, B. Zong, H. Chen, and X. Zhang, ``Parameterized explainer for graph neural network,'' in \emph{Adv. Neural Inf. Process. Syst.}, vol.~33, 2020.
+\bibitem{gnnexplainer} Z. Ying, D. Bourgeois, J. You, M. Zitnik, and J. Leskovec, ``GNNExplainer: Generating explanations for graph neural networks,'' in \emph{Adv. Neural Inf. Process. Syst.}, vol.~32, 2019, pp.~9240--9251.
+\bibitem{saito2015} T. Saito and M. Rehmsmeier, ``The precision-recall plot is more informative than the ROC plot when evaluating binary classifiers on imbalanced datasets,'' \emph{PLoS ONE}, vol.~10, no.~3, art.~e0118432, 2015, doi:10.1371/journal.pone.0118432.
+\bibitem{efron1993} B. Efron and R. J. Tibshirani, \emph{An Introduction to the Bootstrap}. Boston, MA, USA: Springer, 1993, doi:10.1007/978-1-4899-4541-9.
+\bibitem{fey2019} M. Fey and J. E. Lenssen, ``Fast graph representation learning with PyTorch Geometric,'' presented at the ICLR Workshop on Representation Learning on Graphs and Manifolds, 2019, arXiv:1903.02428.
+\bibitem{yuan2023} H. Yuan, H. Yu, S. Gui, and S. Ji, ``Explainability in graph neural networks: A taxonomic survey,'' \emph{IEEE Trans. Pattern Anal. Mach. Intell.}, vol.~45, pp.~5782--5799, 2023, doi:10.1109/TPAMI.2022.3204236.
+\bibitem{agarwal2023} C. Agarwal, O. Queen, H. Lakkaraju, and M. Zitnik, ``Evaluating explainability for graph neural networks,'' \emph{Sci. Data}, vol.~10, art.~144, 2023, doi:10.1038/s41597-023-01974-x.
+\bibitem{jain2019} S. Jain and B. C. Wallace, ``Attention is not explanation,'' in \emph{Proc. Conf. North Amer. Chapter Assoc. Comput. Linguistics (NAACL-HLT)}, 2019, pp.~3543--3556, doi:10.18653/v1/N19-1357.
+\bibitem{wilson1927} E. B. Wilson, ``Probable inference, the law of succession, and statistical inference,'' \emph{J. Amer. Statist. Assoc.}, vol.~22, no.~158, pp.~209--212, 1927, doi:10.1080/01621459.1927.10502953.
 \bibitem{uaefdl2025} United Arab Emirates, ``Federal Decree-Law No.~(6) of 2025 regarding the Central Bank, Regulation of Financial Institutions and Activities, and Insurance Business,'' \emph{Official Gazette} no.~807, 15 Sep. 2025, in force 16 Sep. 2025, Art.~149. English text in the Central Bank of the UAE Rulebook.
-\bibitem{ocds} Open Contracting Partnership, ``Open Contracting Data Standard,'' \url{https://standard.open-contracting.org}.
+\bibitem{oecdgaag2025} OECD, \emph{Government at a Glance 2025}. Paris, France: OECD Publishing, 2025, doi:10.1787/0efd0bcd-en.
+\bibitem{gebru2021} T. Gebru, J. Morgenstern, B. Vecchione, J. Wortman Vaughan, H. Wallach, H. Daum\'e III, and K. Crawford, ``Datasheets for datasets,'' \emph{Commun. ACM}, vol.~64, no.~12, pp.~86--92, 2021, doi:10.1145/3458723.
+\bibitem{mitchell2019} M. Mitchell \emph{et al.}, ``Model cards for model reporting,'' in \emph{Proc. Conf. Fairness, Accountability, and Transparency (FAT*)}, 2019, pp.~220--229, doi:10.1145/3287560.3287596.
 \end{thebibliography}
 
 \end{document}

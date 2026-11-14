@@ -8,7 +8,7 @@ complete laundering ground truth — the only dataset here with known pattern
 types, so it calibrates the motif injector and anchors the held-out-pattern
 transfer study.
 
-**Composition.** 5,078,345 transactions, 515,080 accounts, 5,177 laundering
+**Composition.** 5,078,345 transactions, 515,088 accounts (515,080 distinct account IDs; an account is an ID paired with its bank), 5,177 laundering
 (0.1019%); true amounts, 7 payment formats, 15+ currencies; dates 2022-09-01
 → 2022-09-18. All eight ground-truth pattern types confirmed present (CYCLE,
 GATHER-SCATTER, BIPARTITE, FAN-OUT, SCATTER-GATHER, STACK, RANDOM, FAN-IN).

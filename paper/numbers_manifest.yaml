@@ -144,7 +144,6 @@ numbers:
     items:
       - {id: auc, v: "0.3549", key: node_level.auc_pr}
       - {id: delta, v: "-0.1943", key: node_level.auc_pr, op: sub, b: {file: eval_outputs/elliptic_pp/gnn_gatv2_focal/run.json, key: node_level.auc_pr}}
-      - {id: delta3, v: "-0.194", key: node_level.auc_pr, fmt: "{:.3f}", op: sub, b: {file: eval_outputs/elliptic_pp/gnn_gatv2_focal/run.json, key: node_level.auc_pr}}
       - {id: delta3_abs, v: "0.194", key: node_level.auc_pr, fmt: "{:.3f}", scale: -1, op: sub, b: {file: eval_outputs/elliptic_pp/gnn_gatv2_focal/run.json, key: node_level.auc_pr}}
   - id: multi
     file: eval_outputs/elliptic_pp/gnn_gatv2_focal_multi/run.json

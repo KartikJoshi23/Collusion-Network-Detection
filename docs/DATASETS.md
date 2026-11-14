@@ -68,7 +68,7 @@ counts shared with base).
 
 ### IBM AMLworld HI-Small (notebook 05)
 
-- **5,078,345 transactions, 515,080 accounts, 5,177 laundering (0.1019%, 1 per 980)** —
+- **5,078,345 transactions, 515,088 accounts (515,080 distinct account IDs; an account is an ID paired with its bank), 5,177 laundering (0.1019%, 1 per 980)** —
   matches the Kaggle-metadata statistics; date range 2022-09-01 → 2022-09-18.
 - **All eight ground-truth laundering pattern types confirmed** in the patterns file
   (CYCLE 54, GATHER-SCATTER 51, BIPARTITE 49, FAN-OUT 48, SCATTER-GATHER 44, STACK 43,
