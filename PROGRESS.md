@@ -256,6 +256,29 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-11-14 · **JOURNAL REVISION, step 3.1 + Part A (framing) on branch
+  `paper/journal-revision`.** Follows `revision-plan.md` (19 brief items) and
+  logs each item in `paper/revision-changelog.md`. *Setup:* the co-author-edited
+  manuscript is now the tracked `paper/collusiongraph_paper.tex` (same numbers
+  as the old draft). Master's `eval_outputs/` is moved into place: 182 of the
+  184 paper numbers match it exactly, and the two that do not are the
+  Appendix A injection entry. All five datasets are downloaded and
+  checksum-verified, and all six ingests match the ledger counts.
+  *Part A:* Section I now opens with the problem. The AI Act appears as a
+  design standard, and the 5(b) claim is gone. RQ labels now match the
+  sections that answer them. Section VII is cut to two sentences of future
+  work, and the number-free overclaims are rewritten. Numbers that wait for a
+  run carry a red `\PENDING{}` marker, and the final audit fails while any
+  marker remains.
+  *Found while checking sources:* the primary source for the false-positive
+  rate says 95–98%, not 90–95% (CEPS 2021). Neither OECD figure is in the 2025
+  Guidelines: the procurement share is now 12.7%, from OECD *Government at a
+  Glance 2025*, p. 146, and the 20% figure was removed as untraceable.
+  *Found in the artifacts (not in the brief):* the stored financial and
+  procurement queues were rebuilt by `scripts/build_demo_artifacts.py` from
+  the `gatv2_multi` and `sage_struct` models, not the configs the paper
+  names. The queues are rebuilt from the named configs in step R6.
+  · [revision laptop, i5-11300H]
 - 2026-08-19 · **DEEP AUDIT OF THE PAPER — 72 numbers re-verified against
   artifacts (0 mismatches) and SIX real defects found and fixed.** The user
   asked for a rigorous fact-check. Numbers were clean; the errors were in
