@@ -191,7 +191,7 @@ numbers:
     file: eval_outputs/mendeley_eu/alert_queue/metrics.json
     fmt: "{:.2f}"
     items:
-      - {id: p4, v: "0.50", key: "alert_level.queue.@4.precision"}
+      - {id: p18, v: "0.33", key: "alert_level.queue.@18.precision"}
   - id: procurement_hit_rule
     v: "0.33"
     fmt: "{:.2f}"

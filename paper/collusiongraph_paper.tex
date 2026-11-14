@@ -248,7 +248,7 @@ Section~\ref{sec:prevalence} for which denominator each evaluation uses.}
 Dataset & Domain & Scale & Positives & Role & Licence \\
 \midrule
 Elliptic++ (tx graph)~\cite{elliptic,weber2019} & Financial & 203,769 nodes, 234,355 edges, 49 steps & $\approx$2\% illicit & \textsc{anchor} & research use \\
-Elliptic++ (actor graph)~\cite{elliptic} & Financial & 292,102 test nodes, 966,352 edges & 5.3\% prevalence & granularity & research use \\
+Elliptic++ (actor graph)~\cite{elliptic} & Financial & test window: 292,102 wallets, 966,352 edges & 5.3\% (test window) & granularity & research use \\
 IBM AMLworld HI-Small & Financial & 5,078,345 tx, 515,080 accounts & 0.102\% laundering & \textsc{scale} & CDLA-Sharing-1.0 \\
 Mendeley EU cartel & Procurement & 15,616 contracts, 7 countries, 2004--21 & 41.9\% (case-control) & \textsc{anchor} & CC BY-NC 3.0 \\
 Garc\'ia Rodr\'iguez et al. & Procurement & 64,348 bids, 9,781 tenders, 6 markets & 11.3--81.8\% by market & transfer & CC BY-NC-ND 4.0 \\
@@ -393,6 +393,7 @@ Each rule below changed a headline number at some point while we were building t
 \item \textbf{Strict inductive splits.} Test nodes and their edges stay unseen during training. Temporal splits fence the boundary; entity splits (LOCO, LOMO) hold out whole countries or markets.
 \item \textbf{Frozen train-time normalisation.} We compute feature statistics on training and freeze them. Recomputation on the test set leads to unintentional test-time adaptation, and removing it pulled our own headline GATv2 number down from
 $0.693$ to $0.532$, making the gap to the tree baseline larger. Every figure we report is after the fix.
+\PENDING{D24: replace with the five-seed per-graph normalisation measurement}
 \item \textbf{Budget-first, tie-aware metrics.} Precision@$k$ at budgets a real team would use, with ties handled carefully, along with AUC-PR, which is the right summary under this level of class imbalance~\cite{saito2015} and is always quoted against its own fold’s prevalence baseline.
 \item \textbf{Multi-seed with dispersion.} Five seeds, reported as mean~$\pm$~standard deviation. The seed variance is about $\pm 0.05$ , which is much higher than the cross-machine variance of about $\pm 0.02$, . This means that comparing two machines using only one seed would not give us a reliable comparison. Our own previously published seed-0 GATv2 figure of $0.5492$ happens to be the best of the five. The more reliable number is $0.4729 \pm 0.0525$, and that is the one we quote.
 \item \textbf{Paired stratified bootstrap} over identical confirmed test nodes
@@ -589,13 +590,15 @@ the difference shows up in the numbers. On the Elliptic++ actor graph, R-GCN
 reaches $0.2473$ AUC-PR against a prevalence of $0.053$, a lift of $4.7\times$,
 and the head of its ranking is remarkably dependable: precision@100 of $0.98$,
 stable across seeds. Roll those node scores up into review groups, though, and
-the queue falls apart. The 2,514 actor alerts give precision@50 of $0.08$.
+the queue falls apart. The 2,514 actor alerts from the seed-0 model give
+precision@50 of $0.08$.
 
-The transaction-level queue runs the other way. Its 318 communities condense
-into 254 alerts at precision@50 of $0.32$, precision@100 of $0.25$ and
-precision@200 of $0.135$, a triage list an analyst could work, covering 7.9\% of
-the illicit population in its top 50. Procurement yields 223 alerts from 1,283
-communities at precision@4 of $0.50$.
+The transaction-level queue, built from the seed-0 calibrated ensemble, runs
+the other way. Its 318 communities condense into 254 alerts at precision@50 of
+$0.32$, precision@100 of $0.25$ and precision@200 of $0.135$, a triage list an
+analyst could work, covering 7.9\% of the illicit population in its top 50.
+Procurement, built from the seed-0 R-GCN, yields 223 alerts from 1,283
+communities at precision@18 of $0.33$.
 
 The lesson for practice is that node-level ranking quality and queue-level
 precision are not substitutes for one another. Reporting only the first does not show whether the model is useful for real-world triage. We report both.
@@ -1037,10 +1040,15 @@ outside that envelope.
 \label{sec:reproducibility}
 % =====================================================================
 
-One YAML file equals one experiment, and no number in this paper exists without
-a committed config behind it. The release carries a number-to-config map guarded
-against drift, in the sense that a repository test fails continuous integration
-should the map and the config directory ever disagree in either direction.
+One YAML file equals one experiment, and every experimental result in this
+paper traces to a committed config. The one exception is the machine-class
+difference quoted below, which comes from the project ledger. A number manifest
+records the artifact behind each printed value, and an audit script checks
+every value against it. Two repository tests guard the number-to-config map.
+One fails continuous integration if Appendix~\ref{app:repro} names a
+configuration that does not exist. The other keeps the full map in the
+repository documentation in step with the configuration directory in both
+directions.
 Alongside it go pinned dependencies and a Python version, per-dataset checksum
 manifests recording licences, five datasheets, a model card, and every table
 here as a regeneration target. We verified byte-level cross-machine
@@ -1054,7 +1062,7 @@ class reproduced the seed-0 GATv2 run bit for bit; one of another class
 differed by about $0.02$. Seed variance of about $\pm 0.05$ swamps that
 difference. A dedicated suite enforces the leakage
 guarantees and runs as its own continuous-integration step. The full suite comes
-to 391 tests.
+to 425 tests.
 
 % =====================================================================
 \section{Conclusion}
@@ -1100,9 +1108,10 @@ completed before submission.]
 \label{app:repro}
 
 Table~\ref{tab:repro} ties every headline number in this paper to the one
-committed configuration that produces it. Should this map and the configuration
-directory ever disagree in either direction, a repository hygiene test fails
-continuous integration, so the mapping cannot rot in silence. Run any row as
+committed configuration that produces it. A repository hygiene test fails
+continuous integration if the table names a configuration that does not exist,
+and a second test keeps the repository's full map in step with the
+configuration directory in both directions. Run any row as
 \texttt{collusiongraph <verb> -c configs/experiment/<config>}. Outputs land in a
 gitignored results directory and are never committed.
 

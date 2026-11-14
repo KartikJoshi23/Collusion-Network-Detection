@@ -35,12 +35,12 @@ auto-dispatches on config shape). Outputs land in the gitignored
 
 | Config (`configs/experiment/`) | Produces |
 |---|---|
-| `baselines_elliptic_pp.yaml` | B1 0.0576 / B2 0.8076 / B3 0.8104 AUC-PR (trees byte-reproduce cross-machine) |
-| `baselines_amlworld.yaml` | AMLworld HI-Small tree baselines at 5M-edge scale (added 2026-07-25 to settle whether this machine can train on it at all — it can, in 52 s on CPU). **Honest negative: B2 0.0064 / B3 0.0062 against prevalence 0.0104 — below chance.** Diagnosed: AMLworld's ground truth is edge-level, and a node-first-seen split leaves test accounts with median degree 3 vs 13 in train, so there is almost no structure to score. B1 omitted (no agreed rule thresholds) |
+| `baselines_elliptic_pp.yaml` | B1 0.0576 / B2 0.8076 / B3 0.8104 AUC-PR, deterministic trees (byte-reproduce cross-machine); the paper now quotes B1 from here and B2/B3 from `baselines_elliptic_pp_multiseed.yaml` |
+| `baselines_amlworld.yaml` | AMLworld HI-Small tree baselines at 5M-edge scale (added 2026-07-25 to settle whether this machine can train on it at all — it can, in 52 s on CPU). **Honest negative: B2 0.0063 / B3 0.0062 against prevalence 0.0103 — below chance** (with the post-window fence set in the 2026-11 revision; before it, 0.0064 / 0.0062 against 0.0104). Diagnosed in `diagnose_below_chance.yaml`: the node-first-seen cut falls one hour into the data, and in that hour the money-flow features carry almost no label signal (ROC-AUC 0.49–0.54, against up to 0.74 over the full window). B1 omitted (no agreed rule thresholds) |
 | `injection_recovery_amlworld.yaml` | AMLworld in its DESIGNED role (§4.3 D2, "validating that the detector recovers known injected patterns") — five financial motif families planted into the real 5M-edge graph, no labels needed, giving the RQ2 finding a financial counterpart to the OCDS procurement study |
 | `gnn_elliptic_pp_gatv2_focal.yaml` | headline GATv2-focal single-seed run (seed-0 0.5492 on the master class) |
 | `gnn_elliptic_pp_gatv2_focal_multiseed.yaml` | the paper number: **0.4729 ± 0.0525** (5 seeds) |
-| `gnn_elliptic_pp_gatv2_wce.yaml` / `gnn_elliptic_pp_gatv2_wce_multiseed.yaml` | −focal ablation: 0.4869 seed-0; **0.4435 ± 0.0615** — second-order |
+| `gnn_elliptic_pp_gatv2_wce.yaml` / `gnn_elliptic_pp_gatv2_wce_multiseed.yaml` | −focal ablation: 0.4869 seed-0; **0.4388 ± 0.0505** (master; laptop-B measured 0.4435 ± 0.0615) — second-order |
 | `gnn_elliptic_pp_sage_focal.yaml` / `gnn_elliptic_pp_sage_wce.yaml` | SAGE loss pair: 0.4743 vs 0.3882 (focal decisive on SAGE) |
 | `gnn_elliptic_pp_gatv2_focal_unidir.yaml` | −bidirectional edges: 0.3549 (the strongest component ablation) |
 | `gnn_elliptic_pp_gatv2_focal_multi.yaml` | raw+structural channels: 0.3781 (added channels hurt) |
@@ -58,21 +58,25 @@ auto-dispatches on config shape). Outputs land in the gitignored
 | `sensitivity_elliptic_pp.yaml` | NMS/hit-rule grid (queue protocol-robust) |
 | `label_noise_elliptic_pp.yaml` | the noise curve: clean 0.4827 ± 0.0616 → 20% 0.5978 ± 0.0248 (val-blindness diagnostic) |
 
-Paired-bootstrap significance rows (calibrated-vs-rank Δ +0.471 CI
-[0.440, 0.499]; GATv2-vs-B3 Δ −0.261 CI [−0.285, −0.235]) regenerate via
+Paired-bootstrap significance rows of the first version (calibrated-vs-rank
+Δ +0.471 CI [0.440, 0.499]; GATv2-vs-B3 Δ −0.261 CI [−0.285, −0.235]; the
+revision's per-seed rows come from `significance_elliptic_pp_multiseed.yaml`)
+regenerate with `uv run collusiongraph eval -c
+configs/experiment/significance_elliptic_pp.yaml`, which runs
 `collusiongraph.eval.significance.compare_score_files` over the stored score
-parquets and are persisted by `scripts/build_demo_artifacts.py`.
+parquets. (Until the revision, no committed config produced them, and the
+demo script only links the stored file.)
 
 ### Mendeley EU (procurement anchor; within-sample prevalence 0.358)
 
 | Config | Produces |
 |---|---|
-| `baselines_mendeley_eu.yaml` | B1 0.3426 / B2 0.3925 / B3 0.3775 / B4 0.3811 |
+| `baselines_mendeley_eu.yaml` | B1 0.3426 / B2 0.3925 / B3 0.3775 / B4 0.3811 (deterministic trees; the paper quotes B2/B3 from `baselines_mendeley_eu_multiseed.yaml`) |
 | `baselines_mendeley_b4_precomputed.yaml` | B4 + dataset screens: 0.3874 (wash-to-negative at the queue head) |
-| `baselines_mendeley_screens_ablation.yaml` | **B2+screens 0.4558 (best firm-level number)**; B3+screens 0.3450 |
+| `baselines_mendeley_screens_ablation.yaml` | B2+screens 0.4558; B3+screens 0.3450 (deterministic; the paper quotes `baselines_mendeley_screens_ablation_multiseed.yaml`) |
 | `gnn_mendeley_rgcn.yaml` / `gnn_mendeley_rgcn_multiseed.yaml` | the honest negative: 0.2731 seed-0; **0.2808 ± 0.0087, seed-stable below prevalence** |
 | `transfer_loco_mendeley.yaml` | single-fold LOCO (country_5: 0.8025…, byte-reproduces cross-machine) |
-| `transfer_loco_matrix_mendeley.yaml` | full 7×5 LOCO matrix: macro lift 1.17, largest market fails (0.90) |
+| `transfer_loco_matrix_mendeley.yaml` | full 7×5 LOCO matrix: macro lift 1.17, largest market fails (0.90); pooled lift in `transfer_pooled_lift.yaml` |
 | `alert_queue_mendeley_eu.yaml` | the published queue: 223 alerts, P@4 0.50 |
 | `explanations_mendeley_eu.yaml` | 20/20 matcher bundles (no learned attribution — R12) |
 | `sensitivity_mendeley_eu.yaml` | protocol-sensitivity grid |
@@ -81,14 +85,14 @@ parquets and are persisted by `scripts/build_demo_artifacts.py`.
 
 | Config | Produces |
 |---|---|
-| `transfer_lomo_matrix_garcia.yaml` | 4×5 LOMO matrix: macro lift 1.57, positive on every market (Italy P@10 1.00) |
+| `transfer_lomo_matrix_garcia.yaml` | 4×5 LOMO matrix: macro lift 1.57, positive on every market (Italy P@10 1.00); pooled lift in `transfer_pooled_lift.yaml` |
 | `alert_queue_garcia_italy.yaml` | dashboard queue over the Italy LOMO fold (market-based `test_group`, precalibrated): 3 alerts, all confirmed cartels |
 | `explanations_garcia_italy.yaml` | 3/3 matcher bundles over that queue — 0 motifs (its communities are 2-firm, too small to contain a shape; honest, not a failure). Added 2026-07-25 by the dashboard audit |
-| `cross_domain_probe_proc2fin.yaml` | frozen-probe proc→fin: 0.1501 vs 0.065 prevalence (byte-reproduces cross-machine) |
-| `cross_domain_probe_fin2proc.yaml` | frozen-probe fin→proc: 0.2843 < 0.358 prevalence (negative) |
+| `cross_domain_probe_proc2fin.yaml` | frozen-probe proc→fin: 0.1502 vs 0.065 prevalence (reproduces exactly with the stored encoder) |
+| `cross_domain_probe_fin2proc.yaml` | frozen-probe fin→proc: 0.2841 on master, 0.2843 on laptop-B and the revision laptop, < 0.358 prevalence (negative) |
 | `label_efficiency_proc2fin.yaml` / `label_efficiency_fin2proc.yaml` | label-efficiency curves: transfer never pays at ≤500 target labels, either direction |
 | `injection_recovery_ocds_georgia.yaml` | at-scale injection, seed 0 (163,327-node window) |
-| `injection_recovery_ocds_georgia_multiseed.yaml` | the paper verdict: coordinated_cluster **0.9275 ± 0.162 @2000**; award-pattern motifs evade |
+| `injection_recovery_ocds_georgia_multiseed.yaml` | the paper verdict: coordinated_cluster **0.9225 ± 0.1733 @2000** (printed 0.92 ± 0.17; laptop-B measured 0.9275 ± 0.162); award-pattern motifs evade |
 
 ### Studies & serving
 

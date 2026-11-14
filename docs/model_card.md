@@ -41,47 +41,61 @@ comparisons.
 
 ## Results (headline, honest)
 
+Values follow the journal revision (branch `paper/journal-revision`); each
+comes from the config named in `docs/reproducibility.md`.
+
 * **Elliptic++ (tx-level, test steps 35–49, prevalence 0.065):** GATv2-focal
-  **0.4729 ± 0.0525** AUC-PR (the published seed-0 0.5492 is the best seed —
-  tables must quote the mean); queue head P@100 0.812 ± 0.238 (seed-unstable).
-  **XGB-Graph baseline 0.8104 (deterministic) sits ~6σ above the GNN mean** —
-  the GADBench finding, replicated and reported, not hidden
-  (seed-0 paired bootstrap: Δ −0.261, 95% CI [−0.285, −0.235], p ≈ 0.001;
-  the multi-seed mean difference is larger still, −0.338).
-* **Actor-level view:** global AUC-PR 0.2473 but queue-head P@100 ≥ 0.98
-  seed-stable — served as a node-triage surface alongside the tx-level queue.
-* **Calibrated fusion 0.4434 ± 0.0501** tracks its strongest member; naive
-  rank fusion collapses to 0.0511 ± 0.0019 (seed-0 paired bootstrap:
-  Δ +0.471, CI [0.440, 0.499]; the multi-seed mean difference is +0.392) —
-  calibrate-before-fusing is a measured requirement, not a preference.
-  Unsupervised members alone score at/below prevalence on Elliptic++
-  (their value is coverage, and they cost −0.030 AUC-PR in the fusion).
-* **Mendeley EU (firm-level, within case-control sample, prevalence 0.358):**
-  R-GCN **0.2808 ± 0.0087 — below prevalence, seed-stable**: an honest
-  negative (era shift + weak award-tier signal). The best firm-level signal is
-  tabular: XGB + the dataset's own screens **0.4558**. Alert queues: Elliptic
-  254 alerts P@50 0.32; Mendeley 223 alerts P@4 0.50 — both NMS-invariant and
-  hit-rule-robust.
-* **Transfer (RQ4):** within-procurement LOCO/LOMO is market-dependent
-  (Mendeley macro lift 1.17 with its largest market failing at 0.90; García
-  lift 1.57, positive on every market). Cross-domain transfer is asymmetric
-  and weak (proc→fin ~2.3× prevalence; fin→proc negative) and **never pays at
-  ≤500 target labels in either direction**.
+  **0.4729 ± 0.0525** AUC-PR over five seeds (the seed-0 0.5492 is the best
+  seed; tables quote the mean); queue head P@100 0.812 ± 0.238
+  (seed-unstable). **XGB-Graph (B3) scores 0.8123 ± 0.0012 over five seeds**
+  (subsample and colsample 0.8), far above the GNN mean: the GADBench
+  finding, replicated and reported. Paired bootstrap per seed pair: Δ −0.264
+  to −0.391, every p at the 0.001 floor (seed-0 paired bootstrap: Δ −0.264,
+  95% CI [−0.288, −0.238]); on seed-averaged scores Δ −0.301
+  [−0.324, −0.276]. The whole gap sits in steps 35–42 (B3 0.926 vs GATv2
+  0.574); after the step-43 market closure both fall close to the base rate
+  (0.057 vs 0.039 against 0.025).
+* **Actor-level view:** seed-0 global AUC-PR 0.2473 with queue-head P@100
+  0.98. A five-seed check is pending (`gnn_elliptic_actor_rgcn_multiseed.yaml`).
+* **Calibrated fusion 0.4434 ± 0.0501** stays below its strongest member;
+  naive rank fusion collapses to 0.0511 ± 0.0019 (seed-0 paired bootstrap:
+  Δ +0.471, CI [0.441, 0.500]; seed-averaged Δ +0.444 [0.413, 0.474]).
+  Calibrate-before-fusing is a measured requirement. Unsupervised members
+  alone score at or below prevalence on Elliptic++ and cost 0.030 AUC-PR in
+  the fusion. Adding B3 to a calibrated fusion does not help either (0.7760 ±
+  0.0014 against 0.8012 ± 0.0034 for B3 trained on steps 1–29).
+* **Mendeley EU (firm-level, within the case-control sample, prevalence
+  0.358):** R-GCN **0.2808 ± 0.0087, below prevalence on every seed.** The
+  diagnosis is a temporal reversal, not a bug: training firms are 87–89%
+  cartel-linked against 36% in test, and the structural features rank licit
+  firms higher before 2011 and cartel firms higher in test. The best
+  firm-level tree is XGB + the dataset's own screens, **0.4547 ± 0.0081**; a
+  linear probe on the award screens reaches 0.4752. Alert queues (seed 0):
+  Elliptic 254 alerts, P@50 0.32; Mendeley 223 alerts, P@18 0.33. Both are
+  NMS-invariant; the hit rule moves financial P@50 by 0.02.
+* **Transfer:** García leave-one-market-out pools to lift 1.36 ± 0.15
+  (size-weighted 1.53; every fold's 95% CI above 1). Mendeley
+  leave-one-country-out pools to 0.93 ± 0.02 (size-weighted 0.99); its largest
+  fold sits at 0.90 [0.87, 0.94]. Cross-domain transfer is asymmetric and
+  weak: the procurement encoder reaches 0.1502 on Elliptic++ (2.3×
+  prevalence), against 0.2991 for a probe on B2's inputs and 0.8039 for B2;
+  financial→procurement reaches 0.2843, below prevalence. Below 1,000 target
+  labels transfer never clearly helps (10 of 12 budgets negative).
 * **Injection at scale (OCDS Georgia, 163k-node window):** structure-only
-  unsupervised arms recover clique-type coordination near-completely at 1.2%
-  budget (coordinated_cluster 0.9275 ± 0.162 @2000; common_control clique
-  firms 100% via the floor) and are blind to award-pattern cartels
-  (rotation / partition / cover-bid ≈ 0–0.24, seed-invariant).
+  unsupervised arms recover coordinated clusters at a 1.2% budget
+  (0.92 ± 0.17 @2000 for the rank ensemble; common control 0.58 ± 0.04 for
+  DOMINANT) and are nearly blind to award-pattern cartels (rotation,
+  partition and cover bid ≤ 0.17 @2000).
 
 ## Ablations (component grid, §7 step 32)
 
 Bidirectional edges are the strongest single component (−0.19 without them);
-unsupervised members cost −0.030 in fusion; the focal-vs-weighted-CE choice is
-**second-order on GATv2** (0.4729 ± 0.0525 vs 0.4435 ± 0.0615, within seed
+unsupervised members cost 0.030 in fusion; the focal-vs-weighted-CE choice is
+**second-order on GATv2** (0.4729 ± 0.0525 vs 0.4388 ± 0.0505, within seed
 noise; decisive on SAGE); screens-as-features is input-dependent (helps the
-tabular learner +0.063, harms the graph-feature learner, wash for the
-unweighted composite); added input channels (context fusion, line-graph)
-measurably hurt under the temporal shift and were not adopted.
+tabular learner by 0.070 over five seeds, harms the graph-feature learner,
+wash for the unweighted composite); added input channels (context fusion,
+line-graph) measurably hurt under the temporal shift and were not adopted.
 
 ## Known limitations
 
