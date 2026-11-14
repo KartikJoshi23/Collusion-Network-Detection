@@ -384,6 +384,8 @@ Found during Phases 1 and 2, proposed for the same pass:
 | D21 | Table I's actor row gives test-window counts and test prevalence | Label them as test-window values | actor queue |
 | D22 | The Section VI sanity sentence mixes two measures | B8 definitions | B8 |
 | D23 | "Calibration … roughly an order of magnitude more than any architectural decision": 0.471 against 0.194 is 2.4× | Drop "order of magnitude"; this is part of the A3 calibration row | significance; ablations |
+| D24 | Found during the revision. III-F says removing test-time re-normalisation moved GATv2 from 0.693 to 0.532. Both figures come from the July ledger, the drop came from a 30-finding fix pass, and the isolating ablation was never run | Add a `normalisation: per_graph` measurement switch to the trainer and run `gnn_elliptic_pp_gatv2_focal_pergraphnorm_multiseed.yaml` (5 seeds); report its result against the 5-seed headline, whatever it is | new run |
+| D25 | Found during the revision. V-B calls the actor head "stable across seeds" and quotes seed-0 AUC-PR 0.2473. The only multi-seed evidence is a three-seed laptop-C run (0.326 ± 0.078) with no committed config or artifact | Run `gnn_elliptic_actor_rgcn_multiseed.yaml` (5 seeds); quote mean ± SD and the P@100 range | new run |
 
 ### 5.3 Part E — reference verification
 

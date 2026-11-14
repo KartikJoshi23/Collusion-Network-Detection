@@ -127,6 +127,8 @@ the run outputs once each run completes; nothing here is typed from memory.
 | `gnn_elliptic_pp_gatv2_focal_valwin_multiseed.yaml` | alternative temporal validation window, steps 32–34 (item B7) |
 | `explainer_metrics_elliptic_pp.yaml` | Fidelity+, Fidelity−, sparsity and arm overlap for three explainers on the rebuilt queue (item B8) |
 | `cross_domain_full_label_comparison.yaml` | full-label comparison of the frozen probe (stored encoders), a structural probe, a probe on B2's inputs, and five-seed B2 (item B6) |
+| `gnn_elliptic_pp_gatv2_focal_pergraphnorm_multiseed.yaml` | measures the test-time re-normalisation effect the paper quotes as 0.693 to 0.532 (item D24; not in the brief) |
+| `gnn_elliptic_actor_rgcn_multiseed.yaml` | actor-graph R-GCN over seeds 0–4, for the "stable across seeds" claim (item D25; not in the brief) |
 
 ## 4. Seeds & determinism (measured, not assumed)
 

@@ -178,8 +178,15 @@ def train_gnn(config: dict[str, Any] | str | Path) -> dict[str, Any]:
     infer_raw, _ = _feature_frame(feature_kind, nodes, edges, None, n_raw)
     if exclude:
         infer_raw = infer_raw.drop(exclude)
+    # journal revision (item D24): "per_graph" refits the z-score on the
+    # inference graph. That is the test-time adaptation the frozen protocol
+    # removed; it exists only to measure the effect, never as a protocol choice
+    normalisation = cfg.get("normalisation", "frozen")
+    if normalisation not in ("frozen", "per_graph"):
+        raise ValueError(f"normalisation must be 'frozen' or 'per_graph', got {normalisation!r}")
+    infer_stats = fit_zscore(infer_raw) if normalisation == "per_graph" else stats
     infer_data = build_graph(
-        nodes, edges, labels, apply_zscore(infer_raw, stats), bidirectional=bidirectional
+        nodes, edges, labels, apply_zscore(infer_raw, infer_stats), bidirectional=bidirectional
     )
 
     prefix = f"{cfg['node_type']}:" if cfg.get("node_type") else ""
@@ -288,6 +295,7 @@ def train_gnn(config: dict[str, Any] | str | Path) -> dict[str, Any]:
         "seed": seed,
         **({} if bidirectional else {"bidirectional": False}),
         **({"exclude_features": exclude} if exclude else {}),
+        **({"normalisation": normalisation} if normalisation != "frozen" else {}),
         **(
             {
                 "label_noise": {

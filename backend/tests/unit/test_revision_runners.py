@@ -644,3 +644,47 @@ class TestFullLabelComparison:
     def test_dispatch(self) -> None:
         cfg = {"full_label_comparison": True, "directions": {}}
         assert select_train_runner(cfg) == "full_label_comparison"
+
+
+class TestNormalisationAblation:
+    """D24: per-graph normalisation is recorded and the default is unchanged."""
+
+    def _cfg(self, store, out, **extra) -> dict:
+        return {
+            "dataset": "toysrc",
+            "store_root": str(store.root),
+            "output_dir": str(out),
+            "seed": 0,
+            "features": "structural",
+            "split": {"loss_end": 2, "train_end": 3, "test_start": 5},
+            "model": {"name": "graphsage", "hidden_dim": 8, "dropout": 0.0},
+            "epochs": 3,
+            "patience": 3,
+            "budgets": [4],
+            **extra,
+        }
+
+    def test_per_graph_is_recorded_and_changes_only_inference(self, tmp_path) -> None:
+        from collusiongraph.training.trainer import train_gnn
+
+        from .test_transfer import financial_store
+
+        store = financial_store(tmp_path)
+        frozen = train_gnn(self._cfg(store, tmp_path / "frozen"))
+        per_graph = train_gnn(self._cfg(store, tmp_path / "pg", normalisation="per_graph"))
+        assert "normalisation" not in frozen
+        assert per_graph["normalisation"] == "per_graph"
+        # training and validation run on the frozen train-graph statistics
+        assert per_graph["best_val_auc_pr"] == frozen["best_val_auc_pr"]
+        val_a = pl.read_parquet(tmp_path / "frozen" / "scores_val.parquet")
+        val_b = pl.read_parquet(tmp_path / "pg" / "scores_val.parquet")
+        assert val_a.equals(val_b)
+
+    def test_unknown_mode_raises(self, tmp_path) -> None:
+        from collusiongraph.training.trainer import train_gnn
+
+        from .test_transfer import financial_store
+
+        store = financial_store(tmp_path)
+        with pytest.raises(ValueError, match="normalisation"):
+            train_gnn(self._cfg(store, tmp_path / "x", normalisation="test_time"))

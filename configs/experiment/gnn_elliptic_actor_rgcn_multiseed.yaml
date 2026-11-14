@@ -1,0 +1,41 @@
+# Journal revision, item D25 (not in the brief). The paper quotes the actor
+# R-GCN from seed 0 (0.2473 AUC-PR) and calls its P@100 of 0.98 "stable across
+# seeds". That stability comes from a three-seed check run on another laptop
+# in July 2026 (ledger: 0.326 +- 0.078 AUC-PR; P@100 0.98 / 1.00 / 1.00) with
+# no committed config and no stored artifact. This config makes it a five-seed
+# run under the committed protocol, identical to gnn_elliptic_actor_rgcn.yaml
+# except for the seeds. The seed_0 run doubles as a reproduction check of the
+# stored single-seed run.
+dataset: elliptic_pp_actor
+store_root: data/interim
+output_dir: eval_outputs/elliptic_pp_actor/gnn_rgcn_focal_multiseed
+multiseed: true
+seeds: [0, 1, 2, 3, 4]
+features: raw
+
+split:
+  loss_end: 29
+  train_end: 34
+  test_start: 35
+
+model:
+  name: rgcn
+  hidden_dim: 64
+  num_layers: 2
+  dropout: 0.3
+
+loss:
+  name: focal
+  gamma: 2.0
+
+lr: 0.005
+weight_decay: 0.0005
+epochs: 120
+patience: 15
+budgets: [50, 100, 200]
+
+per_time_step: true
+
+# wallets span time steps, so their stored roll-up label leaks future
+# activity (the Mendeley-F1 pattern); train on as-of observations instead
+train_label_policy: history_as_of

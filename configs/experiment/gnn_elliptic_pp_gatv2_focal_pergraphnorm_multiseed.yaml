@@ -1,0 +1,40 @@
+# Journal revision, item D24 (not in the brief). The paper says that removing
+# test-time re-normalisation lowered the headline GATv2 number from 0.693 to
+# 0.532. Those two figures come from the July 2026 ledger: the drop came from
+# a fix pass that changed many things at once, and the ablation that would
+# isolate this effect was queued but never run. This config runs it. It is
+# identical to gnn_elliptic_pp_gatv2_focal_multiseed.yaml except that the
+# inference graph is z-scored with its own statistics (normalisation:
+# per_graph), the test-time adaptation the frozen protocol removed. It is a
+# measurement of that effect, not a protocol option.
+dataset: elliptic_pp
+store_root: data/interim
+output_dir: eval_outputs/elliptic_pp/gnn_gatv2_focal_pergraphnorm_multiseed
+multiseed: true
+seeds: [0, 1, 2, 3, 4]
+features: raw
+normalisation: per_graph
+
+split:
+  loss_end: 29
+  train_end: 34
+  test_start: 35
+
+model:
+  name: gatv2
+  hidden_dim: 64
+  num_layers: 2
+  heads: 4
+  dropout: 0.3
+
+loss:
+  name: focal
+  gamma: 2.0
+
+lr: 0.005
+weight_decay: 0.0005
+epochs: 200
+patience: 20
+budgets: [50, 100, 200]
+
+per_time_step: true
