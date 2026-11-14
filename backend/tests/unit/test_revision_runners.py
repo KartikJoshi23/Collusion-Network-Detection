@@ -572,3 +572,75 @@ class TestExcludeFeatures:
         with pytest.raises(ValueError, match="unknown columns"):
             train_gnn(self._cfg(store, tmp_path / "run", exclude_features=["no_such"]))
 
+
+class TestFullLabelComparison:
+    """B6: the stored encoder reproduces the published probe exactly."""
+
+    def test_frozen_probe_matches_the_probe_run(self, tmp_path) -> None:
+        from collusiongraph.training.transfer_run import (
+            run_cross_domain_probe,
+            run_full_label_comparison,
+        )
+
+        from .test_transfer import financial_store
+
+        store = financial_store(tmp_path)
+        source = {
+            "dataset": "toysrc",
+            "store_root": str(store.root),
+            "output_dir": str(tmp_path / "src_run"),
+            "seed": 0,
+            "features": "structural",
+            "split": {"loss_end": 2, "train_end": 3, "test_start": 5},
+            "model": {"name": "graphsage", "hidden_dim": 8, "dropout": 0.0},
+            "epochs": 5,
+            "patience": 5,
+            "budgets": [4],
+        }
+        target = {"dataset": "toysrc", "split": {"train_end": 3, "test_start": 5}}
+        probe = run_cross_domain_probe(
+            {
+                "store_root": str(store.root),
+                "output_dir": str(tmp_path / "probe"),
+                "seed": 0,
+                "budgets": [4],
+                "source": source,
+                "target": target,
+            }
+        )
+        reference = tmp_path / "ref.json"
+        reference.write_text(
+            json.dumps({"baselines": {"b2_xgb": {"auc_pr_mean": 0.5, "auc_pr_std": 0.1}}}),
+            encoding="utf-8",
+        )
+        report = run_full_label_comparison(
+            {
+                "full_label_comparison": True,
+                "store_root": str(store.root),
+                "output_dir": str(tmp_path / "flc"),
+                "seed": 0,
+                "n_boot": 50,
+                "directions": {
+                    "toy": {
+                        "source_run": str(tmp_path / "src_run"),
+                        "target": {**target, "domain": "financial"},
+                        "budgets": [4],
+                        "in_domain_reference": {"path": str(reference), "baseline": "b2_xgb"},
+                    }
+                },
+            }
+        )
+        block = report["directions"]["toy"]
+        assert set(block["comparators"]) == {"frozen_probe", "structural_probe", "b2_inputs_probe"}
+        frozen = block["comparators"]["frozen_probe"]["node_level"]["auc_pr"]
+        assert frozen == probe["node_level"]["auc_pr"]
+        assert set(block["paired"]) == {
+            "frozen_probe_vs_structural_probe",
+            "frozen_probe_vs_b2_inputs_probe",
+        }
+        assert block["in_domain_reference"]["auc_pr_mean"] == 0.5
+        assert (tmp_path / "flc" / "full_label_comparison.json").is_file()
+
+    def test_dispatch(self) -> None:
+        cfg = {"full_label_comparison": True, "directions": {}}
+        assert select_train_runner(cfg) == "full_label_comparison"

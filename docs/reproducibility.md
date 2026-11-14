@@ -126,6 +126,7 @@ the run outputs once each run completes; nothing here is typed from memory.
 | `gnn_elliptic_pp_gatv2_focal_es_multiseed.yaml` | regulariser arm: early-stopping patience 5 (item B7) |
 | `gnn_elliptic_pp_gatv2_focal_valwin_multiseed.yaml` | alternative temporal validation window, steps 32–34 (item B7) |
 | `explainer_metrics_elliptic_pp.yaml` | Fidelity+, Fidelity−, sparsity and arm overlap for three explainers on the rebuilt queue (item B8) |
+| `cross_domain_full_label_comparison.yaml` | full-label comparison of the frozen probe (stored encoders), a structural probe, a probe on B2's inputs, and five-seed B2 (item B6) |
 
 ## 4. Seeds & determinism (measured, not assumed)
 

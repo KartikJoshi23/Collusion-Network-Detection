@@ -1,0 +1,35 @@
+# Revision brief item B6: at full labels, compare the frozen cross-domain probe
+# with models that use the target domain's own inputs. It loads the STORED
+# source encoders (the published probe weights) and never retrains them, so
+# the frozen-probe rows reproduce cross_domain_probe_{fin2proc,proc2fin}.yaml
+# exactly. Comparators per direction: the frozen probe, a probe on the
+# target's own structural template, a probe on B2's inputs, and the stored
+# five-seed B2 XGBoost result. Encoders never ingest raw features: both
+# domains enter through the same structural template, z-scored per graph.
+full_label_comparison: true
+store_root: data/interim
+output_dir: eval_outputs/cross_domain/full_label_comparison
+seed: 0
+n_boot: 2000
+directions:
+  fin2proc:
+    source_run: eval_outputs/elliptic_pp/gnn_sage_structural_src
+    target:
+      dataset: mendeley_eu
+      domain: procurement
+      node_type: firm
+      split: {train_end: 2013, test_start: 2014}
+    budgets: [4, 18, 36]
+    in_domain_reference:
+      path: eval_outputs/mendeley_eu/baselines_multiseed/baselines_multiseed.json
+      baseline: b2_xgb
+  proc2fin:
+    source_run: eval_outputs/mendeley_eu/gnn_sage_structural_src
+    target:
+      dataset: elliptic_pp
+      domain: financial
+      split: {train_end: 34, test_start: 35}
+    budgets: [50, 100, 200]
+    in_domain_reference:
+      path: eval_outputs/elliptic_pp/baselines_multiseed/baselines_multiseed.json
+      baseline: b2_xgb

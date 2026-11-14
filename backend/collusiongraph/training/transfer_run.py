@@ -652,3 +652,187 @@ def run_cross_domain_probe(config: dict[str, Any] | str | Path) -> dict[str, Any
         json.dumps(record, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
     )
     return record
+
+
+def _load_stored_encoder(source_run: Path, in_dim: int) -> tuple[GraphSAGE, dict[str, Any]]:
+    """The frozen source encoder exactly as stored (run.json + model.pt). It is
+    never retrained, so the probe reads the published encoder weights."""
+    record = json.loads((source_run / "run.json").read_text(encoding="utf-8"))
+    if record.get("features", "structural") != "structural":
+        raise ValueError("the stored source encoder must use the shared structural channel")
+    encoder = GraphSAGE(in_dim=in_dim, **_source_encoder_kwargs(record))
+    encoder.load_state_dict(torch.load(source_run / "model.pt", weights_only=True))
+    encoder.eval()
+    return encoder, record
+
+
+def _aligned_matrix(view: pl.DataFrame, ids: list[str], cols: list[str]) -> np.ndarray:
+    """Rows of ``view`` in ``ids`` order; nulls and NaNs become 0 before scaling."""
+    frame = pl.DataFrame({"node_id": pl.Series(ids, dtype=pl.Utf8)}).join(
+        view.select(["node_id", *cols]), on="node_id", how="left"
+    )
+    x = frame.select(cols).cast(pl.Float64).fill_null(0.0).to_numpy()
+    return np.nan_to_num(x, nan=0.0, posinf=0.0, neginf=0.0)
+
+
+def _standardise(x_fit: np.ndarray, x_eval: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """z-score with statistics fit on the training pool only."""
+    mean = x_fit.mean(axis=0)
+    std = x_fit.std(axis=0)
+    std[std == 0] = 1.0
+    return (x_fit - mean) / std, (x_eval - mean) / std
+
+
+def run_full_label_comparison(config: dict[str, Any] | str | Path) -> dict[str, Any]:
+    """Revision brief item B6: the frozen cross-domain probe against
+    target-domain models at full labels, per direction.
+
+    Comparators, all fit on the same target train pool and scored on the same
+    test pool as the published probe:
+
+    * ``frozen_probe``: logistic probe on embeddings from the STORED source
+      encoder (the structural template goes in, never raw features);
+    * ``structural_probe``: logistic probe on the target's own structural
+      template (the label-efficiency comparator at full labels);
+    * ``b2_inputs_probe``: logistic probe on the inputs of B2 (Elliptic's raw
+      columns plus the money-flow pack; Mendeley's award screens), featurised
+      as B2 sees them (train side as of train_end, test side on the full graph);
+    * ``in_domain_reference``: the stored multi-seed B2 XGBoost result.
+
+    Each AUC-PR carries a stratified bootstrap 95% CI, and the frozen probe is
+    compared with each other probe by a paired bootstrap."""
+    from collusiongraph.eval.significance import bootstrap_auc_pr_ci, paired_bootstrap_auc_pr
+
+    from .baseline_run import assemble_features
+
+    cfg = load_config(config)
+    if not cfg.get("full_label_comparison"):
+        raise ValueError("run_full_label_comparison expects full_label_comparison: true")
+    seed: int = cfg.get("seed", 0)
+    n_boot: int = int(cfg.get("n_boot", 2000))
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+    store = GraphStore(cfg.get("store_root", "data/interim"))
+    out_root = Path(cfg["output_dir"])
+
+    report: dict[str, Any] = {
+        "kind": "full_label_comparison",
+        "seed": seed,
+        "n_boot": n_boot,
+        "directions": {},
+    }
+    for name, spec in cfg["directions"].items():
+        target_cfg = dict(spec["target"])
+        dataset: str = target_cfg["dataset"]
+        domain: str = target_cfg["domain"]
+        prefix = f"{target_cfg['node_type']}:" if target_cfg.get("node_type") else ""
+        train_data, infer_data, times, train_end, test_start = _target_graphs(target_cfg, store)
+        source_run = Path(spec["source_run"])
+        in_dim = int(train_data.x.shape[1])
+        encoder, source_record = _load_stored_encoder(source_run, in_dim)
+        with torch.no_grad():
+            emb_tr = encoder.embed(
+                train_data.x, train_data.edge_index, train_data.edge_direction
+            ).numpy()
+            emb_te = encoder.embed(
+                infer_data.x, infer_data.edge_index, infer_data.edge_direction
+            ).numpy()
+
+        idx_tr = _pool_indices(train_data, times, prefix, lo=0, hi=train_end)
+        idx_te = _pool_indices(infer_data, times, prefix, lo=test_start, hi=None)
+        y_tr = train_data.y.numpy()[idx_tr]
+        y_te = infer_data.y.numpy()[idx_te]
+        if y_tr.min() == y_tr.max() or y_te.min() == y_te.max():
+            raise ValueError(f"{name}: probe pools lack both classes — check target split")
+        ids_tr = [train_data.node_ids[i] for i in idx_tr]
+        ids_te = [infer_data.node_ids[i] for i in idx_te]
+
+        nodes = store.read(dataset, "nodes")
+        edges = store.read(dataset, "edges")
+        if (fence := target_cfg["split"].get("fence_after")) is not None:
+            nodes, edges = restrict_as_of(nodes, edges, fence)
+        meta = store.read_meta(dataset)
+        n_raw = int(meta.get("n_features", 0))
+        names = meta.get("feature_names")
+        train_view, groups = assemble_features(
+            domain, nodes, edges, as_of=train_end, n_raw_features=n_raw, feature_names=names
+        )
+        test_view, _ = assemble_features(
+            domain, nodes, edges, as_of=None, n_raw_features=n_raw, feature_names=names
+        )
+        b2_cols = groups["tabular"]
+        b2_tr, b2_te = _standardise(
+            _aligned_matrix(train_view, ids_tr, b2_cols),
+            _aligned_matrix(test_view, ids_te, b2_cols),
+        )
+
+        inputs = {
+            "frozen_probe": (emb_tr[idx_tr], emb_te[idx_te]),
+            "structural_probe": (train_data.x.numpy()[idx_tr], infer_data.x.numpy()[idx_te]),
+            "b2_inputs_probe": (b2_tr, b2_te),
+        }
+        out_dir = out_root / name
+        out_dir.mkdir(parents=True, exist_ok=True)
+        scores: dict[str, np.ndarray] = {}
+        comparators: dict[str, Any] = {}
+        for comp, (x_fit, x_eval) in inputs.items():
+            probe = LogisticRegression(max_iter=5000, class_weight="balanced", random_state=seed)
+            probe.fit(x_fit, y_tr)
+            s = probe.predict_proba(x_eval)[:, 1]
+            scores[comp] = s
+            path = out_dir / f"{comp}.parquet"
+            pl.DataFrame({"node_id": pl.Series(ids_te, dtype=pl.Utf8), "score": s}).write_parquet(
+                path
+            )
+            metrics = run_eval(
+                {
+                    "dataset": dataset,
+                    "store_root": str(store.root),
+                    "budgets": spec["budgets"],
+                    "node_scores": str(path),
+                    "output_dir": str(out_dir / comp),
+                }
+            )
+            comparators[comp] = {
+                "n_input_columns": int(x_fit.shape[1]),
+                "auc_pr_ci": bootstrap_auc_pr_ci(y_te, s, n_boot=n_boot, seed=seed),
+                "node_level": metrics.get("node_level"),
+            }
+        paired = {
+            f"frozen_probe_vs_{comp}": paired_bootstrap_auc_pr(
+                y_te, scores["frozen_probe"], scores[comp], n_boot=n_boot, seed=seed
+            )
+            for comp in ("structural_probe", "b2_inputs_probe")
+        }
+
+        reference: dict[str, Any] | None = None
+        if ref := spec.get("in_domain_reference"):
+            stored = json.loads(Path(ref["path"]).read_text(encoding="utf-8"))
+            block = stored["baselines"][ref["baseline"]]
+            reference = {
+                "path": ref["path"],
+                "baseline": ref["baseline"],
+                "auc_pr_mean": block["auc_pr_mean"],
+                "auc_pr_std": block["auc_pr_std"],
+                "auc_pr_per_seed": block.get("auc_pr_per_seed"),
+            }
+
+        report["directions"][name] = {
+            "direction": f"{source_record['dataset']} -> {dataset}",
+            "source_run": str(source_run),
+            "source_best_val_auc_pr": source_record.get("best_val_auc_pr"),
+            "encoder_in_dim": in_dim,
+            "b2_input_columns": len(b2_cols),
+            "n_probe_train": int(y_tr.size),
+            "n_probe_test": int(y_te.size),
+            "prevalence_baseline": float(y_te.mean()),
+            "comparators": comparators,
+            "paired": paired,
+            "in_domain_reference": reference,
+        }
+
+    out_root.mkdir(parents=True, exist_ok=True)
+    (out_root / "full_label_comparison.json").write_text(
+        json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
+    return report

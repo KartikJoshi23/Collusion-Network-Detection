@@ -43,6 +43,8 @@ def select_train_runner(cfg: dict[str, Any]) -> str:
     """Dispatch a training config on its distinguishing shape (pure, testable)."""
     if cfg.get("supervised_fusion"):
         return "supervised_fusion"
+    if cfg.get("full_label_comparison"):
+        return "full_label_comparison"
     if "baselines" in cfg:
         return "baselines_multiseed" if cfg.get("multiseed") else "baselines"
     if "motifs" in cfg:
@@ -95,6 +97,7 @@ def _cmd_train(args: argparse.Namespace) -> int:
     )
     from collusiongraph.training.transfer_run import (
         run_cross_domain_probe,
+        run_full_label_comparison,
         run_label_efficiency,
         run_loco_matrix,
         run_loco_transfer,
@@ -114,6 +117,7 @@ def _cmd_train(args: argparse.Namespace) -> int:
         "label_noise_curve": run_label_noise,
         "label_efficiency": run_label_efficiency,
         "cross_domain_probe": run_cross_domain_probe,
+        "full_label_comparison": run_full_label_comparison,
     }
     cfg = load_config(args.config)
     kind = select_train_runner(cfg)
