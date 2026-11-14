@@ -92,19 +92,32 @@ graph neural networks (GNN), anomaly detection, anti-money laundering (AML), bid
 Money laundering and bid rigging are screened by two enforcement worlds that
 have never shared a toolchain. Inside banks, anti-money-laundering (AML) teams
 run transaction-monitoring rules that fire on individual records. Most of the
-resulting alerts are false positives: a CEPS task force puts their share at
-often around 95--98\%~\cite[pp.~3, 31]{lannoo2021}. Competition authorities and
+resulting alerts are false positives: a CEPS task force puts their share
+often at around 95--98\%~\cite[pp.~3, 31]{lannoo2021}. Competition authorities and
 procurement officials face the opposite problem. Bid-rigging agreements are
 typically negotiated in secret and are hard to detect~\cite[p.~23]{oecd2025}.
 Detection therefore leans on red flags spotted in tenders and on self-reporting
 through leniency and whistleblower programmes~\cite[pp.~12, 14]{oecd2025}.
 
-Both worlds are much closer than we realize. A single small bank wire transfer does not look suspicious or unusual, but twelve accounts passing the same money around a circle within 72 hours is the laundering process. One bid is technically clean: the tender was advertised, bid arrived, a winner is declared, but five companies that quietly take turns winning contracts, while their losing bids are suspiciously close in price and turn out to share directors and a registered address may indicate a cartel. A single record on its own may look innocent in both cases, but the overall network is not. For both cases, participants keep all the records below the threshold that the rules look for, so the suspicious activity only becomes clear when we look at the overall network. Confirmed cases are quite rare as compared to the large volume of normal activity.
+The two problems are closer than they appear. A single small wire transfer
+looks unremarkable, but twelve accounts passing the same money around a circle
+within 72 hours is a laundering pattern. A single bid can be clean: the tender
+was advertised, the bids arrived and a winner was declared. Yet five firms that
+quietly take turns winning, whose losing bids sit suspiciously close in price
+and who share directors and an address, may form a cartel. In both cases each
+record looks innocent on its own, and the participants keep every record below
+the thresholds the rules check. The scheme shows only in the network of
+dealings. Confirmed cases are also rare against the volume of normal activity.
 
 Fig.~\ref{fig:ledgers} makes the correspondence concrete. Five mechanisms recur
-across the two domains and each collapses to one graph signature. Laundering
+across the two domains, and each collapses to one graph signature. Laundering
 cycles and bid rotation are directed cycles. Smurfing and cover bidding are
-fan-in stars. Layering and market allocation are fan-out stars. Shell-company chains and the shared directorships form dense subgraphs based on common attributes. Pass-through clusters and closely grouped bid prices form tight communities with unusual edge attributes. If this correspondence holds, one model should be able to work with both types of ledgers, which would allow us to measure whether a learned understanding of ``collusion structure'' carries over between them instead of simply assuming that it does.
+fan-in stars. Layering and market allocation are fan-out stars. Shell-company
+chains and shared directorships form dense subgraphs of common attributes.
+Pass-through clusters and closely grouped bid prices form tight communities
+with unusual edge attributes. If the correspondence holds, one model can serve
+both ledgers. We can then measure whether a learned notion of collusion
+structure carries over between them, instead of assuming that it does.
 
 
 \begin{figure*}[t]
@@ -176,22 +189,30 @@ released with the code.
 
 \textbf{Graph anomaly detection and benchmarks.} The survey by Ma et
 al.~\cite{ma2023} supplies the node/edge/subgraph taxonomy we work inside.
-GADBench~\cite{gadbench} is the uncomfortable reference point: over 29 models and ten datasets, tree ensembles with plain neighborhood aggregation match or even outperform graph neural networks designed specifically for the task. BOND~\cite{liu2022bond} benchmarks the unsupervised detectors in the same way. Our \RQ{1} result shows the same pattern on Elliptic++, using a strict evaluation protocol that we think makes the reproduction worth reporting on its own.
+GADBench~\cite{gadbench} is the uncomfortable reference point. Across 29
+models and ten datasets, tree ensembles with plain neighbourhood aggregation
+match or beat graph neural networks designed for the task. BOND~\cite{liu2022bond}
+benchmarks the unsupervised detectors in the same way. Our \RQ{1} result shows
+the same pattern on Elliptic++ under a strict protocol, which makes the
+reproduction worth reporting.
 
 \textbf{AML with graph neural networks.} Motie and Raahemi~\cite{motie2024}
 survey the field. LineMVGNN~\cite{linemv2025} adds a line-graph view to two-way
-message passing so that direction of money flow is preserved. Weber et
-al.\ found that a random forest beat their graph convolutional network on the
-original Elliptic data, and that every method, a random forest included,
-failed after a dark-market shutdown at time step 43~\cite{weber2019}. Our
-\RQ{1} result confirms both findings under a stricter protocol.
+message passing so that direction of money flow is preserved. On the original
+Elliptic data, Weber et al.\ found that a random forest beat their graph
+convolutional network. They also found that every method, the random forest
+included, failed after a dark-market shutdown at time step 43~\cite{weber2019}.
+Our \RQ{1} result confirms both findings under a stricter protocol.
 LaundroGraph learns self-supervised representations of customer--transaction
 graphs for anti-money laundering~\cite{cardoso2022}. Egressy et al.\ add
 reverse message passing, port numbering and ego identifiers to standard
-message passing and report gains of up to 30\% in minority-class F1 on
-anti-money-laundering data~\cite{egressy2024}. Removing the reverse edges from
+message passing. On anti-money-laundering data they report gains of up to
+30\% in minority-class F1~\cite{egressy2024}. Removing the reverse edges from
 our direction-aware graphs costs $0.194$ AUC-PR, the largest single-component
-effect we measured. Near-perfect Elliptic results are best read with the ablation results in the same papers: one wavelet-temporal graph transformer~\cite{lin2026} reports about $0.98$ accuracy while also noting that its wavelet features contribute roughly $0.01$ and are ``not strictly indispensable''.
+effect we measured. Near-perfect Elliptic results are best read with the ablations in the same
+papers. One wavelet-temporal graph transformer reports about $0.98$
+accuracy~\cite{lin2026}. The same paper notes that its wavelet features
+contribute roughly $0.01$ and are ``not strictly indispensable''.
 
 \textbf{Cartel detection.} The screens tradition of coefficient of variation,
 price spread and kurtosis is long established and has been tested on real
@@ -202,24 +223,23 @@ procurement records~\cite{fazekas2020} and network analyses of contracting
 markets~\cite{wachs2021} extend the approach to corruption more broadly. The
 benchmarks that get reused come from Garc\'ia Rodr\'iguez et
 al.~\cite{garcia2022} and the Mendeley EU cartel release~\cite{mendeley2025}. Recent cartel GNN work posts strong
-cross-market numbers. Graph attention networks over tender--firm graphs spanning
-13 markets in seven countries transfer at 80--90\% accuracy, peaking at 91\% on
-an eight-market configuration and settling at 84\% once extended to
-12~\cite{imhof2025}. Relational GCNs with an explicit zero-shot phase attack
+cross-market numbers. Graph attention networks over tender--firm graphs from 13
+markets in seven countries transfer at 80--90\% accuracy~\cite{imhof2025}. They
+peak at 91\% on an eight-market configuration and settle at 84\% once extended
+to 12 markets. Relational GCNs with an explicit zero-shot phase attack
 out-of-distribution generalisation head on~\cite{gomes2024}, and a systematic
 mapping study finds few methods applied in real systems to detect new
-cases~\cite{epjds2025}. We want to
-be careful here: those accuracy figures and our budget-first lift numbers are
-different metrics computed on differently sampled data, so we make no claim to
-beat them. What our matrices contribute is the shape of the degradation. It is
+cases~\cite{epjds2025}. Those
+accuracy figures and our budget-first lift numbers are different metrics on
+differently sampled data, so we make no claim to beat them. What our matrices contribute is the shape of the degradation. It is
 uneven across markets, and on the harder of the two benchmarks the market that
 fails is the biggest one.
 
 \textbf{Evaluation-protocol critiques.} A recurring complaint is that
 machine-learning results, graph results among them, are inflated by
-leakage~\cite{kaufman2012,kapoor2023}, by evaluation on a single fixed
-split~\cite{shchur2018}, and by a mismatch between the unit that gets scored and
-the unit a human reviews. Our
+leakage~\cite{kaufman2012,kapoor2023} and by evaluation on a single fixed
+split~\cite{shchur2018}. A third problem is a mismatch between the unit that
+gets scored and the unit a human reviews. Our
 transaction-versus-actor disagreement in Section~\ref{sec:granularity} measures
 the third of those directly.
 
@@ -245,10 +265,10 @@ reviewer participate without inviting them to defer.
 
 \subsection{Datasets}
 
-Table~\ref{tab:data} lists the five public datasets, in the six graph views our
-six adapters build from them (Elliptic++ supplies both a transaction graph and
-an actor graph, and the disagreement between those two is itself a result; see
-Section~\ref{sec:granularity}). Two views are labelled anchors carrying the
+Table~\ref{tab:data} lists the five public datasets in the six graph views our
+six adapters build from them. Elliptic++ supplies both a transaction graph and
+an actor graph, and the disagreement between the two is itself a result
+(Section~\ref{sec:granularity}). Two views are labelled anchors carrying the
 headline results. The rest supply scale, controllable ground truth, and an
 unlabelled population for injection studies. Every dataset is
 downloaded from its canonical source and verified against a committed
@@ -309,8 +329,8 @@ naive split would produce a spectacular number and a meaningless one.
 \label{sec:prevalence}
 
 Three different denominators circulate in the literature on these datasets.
-Mixing them up is an easy way to make a result look better or worse than it is,
-so we fix the convention here and keep it for the rest of the paper.
+Mixing them up can make a result look better or worse than it is. We
+therefore fix the convention here and keep it for the rest of the paper.
 
 Take Elliptic++ first. About 2\% of all transactions are labelled illicit, but
 77\% carry no label whatsoever. We compute every metric over confirmed nodes
@@ -400,28 +420,28 @@ Section~\ref{sec:robustness} sweeps every parameter in that pipeline.
 
 \subsection{Explanation layer}
 
-For each alert the system returns four things: the minimal responsible subgraph
-from PGExplainer~\cite{pgexplainer}, which we adopted over
-GNNExplainer~\cite{gnnexplainer} after the fidelity ablation in
-Section~\ref{sec:rq3}; the matched motif; the attributes supporting it; and the
-particular FATF or OECD red-flag indicator that the shape corresponds to. If an alert arrives without an explanation, it doesn't count as delivered.
+For each alert the system returns four things. The first is the minimal
+responsible subgraph from PGExplainer~\cite{pgexplainer}, which we adopted over
+GNNExplainer~\cite{gnnexplainer} after the ablation in Section~\ref{sec:rq3}.
+The others are the matched motif, the attributes supporting it, and the FATF or
+OECD red-flag indicator that the shape corresponds to. An alert without an explanation does not count as delivered.
 
 \subsection{Guarded copilot}
 
-A bounded language-model agent answers analyst questions using the published artifacts. It is constrained by design: a SELECT-only allowlist over read-only views, a numeric sanity check that rejects any figure that is not present in the underlying rows, a guilt-language guard, and a disclaimer included in every response. Its release gate is a golden set of 26 cases, graded for grounding and violations in the released output, with zero tolerance for anything that ships and a separate limit for drafted rewrites.
+A bounded language-model agent answers analyst questions using the published artifacts. It is constrained by design. It has a SELECT-only allowlist over read-only views, a numeric check that rejects any figure absent from the rows it read, a guilt-language guard, and a disclaimer on every response. Its release gate is a golden set of 26 cases, graded for grounding and for violations in the released output. Anything that ships has zero tolerance; drafted rewrites have a separate limit.
 
 \subsection{Evaluation protocol}
 \label{sec:protocol}
 
-Each rule below changed a headline number at some point while we were building the system, which is why we treat the protocol as a result in its own way. Appendix~\ref{app:methods} gives every split, feature, rule and hyperparameter.
+Each rule below changed a headline number at some point while we built the system. We therefore treat the protocol as a result in its own right. Appendix~\ref{app:methods} gives every split, feature, rule and hyperparameter.
 
 \begin{itemize}
 \item \textbf{Strict inductive splits.} Test nodes and their edges stay unseen during training. Temporal splits fence the boundary; entity splits (LOCO, LOMO) hold out whole countries or markets.
-\item \textbf{Frozen train-time normalisation.} We compute feature statistics on training and freeze them. Recomputation on the test set leads to unintentional test-time adaptation, and removing it pulled our own headline GATv2 number down from
-$0.693$ to $0.532$, making the gap to the tree baseline larger. Every figure we report is after the fix.
+\item \textbf{Frozen train-time normalisation.} We compute feature statistics on training and freeze them. Recomputing them on the test set is unintentional test-time adaptation. Removing it pulled our own headline GATv2 number down from
+$0.693$ to $0.532$, which widened the gap to the tree baseline. Every figure we report is after the fix.
 \PENDING{D24: replace with the five-seed per-graph normalisation measurement}
-\item \textbf{Budget-first, tie-aware metrics.} Precision@$k$ at budgets a real team would use, with ties handled carefully, along with AUC-PR, which is the right summary under this level of class imbalance~\cite{saito2015} and is always quoted against its own fold’s prevalence baseline.
-\item \textbf{Multi-seed with dispersion.} Five seeds, reported as mean~$\pm$~standard deviation. The seed variance is about $\pm 0.05$ , which is much higher than the cross-machine variance of about $\pm 0.02$, . This means that comparing two machines using only one seed would not give us a reliable comparison. Our own previously published seed-0 GATv2 figure of $0.5492$ happens to be the best of the five. The more reliable number is $0.4729 \pm 0.0525$, and that is the one we quote.
+\item \textbf{Budget-first, tie-aware metrics.} We report tie-aware precision@$k$ at budgets a real team would use. We also report AUC-PR, the right summary under this level of class imbalance~\cite{saito2015}, always against its own fold’s prevalence baseline.
+\item \textbf{Multi-seed with dispersion.} Five seeds, reported as mean~$\pm$~standard deviation. The seed variance, about $\pm 0.05$, is much larger than the cross-machine variance of about $\pm 0.02$, so a single-seed comparison between two machines is unreliable. Our own previously published seed-0 GATv2 figure of $0.5492$ happens to be the best of the five. The more reliable number is $0.4729 \pm 0.0525$, and that is the one we quote.
 \item \textbf{Paired stratified bootstrap}~\cite{efron1993} over identical
 confirmed test nodes
 for every headline comparison, at 2,000 resamples.
@@ -617,14 +637,16 @@ Scoring transactions and scoring actors turn out to be different problems, and
 the difference shows up in the numbers. On the Elliptic++ actor graph, R-GCN
 reaches $0.2473$ AUC-PR against a prevalence of $0.053$, a lift of $4.7\times$,
 and the head of its ranking is remarkably dependable: precision@100 of $0.98$,
-stable across seeds. Roll those node scores up into review groups, though, and
+stable across seeds.
+\PENDING{D25: the five-seed actor run supports or replaces this sentence} Roll those node scores up into review groups, though, and
 the queue falls apart. The 2,514 actor alerts from the seed-0 model give
 precision@50 of $0.08$.
 
 The transaction-level queue, built from the seed-0 calibrated ensemble, runs
 the other way. Its 318 communities condense into 254 alerts at precision@50 of
-$0.32$, precision@100 of $0.25$ and precision@200 of $0.135$, a triage list an
-analyst could work, covering 7.9\% of the illicit population in its top 50.
+$0.32$, precision@100 of $0.25$ and precision@200 of $0.135$. That is a triage
+list an analyst could work, and its top 50 cover 7.9\% of the illicit
+population.
 Procurement, built from the seed-0 R-GCN, yields 223 alerts from 1,283
 communities at precision@18 of $0.33$.
 
@@ -752,9 +774,9 @@ think this is among the more useful negatives we report, given how often the
 cartel literature treats rotation as a flagship detectable pattern.
 
 A caveat belongs with that headline. Coordinated-cluster recall carries a
-standard deviation of $0.17$ over five seeds, so the apparent ordering between
-the rank ensemble at $0.92$ and the graph autoencoder at $0.91$ sits well inside
-noise. What the experiment supports is the family-level split between
+standard deviation of $0.17$ over five seeds. The apparent ordering between the
+rank ensemble at $0.92$ and the graph autoencoder at $0.91$ therefore sits well
+inside noise. What the experiment supports is the family-level split between
 shape-changing and award-changing motifs. It does not support a ranking of
 unsupervised detectors, and we do not offer one.
 
@@ -867,7 +889,7 @@ hit-rule settings. The two axes give different results, so we do not combine the
 Suppression does not change the alert set. At every threshold, the financial queue keeps all 254 alerts and the procurement queue keeps all 223, with none suppressed anywhere in the grid. The communities barely overlap, so non-maximum suppression does not affect the results. This means the published queues are not dependent on a tuned de-duplication setting.
 
 The hit rule is different. Our published queue counts a group as a hit when at least one member is confirmed. If we instead require $0.1$ of the members to be confirmed, financial precision@50 falls from
-$0.32$ to $0.30$, while P@100 falls from $0.25$ to $0.23$ and P@200 from $0.135$ to
+$0.32$ to $0.30$. P@100 falls from $0.25$ to $0.23$, and P@200 from $0.135$ to
 $0.125$. Tightening further to $0.25$ costs nothing beyond that. Procurement
 stays flat on both axes, with P@18 remaining at $0.33$ throughout. So about $0.02$ of
 our headline queue precision rests on a definitional choice. We report the
@@ -908,8 +930,8 @@ prevalence. The labels map correctly, so this is not an inversion bug. The
 cause is the split. Accounts are heavily front-loaded, so a node-first-seen
 split puts the training cut one hour into the data, and training features see
 only 344,747 of 5,078,345 transactions. In that hour the money-flow features
-carry almost no label signal (ROC-AUC $0.49$ to $0.54$), while over the full
-window the same features carry a strong one (up to $0.74$). The trees
+carry almost no label signal (ROC-AUC $0.49$ to $0.54$). Over the full window
+the same features carry a strong one (up to $0.74$). The trees
 therefore learn from noise, and their splits do not carry over to accounts
 observed for ten days. We use AMLworld for what it was designed to do,
 injection against known ground truth, and not as a supervised benchmark.
@@ -974,9 +996,10 @@ Attention & --- & 0.049 & 0.000 & 22/50 & 0.01 & 0.6 \\
 \textbf{Motif matching and red-flag mapping.} A rule-based matcher emitting
 nine motif types (cycle, fan-in, fan-out, pass-through, common control,
 rotation, cover bid, partition, clique) runs over every alert's subgraph. It is
-implemented independently of the injection generators so the two cross-validate
-each other, and a parameterised test asserts that it recovers all ten generator
-families, five financial and five procurement, at 100\% recall on fixtures.
+implemented independently of the injection generators, so the two
+cross-validate each other. A parameterised test asserts that it recovers all
+ten generator families, five financial and five procurement, at 100\% recall
+on fixtures.
 Coverage on real queues is patchier. On the financial queue 15 of 50 bundles
 carry a proven motif with FATF citations attached, and on the actor queue 15 of
 20. On the procurement queues the count is zero. The Mendeley alert communities
@@ -984,9 +1007,9 @@ and the three Garc\'ia Italy alerts are simply too small, often just two firms,
 to contain a shape the matcher can prove. That is a coverage limitation and we
 would rather record it than paper over it with a weaker claim.
 
-\textbf{Copilot gate.} The release gate checks 26 golden cases against two separate requirements. The first has zero tolerance and applies to the released output: no guilt-attributing language can be released, and a deterministic guard enforces this instead of relying on a prompt. The second requires a grounding score of $0.9$, meaning every number quoted by the assistant must appear in the rows it actually read. The gate passes. Grounding is 24 of 26 cases ($0.923$; Wilson 95\% CI~\cite{wilson1927} $[0.759, 0.979]$); released guilt violations are at zero, while draft rewrites have 1 of 26 cases against a $10\%$ ceiling. The interval is wide: with 26 cases, its lower bound sits below the $0.9$ threshold, so the gate cannot show that grounding exceeds it.
+\textbf{Copilot gate.} The release gate checks 26 golden cases against two separate requirements. The first has zero tolerance and applies to the released output: no guilt-attributing language can be released, and a deterministic guard enforces this instead of relying on a prompt. The second requires a grounding score of $0.9$, meaning every number quoted by the assistant must appear in the rows it actually read. The gate passes. Grounding is 24 of 26 cases ($0.923$; Wilson 95\% CI~\cite{wilson1927} $[0.759, 0.979]$). Released guilt violations are at zero, and draft rewrites have 1 of 26 cases against a $10\%$ ceiling. The interval is wide: with 26 cases, its lower bound sits below the $0.9$ threshold, so the gate cannot show that grounding exceeds it.
 
-We report the two grounding misses instead of hiding them through rounding because they aren't random. Both are the newest cases in the set, and both use the tool we added most recently, the injection-study reader. One quoted a recall figure that was not present in the rows it had retrieved; the other left out an expected motif name from an answer that was otherwise well grounded. Growing the golden set from 24 to 26 left the older cases untouched but exposed problems in the new ones. For a bounded agent whose tool surface has just been expanded, this is a useful failure to find. It also shows why the golden set should be extended whenever a new tool is added instead of relying on a previously perfect score.
+We report the two grounding misses instead of hiding them through rounding because they are not random. Both are the newest cases in the set, and both use the tool we added most recently, the injection-study reader. One quoted a recall figure that was not present in the rows it had retrieved; the other left out an expected motif name from an answer that was otherwise well grounded. Growing the golden set from 24 to 26 left the older cases untouched but exposed problems in the new ones. For a bounded agent whose tool surface has just been expanded, this is a useful failure to find. It also shows why the golden set should be extended whenever a new tool is added instead of relying on a previously perfect score.
 
 Two earlier failures were fixed with prompt rules and did not need model changes. The agent once repeated a question presuming guilt in its own words while denying the premise. In another case, it changed a metric from  $0.32$ to ``32\%'' in a way that broke traceability back to the artifact. The deterministic guard, rather than the model simply following instructions, is what keeps the released-output bar at zero.
 
@@ -1050,8 +1073,8 @@ the language guarding against that is part of the design.
 
 \begin{itemize}
 \item \textbf{The Elliptic shift has a strong effect on the financial results}, and validation selection cannot detect it \PENDING{B7: the measurements that support this}. Test numbers on this benchmark should therefore be read as dependent on the regime.
-\item \textbf{Anonymised features limit what an explanation can say.} Elliptic’s features don't contain names, so financial explanations remain structural. Amount-level explanations are only available on AMLworld, which is synthetic.
-\item \textbf{Mendeley is case-control.} Lift is the appropriate comparator instead of raw AUC-PR, and it does not tell us anything about population-level precision
+\item \textbf{Anonymised features limit what an explanation can say.} Elliptic’s features contain no names, so financial explanations remain structural. Amount-level explanations are only available on AMLworld, which is synthetic.
+\item \textbf{Mendeley is case-control.} Lift is the appropriate comparator instead of raw AUC-PR, and it says nothing about population-level precision.
 \item \textbf{Garc\'ia identity coverage reaches four of six markets}, so the co-bidding identity graphs do not cover the whole benchmark.
 \item \textbf{Award-pattern motifs recover badly} especially rotation, cover bidding and partition. This limits what we can claim about the procurement side specifically.
 \item \textbf{The copilot's grounding is imperfect and depends on its tool
@@ -1105,8 +1128,8 @@ The whole gap lies before the step-43 market closure, which defeats both model
 families.
 Calibrated fusion is necessary once members are fused, but it did not beat its
 best member. Transfer between procurement markets holds on Garc\'ia, with a
-pooled lift of $1.36$, but not on Mendeley, where the pooled lift is $0.93$ and
-the largest market falls below its base rate. Across domains, a frozen
+pooled lift of $1.36$. It does not hold on Mendeley, where the pooled lift is
+$0.93$ and the largest market falls below its base rate. Across domains, a frozen
 procurement encoder carries some structural signal into the financial domain.
 A probe on the target's own features doubles it, and the reverse direction
 gives no signal. Below 1,000 labels, transfer never clearly helps.
@@ -1118,9 +1141,8 @@ Several of these findings would be hidden by a single-seed,
 validation-selected, aggregate-only evaluation: the spread across seeds, the
 failing largest market and the validation blind spot. That is what we mean by
 calling the protocol a contribution. Alongside it we ship a screening
-instrument that ranks groups for a human at a fixed budget, explains each flag
-in the reviewer's own red-flag vocabulary, and is built so that it cannot call
-anyone guilty.
+instrument. It ranks groups for a human at a fixed budget, explains each flag
+in the reviewer's own red-flag vocabulary, and cannot call anyone guilty.
 
 \textbf{Future work.} One beneficial owner may control both a bid-rigging firm
 and the accounts that launder its proceeds. A natural next step is to test
