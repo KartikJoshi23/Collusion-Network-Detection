@@ -33,6 +33,11 @@ seed: 0
 split:
   train_end: 27699900
   test_start: 27699901
+  # Journal revision (2026-11): the paper says the splitter fences off the
+  # post-window tail (1,108 transactions after 10 September, 59.1% laundering),
+  # but this config never set the fence. It now does; the value is the
+  # adapter's primary_window_end (2022-09-10 23:59 UTC in epoch minutes).
+  fence_after: 27714239
 
 # B1 is omitted: the rules engine needs a hand-written `rules:` block, and no
 # AMLworld red-flag thresholds have been agreed. The tree pair is what answers

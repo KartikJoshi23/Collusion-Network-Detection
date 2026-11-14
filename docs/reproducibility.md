@@ -115,7 +115,8 @@ the run outputs once each run completes; nothing here is typed from memory.
 | `fusion_gatv2_b3_multiseed.yaml` | GATv2 + B3 calibrated fusion vs each member (item B2) |
 | `significance_elliptic_pp.yaml` | Table III seed-0 bootstrap, the committed source of the stored `significance.json` |
 | `significance_elliptic_pp_multiseed.yaml` | paired bootstrap for every seed pair, plus seed-averaged scores (item B2) |
-| `diagnose_below_chance.yaml` | below-chance diagnostics for four cases (item B4) |
+| `diagnose_below_chance.yaml` | below-chance diagnostics: inverted-score AUC-PR, label encoding, split facts, feature shift, and per-window feature-label ROC-AUC (item B4) |
+| `gnn_mendeley_rgcn_nocomm_multiseed.yaml` | diagnostic ablation: the Mendeley R-GCN without the two component features, a test of the component-size explanation (item B4; not in the brief) |
 | `transfer_pooled_lift.yaml` | pooled and size-weighted lift, per-fold 95% CIs (item B5) |
 | `derived_numbers.yaml` | copilot grounding Wilson CI, probe lift, pre/post-step-43 AUC-PR (items A3, B1) |
 | `label_noise_elliptic_pp_5seed.yaml` | label-noise curve on seeds 0–4, Fig. 6 (item B7). Seeds 0–2 reuse the stored master runs, since this machine reproduces master's GATv2 bit for bit (check R7); seeds 3–4 are new |
@@ -131,10 +132,18 @@ the run outputs once each run completes; nothing here is typed from memory.
 - Every config carries an explicit `seed:`; multi-seed campaigns run seeds
   0–4 and are resumable (completed seeds are never retrained).
 - **Byte-reproducible cross-machine (verified):** XGBoost baselines; the LOCO
-  country_5 R-GCN fold; the frozen-encoder probe numbers.
-- **Same-machine deterministic only:** torch GNN training. Cross-machine,
-  CPU scatter reductions differ — measured GATv2 seed-0 0.5492 (master class)
-  vs 0.5318 (laptop-C), a ±0.02 machine-class variance.
+  country_5 R-GCN fold; the García LOMO matrix (revision checks R1–R3, R5).
+- **Frozen-encoder probes (revision check R4, corrected 2026-11):** with the
+  stored encoder weights, procurement→financial reproduces exactly (0.1502),
+  while financial→procurement gives 0.2843 against 0.2841 on master. The
+  difference persists with identical weights and does not depend on the
+  torch thread count, so it is CPU-level floating-point variation in the
+  probe pipeline, not encoder retraining.
+- **Torch GNN training is machine-class dependent:** measured GATv2 seed-0
+  0.5492 (master class) vs 0.5318 (laptop-C), a ±0.02 machine-class
+  variance. The revision laptop (Intel i5-11300H) reproduces master's
+  seed-0 GATv2 bit for bit (check R7: test AUC-PR 0.5492089151328867, best
+  epoch 121).
 - **Seed variance (±0.05) dominates machine variance (±0.02)** — the paper
   quotes multi-seed means with stds, never a best seed. Where a comparison
   crosses machines (the wce campaign), the ledger records the confound.

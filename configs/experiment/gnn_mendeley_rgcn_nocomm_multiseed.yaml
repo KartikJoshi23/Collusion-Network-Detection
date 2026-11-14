@@ -1,0 +1,40 @@
+# Revision brief item B4, diagnostic ablation (added during the revision; the
+# brief does not list it). The R-GCN headline scores below its prevalence, and
+# its 1 - score lies above it on every seed. The largest train-versus-test
+# shift is in the two component features of the structural template:
+# community_size (the weakly connected component size) and
+# degree_rel_community. Train firms see the graph as of 2013, test firms the
+# full graph, where the components merge. This run drops those two columns and
+# keeps everything else identical to gnn_mendeley_rgcn_multiseed.yaml. It is a
+# test of the diagnosis, not a new headline model.
+dataset: mendeley_eu
+store_root: data/interim
+output_dir: eval_outputs/mendeley_eu/gnn_rgcn_focal_nocomm_multiseed
+multiseed: true
+seeds: [0, 1, 2, 3, 4]
+features: structural
+exclude_features: [community_size, degree_rel_community]
+node_type: firm
+
+split:
+  loss_end: 2010
+  train_end: 2013
+  test_start: 2014
+
+model:
+  name: rgcn
+  hidden_dim: 64
+  num_layers: 2
+  dropout: 0.3
+
+loss:
+  name: focal
+  gamma: 2.0
+
+lr: 0.01
+weight_decay: 0.0005
+epochs: 300
+patience: 30
+budgets: [4, 18, 36]
+
+train_label_policy: mendeley_as_of

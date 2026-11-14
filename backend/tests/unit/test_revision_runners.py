@@ -492,3 +492,83 @@ class TestLabelSmoothing:
         assert make_loss("focal", gamma=0.0, label_smoothing=0.1)(logits, targets) == smoothed
         with pytest.raises(ValueError):
             focal_loss(logits, targets, label_smoothing=1.0)
+
+
+class TestLabelAssociation:
+    """B4: per-window prevalence and feature-label ROC-AUC."""
+
+    def _assoc(self, store, windows):
+        from collusiongraph.eval.diagnostics import label_association
+
+        return label_association(
+            store.read("toyfin", "nodes"),
+            store.read("toyfin", "edges"),
+            store.read("toyfin", "labels"),
+            "tx:",
+            "degree",
+            4,
+            windows,
+        )
+
+    def test_windows_report_prevalence_and_sign(self, tmp_path) -> None:
+        store = toy_financial_store(tmp_path)
+        out = self._assoc(
+            store,
+            {"train": {"side": "train", "until": 4}, "test": {"side": "test", "after": 4}},
+        )
+        train, test = out["windows"]["train"], out["windows"]["test"]
+        # 3 illicit and 6 licit confirmed nodes per step; one unknown is dropped
+        assert train["n_confirmed"] == 36 and test["n_confirmed"] == 18
+        assert train["prevalence"] == pytest.approx(1 / 3)
+        assert set(train["roc_auc"]) == {"degree_out", "degree_in", "degree"}
+        assert "train" in out["opposite_sign_to_test"]
+
+    def test_rejects_bad_windows(self, tmp_path) -> None:
+        store = toy_financial_store(tmp_path)
+        with pytest.raises(ValueError, match="side"):
+            self._assoc(store, {"w": {"side": "both"}})
+        with pytest.raises(ValueError, match="train_end"):
+            self._assoc(store, {"w": {"side": "train", "until": 6}})
+
+
+class TestExcludeFeatures:
+    """B4 diagnostic ablation: named columns leave both featurisations."""
+
+    def _cfg(self, store, out, **extra) -> dict:
+        return {
+            "dataset": "toysrc",
+            "store_root": str(store.root),
+            "output_dir": str(out),
+            "seed": 0,
+            "features": "structural",
+            "split": {"loss_end": 2, "train_end": 3, "test_start": 5},
+            "model": {"name": "graphsage", "hidden_dim": 8, "dropout": 0.0},
+            "epochs": 3,
+            "patience": 3,
+            "budgets": [4],
+            **extra,
+        }
+
+    def test_columns_are_dropped_and_recorded(self, tmp_path) -> None:
+        from collusiongraph.training.trainer import train_gnn
+
+        from .test_transfer import financial_store
+
+        store = financial_store(tmp_path)
+        drop = ["community_size", "degree_rel_community"]
+        record = train_gnn(self._cfg(store, tmp_path / "run", exclude_features=drop))
+        assert record["exclude_features"] == drop
+        stats = json.loads((tmp_path / "run" / "feature_stats.json").read_text(encoding="utf-8"))
+        assert not set(drop) & set(stats["stats"])
+        default = train_gnn(self._cfg(store, tmp_path / "base"))
+        assert "exclude_features" not in default
+
+    def test_unknown_column_raises(self, tmp_path) -> None:
+        from collusiongraph.training.trainer import train_gnn
+
+        from .test_transfer import financial_store
+
+        store = financial_store(tmp_path)
+        with pytest.raises(ValueError, match="unknown columns"):
+            train_gnn(self._cfg(store, tmp_path / "run", exclude_features=["no_such"]))
+

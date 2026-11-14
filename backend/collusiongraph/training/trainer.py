@@ -159,6 +159,16 @@ def train_gnn(config: dict[str, Any] | str | Path) -> dict[str, Any]:
     # normalization stats are FIT on the train graph and FROZEN for inference
     # (F3): the model trains and scores under one normalization, not two
     train_raw, fusion_spans = _feature_frame(feature_kind, t_nodes, t_edges, train_end, n_raw)
+    # revision brief item B4 (diagnostic ablation): drop named feature columns
+    # from both featurisations; the default (none) is the published protocol
+    exclude: list[str] = list(cfg.get("exclude_features", []))
+    if exclude:
+        missing = sorted(set(exclude) - set(train_raw.columns))
+        if missing:
+            raise ValueError(f"exclude_features names unknown columns: {missing}")
+        if cfg.get("model", {}).get("fusion") == "gated":
+            raise ValueError("exclude_features cannot be combined with gated fusion spans")
+        train_raw = train_raw.drop(exclude)
     stats = fit_zscore(train_raw)
     # §7 step 32 ablation arm (−bidirectional edges); default True = published protocol
     bidirectional = bool(cfg.get("bidirectional", True))
@@ -166,6 +176,8 @@ def train_gnn(config: dict[str, Any] | str | Path) -> dict[str, Any]:
         t_nodes, t_edges, train_labels, apply_zscore(train_raw, stats), bidirectional=bidirectional
     )
     infer_raw, _ = _feature_frame(feature_kind, nodes, edges, None, n_raw)
+    if exclude:
+        infer_raw = infer_raw.drop(exclude)
     infer_data = build_graph(
         nodes, edges, labels, apply_zscore(infer_raw, stats), bidirectional=bidirectional
     )
@@ -275,6 +287,7 @@ def train_gnn(config: dict[str, Any] | str | Path) -> dict[str, Any]:
         "loss": cfg.get("loss", {}),
         "seed": seed,
         **({} if bidirectional else {"bidirectional": False}),
+        **({"exclude_features": exclude} if exclude else {}),
         **(
             {
                 "label_noise": {

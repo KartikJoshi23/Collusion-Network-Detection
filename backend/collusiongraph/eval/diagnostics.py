@@ -15,7 +15,10 @@ module reads stored score files and the IR store, and reports:
 * distribution shift: per-feature Kolmogorov–Smirnov statistics and
   standardised mean differences between training-period and test-period
   nodes. Each side is featurised the way the models saw it: the training side
-  as of ``train_end``, the test side on the full graph.
+  as of ``train_end``, the test side on the full graph;
+* label association (optional): per time window, prevalence and each
+  feature's ROC-AUC against the label, so a sign change between the training
+  windows and the test window shows up directly.
 
 It never trains anything. Its output is ``diagnostics.json``.
 """
@@ -30,7 +33,7 @@ import numpy as np
 import polars as pl
 from scipy.stats import ks_2samp
 
-from collusiongraph.features import restrict_as_of, structural_features
+from collusiongraph.features import financial_features, restrict_as_of, structural_features
 from collusiongraph.schema import GraphStore, Label
 
 from .metrics import auc_pr, confirmed_node_vectors
@@ -165,6 +168,105 @@ def distribution_shift(
     }
 
 
+def _features_of(kind: str, nodes: pl.DataFrame, edges: pl.DataFrame) -> pl.DataFrame:
+    if kind == "structural":
+        return structural_features(nodes, edges, as_of=None)
+    if kind == "degree":
+        return _degree_frame(nodes, edges)
+    if kind == "financial":  # the money-flow pack the financial trees use
+        return financial_features(nodes, edges, as_of=None)
+    raise ValueError(
+        f"unknown feature kind {kind!r} (expected 'structural', 'degree' or 'financial')"
+    )
+
+
+def label_association(
+    nodes: pl.DataFrame,
+    edges: pl.DataFrame,
+    labels: pl.DataFrame,
+    prefix: str,
+    kind: str,
+    train_end: int,
+    windows: dict[str, dict[str, Any]],
+    label_policy: str = "static",
+    min_effect: float = 0.02,
+) -> dict[str, Any]:
+    """Per time window: confirmed nodes, prevalence, and the ROC-AUC of each
+    feature against the label. 0.5 means no association. Below 0.5 means the
+    feature ranks licit nodes above illicit ones. Training-side windows are
+    featurised as of ``train_end`` and labelled with the training label
+    policy; test-side windows use the full graph and the stored labels, as the
+    models saw them. A feature whose ROC-AUC sits on opposite sides of 0.5 in a
+    training window and in the test window ranks test nodes backwards for a
+    model that learned the training-window direction. Only departures of at
+    least ``min_effect`` from 0.5 on both sides count as opposite signs."""
+    from sklearn.metrics import roc_auc_score
+
+    from collusiongraph.training.labels import resolve_train_labels
+
+    t_nodes, t_edges = restrict_as_of(nodes, edges, train_end)
+    sides = {
+        "train": (
+            _features_of(kind, t_nodes, t_edges),
+            resolve_train_labels(label_policy, labels, t_edges, train_end),
+        ),
+        "test": (_features_of(kind, nodes, edges), labels),
+    }
+    typed = nodes.filter(pl.col("node_id").str.starts_with(prefix)) if prefix else nodes
+    confirmed = [Label.ILLICIT.value, Label.LICIT.value]
+    out: dict[str, Any] = {
+        "kind": kind,
+        "label_policy": label_policy,
+        "min_effect": min_effect,
+        "windows": {},
+    }
+    for name, win in windows.items():
+        side = win["side"]
+        if side not in sides:
+            raise ValueError(f"window {name!r}: side must be 'train' or 'test', got {side!r}")
+        if side == "train" and win.get("until") is not None and int(win["until"]) > train_end:
+            raise ValueError(f"window {name!r} ends after train_end but claims the train side")
+        sel = typed
+        if win.get("after") is not None:
+            sel = sel.filter(pl.col(_TIME) > int(win["after"]))
+        if win.get("until") is not None:
+            sel = sel.filter(pl.col(_TIME) <= int(win["until"]))
+        feats, labs = sides[side]
+        rows = (
+            feats.join(labs.select("node_id", "label"), on="node_id")
+            .filter(pl.col("node_id").is_in(sel["node_id"].implode()))
+            .filter(pl.col("label").is_in(confirmed))
+        )
+        y = (rows["label"] == Label.ILLICIT.value).to_numpy().astype(int)
+        roc: dict[str, float | None] = {}
+        for col in [c for c, dt in feats.schema.items() if c != "node_id" and dt.is_numeric()]:
+            x = rows[col].cast(pl.Float64).fill_null(0.0).to_numpy()
+            ok = 0 < y.sum() < y.size and float(np.std(x)) > 0
+            roc[col] = float(roc_auc_score(y, x)) if ok else None
+        out["windows"][name] = {
+            "side": side,
+            "n_confirmed": int(y.size),
+            "prevalence": float(y.mean()) if y.size else None,
+            "roc_auc": roc,
+        }
+    test_windows = [n for n, w in windows.items() if w["side"] == "test"]
+    if test_windows:
+        ref = out["windows"][test_windows[0]]["roc_auc"]
+        out["opposite_sign_to_test"] = {
+            name: sorted(
+                c
+                for c, v in w["roc_auc"].items()
+                if v is not None
+                and ref.get(c) is not None
+                and (v - 0.5) * (ref[c] - 0.5) < 0
+                and min(abs(v - 0.5), abs(ref[c] - 0.5)) >= min_effect
+            )
+            for name, w in out["windows"].items()
+            if w["side"] == "train"
+        }
+    return out
+
+
 def _score_paths(spec: dict[str, Any]) -> dict[str, Path]:
     """name -> score file, expanding ``{seed}`` templates over ``seeds``."""
     scores = spec["scores"]
@@ -216,9 +318,27 @@ def run_below_chance_diagnostics(config: dict[str, Any] | str | Path) -> dict[st
             case["split_facts"] = split_facts(
                 nodes, edges, prefix, train_end, test_start, window_end
             )
+            # the models' own fence, applied after the split facts are counted
+            fence = shift_cfg.get("fence_after")
+            if fence is not None:
+                nodes, edges = restrict_as_of(nodes, edges, int(fence))
+                case["split_facts"]["fence_after"] = int(fence)
             case["distribution_shift"] = distribution_shift(
                 nodes, edges, prefix, train_end, test_start, shift_cfg.get("features", "degree")
             )
+            assoc_cfg = shift_cfg.get("association")
+            if assoc_cfg:
+                case["label_association"] = label_association(
+                    nodes,
+                    edges,
+                    labels,
+                    prefix,
+                    assoc_cfg.get("features", shift_cfg.get("features", "degree")),
+                    train_end,
+                    assoc_cfg["windows"],
+                    assoc_cfg.get("label_policy", "static"),
+                    float(assoc_cfg.get("min_effect", 0.02)),
+                )
         report["cases"][case_name] = case
 
     out_dir.mkdir(parents=True, exist_ok=True)
