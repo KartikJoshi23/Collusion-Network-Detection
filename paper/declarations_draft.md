@@ -23,6 +23,11 @@ sources: Elliptic++ (Elmougy and Liu, 2023), IBM AMLworld HI-Small (Altman et
 al., 2023), the Mendeley EU cartel dataset (Fazekas et al., 2025,
 doi:10.17632/f3y4nrn3s6.2), García Rodríguez et al. (2022), and OCDS Georgia
 (OpenTender). No raw or modified data is redistributed."
+[AUTHORS TO NOTE: this holds for branch `paper/journal-revision`. Until it
+is merged, the public main branch shows raw-row previews in three EDA
+notebooks (5 Mendeley, 5 García and 3 AMLworld rows), and the repository
+history keeps them after the merge. Whether to rewrite that history is
+yours to decide.]
 
 ## Code availability
 [AUTHORS TO DECIDE — item L3: repository URL and wording.] The manuscript carries

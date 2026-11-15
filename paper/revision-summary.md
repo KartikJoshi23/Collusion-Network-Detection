@@ -53,3 +53,6 @@ published" sentence); confirmation of the AI-use statement in
 `paper/declarations_draft.md`; funding, competing interests, contributions,
 acknowledgements; co-author approval; the four source disagreements with the
 brief (95–98% vs 90–95%; the OECD 13%/20% figures; "after the fact"; country names).
+Also: three EDA notebooks on the public main branch show raw-row previews
+(5 Mendeley, 5 García, 3 AMLworld rows). They are removed on this branch,
+but the repository history keeps them; whether to rewrite it is yours.
