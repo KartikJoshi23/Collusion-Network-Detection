@@ -284,6 +284,7 @@ Part G           ◄─ journal decision (Dr. Garg)
 - **Outputs:** `eval_outputs/elliptic_pp/label_noise_curve_5seed/noise_curve.json` (4 rates × 5 seeds) and one `multiseed.json` per regulariser arm, each with per-seed validation and test AUC-PR.
 - **Machine note (Q2):** if B7 runs here, its clean 5-seed mean will differ from the headline 0.4729 by machine variance. The comparison table stays internally consistent, since every arm runs on one machine, and the text says so. Running B7 on the master machine would avoid this.
 - **Feeds:** a 5-seed Fig. 6; a short comparison table; the V-E text; D6; Limitations; the A3 "four measurements" row.
+- **Done 2026-11-16.** Five-seed noise curve: 0.4729 → 0.5646 at 10%, validation 0.9380 → 0.5642, gain in steps 35–42. Weight decay 5e-3: 0.5403 ± 0.0286, 5/5 seeds above clean, validation 0.8996. Dropout, label smoothing and patience 5 do not repeat the pattern; the window arm leaves test at 0.4772. Table X in V-E; the count is two (label noise, weight decay).
 
 ### B8. Standard explainer metrics (P2)
 

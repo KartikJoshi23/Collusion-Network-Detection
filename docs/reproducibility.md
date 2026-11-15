@@ -124,11 +124,11 @@ the run outputs once each run completes; nothing here is typed from memory.
 | `transfer_pooled_lift.yaml` | pooled and size-weighted lift, per-fold 95% CIs (item B5) |
 | `derived_numbers.yaml` | copilot grounding Wilson CI, probe lift, pre/post-step-43 AUC-PR (items A3, B1), and the same windows for the per-graph pass (D24), each noise rate and each regulariser arm (B7) |
 | `label_noise_elliptic_pp_5seed.yaml` | label-noise curve on seeds 0–4 (item B7): test 0.4729 ± 0.0525 clean → 0.5646 ± 0.0456 at 10% → 0.5507 ± 0.0690 at 20%; validation 0.9380 → 0.5642. The clean runs are the headline runs. Seeds 0–2 reuse the stored master runs, since this machine reproduces master's GATv2 bit for bit (check R7); seeds 3–4 are new |
-| `gnn_elliptic_pp_gatv2_focal_ls_multiseed.yaml` | regulariser arm: label smoothing ε = 0.1 (item B7) |
-| `gnn_elliptic_pp_gatv2_focal_wd_multiseed.yaml` | regulariser arm: weight decay 5e-3 (item B7) |
-| `gnn_elliptic_pp_gatv2_focal_do_multiseed.yaml` | regulariser arm: dropout 0.5 (item B7) |
-| `gnn_elliptic_pp_gatv2_focal_es_multiseed.yaml` | regulariser arm: early-stopping patience 5 (item B7) |
-| `gnn_elliptic_pp_gatv2_focal_valwin_multiseed.yaml` | alternative temporal validation window, steps 32–34 (item B7) |
+| `gnn_elliptic_pp_gatv2_focal_ls_multiseed.yaml` | regulariser arm: label smoothing ε = 0.1 (item B7): test 0.4585 ± 0.0344, validation 0.9387, 2/5 seeds above clean |
+| `gnn_elliptic_pp_gatv2_focal_wd_multiseed.yaml` | regulariser arm: weight decay 5e-3, ten times the headline (item B7): test 0.5403 ± 0.0286, validation 0.8996, 5/5 seeds above clean; steps 35–42 0.6588. Seeds 4 to 0 were trained by a scratchpad copy of this config with the seed list reversed, in a second process; this config then rewrote `multiseed.json` in seed order, skipping every trained seed (per-seed records identical; aggregates within 2.2e-16) |
+| `gnn_elliptic_pp_gatv2_focal_do_multiseed.yaml` | regulariser arm: dropout 0.5 (item B7): test 0.4874 ± 0.0362, validation 0.9419, 4/5 seeds above clean |
+| `gnn_elliptic_pp_gatv2_focal_es_multiseed.yaml` | regulariser arm: early-stopping patience 5 (item B7): test 0.4224 ± 0.0589, validation 0.8913, 0/5 seeds above clean |
+| `gnn_elliptic_pp_gatv2_focal_valwin_multiseed.yaml` | alternative temporal validation window (item B7): loss on steps 1–31, validation on 32–34; test 0.4772 ± 0.0468, validation 0.9583, 2/5 seeds above clean (validation not comparable) |
 | `explainer_metrics_elliptic_pp.yaml` | Fidelity+, Fidelity−, sparsity and arm overlap for three explainers on the rebuilt queue (item B8) |
 | `cross_domain_full_label_comparison.yaml` | full-label comparison of the frozen probe (stored encoders), a structural probe, a probe on B2's inputs, and five-seed B2 (item B6) |
 | `gnn_elliptic_pp_gatv2_focal_pergraphnorm_multiseed.yaml` | per-graph normalisation trained end to end, seed 0 only: the cross-check of the re-scoring runner (identical test scores, 0.6919; item D24; not in the brief) |

@@ -103,10 +103,13 @@ line-graph) measurably hurt under the temporal shift and were not adopted.
 
 ## Known limitations
 
-1. **Validation blindness under temporal shift (t43):** val AUC-PR spans
-   0.93–0.95 across seeds while test spans 0.42–0.55; train-label noise up to
-   20% *raises* test AUC-PR (0.5978 ± 0.0248) while val collapses — four
-   independent measurements. Shift-aware selection is future work.
+1. **Validation blindness under temporal shift:** val AUC-PR spans
+   0.93–0.95 across seeds while test spans 0.42–0.55. Flipping 10% of the
+   training labels *raises* test AUC-PR to 0.5646 ± 0.0456 while validation
+   falls to 0.6832, and tenfold weight decay does the same (0.5403 ± 0.0286;
+   validation 0.8996). Both gains lie in steps 35–42. Dropout, label smoothing
+   and earlier stopping do not show this, and a later validation window (steps
+   32–34) leaves test at 0.4772 ± 0.0468. Shift-aware selection is future work.
 2. Seed variance (±0.05) dominates machine-class variance (±0.02); paper
    tables quote multi-seed means.
 3. Elliptic features are anonymized — evidence narratives are structural or

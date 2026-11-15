@@ -1,8 +1,8 @@
 # One-page change log — "One Stack, Two Ledgers" (journal revision)
 
 Branch `paper/journal-revision`. Item-by-item detail: `paper/revision-changelog.md`;
-raw results against the old claims: `paper/revision-results.md`. **Draft: the B7
-regulariser arms are still running; their lines are marked.**
+raw results against the old claims: `paper/revision-results.md`. Every run is in;
+what remains are the author decisions below.
 
 ## Headline results after the revision
 - **RQ1 holds:** five-seed trees (B3 0.8123 ± 0.0012) beat GATv2 (0.4729 ± 0.0525)
@@ -18,7 +18,13 @@ regulariser arms are still running; their lines are marked.**
   signal. **Bug fixed:** the AMLworld config never set the post-window fence.
 - **Explanations:** PGExplainer passes PyG's sanity check on 49/50 alerts, but only
   25/50 under a uniform hard-mask test, and no explainer is sparse.
-- **Label noise vs regularisers (B7):** [PENDING]
+- **Label noise vs regularisers (B7):** on five seeds, 10% label noise lifts
+  test AUC-PR from 0.4729 to 0.5646 while validation falls from 0.938 to 0.683,
+  and tenfold weight decay does the same (0.5403; validation 0.8996). Both
+  gains lie in steps 35–42, not across the step-43 closure, so the old
+  explanation is replaced. Dropout, label smoothing and patience 5 do not repeat
+  the pattern; a later validation window does not close the gap. The paper now
+  counts two such measurements, not four.
 - **Normalisation effect (D24):** re-normalising on the test graph lifts GATv2
   from 0.4729 ± 0.0525 to 0.6853 ± 0.0052 (every seed p ≤ 0.001), all of it in
   steps 35–42. Even adapted, GATv2 stays below the trees. The unsourced
@@ -36,8 +42,8 @@ regulariser arms are still running; their lines are marked.**
 - Framing (Part A): problem-first introduction; the AI Act as a design standard;
   RQs matched to the sections that answer them; Section VII cut.
 - Results (Part B): Tables II–VI rebuilt from five-seed runs; new tables for steps
-  35–42 vs 43–49, full-label probes and explainer metrics; Appendix A rebuilt (42
-  rows); every printed number checked by a manifest (0 failures).
+  35–42 vs 43–49, full-label probes, explainer metrics and regularisers; Appendix A
+  rebuilt (51 rows); every printed number checked by a manifest (0 failures).
 - Methods (Part C): new Appendix C with every split, feature, rule and setting.
 - Consistency (Part D): 28 items found and fixed or marked, including the queues
   and explanation bundles built from the wrong models (rebuilt, counts unchanged)

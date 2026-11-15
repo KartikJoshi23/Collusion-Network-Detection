@@ -326,7 +326,7 @@ sentence and Appendix A change (0.33 → 0.40, with the random-order baseline
 0.39). The actor seed-0 queue still prints 0.08 (0.0846). Section IV now
 states that precision@k is tie-aware for nodes and for groups.
 
-## B7. Label noise over five seeds (regulariser arms still running)
+## B7. Label noise and explicit regularisers, five seeds
 
 `label_noise_elliptic_pp_5seed.yaml`, rates 0, 0.05, 0.10 and 0.20, seeds
 0–4. Seeds 0–2 reuse the stored master runs; seeds 3–4 ran here. The rate-0
@@ -351,7 +351,34 @@ gain lies in steps 35–42, and after the break noise lowers AUC-PR to the base
 rate. What the curve shows is that validation (steps 30–34) and the next test
 steps (35–42) rank the same models in opposite orders.
 
-Dropout 0.5 (`gnn_elliptic_pp_gatv2_focal_do_multiseed.yaml`, here):
-0.4874 ± 0.0362 test, validation 0.9419; steps 35–42 0.5909 ± 0.0474, steps
-43–49 0.0393 ± 0.0067. The other arms are still training.
+Regulariser arms, five seeds each, every one changing one setting of the
+headline run (all trained here; windows from `derived_numbers.yaml`):
+
+| Arm | Test AUC-PR | Validation | Seeds above clean | Steps 35–42 | Steps 43–49 |
+|---|---|---|---|---|---|
+| Label smoothing ε = 0.1 | 0.4585 ± 0.0344 | 0.9387 | 2/5 | 0.5570 | 0.0402 |
+| Weight decay 5e-3 | 0.5403 ± 0.0286 | 0.8996 | 5/5 | 0.6588 | 0.0323 |
+| Dropout 0.5 | 0.4874 ± 0.0362 | 0.9419 | 4/5 | 0.5909 | 0.0393 |
+| Patience 5 | 0.4224 ± 0.0589 | 0.8913 | 0/5 | 0.5193 | 0.0328 |
+| Validation on steps 32–34 | 0.4772 ± 0.0468 | 0.9583 | 2/5 | 0.5799 | 0.0376 |
+
+Weight decay behaves like label noise: test rises on all five seeds, the
+gain sits in steps 35–42, and validation falls (0.938 → 0.8996).
+Dropout raises test slightly with validation unchanged. Label smoothing and
+patience 5 lower test. The later validation window (loss on steps 1–31,
+validation on 32–34) leaves test at the clean level while validation rises
+to 0.9583, so the validation–test gap does not come from the
+choice of window. Among the eight variants that share the original window,
+the validation choice is dropout, fifth of eight on test.
+
+Counting the measurements (brief item A3). The old paper counted four signs:
+the frozen-normalisation fix, the added-channel variants, the per-step crater
+and the noise curve. The brief rules out the normalisation fix. A measurement
+counts here when validation prefers the setting that does worse on test.
+Label noise and weight decay qualify. The added-channel variants do not:
+validation still ranks the raw model above each of them, though it understates
+the drops (context fusion: validation 0.9483 against 0.9497, test 0.3242
+against 0.5492, seed 0). The crater shows the shift, not a selection failure.
+Dropout, label smoothing and patience 5 do not qualify either. The paper
+therefore says two five-seed measurements.
 
