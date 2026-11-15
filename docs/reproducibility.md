@@ -156,7 +156,10 @@ the run outputs once each run completes; nothing here is typed from memory.
   (identical test scores, maximum difference 0.0), while two other trainings
   ran in parallel. Re-scoring the five stored master checkpoints here
   (`normalisation_rescore_elliptic_pp.yaml`) reproduces every seed's
-  validation and test AUC-PR exactly. The main machine reported by the user is an Intel Core
+  validation and test AUC-PR exactly. The actor R-GCN reproduces too: seed 0
+  of `gnn_elliptic_actor_rgcn_multiseed.yaml` matches the stored master run of
+  `gnn_elliptic_actor_rgcn.yaml` in every test score (292,102 wallets; AUC-PR
+  0.2472721036304367, best epoch 13). The main machine reported by the user is an Intel Core
   i7-1195G7 (4 cores / 8 threads, 16 GB). Both are 11th-generation Intel
   Core (Tiger Lake) parts, which is consistent with the bit-identical
   results. Its NVIDIA MX450 is not used: every published number is a CPU

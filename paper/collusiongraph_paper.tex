@@ -1114,8 +1114,8 @@ procurement-to-financial probe also reproduces exactly. The
 financial-to-procurement probe gives $0.2841$ on the original machine and
 $0.2843$ on a second one. Torch GNN training is deterministic on one machine,
 and its results depend on the machine class. A second machine of the same
-class reproduced the seed-0 GATv2 run bit for bit; one of another class
-differed by about $0.02$. Seed variance of about $\pm 0.05$ swamps that
+class reproduced GATv2 seeds 0, 3 and 4 and the seed-0 actor R-GCN bit for
+bit. A machine of another class differed by about $0.02$. Seed variance of about $\pm 0.05$ swamps that
 difference. A dedicated suite enforces the leakage
 guarantees and runs as its own continuous-integration step. The full suite comes
 to 427 tests.
