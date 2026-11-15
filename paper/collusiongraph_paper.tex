@@ -60,24 +60,23 @@ Dubai, United Arab Emirates\\
 Money laundering and bid rigging are studied by separate communities, yet both
 are collusive crimes. No single transaction or tender looks wrong by itself;
 the scheme shows only in the pattern of dealings around it. We built one
-graph-learning stack for both domains. A single intermediate representation
-feeds one detector family, one explanation layer and one evaluation protocol,
-and six adapters carry five public datasets into it. Under strict inductive
+graph-learning stack for both: one intermediate representation, one detector
+family, one explanation layer and one evaluation protocol, fed by five public
+datasets. Under strict inductive
 splits and fixed alert budgets, gradient-boosted trees on graph features beat
 every graph neural network we trained on Elliptic++. Over five seeds each, the
 trees score $0.8123 \pm 0.0012$ AUC-PR against $0.4729 \pm 0.0525$ for
 GATv2-focal, and the gap holds on every seed pair. The whole gap lies before a
 market closure at time step 43; after it, both models fall close to the base
-rate. Transfer between procurement markets is uneven. All four Garc\'ia markets
-beat their base rate, with a pooled lift of $1.36$, but the pooled lift over
-the seven Mendeley countries is $0.93$. Across domains, a frozen procurement
+rate. Transfer between procurement markets is uneven: the Garc\'ia markets pool
+to a lift of $1.36$ over their base rates, the Mendeley countries to $0.93$. Across domains, a frozen procurement
 encoder reaches $0.150$ AUC-PR on Elliptic++ against a base rate of $0.065$,
 while a linear probe on the target's own features reaches $0.299$. The reverse
 direction falls below its base rate.
 \PENDING{B7: the label-noise and regulariser result}
 The released system ranks group alerts for a fixed review budget, explains
-each alert with a subgraph and a red-flag citation, and leaves every decision
-to a human reviewer.
+each with a subgraph and a red-flag citation, and leaves every decision to a
+human.
 \PENDING{L3: repository-availability wording, an author decision}
 \end{abstract}
 
