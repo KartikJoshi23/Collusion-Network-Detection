@@ -12,6 +12,7 @@ this queue's job).
 from __future__ import annotations
 
 import json
+import statistics
 from pathlib import Path
 from typing import Any
 
@@ -138,3 +139,55 @@ def build_alert_queue(config: dict[str, Any] | str | Path) -> dict[str, Any]:
         json.dumps(summary, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
     )
     return summary
+
+
+def build_alert_queue_multiseed(config: dict[str, Any] | str | Path) -> dict[str, Any]:
+    """One queue per model seed over the same communities (revision item D25).
+
+    ``scores_root`` holds a multiseed campaign's ``seed_<s>`` folders. Each model
+    seed runs the full single-queue pipeline on its own scores. ``seed`` stays
+    the Leiden seed, so every model seed is ranked over identical communities.
+    """
+    cfg = load_config(config)
+    seeds: list[int] = list(cfg["seeds"])
+    scores_root = Path(cfg["scores_root"])
+    out_root = Path(cfg["output_dir"])
+    run_id = cfg.get("model_run_id", "gnn")
+    base = {k: v for k, v in cfg.items() if k not in ("seeds", "scores_root", "output_dir")}
+    per_seed = []
+    for s in seeds:
+        summary = build_alert_queue(
+            {
+                **base,
+                "scores_dir": str(scores_root / f"seed_{s}"),
+                "output_dir": str(out_root / f"seed_{s}"),
+                "model_run_id": f"{run_id}_s{s}",
+            }
+        )
+        queue = summary["alert_level"]["queue"]
+        per_seed.append(
+            {
+                "seed": s,
+                "n_communities": summary["n_communities"],
+                "n_alerts": summary["n_alerts"],
+                "precision": {budget: queue[budget]["precision"] for budget in queue},
+            }
+        )
+    aggregate: dict[str, float] = {}
+    for budget in per_seed[0]["precision"]:
+        values = [row["precision"][budget] for row in per_seed]
+        aggregate[f"precision{budget}_mean"] = statistics.mean(values)
+        aggregate[f"precision{budget}_std"] = statistics.stdev(values) if len(values) > 1 else 0.0
+    report = {
+        "kind": "alert_queue_multiseed",
+        "dataset": cfg["dataset"],
+        "seeds": seeds,
+        "leiden_seed": cfg.get("seed", 0),
+        "per_seed": per_seed,
+        "aggregate": aggregate,
+    }
+    out_root.mkdir(parents=True, exist_ok=True)
+    (out_root / "queue_multiseed.json").write_text(
+        json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
+    return report

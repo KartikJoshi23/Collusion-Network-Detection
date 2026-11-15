@@ -9,6 +9,7 @@ import polars as pl
 import pytest
 from collusiongraph.schema import GraphStore
 from collusiongraph.training import build_alert_queue, train_gnn
+from collusiongraph.training.alert_queue import build_alert_queue_multiseed
 
 pytestmark = pytest.mark.integration
 
@@ -131,6 +132,64 @@ def test_train_score_queue_eval_end_to_end(tmp_path) -> None:
     alerts = pl.read_parquet(out_dir / "alerts" / "alerts.parquet")
     assert alerts["rank"].to_list() == list(range(1, alerts.height + 1))
     assert ((alerts["risk_score"] >= 0.0) & (alerts["risk_score"] <= 1.0)).all()
+
+
+def test_multiseed_queue_matches_single_queues(tmp_path) -> None:
+    """Revision item D25: one queue per model seed over the same communities."""
+    store = synthetic_financial_store(tmp_path)
+    root = tmp_path / "campaign"
+    for s in (0, 1):
+        train_gnn(
+            {
+                "dataset": "toyfin",
+                "store_root": str(store.root),
+                "output_dir": str(root / f"seed_{s}"),
+                "seed": s,
+                "features": "raw",
+                "split": {"loss_end": 2, "train_end": 3, "test_start": 5},
+                "model": {"name": "graphsage", "hidden_dim": 16, "dropout": 0.0},
+                "loss": {"name": "focal", "gamma": 2.0},
+                "epochs": 30,
+                "patience": 10,
+                "lr": 0.05,
+                "budgets": [4],
+            }
+        )
+    common = {
+        "dataset": "toyfin",
+        "domain": "financial",
+        "store_root": str(store.root),
+        "split": {"test_start": 5},
+        "seed": 0,
+        "budgets": [2],
+    }
+    report = build_alert_queue_multiseed(
+        {
+            **common,
+            "seeds": [0, 1],
+            "scores_root": str(root),
+            "output_dir": str(tmp_path / "queues"),
+            "model_run_id": "it",
+        }
+    )
+    single = build_alert_queue(
+        {
+            **common,
+            "scores_dir": str(root / "seed_1"),
+            "output_dir": str(tmp_path / "single"),
+            "model_run_id": "it_s1",
+        }
+    )
+    assert [row["seed"] for row in report["per_seed"]] == [0, 1]
+    assert {row["n_communities"] for row in report["per_seed"]} == {single["n_communities"]}
+    direct_p = single["alert_level"]["queue"]["@2"]["precision"]
+    assert report["per_seed"][1]["precision"]["@2"] == direct_p
+    rebuilt = pl.read_parquet(tmp_path / "queues" / "seed_1" / "alerts.parquet").drop("created_at")
+    direct = pl.read_parquet(tmp_path / "single" / "alerts.parquet").drop("created_at")
+    assert rebuilt.equals(direct)
+    values = [row["precision"]["@2"] for row in report["per_seed"]]
+    assert report["aggregate"]["precision@2_mean"] == pytest.approx(sum(values) / 2)
+    assert (tmp_path / "queues" / "queue_multiseed.json").is_file()
 
 
 def test_market_test_group_queue(tmp_path) -> None:

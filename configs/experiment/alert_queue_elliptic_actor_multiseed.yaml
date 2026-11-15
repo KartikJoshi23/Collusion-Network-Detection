@@ -1,0 +1,27 @@
+# Journal revision, item D25 (not in the brief). The five-seed actor run puts
+# seed 0, the model behind the published actor queue, last of the five on
+# AUC-PR (0.2473 against a mean of 0.3400). This config rebuilds the actor
+# queue from every seed's scores, so the queue sentence in Section V-B rests
+# on five seeds. Everything else matches alert_queue_elliptic_actor.yaml.
+# `seed` stays the Leiden seed: every model seed is ranked over the same
+# communities. Seed 0's scores equal the stored run's scores, so its queue
+# doubles as a reproduction check of the stored actor queue.
+dataset: elliptic_pp_actor
+domain: financial
+store_root: data/interim
+seeds: [0, 1, 2, 3, 4]
+scores_root: eval_outputs/elliptic_pp_actor/gnn_rgcn_focal_multiseed
+output_dir: eval_outputs/elliptic_pp_actor/alert_queue_multiseed
+model_run_id: rgcn_actor
+seed: 0
+
+split:
+  train_end: 34
+  test_start: 35
+
+train_label_policy: history_as_of
+
+resolution: 1.0
+min_community_size: 2
+top_p: 0.25
+budgets: [50, 100, 200]

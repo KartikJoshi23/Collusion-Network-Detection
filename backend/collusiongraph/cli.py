@@ -132,9 +132,16 @@ def _cmd_train(args: argparse.Namespace) -> int:
 
 
 def _cmd_score(args: argparse.Namespace) -> int:
-    from collusiongraph.training import build_alert_queue
+    from collusiongraph.eval import load_config
+    from collusiongraph.training.alert_queue import (
+        build_alert_queue,
+        build_alert_queue_multiseed,
+    )
 
-    summary = build_alert_queue(args.config)
+    cfg = load_config(args.config)
+    # a ``seeds`` list rebuilds the queue once per model seed (revision item D25)
+    runner = build_alert_queue_multiseed if cfg.get("seeds") else build_alert_queue
+    summary = runner(cfg)
     print(json.dumps(summary, indent=2))
     return 0
 
