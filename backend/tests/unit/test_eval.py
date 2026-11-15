@@ -244,6 +244,79 @@ class TestAlertQueueMetrics:
         assert cov["@1"] == pytest.approx(1 / 3)
         assert cov["@3"] == pytest.approx(2 / 3)
 
+    @staticmethod
+    def tied_queue(order: list[str]) -> tuple[pl.DataFrame, pl.DataFrame]:
+        """A leads; B, C and D tie below it and only C is a hit. ``order`` sets
+        the ranks inside the tie (the community-id tie-break), which must not
+        move any metric (revision item D28)."""
+        members = {"A": ["bad1"], "B": ["ok1"], "C": ["bad2", "bad3"], "D": ["ok2"]}
+        risk = {"A": 0.9, "B": 0.5, "C": 0.5, "D": 0.5}
+        rows = [{"alert_id": "A", "rank": 1, "members": members["A"]}] + [
+            {"alert_id": a, "rank": i + 2, "members": members[a]} for i, a in enumerate(order)
+        ]
+        alerts = alert_frame(rows).with_columns(
+            pl.Series("risk_score", [risk[r["alert_id"]] for r in rows], dtype=pl.Float32)
+        )
+        bad = {f"bad{i}": "illicit" for i in (1, 2, 3)}
+        labels = labels_frame({**bad, "ok1": "licit", "ok2": "licit"})
+        return apply_hit_rule(alerts, labels), labels
+
+    def test_tied_alerts_are_order_free(self) -> None:
+        results = []
+        for order in (["B", "C", "D"], ["C", "B", "D"], ["D", "B", "C"]):
+            labeled, labels = self.tied_queue(order)
+            results.append(
+                (
+                    alert_queue_metrics(labeled, budgets=[2, 4]),
+                    illicit_coverage_at_budget(labeled, labels, budgets=[2]),
+                )
+            )
+        assert all(r == results[0] for r in results)
+        queue, coverage = results[0]
+        # A is a sure hit; the second slot draws C with probability 1/3
+        assert queue["@2"]["precision"] == pytest.approx((1 + 1 / 3) / 2)
+        assert queue["@2"]["n_hits"] == pytest.approx(4 / 3)
+        assert queue["@4"]["precision"] == pytest.approx(2 / 4)  # whole queue: exact
+        # bad1 is certain; bad2 and bad3 ride on C, drawn with probability 1/3
+        assert coverage["@2"] == pytest.approx((1 + 2 / 3) / 3)
+
+    def test_tied_coverage_matches_enumeration_with_shared_members(self) -> None:
+        from itertools import combinations
+
+        members = {
+            "T1": ["bad1", "bad2"],
+            "T2": ["bad2"],
+            "T3": ["bad3", "ok1"],
+            "T4": ["bad1"],
+            "T5": ["ok2"],
+        }
+        rows = [
+            {"alert_id": a, "rank": i + 1, "members": m} for i, (a, m) in enumerate(members.items())
+        ]
+        alerts = alert_frame(rows).with_columns(pl.lit(0.5, dtype=pl.Float32).alias("risk_score"))
+        labels = labels_frame(
+            {
+                "bad1": "illicit",
+                "bad2": "illicit",
+                "bad3": "illicit",
+                "bad4": "illicit",
+                "ok1": "licit",
+                "ok2": "licit",
+            }
+        )
+        labeled = apply_hit_rule(alerts, labels)
+        illicit = {"bad1", "bad2", "bad3", "bad4"}
+        for k in (1, 2, 3, 5):
+            subsets = list(combinations(members, k))
+            union = [set().union(*(members[a] for a in s)) & illicit for s in subsets]
+            brute = sum(len(u) for u in union) / len(subsets) / len(illicit)
+            cov = illicit_coverage_at_budget(labeled, labels, budgets=[k])
+            assert cov[f"@{k}"] == pytest.approx(brute)
+            hits = sum(1 for a in members if set(members[a]) & illicit)
+            assert alert_queue_metrics(labeled, budgets=[k])[f"@{k}"]["precision"] == (
+                pytest.approx(hits / len(members))
+            )
+
 
 class TestResolveBudgets:
     def test_mendeley_manual_resolution_reproduced(self) -> None:

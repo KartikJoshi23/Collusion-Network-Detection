@@ -111,27 +111,64 @@ def confirmed_node_vectors(
     return y, joined["score"].to_numpy()
 
 
-def alert_queue_metrics(labeled_queue: pl.DataFrame, budgets: list[int]) -> dict[str, dict]:
-    """Budget metrics over a deduplicated, hit-labeled queue (rank-sorted).
+def _split_at_budget(queue: pl.DataFrame, k: int) -> tuple[pl.DataFrame, pl.DataFrame, int]:
+    """Split a queue at budget ``k`` into the alerts strictly above the k-th
+    risk score, the tie group at that score, and the number of tie-group
+    alerts the budget admits.
 
-    ``precision``: hits among the top-k alerts / k (k truncated to queue length,
-    reported as ``k_effective``). ``false_alert_rate`` = 1 − precision — the
-    alert-level operational analogue of FPR (alert-level TN is ill-defined).
+    Alert risk scores tie when calibrated scores saturate (isotonic plateaus),
+    and ``rank`` then breaks the tie by community id, which carries no model
+    information. Budget metrics therefore take the expectation over a uniform
+    random order within the tie group, the rule the node-level metrics use.
+    A frame without ``risk_score`` has unique ranks and so no ties.
     """
-    queue = labeled_queue.sort("rank")
-    hits = queue["is_hit"].to_numpy()
+    if "risk_score" not in queue.columns:
+        ranked = queue.sort("rank")
+        return ranked.head(k), ranked.head(0), 0
+    scores = queue["risk_score"].to_numpy()
+    threshold = np.sort(scores)[::-1][k - 1]
+    above = queue.filter(pl.Series(scores > threshold))
+    tie = queue.filter(pl.Series(scores == threshold))
+    return above, tie, k - above.height
+
+
+def _p_none_drawn(n_group: int, n_drawn: int, n_marked: int) -> float:
+    """Probability that ``n_drawn`` alerts drawn uniformly without replacement
+    from ``n_group`` include none of ``n_marked`` marked alerts."""
+    p = 1.0
+    for i in range(n_marked):
+        if n_group - n_drawn - i <= 0:
+            return 0.0
+        p *= (n_group - n_drawn - i) / (n_group - i)
+    return p
+
+
+def alert_queue_metrics(labeled_queue: pl.DataFrame, budgets: list[int]) -> dict[str, dict]:
+    """Budget metrics over a deduplicated, hit-labeled queue (tie-aware).
+
+    ``precision``: expected hits among the top-k alerts / k (k truncated to
+    queue length, reported as ``k_effective``), with a uniform random order
+    within tied risk scores (``_split_at_budget``). ``n_hits`` is that
+    expectation, so it can be fractional. ``false_alert_rate`` = 1 −
+    precision — the alert-level operational analogue of FPR (alert-level TN
+    is ill-defined).
+    """
     out: dict[str, dict] = {}
     for k in budgets:
-        k_eff = min(k, len(hits))
+        k_eff = min(k, labeled_queue.height)
         if k_eff == 0:
             raise ValueError("empty alert queue")
-        p = float(hits[:k_eff].mean())
+        above, tie, slots = _split_at_budget(labeled_queue, k_eff)
+        expected = float(above["is_hit"].sum())
+        if slots:
+            expected += slots * float(tie["is_hit"].sum()) / tie.height
+        p = expected / k_eff
         out[f"@{k}"] = {
             "k_requested": k,
             "k_effective": k_eff,
             "precision": p,
             "false_alert_rate": 1.0 - p,
-            "n_hits": int(hits[:k_eff].sum()),
+            "n_hits": expected,
         }
     return out
 
@@ -139,14 +176,28 @@ def alert_queue_metrics(labeled_queue: pl.DataFrame, budgets: list[int]) -> dict
 def illicit_coverage_at_budget(
     labeled_queue: pl.DataFrame, labels: pl.DataFrame, budgets: list[int]
 ) -> dict[str, float]:
-    """Alert-level recall: share of ALL confirmed illicit nodes that appear as
-    members of the top-k deduplicated alerts (captured illicit mass, §4.5)."""
+    """Alert-level recall: expected share of ALL confirmed illicit nodes that
+    appear as members of the top-k deduplicated alerts (captured illicit mass,
+    §4.5). Tie-aware like ``alert_queue_metrics``; the expectation is exact
+    even when alerts in the tie group share members."""
     illicit = set(labels.filter(pl.col("label") == Label.ILLICIT.value)["node_id"].to_list())
     if not illicit:
         raise ValueError("coverage undefined: no confirmed illicit nodes in labels")
-    queue = labeled_queue.sort("rank")
     out: dict[str, float] = {}
     for k in budgets:
-        members = queue.head(k)["member_node_ids"].explode(empty_as_null=False).to_list()
-        out[f"@{k}"] = len(set(members) & illicit) / len(illicit)
+        k_eff = min(k, labeled_queue.height)
+        if k_eff == 0:
+            out[f"@{k}"] = 0.0
+            continue
+        above, tie, slots = _split_at_budget(labeled_queue, k_eff)
+        covered = set(above["member_node_ids"].explode(empty_as_null=False).to_list()) & illicit
+        expected = float(len(covered))
+        if slots:
+            open_illicit = illicit - covered
+            marked: dict[str, int] = {}  # tie-group alerts holding each open illicit node
+            for members in tie["member_node_ids"].to_list():
+                for node in set(members) & open_illicit:
+                    marked[node] = marked.get(node, 0) + 1
+            expected += sum(1.0 - _p_none_drawn(tie.height, slots, m) for m in marked.values())
+        out[f"@{k}"] = expected / len(illicit)
     return out
