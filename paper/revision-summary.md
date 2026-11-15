@@ -1,8 +1,8 @@
 # One-page change log — "One Stack, Two Ledgers" (journal revision)
 
 Branch `paper/journal-revision`. Item-by-item detail: `paper/revision-changelog.md`;
-raw results against the old claims: `paper/revision-results.md`. **Draft: B7, D24
-and D25 are still running; their lines are marked.**
+raw results against the old claims: `paper/revision-results.md`. **Draft: B7 and D25
+are still running; their lines are marked.**
 
 ## Headline results after the revision
 - **RQ1 holds:** five-seed trees (B3 0.8123 ± 0.0012) beat GATv2 (0.4729 ± 0.0525)
@@ -19,7 +19,10 @@ and D25 are still running; their lines are marked.**
 - **Explanations:** PGExplainer passes PyG's sanity check on 49/50 alerts, but only
   25/50 under a uniform hard-mask test, and no explainer is sparse.
 - **Label noise vs regularisers (B7):** [PENDING]
-- **Normalisation effect (D24):** [PENDING; seed 0 reproduces 0.692 vs 0.549]
+- **Normalisation effect (D24):** re-normalising on the test graph lifts GATv2
+  from 0.4729 ± 0.0525 to 0.6853 ± 0.0052 (every seed p ≤ 0.001), all of it in
+  steps 35–42. Even adapted, GATv2 stays below the trees. The unsourced
+  0.693 → 0.532 figures are gone.
 - **Actor model across seeds (D25):** [PENDING]
 
 ## What changed in the manuscript
