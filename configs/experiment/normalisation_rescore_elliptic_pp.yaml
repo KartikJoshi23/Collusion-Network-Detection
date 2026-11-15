@@ -1,0 +1,26 @@
+# Journal revision, item D24 (not in the brief). The five-seed measurement of
+# test-time re-normalisation on Elliptic++.
+#
+# The paper used to say that removing test-time re-normalisation lowered the
+# headline GATv2 number from 0.693 to 0.532. Those figures come from a fix pass
+# that changed many things at once. This config isolates the one effect.
+#
+# Validation is scored on the train graph with the frozen train statistics, so
+# a per-graph run trains exactly the weights of the frozen run. This runner
+# therefore loads the five stored headline checkpoints (source_config below)
+# and scores the test graph twice: with the frozen train statistics (the
+# published protocol) and with the test graph's own statistics. Both passes use
+# the same weights, so the difference is the normalisation alone.
+#
+# Guards: each checkpoint must reproduce its run's validation AUC-PR, and the
+# frozen pass must reproduce its run's test AUC-PR, within `tolerance`.
+# Cross-check: seed 0 of gnn_elliptic_pp_gatv2_focal_pergraphnorm_multiseed.yaml
+# trained the per-graph arm end to end and must match the per-graph pass here.
+# This is a measurement of the effect, not a protocol option.
+normalisation_rescore: true
+source_config: configs/experiment/gnn_elliptic_pp_gatv2_focal_multiseed.yaml
+seeds: [0, 1, 2, 3, 4]
+output_dir: eval_outputs/elliptic_pp/normalisation_rescore
+tolerance: 1.0e-9
+n_boot: 2000
+bootstrap_seed: 0

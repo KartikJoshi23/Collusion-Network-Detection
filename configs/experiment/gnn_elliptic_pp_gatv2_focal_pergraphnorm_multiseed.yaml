@@ -1,17 +1,24 @@
-# Journal revision, item D24 (not in the brief). The paper says that removing
-# test-time re-normalisation lowered the headline GATv2 number from 0.693 to
-# 0.532. Those two figures come from the July 2026 ledger: the drop came from
-# a fix pass that changed many things at once, and the ablation that would
-# isolate this effect was queued but never run. This config runs it. It is
-# identical to gnn_elliptic_pp_gatv2_focal_multiseed.yaml except that the
-# inference graph is z-scored with its own statistics (normalisation:
-# per_graph), the test-time adaptation the frozen protocol removed. It is a
-# measurement of that effect, not a protocol option.
+# Journal revision, item D24 (not in the brief). The paper used to say that
+# removing test-time re-normalisation lowered the headline GATv2 number from
+# 0.693 to 0.532. Those two figures come from the July 2026 ledger: the drop
+# came from a fix pass that changed many things at once. This config trains
+# the per-graph arm end to end. It is identical to
+# gnn_elliptic_pp_gatv2_focal_multiseed.yaml except that the inference graph is
+# z-scored with its own statistics (normalisation: per_graph), the test-time
+# adaptation the frozen protocol removed.
+#
+# Seed 0 only. Validation runs on the train graph with the frozen statistics,
+# so this arm trains exactly the weights of the frozen run. The five-seed
+# measurement therefore re-scores the stored headline checkpoints instead
+# (normalisation_rescore_elliptic_pp.yaml). This run is that runner's
+# cross-check: its seed-0 test scores must equal the re-scored ones, and they
+# do. Seed 1 was in progress here when that check passed, and it was stopped.
+# This is a measurement of the effect, not a protocol option.
 dataset: elliptic_pp
 store_root: data/interim
 output_dir: eval_outputs/elliptic_pp/gnn_gatv2_focal_pergraphnorm_multiseed
 multiseed: true
-seeds: [0, 1, 2, 3, 4]
+seeds: [0]
 features: raw
 normalisation: per_graph
 

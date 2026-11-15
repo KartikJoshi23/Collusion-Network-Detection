@@ -45,6 +45,8 @@ def select_train_runner(cfg: dict[str, Any]) -> str:
         return "supervised_fusion"
     if cfg.get("full_label_comparison"):
         return "full_label_comparison"
+    if cfg.get("normalisation_rescore"):
+        return "normalisation_rescore"
     if "baselines" in cfg:
         return "baselines_multiseed" if cfg.get("multiseed") else "baselines"
     if "motifs" in cfg:
@@ -95,6 +97,7 @@ def _cmd_train(args: argparse.Namespace) -> int:
         run_label_noise,
         run_multiseed,
     )
+    from collusiongraph.training.rescore import run_normalisation_rescore
     from collusiongraph.training.transfer_run import (
         run_cross_domain_probe,
         run_full_label_comparison,
@@ -118,6 +121,7 @@ def _cmd_train(args: argparse.Namespace) -> int:
         "label_efficiency": run_label_efficiency,
         "cross_domain_probe": run_cross_domain_probe,
         "full_label_comparison": run_full_label_comparison,
+        "normalisation_rescore": run_normalisation_rescore,
     }
     cfg = load_config(args.config)
     kind = select_train_runner(cfg)

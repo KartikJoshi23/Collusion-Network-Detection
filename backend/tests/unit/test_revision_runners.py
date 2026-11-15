@@ -460,6 +460,7 @@ class TestDispatch:
             ({"baselines": ["b2_xgb"]}, "baselines"),
             ({"baselines": ["b2_xgb"], "multiseed": True}, "baselines_multiseed"),
             ({"supervised_fusion": True, "members": {}}, "supervised_fusion"),
+            ({"normalisation_rescore": True, "seeds": [0]}, "normalisation_rescore"),
         ],
     )
     def test_new_shapes(self, cfg, kind) -> None:
@@ -688,3 +689,100 @@ class TestNormalisationAblation:
         store = financial_store(tmp_path)
         with pytest.raises(ValueError, match="normalisation"):
             train_gnn(self._cfg(store, tmp_path / "x", normalisation="test_time"))
+
+
+class TestNormalisationRescore:
+    """D24: stored checkpoints re-scored under frozen and per-graph statistics."""
+
+    def _source(self, store, tmp_path) -> Path:
+        import yaml
+
+        cfg = {
+            "dataset": "toysrc",
+            "store_root": str(store.root),
+            "output_dir": str(tmp_path / "src"),
+            "multiseed": True,
+            "seeds": [0, 1],
+            "features": "structural",
+            "split": {"loss_end": 2, "train_end": 3, "test_start": 5},
+            "model": {"name": "graphsage", "hidden_dim": 8, "dropout": 0.0},
+            "epochs": 3,
+            "patience": 3,
+            "budgets": [4],
+        }
+        path = tmp_path / "source.yaml"
+        path.write_text(yaml.safe_dump(cfg), encoding="utf-8")
+        return path
+
+    def _rescore_cfg(self, source: Path, out: Path) -> dict:
+        return {
+            "normalisation_rescore": True,
+            "source_config": str(source),
+            "seeds": [0, 1],
+            "output_dir": str(out),
+            "n_boot": 50,
+        }
+
+    def test_frozen_reproduces_and_per_graph_matches_training(self, tmp_path) -> None:
+        import yaml
+        from collusiongraph.training.multiseed import run_multiseed
+        from collusiongraph.training.rescore import run_normalisation_rescore
+        from collusiongraph.training.trainer import train_gnn
+
+        from .test_transfer import financial_store
+
+        store = financial_store(tmp_path)
+        source = self._source(store, tmp_path)
+        campaign = run_multiseed(str(source))
+        base = yaml.safe_load(source.read_text(encoding="utf-8"))
+        base = {k: v for k, v in base.items() if k not in ("multiseed", "seeds", "output_dir")}
+        trained_pg = train_gnn(
+            {**base, "seed": 0, "output_dir": str(tmp_path / "pg"), "normalisation": "per_graph"}
+        )
+        report = run_normalisation_rescore(self._rescore_cfg(source, tmp_path / "out"))
+
+        frozen = [r["auc_pr"]["frozen"] for r in report["per_seed"]]
+        assert frozen == [r["auc_pr"] for r in campaign["per_seed"]]
+        seed0 = report["per_seed"][0]
+        assert seed0["auc_pr"]["per_graph"] == trained_pg["node_level"]["auc_pr"]
+        rescored = pl.read_parquet(
+            tmp_path / "out" / "seed_0" / "per_graph" / "scores_test.parquet"
+        )
+        trained = pl.read_parquet(tmp_path / "pg" / "scores_test.parquet")
+        assert rescored.equals(trained)
+        agg = report["aggregate"]
+        assert agg["frozen"]["mean"] == pytest.approx(np.mean(frozen))
+        deltas = [r["auc_pr"]["per_graph"] - r["auc_pr"]["frozen"] for r in report["per_seed"]]
+        assert agg["delta_per_graph_minus_frozen"]["mean"] == pytest.approx(np.mean(deltas))
+        paired = seed0["paired_per_graph_minus_frozen"]
+        assert paired["delta"] == pytest.approx(deltas[0])
+        assert (tmp_path / "out" / "normalisation_rescore.json").is_file()
+
+    def test_tampered_checkpoint_is_refused(self, tmp_path) -> None:
+        import torch
+        from collusiongraph.training.multiseed import run_multiseed
+        from collusiongraph.training.rescore import run_normalisation_rescore
+
+        from .test_transfer import financial_store
+
+        store = financial_store(tmp_path)
+        source = self._source(store, tmp_path)
+        run_multiseed(str(source))
+        ckpt = tmp_path / "src" / "seed_1" / "model.pt"
+        state = torch.load(ckpt)
+        torch.save({k: v + 0.5 if v.is_floating_point() else v for k, v in state.items()}, ckpt)
+        with pytest.raises(RuntimeError, match="rebuild differs from training"):
+            run_normalisation_rescore(self._rescore_cfg(source, tmp_path / "out"))
+
+    def test_rejects_a_per_graph_source(self, tmp_path) -> None:
+        import yaml
+        from collusiongraph.training.rescore import run_normalisation_rescore
+
+        from .test_transfer import financial_store
+
+        store = financial_store(tmp_path)
+        source = self._source(store, tmp_path)
+        cfg = yaml.safe_load(source.read_text(encoding="utf-8"))
+        source.write_text(yaml.safe_dump({**cfg, "normalisation": "per_graph"}), encoding="utf-8")
+        with pytest.raises(ValueError, match="frozen normalisation"):
+            run_normalisation_rescore(self._rescore_cfg(source, tmp_path / "out"))
