@@ -1,8 +1,8 @@
 # One-page change log — "One Stack, Two Ledgers" (journal revision)
 
 Branch `paper/journal-revision`. Item-by-item detail: `paper/revision-changelog.md`;
-raw results against the old claims: `paper/revision-results.md`. **Draft: B7 and D25
-are still running; their lines are marked.**
+raw results against the old claims: `paper/revision-results.md`. **Draft: the B7
+regulariser arms are still running; their lines are marked.**
 
 ## Headline results after the revision
 - **RQ1 holds:** five-seed trees (B3 0.8123 ± 0.0012) beat GATv2 (0.4729 ± 0.0525)
@@ -23,7 +23,14 @@ are still running; their lines are marked.**
   from 0.4729 ± 0.0525 to 0.6853 ± 0.0052 (every seed p ≤ 0.001), all of it in
   steps 35–42. Even adapted, GATv2 stays below the trees. The unsourced
   0.693 → 0.532 figures are gone.
-- **Actor model across seeds (D25):** [PENDING]
+- **Actor model across seeds (D25):** five seeds give 0.3400 ± 0.0632
+  AUC-PR; the quoted seed 0 (0.2473) is the weakest. Precision@100 is 0.98–1.00
+  on every seed. The actor queue, rebuilt per seed, reaches P@50
+  0.14 ± 0.03 against 0.99 for the node ranking.
+- **Queue precision is now tie-aware (D28):** the paper claimed it, but the
+  alert-level code ranked ties by community id. The procurement queue's top 129
+  alerts tie: P@18 is 0.40 (was 0.33), against 0.39 for a random order, so the
+  procurement queue barely ranks. The financial queue does not change.
 
 ## What changed in the manuscript
 - Framing (Part A): problem-first introduction; the AI Act as a design standard;
@@ -32,7 +39,7 @@ are still running; their lines are marked.**
   35–42 vs 43–49, full-label probes and explainer metrics; Appendix A rebuilt (42
   rows); every printed number checked by a manifest (0 failures).
 - Methods (Part C): new Appendix C with every split, feature, rule and setting.
-- Consistency (Part D): 27 items found and fixed or marked, including the queues
+- Consistency (Part D): 28 items found and fixed or marked, including the queues
   and explanation bundles built from the wrong models (rebuilt, counts unchanged)
   and the probe reproducibility claim (corrected).
 - References (Part E): 31 → 60, each verified; one finding re-attributed.

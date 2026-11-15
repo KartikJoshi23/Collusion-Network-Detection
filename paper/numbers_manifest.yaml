@@ -202,30 +202,52 @@ numbers:
       - {id: p50, v: "0.30", key: "results.1.queue.@50.precision"}
       - {id: p100, v: "0.23", key: "results.1.queue.@100.precision"}
       - {id: p200, v: "0.125", key: "results.1.queue.@200.precision", fmt: "{:.3f}"}
+  # D28: queue precision is tie-aware; the top 129 procurement alerts tie
   - id: procurement_queue
     file: eval_outputs/mendeley_eu/alert_queue/metrics.json
     fmt: "{:.2f}"
     items:
-      - {id: p18, v: "0.33", key: "alert_level.queue.@18.precision"}
+      - {id: p18, v: "0.40", key: "alert_level.queue.@18.precision"}
   - id: procurement_hit_rule
-    v: "0.33"
-    fmt: "{:.2f}"
     file: eval_outputs/mendeley_eu/sensitivity/sensitivity.json
-    key: "results.*.queue.@18.precision"
-    reduce: min
-  - id: actor
-    file: eval_outputs/elliptic_pp_actor/gnn_rgcn_focal/run.json
+    fmt: "{:.2f}"
     items:
-      - {id: auc, v: "0.2473", key: node_level.auc_pr}
-      - {id: prev, v: "0.053", key: node_level.prevalence_baseline, fmt: "{:.3f}"}
-      - {id: prev_pct, v: "5.3", key: node_level.prevalence_baseline, fmt: "{:.1f}", scale: 100}
-      - {id: p100, v: "0.98", key: "node_level.precision@100", fmt: "{:.2f}"}
-      - {id: lift, v: "4.7", key: node_level.auc_pr, fmt: "{:.1f}", op: div, b: {file: eval_outputs/elliptic_pp_actor/gnn_rgcn_focal/run.json, key: node_level.prevalence_baseline}}
+      - {id: any_member, v: "0.40", key: "results.0.queue.@18.precision"}
+      - {id: tenth, v: "0.39", key: "results.1.queue.@18.precision"}
+      - {id: quarter, v: "0.37", key: "results.2.queue.@18.precision"}
+      - {id: random_order, v: "0.39", key: results.0.n_hits_total, op: div, b: {file: eval_outputs/mendeley_eu/sensitivity/sensitivity.json, key: results.0.n_kept}}
+  # D25: the actor R-GCN over five seeds (seed 0 is the stored single run)
+  - id: actor
+    file: eval_outputs/elliptic_pp_actor/gnn_rgcn_focal_multiseed/multiseed.json
+    items:
+      - {id: auc, v: "0.3400", key: aggregate.auc_pr_mean}
+      - {id: auc_sd, v: "0.0632", key: aggregate.auc_pr_std}
+      - {id: auc_min, v: "0.2473", key: per_seed.*.auc_pr, reduce: min}
+      - {id: auc_max, v: "0.4033", key: per_seed.*.auc_pr, reduce: max}
+      - {id: prev, v: "0.053", key: prevalence_baseline, fmt: "{:.3f}"}
+      - {id: prev_pct, v: "5.3", key: prevalence_baseline, fmt: "{:.1f}", scale: 100}
+      - {id: lift, v: "6.4", key: aggregate.auc_pr_mean, fmt: "{:.1f}", op: div, b: {file: eval_outputs/elliptic_pp_actor/gnn_rgcn_focal_multiseed/multiseed.json, key: prevalence_baseline}}
+      - {id: p50, v: "0.99", key: "aggregate.precision@50_mean", fmt: "{:.2f}"}
+  - id: actor_p100
+    key: "node_level.precision@100"
+    fmt: "{:.2f}"
+    items:
+      - {id: s0, v: "0.98", file: eval_outputs/elliptic_pp_actor/gnn_rgcn_focal_multiseed/seed_0/run.json}
+      - {id: s1, v: "1.00", file: eval_outputs/elliptic_pp_actor/gnn_rgcn_focal_multiseed/seed_1/run.json}
+      - {id: s2, v: "1.00", file: eval_outputs/elliptic_pp_actor/gnn_rgcn_focal_multiseed/seed_2/run.json}
+      - {id: s3, v: "1.00", file: eval_outputs/elliptic_pp_actor/gnn_rgcn_focal_multiseed/seed_3/run.json}
+      - {id: s4, v: "1.00", file: eval_outputs/elliptic_pp_actor/gnn_rgcn_focal_multiseed/seed_4/run.json}
   - id: actor_queue
     v: "0.08"
     fmt: "{:.2f}"
     file: eval_outputs/elliptic_pp_actor/alert_queue/metrics.json
     key: "alert_level.queue.@50.precision"
+  - id: actor_queue_seeds
+    file: eval_outputs/elliptic_pp_actor/alert_queue_multiseed/queue_multiseed.json
+    fmt: "{:.2f}"
+    items:
+      - {id: p50, v: "0.14", key: "aggregate.precision@50_mean"}
+      - {id: p50_sd, v: "0.03", key: "aggregate.precision@50_std"}
 
   # ------------------------------------------------------------ Mendeley
   - id: mendeley_det

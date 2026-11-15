@@ -221,3 +221,107 @@ Verdict. The direction of the old claim holds, and the effect is larger than
 stated: re-normalising on the test graph adds 0.21 AUC-PR and cuts the seed
 SD tenfold. The paper now quotes the five-seed measurement and drops the
 ledger figures.
+
+## D25. Actor R-GCN over five seeds
+
+The paper quoted the seed-0 actor R-GCN (0.2473 AUC-PR, precision@100 0.98)
+and called the head of its ranking "stable across seeds". The only evidence
+for that phrase was a three-seed check on another laptop in July 2026, with no
+committed config or artifact (ledger: 0.326 ± 0.078; P@100 0.98, 1.00, 1.00).
+
+Run. `gnn_elliptic_actor_rgcn_multiseed.yaml` (here), identical to
+`gnn_elliptic_actor_rgcn.yaml` except for the seeds. Seed 0 reproduces the
+stored single-seed run in every validation and test score (56,720 and 292,102
+wallets).
+
+| Seed | Test AUC-PR | Validation AUC-PR | Best epoch / epochs run | P@50 | P@100 | P@200 |
+|---|---|---|---|---|---|---|
+| 0 | 0.2473 | 0.5087 | 13 / 29 | 0.96 | 0.98 | 0.98 |
+| 1 | 0.3286 | 0.5247 | 20 / 36 | 1.00 | 1.00 | 1.00 |
+| 2 | 0.4033 | 0.7601 | 119 / 120 | 1.00 | 1.00 | 0.945 |
+| 3 | 0.3950 | 0.7400 | 111 / 120 | 1.00 | 1.00 | 0.99 |
+| 4 | 0.3258 | 0.5797 | 22 / 38 | 1.00 | 1.00 | 1.00 |
+| Mean ± SD | 0.3400 ± 0.0632 | | | 0.992 ± 0.018 | 0.996 ± 0.009 | 0.983 ± 0.023 |
+
+Prevalence in the test window is 0.0529, so the mean lift is 6.4× (seed 0
+alone: 4.7×). Seeds 0–2 alone give 0.3264 ± 0.0780, the July ledger value, so
+the two laptops agree.
+
+Observations, not claims. Seed 0 is the weakest seed. Its deficit sits in
+steps 35 and 36 (AUC-PR 0.089 and 0.050, against 0.63–0.81 and 0.94–0.96 for
+the other seeds). Seeds 0, 1 and 4 stop early (best epochs 13–22); seeds 2
+and 3 train all 120 epochs and score highest. On this graph, validation
+AUC-PR tracks test AUC-PR across the five seeds (Spearman 0.90; with five
+points the exact two-sided permutation p is 0.083). That differs from the
+transaction graph, where validation sits near 0.94 on every seed. Five points
+cannot carry a claim, so the paper does not state it.
+
+Queue across seeds (`alert_queue_elliptic_actor_multiseed.yaml`, here). The
+paper's queue sentence used seed 0, the weakest seed, so the actor queue was
+rebuilt from every seed's scores over the same Leiden communities (Leiden
+seed 0). Seed 0 reproduces the stored queue alert for alert. Precision is
+tie-aware (item D28):
+
+| Seed | P@50 | P@100 | P@200 |
+|---|---|---|---|
+| 0 | 0.0846 | 0.0538 | 0.0384 |
+| 1 | 0.1538 | 0.1538 | 0.1956 |
+| 2 | 0.1538 | 0.1538 | 0.1950 |
+| 3 | 0.1538 | 0.1538 | 0.1950 |
+| 4 | 0.1538 | 0.1538 | 0.2007 |
+| Mean ± SD | 0.1400 ± 0.0310 | 0.1338 ± 0.0447 | 0.1649 ± 0.0708 |
+
+In seeds 1–4 the calibrated scores saturate, and the top 130 alerts all
+score 1.0; 20 of them are hits. A random order of the 2,514 alerts gives
+48/2,514 = 0.0191. The node ranking gives P@50 0.992 ± 0.018. The queue
+collapse therefore holds on every seed.
+
+Verdict. The single-seed AUC-PR understated the model: the five-seed mean is
+0.3400, not 0.2473. The head-of-ranking claim holds on five seeds
+(precision@100 0.98 to 1.00). The queue sentence holds too, and now carries
+the five-seed queue figure. The paper quotes the five-seed numbers and drops
+"remarkably".
+
+## D28. Tie-aware queue precision (found during the revision)
+
+Finding. Contribution 1 lists tie-aware precision@k among the protocol's
+guarantees, and Section IV counts queue hits "tie-aware". Node-level
+precision@k was tie-aware (`_expected_positives_at_k` in `eval/metrics.py`).
+Alert-level precision was not: the harness read hits in rank order, and
+`build_alerts` breaks equal risk scores by community id. Isotonic calibration
+maps ranges of raw scores to one value, so group scores tie often. The
+five-seed actor queue exposed it: seeds 1–3 gave identical precision because
+their top 130 alerts all scored 1.0.
+
+Fix (commit 5ee1604). `alert_queue_metrics` and `illicit_coverage_at_budget`
+take the expectation over a uniform random order within the tie group at each
+budget, the node-level rule. Unit tests pin order-freedom and check coverage
+against full enumeration when tied alerts share members. Every queue and
+sensitivity config the paper cites was rerun under the fix.
+
+Audit at the published budgets (rank order → tie-aware), any-member hit rule:
+
+| Queue | Budget | Rank order → tie-aware |
+|---|---|---|
+| Financial (published) | @50 / @100 / @200 | unchanged: 0.32, 0.25, 0.135 (no ties) |
+| García Italy | @10 | unchanged: 1.00 |
+| Procurement (published) | @4 | 0.5000 → 0.3953 (tie group 129) |
+| Procurement (published) | @18 | 0.3333 → 0.3953 (tie group 129) |
+| Procurement (published) | @36 | 0.3333 → 0.3953 (tie group 129) |
+| Actor seed 0 (published) | @50 | 0.0800 → 0.0846 (tie group 1780) |
+| Actor seed 0 (published) | @100 | 0.0600 → 0.0538 (tie group 1780) |
+| Actor seed 0 (published) | @200 | 0.0350 → 0.0384 (tie group 1780) |
+
+Rerun values (tie-aware): procurement P@18 0.3953; under
+the hit rules 0.1 and 0.25 it is 0.3876 and
+0.3721. A random order of the 223 alerts gives
+86/223 = 0.3857. The top 129
+alerts all score 1.0 and hit at 0.3953; the other 94 hit at 0.3723. The
+procurement queue therefore barely ranks its alerts, which fits the seed-0
+R-GCN scoring below prevalence at the firm level.
+
+Effect on the paper. The financial numbers, the García queue and the financial
+hit-rule sentence do not change. The procurement queue sentence, its hit-rule
+sentence and Appendix A change (0.33 → 0.40, with the random-order baseline
+0.39). The actor seed-0 queue still prints 0.08 (0.0846). Section IV now
+states that precision@k is tie-aware for nodes and for groups.

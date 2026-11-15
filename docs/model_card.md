@@ -55,8 +55,10 @@ comes from the config named in `docs/reproducibility.md`.
   [−0.324, −0.276]. The whole gap sits in steps 35–42 (B3 0.926 vs GATv2
   0.574); after the step-43 market closure both fall close to the base rate
   (0.057 vs 0.039 against 0.025).
-* **Actor-level view:** seed-0 global AUC-PR 0.2473 with queue-head P@100
-  0.98. A five-seed check is pending (`gnn_elliptic_actor_rgcn_multiseed.yaml`).
+* **Actor-level view:** five-seed AUC-PR 0.3400 ± 0.0632 (seed 0, the
+  weakest, 0.2473); node precision@100 is 0.98 or 1.00 on every seed. Rolled
+  up into group alerts, the actor queue reaches P@50 0.14 ± 0.03 over the
+  five seeds (seed 0: 0.08), against 0.99 for the node ranking.
 * **Calibrated fusion 0.4434 ± 0.0501** stays below its strongest member;
   naive rank fusion collapses to 0.0511 ± 0.0019 (seed-0 paired bootstrap:
   Δ +0.471, CI [0.441, 0.500]; seed-averaged Δ +0.444 [0.413, 0.474]).
@@ -71,8 +73,10 @@ comes from the config named in `docs/reproducibility.md`.
   firms higher before 2011 and cartel firms higher in test. The best
   firm-level tree is XGB + the dataset's own screens, **0.4547 ± 0.0081**; a
   linear probe on the award screens reaches 0.4752. Alert queues (seed 0):
-  Elliptic 254 alerts, P@50 0.32; Mendeley 223 alerts, P@18 0.33. Both are
-  NMS-invariant; the hit rule moves financial P@50 by 0.02.
+  Elliptic 254 alerts, P@50 0.32; Mendeley 223 alerts, P@18 0.40, where a
+  random order of the same alerts gives 0.39 (its top 129 alerts share one
+  calibrated score). Precision is tie-aware. Both queues are NMS-invariant;
+  the hit rule moves financial P@50 by 0.02 and procurement P@18 by 0.03.
 * **Transfer:** García leave-one-market-out pools to lift 1.36 ± 0.15
   (size-weighted 1.53; every fold's 95% CI above 1). Mendeley
   leave-one-country-out pools to 0.93 ± 0.02 (size-weighted 0.99); its largest

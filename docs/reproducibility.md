@@ -50,7 +50,7 @@ auto-dispatches on config shape). Outputs land in the gitignored
 | `ensemble_elliptic_pp_multiseed.yaml` | **calibrated 0.4434 ± 0.0501 vs rank 0.0511 ± 0.0019** |
 | `alert_queue_elliptic_pp.yaml` | M2-era SAGE queue (historical first queue) |
 | `alert_queue_elliptic_pp_ensemble.yaml` | the published queue: 254 alerts, P@50 0.32 |
-| `gnn_elliptic_actor_rgcn.yaml` / `alert_queue_elliptic_actor.yaml` | actor view: AUC-PR 0.2473 with seed-stable queue head P@100 ≥ 0.98 |
+| `gnn_elliptic_actor_rgcn.yaml` / `alert_queue_elliptic_actor.yaml` | seed-0 actor view: AUC-PR 0.2473, node P@100 0.98; its queue: 2,514 alerts, tie-aware P@50 0.08 |
 | `explanations_elliptic_actor.yaml` | 20/20 matcher bundles over the actor queue — **15 with motif + FATF flags** (added 2026-07-25: the dashboard audit found the actor dataset served 50 alerts with zero bundles) |
 | `injection_recovery_elliptic_pp.yaml` | M3 injection-recovery report (floor catches common_control 1.0) |
 | `explanations_elliptic_pp.yaml` | 50/50 PGExplainer bundles |
@@ -77,9 +77,9 @@ demo script only links the stored file.)
 | `gnn_mendeley_rgcn.yaml` / `gnn_mendeley_rgcn_multiseed.yaml` | the honest negative: 0.2731 seed-0; **0.2808 ± 0.0087, seed-stable below prevalence** |
 | `transfer_loco_mendeley.yaml` | single-fold LOCO (country_5: 0.8025…, byte-reproduces cross-machine) |
 | `transfer_loco_matrix_mendeley.yaml` | full 7×5 LOCO matrix: macro lift 1.17, largest market fails (0.90); pooled lift in `transfer_pooled_lift.yaml` |
-| `alert_queue_mendeley_eu.yaml` | the published queue: 223 alerts, P@4 0.50 |
+| `alert_queue_mendeley_eu.yaml` | the published queue: 223 alerts; the top 129 tie at calibrated risk 1.0, so tie-aware P@18 is 0.40 against 0.39 for a random order (item D28) |
 | `explanations_mendeley_eu.yaml` | 20/20 matcher bundles (no learned attribution — R12) |
-| `sensitivity_mendeley_eu.yaml` | protocol-sensitivity grid |
+| `sensitivity_mendeley_eu.yaml` | protocol-sensitivity grid: flat under NMS; the hit rule moves P@18 from 0.40 to 0.39 and 0.37 |
 
 ### García Rodríguez / cross-domain / OCDS
 
@@ -133,7 +133,8 @@ the run outputs once each run completes; nothing here is typed from memory.
 | `cross_domain_full_label_comparison.yaml` | full-label comparison of the frozen probe (stored encoders), a structural probe, a probe on B2's inputs, and five-seed B2 (item B6) |
 | `gnn_elliptic_pp_gatv2_focal_pergraphnorm_multiseed.yaml` | per-graph normalisation trained end to end, seed 0 only: the cross-check of the re-scoring runner (identical test scores, 0.6919; item D24; not in the brief) |
 | `normalisation_rescore_elliptic_pp.yaml` | re-scores the five stored GATv2 checkpoints with frozen and with test-graph statistics: 0.4729 ± 0.0525 → 0.6853 ± 0.0052, p ≤ 0.001 on every seed; the gain lies in steps 35–42 (item D24; not in the brief) |
-| `gnn_elliptic_actor_rgcn_multiseed.yaml` | actor-graph R-GCN over seeds 0–4, for the "stable across seeds" claim (item D25; not in the brief) |
+| `gnn_elliptic_actor_rgcn_multiseed.yaml` | actor-graph R-GCN over seeds 0–4: AUC-PR 0.3400 ± 0.0632 (0.2473 to 0.4033); node P@100 0.98 for seed 0 and 1.00 for seeds 1–4 (item D25; not in the brief) |
+| `alert_queue_elliptic_actor_multiseed.yaml` | the actor queue rebuilt from each seed's scores over the same communities: tie-aware P@50 0.14 ± 0.03; seed 0 reproduces the stored queue alert for alert (item D25) |
 
 ## 4. Seeds & determinism (measured, not assumed)
 

@@ -414,7 +414,9 @@ operational unit has to be a group and not a node. Leiden community
 detection~\cite{leiden} over the scored graph proposes the candidates. We then
 rank groups by aggregate member risk, deduplicate them with Jaccard non-maximum
 suppression, cap their size, and cut the list at a fixed review budget. A group
-counts as a hit when at least one member is confirmed, tie-aware.
+counts as a hit when at least one member is confirmed. Precision@$k$ is
+tie-aware for nodes and for groups: tied scores count in expectation over a
+random order.
 Section~\ref{sec:robustness} sweeps every parameter in that pipeline.
 
 \subsection{Explanation layer}
@@ -638,12 +640,13 @@ R-GCN focal & $0.2808 \pm 0.0087$ & $0.07 \pm 0.04$ \\
 
 Scoring transactions and scoring actors turn out to be different problems, and
 the difference shows up in the numbers. On the Elliptic++ actor graph, R-GCN
-reaches $0.2473$ AUC-PR against a prevalence of $0.053$, a lift of $4.7\times$,
-and the head of its ranking is remarkably dependable: precision@100 of $0.98$,
-stable across seeds.
-\PENDING{D25: the five-seed actor run supports or replaces this sentence} Roll those node scores up into review groups, though, and
+reaches $0.3400 \pm 0.0632$ AUC-PR over five seeds against a prevalence of
+$0.053$, a lift of $6.4\times$. The seeds range from $0.2473$ to $0.4033$, yet
+the head of the ranking holds: precision@100 is $0.98$ for seed 0 and $1.00$
+for the other four. Roll those node scores up into review groups, though, and
 the queue falls apart. The 2,514 actor alerts from the seed-0 model give
-precision@50 of $0.08$.
+precision@50 of $0.08$. Over the five seeds the queue reaches $0.14 \pm 0.03$,
+against $0.99$ for the node ranking.
 
 The transaction-level queue, built from the seed-0 calibrated ensemble, runs
 the other way. Its 318 communities condense into 254 alerts at precision@50 of
@@ -651,7 +654,9 @@ $0.32$, precision@100 of $0.25$ and precision@200 of $0.135$. That is a triage
 list an analyst could work, and its top 50 cover 7.9\% of the illicit
 population.
 Procurement, built from the seed-0 R-GCN, yields 223 alerts from 1,283
-communities at precision@18 of $0.33$.
+communities, but the queue barely ranks them. Its top 129 alerts share one
+calibrated score, and precision@18 is $0.40$. A random order of the same 223
+alerts gives $0.39$.
 
 The lesson for practice is that node-level ranking quality and queue-level
 precision are not substitutes for one another. Reporting only the first does not show whether the model is useful for real-world triage. We report both.
@@ -894,7 +899,8 @@ Suppression does not change the alert set. At every threshold, the financial que
 The hit rule is different. Our published queue counts a group as a hit when at least one member is confirmed. If we instead require $0.1$ of the members to be confirmed, financial precision@50 falls from
 $0.32$ to $0.30$. P@100 falls from $0.25$ to $0.23$, and P@200 from $0.135$ to
 $0.125$. Tightening further to $0.25$ costs nothing beyond that. Procurement
-stays flat on both axes, with P@18 remaining at $0.33$ throughout. So about $0.02$ of
+is flat on the suppression axis. On the hit-rule axis its P@18 moves from
+$0.40$ to $0.39$ and then $0.37$. So about $0.02$ of
 our headline queue precision rests on a definitional choice. We report the
 looser rule and state the dependence, since presenting the number as though no
 choice were involved would not be true.
@@ -1202,8 +1208,10 @@ Config (\texttt{configs/experiment/}) & Produces \\
 \texttt{label\_noise\_elliptic\_pp} & the noise curve, $0.4827 \rightarrow 0.5978$ \\
 \texttt{explainer\_metrics\_} \texttt{elliptic\_pp} & Table~\ref{tab:explainers} \\
 \texttt{explanations\_elliptic\_pp} & financial bundles, 15 of 50 with a motif \\
-\texttt{gnn\_elliptic\_actor\_rgcn} & the actor-graph R-GCN \\
-\texttt{alert\_queue\_elliptic\_actor} & the actor queue \\
+\texttt{gnn\_elliptic\_actor\_rgcn} & the seed-0 actor-graph R-GCN \\
+\texttt{gnn\_elliptic\_actor\_} \texttt{rgcn\_multiseed} & the actor R-GCN over five seeds, $0.3400 \pm 0.0632$ \\
+\texttt{alert\_queue\_elliptic\_actor} & the seed-0 actor queue: 2,514 alerts, P@50 $0.08$ \\
+\texttt{alert\_queue\_elliptic\_} \texttt{actor\_multiseed} & the actor queue for each seed, P@50 $0.14 \pm 0.03$ \\
 \texttt{explanations\_elliptic\_actor} & actor bundles \\
 \texttt{baselines\_mendeley\_eu} & B1 $0.3426$ / B4 $0.3811$ \\
 \texttt{baselines\_mendeley\_eu\_} \texttt{multiseed} & B2 $0.3849$ / B3 $0.3749$ \\
@@ -1212,7 +1220,7 @@ Config (\texttt{configs/experiment/}) & Produces \\
 \texttt{gnn\_mendeley\_rgcn\_} \texttt{multiseed} & R-GCN, $0.2808 \pm 0.0087$ \\
 \texttt{gnn\_mendeley\_rgcn\_} \texttt{nocomm\_multiseed} & R-GCN without component features, $0.2997$ \\
 \texttt{diagnose\_below\_chance} & the below-chance diagnoses \\
-\texttt{alert\_queue\_mendeley\_eu} & the procurement queue: 223 alerts, P@4 $0.50$ \\
+\texttt{alert\_queue\_mendeley\_eu} & the procurement queue: 223 alerts, P@18 $0.40$ \\
 \texttt{sensitivity\_mendeley\_eu} & procurement NMS and hit-rule grid \\
 \texttt{explanations\_mendeley\_eu} & procurement bundles, 0 of 20 with a motif \\
 \texttt{transfer\_loco\_matrix\_} \texttt{mendeley} & 7-fold LOCO (Table~\ref{tab:t4}) \\
