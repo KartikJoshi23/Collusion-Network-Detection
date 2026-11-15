@@ -390,7 +390,8 @@ def regularisers(root: Path) -> Table:
 
     The clean row is the headline campaign. Every other row changes one
     setting; the last column counts seeds whose test AUC-PR beats the clean
-    run of the same seed."""
+    run of the same seed. Validation is a mean, as in the label-noise figure
+    and table."""
     from statistics import mean, stdev
 
     base = "eval_outputs/elliptic_pp"
@@ -420,7 +421,7 @@ def regularisers(root: Path) -> Table:
         return [
             label,
             _ms(mean(tests), stdev(tests)),
-            _ms(mean(vals), stdev(vals)),
+            f"{mean(vals):.4f}",
             f"{above}/{len(runs)}" if compare else "—",
         ]
 
@@ -436,7 +437,8 @@ def regularisers(root: Path) -> Table:
         ["Arm", "Test AUC-PR", "Validation AUC-PR", "Seeds above clean"],
         rows,
         "Label noise against explicit regularisers (GATv2-focal on Elliptic++, five seeds, "
-        "mean ± SD). Each arm changes one setting of the headline run. The last column counts "
+        "test mean ± SD, validation mean). Each arm changes one setting of the headline run. "
+        "The last column counts "
         "seeds whose test AUC-PR beats the clean run of the same seed. The window arm "
         "validates on steps 32–34, so its validation column is not comparable.",
     )

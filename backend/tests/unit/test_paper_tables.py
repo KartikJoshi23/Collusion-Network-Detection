@@ -461,9 +461,9 @@ def test_regularisers_table_counts_seed_wins(tmp_path) -> None:
         )
     # the builder alone: the minimal fixture does not feed the other tables
     md = to_markdown(*regularisers(tmp_path))
-    assert "| Clean labels (headline) | 0.4500 ± 0.0412 | 0.9400 ± 0.0000 | — |" in md
-    assert "| Label noise 20% | 0.5620 ± 0.0918 | 0.5700 ± 0.0000 | 4/5 |" in md
-    assert "| Dropout 0.5 | 0.4400 ± 0.0412 | 0.9300 ± 0.0000 | 0/5 |" in md
+    assert "| Clean labels (headline) | 0.4500 ± 0.0412 | 0.9400 | — |" in md
+    assert "| Label noise 20% | 0.5620 ± 0.0918 | 0.5700 | 4/5 |" in md
+    assert "| Dropout 0.5 | 0.4400 ± 0.0412 | 0.9300 | 0/5 |" in md
 
 
 def test_regularisers_table_skips_while_an_arm_is_missing(tmp_path) -> None:
