@@ -256,6 +256,27 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-11-16 · **JOURNAL REVISION, every run in: D24, D25, D28, B7 and the
+  Part G licence check.** *D24:* re-scoring the five stored GATv2 checkpoints
+  with test-graph statistics lifts AUC-PR from 0.4729 ± 0.0525 to
+  0.6853 ± 0.0052, all in steps 35–42; the trees, on raw features, stay ahead.
+  *D25:* the actor R-GCN over five seeds scores 0.3400 ± 0.0632 (the published
+  seed 0 is the weakest); node P@100 is 0.98–1.00; the actor queue rebuilt per
+  seed reaches P@50 0.14 ± 0.03. *D28:* alert-level precision and coverage are
+  now tie-aware, as Contribution 1 claimed; the procurement queue's top 129
+  alerts tie, so its P@18 is 0.40 (was 0.33) against 0.39 for a random order;
+  the financial and García queues are unchanged. *B7:* five-seed label noise
+  (0.4729 → 0.5646 at 10%, validation 0.938 → 0.683) and tenfold weight decay
+  (0.5403, 5/5 seeds above clean, validation 0.900) both lift test while
+  validation falls, with the gain in steps 35–42; dropout, label smoothing and
+  patience 5 do not; a later validation window leaves test at 0.4772. Table X;
+  the contributions count two measurements. *Part G:* three EDA notebooks'
+  raw-row previews removed (the public main branch keeps them until merge).
+  The Appendix A table may take a float page (it had grown past a top float
+  and pushed the settings table out of the PDF). Paper: 16 pages, 0 overfull
+  boxes, verify_numbers --strict 0/0, 436 tests; only the two L3 markers
+  remain. Training survived a session restart; a coordinator kept the
+  weight-decay seed 0 to one process. · [revision laptop, i5-11300H]
 - 2026-11-15 · **JOURNAL REVISION, Parts C, E and F (B7, D24, D25 still
   training).** *Figures:* vector PDFs in `paper/figures/` (8 pt minimum,
   greyscale-safe), Fig. 3 with the B3 line, Fig. 4 with interval whiskers,

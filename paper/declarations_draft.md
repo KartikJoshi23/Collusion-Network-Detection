@@ -62,7 +62,8 @@ Facts behind the draft, for checking:
 - Commit 09c027b (17 August 2026), "the research paper, written from the
   blueprint", carries the trailer "Co-Authored-By: Claude Opus 5".
 - Commit trailers across the repository: Claude Fable 5 (131), Claude Opus 5
-  (34), Claude Opus 5.5 (22, this revision so far), Claude Opus 4.8 (12).
+  (34), Claude Opus 5.5 (43 when this draft was last updated, all from this
+  revision), Claude Opus 4.8 (12).
 - This revision ran on the branch `paper/journal-revision` with Claude Opus 5.5
   in Claude Code.
 
