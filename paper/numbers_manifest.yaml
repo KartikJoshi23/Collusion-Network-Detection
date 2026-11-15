@@ -176,15 +176,26 @@ numbers:
     items:
       - {id: auc, v: "0.3242", key: node_level.auc_pr}
       - {id: delta, v: "-0.2250", key: node_level.auc_pr, op: sub, b: {file: eval_outputs/elliptic_pp/gnn_gatv2_focal/run.json, key: node_level.auc_pr}}
-  - id: label_noise_3seed
-    file: eval_outputs/elliptic_pp/label_noise_curve/noise_curve.json
+  # B7: the five-seed curve; its clean runs are the headline runs
+  - id: label_noise
+    file: eval_outputs/elliptic_pp/label_noise_curve_5seed/noise_curve.json
     items:
-      - {id: clean, v: "0.4827", key: curve.0.auc_pr_mean}
-      - {id: clean_sd, v: "0.0616", key: curve.0.auc_pr_std}
-      - {id: r20, v: "0.5978", key: curve.3.auc_pr_mean}
-      - {id: r20_sd, v: "0.0248", key: curve.3.auc_pr_std}
-      - {id: val_clean, v: "0.9418", key: curve.0.val_auc_pr_mean}
-      - {id: val_r20, v: "0.5692", key: curve.3.val_auc_pr_mean}
+      - {id: clean, v: "0.4729", key: curve.0.auc_pr_mean}
+      - {id: clean_sd, v: "0.0525", key: curve.0.auc_pr_std}
+      - {id: r10, v: "0.5646", key: curve.2.auc_pr_mean}
+      - {id: r10_sd, v: "0.0456", key: curve.2.auc_pr_std}
+      - {id: r20, v: "0.5507", key: curve.3.auc_pr_mean}
+      - {id: r20_sd, v: "0.0690", key: curve.3.auc_pr_std}
+      - {id: val_clean, v: "0.9380", key: curve.0.val_auc_pr_mean}
+      - {id: val_r20, v: "0.5642", key: curve.3.val_auc_pr_mean}
+  - id: label_noise_windows
+    file: eval_outputs/derived/derived_numbers.json
+    fmt: "{:.3f}"
+    items:
+      - {id: clean_pre, v: "0.574", key: items.gatv2_steps_35_42.auc_pr_mean}
+      - {id: r10_pre, v: "0.683", key: items.noise_10_steps_35_42.auc_pr_mean}
+      - {id: clean_post, v: "0.039", key: items.gatv2_steps_43_49.auc_pr_mean}
+      - {id: r10_post, v: "0.025", key: items.noise_10_steps_43_49.auc_pr_mean}
 
   # ------------------------------------------------------------ queues
   - id: financial_queue

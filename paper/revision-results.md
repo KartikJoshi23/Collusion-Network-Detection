@@ -325,3 +325,33 @@ hit-rule sentence do not change. The procurement queue sentence, its hit-rule
 sentence and Appendix A change (0.33 → 0.40, with the random-order baseline
 0.39). The actor seed-0 queue still prints 0.08 (0.0846). Section IV now
 states that precision@k is tie-aware for nodes and for groups.
+
+## B7. Label noise over five seeds (regulariser arms still running)
+
+`label_noise_elliptic_pp_5seed.yaml`, rates 0, 0.05, 0.10 and 0.20, seeds
+0–4. Seeds 0–2 reuse the stored master runs; seeds 3–4 ran here. The rate-0
+runs equal the five headline runs score for score, so the clean point is the
+headline 0.4729. The old three-seed curve averaged seeds 0–2 only, which is
+why its clean point was 0.4827 (item D6).
+
+| Rate | Test AUC-PR | Validation AUC-PR | Seeds above clean | Steps 35–42 | Steps 43–49 |
+|---|---|---|---|---|---|
+| 0 | 0.4729 ± 0.0525 | 0.9380 | — | 0.5737 ± 0.0623 | 0.0391 ± 0.0041 |
+| 0.05 | 0.5493 ± 0.0870 | 0.7735 | 4/5 | 0.6638 ± 0.1052 | 0.0246 ± 0.0032 |
+| 0.10 | 0.5646 ± 0.0456 | 0.6832 | 5/5 | 0.6831 ± 0.0464 | 0.0251 ± 0.0017 |
+| 0.20 | 0.5507 ± 0.0690 | 0.5642 | 4/5 | 0.6779 ± 0.0754 | 0.0241 ± 0.0028 |
+
+Windows from `derived_numbers.yaml`. The prevalence of steps 43–49 is 0.025.
+
+Against the old text. The old curve climbed steadily to 0.5978 at 20%. On
+five seeds test AUC-PR peaks at 10% and holds at 20%; the direction is
+unchanged and the size at 20% is smaller (0.5507). The old explanation, that
+noise helps the model across the step-43 break, does not survive: the whole
+gain lies in steps 35–42, and after the break noise lowers AUC-PR to the base
+rate. What the curve shows is that validation (steps 30–34) and the next test
+steps (35–42) rank the same models in opposite orders.
+
+Dropout 0.5 (`gnn_elliptic_pp_gatv2_focal_do_multiseed.yaml`, here):
+0.4874 ± 0.0362 test, validation 0.9419; steps 35–42 0.5909 ± 0.0474, steps
+43–49 0.0393 ± 0.0067. The other arms are still training.
+

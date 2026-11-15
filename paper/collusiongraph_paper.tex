@@ -907,25 +907,30 @@ choice were involved would not be true.
 
 \textbf{The label-noise result.} Fig.~\ref{fig:noise} carries the sharpest
 negative in the paper. We flipped a fraction of the training labels at random
-and tracked validation and test AUC-PR together. Test performance climbed
-steadily, from $0.4827 \pm 0.0616$ on clean labels to $0.5978 \pm 0.0248$ with
-20\% flipped. Validation fell over the same range, $0.9418$ down to $0.5692$.
-The curves move apart.
+and tracked validation and test AUC-PR together over five seeds. Test AUC-PR
+rose from $0.4729 \pm 0.0525$ on clean labels to $0.5646 \pm 0.0456$ with 10\%
+flipped, and held at $0.5507 \pm 0.0690$ with 20\%. Validation fell over the
+same range, from $0.9380$ to $0.5642$. The two curves move in opposite
+directions. At 10\% every
+seed beat its clean run, and at 5\% and 20\% four of five did. The clean runs
+are the headline runs, so the curve starts at the headline value.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{figures/fig5_label_noise.pdf}
-\caption{Label-noise robustness on Elliptic++ (GATv2-focal, 3 seeds per rate).
+\caption{Label-noise robustness on Elliptic++ (GATv2-focal, 5 seeds per rate).
 Corrupting training labels \emph{improves} test AUC-PR while validation
 collapses. Model selection on validation is optimising against the wrong
 curve.}
 \label{fig:noise}
 \end{figure}
 
-A plausible explanation is that validation (steps 30--34) sits entirely in the
-pre-shift regime, while test straddles the step-43 break. Label noise may act
-as a regulariser that stops the model committing too hard to pre-shift
-structure. That costs validation and buys test.
+The gain falls entirely before the market closure. In steps 35--42, AUC-PR
+rises from $0.574$ to $0.683$ with 10\% noise. In steps 43--49 it drops from
+$0.039$ to $0.025$, level with the base rate. Noise therefore does not carry
+the model across the closure. It helps on the steps just after validation
+(30--34), while validation itself falls, so the two windows disagree about the
+same models even before the break.
 \PENDING{B7: whether explicit regularisers do the same, and which measurements support the claim}
 
 This is a diagnostic, not a training recommendation. It shows that validation
@@ -1194,7 +1199,7 @@ Config (\texttt{configs/experiment/}) & Produces \\
 \texttt{normalisation\_rescore\_} \texttt{elliptic\_pp} & test-graph statistics, $0.6853 \pm 0.0052$ (Section~\ref{sec:protocol}) \\
 \texttt{gnn\_elliptic\_pp\_gatv2\_} \texttt{focal\_pergraphnorm\_} \texttt{multiseed} & seed-0 cross-check of the re-scoring runner \\
 \texttt{significance\_elliptic\_pp\_} \texttt{multiseed} & Table~\ref{tab:t3} \\
-\texttt{derived\_numbers} & Table~\ref{tab:t1b}; copilot Wilson interval; probe lift; per-graph windows \\
+\texttt{derived\_numbers} & Table~\ref{tab:t1b}; copilot Wilson interval; probe lift; per-graph and noise windows \\
 \texttt{baselines\_elliptic\_pp\_} \texttt{calib\_multiseed} & B3 trained on steps 1--29, $0.8012$ \\
 \texttt{fusion\_gatv2\_b3\_} \texttt{multiseed} & GATv2 + B3 calibrated fusion, $0.7760$ \\
 \texttt{gnn\_elliptic\_pp\_gatv2\_} \texttt{wce\_multiseed} & $-$focal ablation, $0.4388 \pm 0.0505$ \\
@@ -1205,7 +1210,7 @@ Config (\texttt{configs/experiment/}) & Produces \\
 \texttt{ensemble\_elliptic\_pp\_} \texttt{multiseed} & calibrated $0.4434 \pm 0.0501$ vs.\ rank $0.0511 \pm 0.0019$ \\
 \texttt{alert\_queue\_elliptic\_pp\_} \texttt{ensemble} & the financial queue: 254 alerts, P@50 $0.32$ \\
 \texttt{sensitivity\_elliptic\_pp} & financial NMS and hit-rule grid \\
-\texttt{label\_noise\_elliptic\_pp} & the noise curve, $0.4827 \rightarrow 0.5978$ \\
+\texttt{label\_noise\_elliptic\_} \texttt{pp\_5seed} & the noise curve, $0.4729 \rightarrow 0.5646$ at 10\% \\
 \texttt{explainer\_metrics\_} \texttt{elliptic\_pp} & Table~\ref{tab:explainers} \\
 \texttt{explanations\_elliptic\_pp} & financial bundles, 15 of 50 with a motif \\
 \texttt{gnn\_elliptic\_actor\_rgcn} & the seed-0 actor-graph R-GCN \\

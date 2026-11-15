@@ -56,7 +56,7 @@ auto-dispatches on config shape). Outputs land in the gitignored
 | `explanations_elliptic_pp.yaml` | 50/50 PGExplainer bundles |
 | `explainer_ablation_elliptic_pp.yaml` | the §7-27 three-arm fidelity ablation (PGExplainer adopted) |
 | `sensitivity_elliptic_pp.yaml` | NMS/hit-rule grid (queue protocol-robust) |
-| `label_noise_elliptic_pp.yaml` | the noise curve: clean 0.4827 ± 0.0616 → 20% 0.5978 ± 0.0248 (val-blindness diagnostic) |
+| `label_noise_elliptic_pp.yaml` | the three-seed noise curve: clean 0.4827 ± 0.0616 → 20% 0.5978 ± 0.0248 (seeds 0–2; the paper now uses the five-seed curve) |
 
 Paired-bootstrap significance rows of the first version (calibrated-vs-rank
 Δ +0.471 CI [0.440, 0.499]; GATv2-vs-B3 Δ −0.261 CI [−0.285, −0.235]; the
@@ -122,8 +122,8 @@ the run outputs once each run completes; nothing here is typed from memory.
 | `diagnose_below_chance.yaml` | below-chance diagnostics: inverted-score AUC-PR, label encoding, split facts, feature shift, and per-window feature-label ROC-AUC (item B4) |
 | `gnn_mendeley_rgcn_nocomm_multiseed.yaml` | diagnostic ablation: the Mendeley R-GCN without the two component features, a test of the component-size explanation (item B4; not in the brief) |
 | `transfer_pooled_lift.yaml` | pooled and size-weighted lift, per-fold 95% CIs (item B5) |
-| `derived_numbers.yaml` | copilot grounding Wilson CI, probe lift, pre/post-step-43 AUC-PR (items A3, B1), and the same windows for the per-graph pass (D24) |
-| `label_noise_elliptic_pp_5seed.yaml` | label-noise curve on seeds 0–4, Fig. 6 (item B7). Seeds 0–2 reuse the stored master runs, since this machine reproduces master's GATv2 bit for bit (check R7); seeds 3–4 are new |
+| `derived_numbers.yaml` | copilot grounding Wilson CI, probe lift, pre/post-step-43 AUC-PR (items A3, B1), and the same windows for the per-graph pass (D24), each noise rate and each regulariser arm (B7) |
+| `label_noise_elliptic_pp_5seed.yaml` | label-noise curve on seeds 0–4 (item B7): test 0.4729 ± 0.0525 clean → 0.5646 ± 0.0456 at 10% → 0.5507 ± 0.0690 at 20%; validation 0.9380 → 0.5642. The clean runs are the headline runs. Seeds 0–2 reuse the stored master runs, since this machine reproduces master's GATv2 bit for bit (check R7); seeds 3–4 are new |
 | `gnn_elliptic_pp_gatv2_focal_ls_multiseed.yaml` | regulariser arm: label smoothing ε = 0.1 (item B7) |
 | `gnn_elliptic_pp_gatv2_focal_wd_multiseed.yaml` | regulariser arm: weight decay 5e-3 (item B7) |
 | `gnn_elliptic_pp_gatv2_focal_do_multiseed.yaml` | regulariser arm: dropout 0.5 (item B7) |

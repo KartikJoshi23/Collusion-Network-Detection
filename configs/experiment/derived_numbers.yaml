@@ -4,6 +4,8 @@
 # post-step-43 AUC-PR for GATv2-focal (stored five-seed scores) and for the
 # seeded B3 of baselines_elliptic_pp_multiseed.yaml. Item D24 adds the same
 # windows for the per-graph pass of normalisation_rescore_elliptic_pp.yaml.
+# Item B7 adds them for each noise rate of label_noise_elliptic_pp_5seed.yaml
+# and for each regulariser arm, to show where each effect falls.
 derived_numbers: true
 output_dir: eval_outputs/derived
 items:
@@ -55,5 +57,61 @@ items:
     dataset: elliptic_pp
     store_root: data/interim
     scores: eval_outputs/elliptic_pp/normalisation_rescore/seed_{seed}/per_graph/scores_test.parquet
+    seeds: [0, 1, 2, 3, 4]
+    steps: [43, 49]
+  noise_5_steps_35_42:
+    op: window_auc_pr
+    dataset: elliptic_pp
+    store_root: data/interim
+    scores: eval_outputs/elliptic_pp/label_noise_curve_5seed/rate_0.05_seed_{seed}/scores_test.parquet
+    seeds: [0, 1, 2, 3, 4]
+    steps: [35, 42]
+  noise_5_steps_43_49:
+    op: window_auc_pr
+    dataset: elliptic_pp
+    store_root: data/interim
+    scores: eval_outputs/elliptic_pp/label_noise_curve_5seed/rate_0.05_seed_{seed}/scores_test.parquet
+    seeds: [0, 1, 2, 3, 4]
+    steps: [43, 49]
+  noise_10_steps_35_42:
+    op: window_auc_pr
+    dataset: elliptic_pp
+    store_root: data/interim
+    scores: eval_outputs/elliptic_pp/label_noise_curve_5seed/rate_0.1_seed_{seed}/scores_test.parquet
+    seeds: [0, 1, 2, 3, 4]
+    steps: [35, 42]
+  noise_10_steps_43_49:
+    op: window_auc_pr
+    dataset: elliptic_pp
+    store_root: data/interim
+    scores: eval_outputs/elliptic_pp/label_noise_curve_5seed/rate_0.1_seed_{seed}/scores_test.parquet
+    seeds: [0, 1, 2, 3, 4]
+    steps: [43, 49]
+  noise_20_steps_35_42:
+    op: window_auc_pr
+    dataset: elliptic_pp
+    store_root: data/interim
+    scores: eval_outputs/elliptic_pp/label_noise_curve_5seed/rate_0.2_seed_{seed}/scores_test.parquet
+    seeds: [0, 1, 2, 3, 4]
+    steps: [35, 42]
+  noise_20_steps_43_49:
+    op: window_auc_pr
+    dataset: elliptic_pp
+    store_root: data/interim
+    scores: eval_outputs/elliptic_pp/label_noise_curve_5seed/rate_0.2_seed_{seed}/scores_test.parquet
+    seeds: [0, 1, 2, 3, 4]
+    steps: [43, 49]
+  do_steps_35_42:
+    op: window_auc_pr
+    dataset: elliptic_pp
+    store_root: data/interim
+    scores: eval_outputs/elliptic_pp/gnn_gatv2_focal_do_multiseed/seed_{seed}/scores_test.parquet
+    seeds: [0, 1, 2, 3, 4]
+    steps: [35, 42]
+  do_steps_43_49:
+    op: window_auc_pr
+    dataset: elliptic_pp
+    store_root: data/interim
+    scores: eval_outputs/elliptic_pp/gnn_gatv2_focal_do_multiseed/seed_{seed}/scores_test.parquet
     seeds: [0, 1, 2, 3, 4]
     steps: [43, 49]
