@@ -197,6 +197,50 @@ numbers:
       - {id: clean_post, v: "0.039", key: items.gatv2_steps_43_49.auc_pr_mean}
       - {id: r10_post, v: "0.025", key: items.noise_10_steps_43_49.auc_pr_mean}
 
+  # B7: the regulariser arms (tab:regularisers)
+  - id: reg_ls
+    file: eval_outputs/elliptic_pp/gnn_gatv2_focal_ls_multiseed/multiseed.json
+    items:
+      - {id: test, v: "0.4585", key: aggregate.auc_pr_mean}
+      - {id: test_sd, v: "0.0344", key: aggregate.auc_pr_std}
+      - {id: val, v: "0.9387", key: per_seed.*.best_val_auc_pr, reduce: mean}
+  - id: reg_wd
+    file: eval_outputs/elliptic_pp/gnn_gatv2_focal_wd_multiseed/multiseed.json
+    items:
+      - {id: test, v: "0.5403", key: aggregate.auc_pr_mean}
+      - {id: test_sd, v: "0.0286", key: aggregate.auc_pr_std}
+      - {id: val, v: "0.8996", key: per_seed.*.best_val_auc_pr, reduce: mean}
+  - id: reg_do
+    file: eval_outputs/elliptic_pp/gnn_gatv2_focal_do_multiseed/multiseed.json
+    items:
+      - {id: test, v: "0.4874", key: aggregate.auc_pr_mean}
+      - {id: test_sd, v: "0.0362", key: aggregate.auc_pr_std}
+      - {id: val, v: "0.9419", key: per_seed.*.best_val_auc_pr, reduce: mean}
+  - id: reg_es
+    file: eval_outputs/elliptic_pp/gnn_gatv2_focal_es_multiseed/multiseed.json
+    items:
+      - {id: test, v: "0.4224", key: aggregate.auc_pr_mean}
+      - {id: test_sd, v: "0.0589", key: aggregate.auc_pr_std}
+      - {id: val, v: "0.8913", key: per_seed.*.best_val_auc_pr, reduce: mean}
+  - id: reg_valwin
+    file: eval_outputs/elliptic_pp/gnn_gatv2_focal_valwin_multiseed/multiseed.json
+    items:
+      - {id: test, v: "0.4772", key: aggregate.auc_pr_mean}
+      - {id: test_sd, v: "0.0468", key: aggregate.auc_pr_std}
+      - {id: val, v: "0.9583", key: per_seed.*.best_val_auc_pr, reduce: mean}
+  - id: reg_noise_rows
+    file: eval_outputs/elliptic_pp/label_noise_curve_5seed/noise_curve.json
+    items:
+      - {id: r5, v: "0.5493", key: curve.1.auc_pr_mean}
+      - {id: r5_sd, v: "0.0870", key: curve.1.auc_pr_std}
+      - {id: r5_val, v: "0.7735", key: curve.1.val_auc_pr_mean}
+      - {id: r10_val, v: "0.6832", key: curve.2.val_auc_pr_mean}
+  - id: reg_wd_window
+    v: "0.659"
+    fmt: "{:.3f}"
+    file: eval_outputs/derived/derived_numbers.json
+    key: items.wd_steps_35_42.auc_pr_mean
+
   # ------------------------------------------------------------ queues
   - id: financial_queue
     file: eval_outputs/elliptic_pp/alert_queue_ensemble/metrics.json

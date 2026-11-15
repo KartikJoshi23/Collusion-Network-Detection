@@ -115,3 +115,59 @@ items:
     scores: eval_outputs/elliptic_pp/gnn_gatv2_focal_do_multiseed/seed_{seed}/scores_test.parquet
     seeds: [0, 1, 2, 3, 4]
     steps: [43, 49]
+  ls_steps_35_42:
+    op: window_auc_pr
+    dataset: elliptic_pp
+    store_root: data/interim
+    scores: eval_outputs/elliptic_pp/gnn_gatv2_focal_ls_multiseed/seed_{seed}/scores_test.parquet
+    seeds: [0, 1, 2, 3, 4]
+    steps: [35, 42]
+  ls_steps_43_49:
+    op: window_auc_pr
+    dataset: elliptic_pp
+    store_root: data/interim
+    scores: eval_outputs/elliptic_pp/gnn_gatv2_focal_ls_multiseed/seed_{seed}/scores_test.parquet
+    seeds: [0, 1, 2, 3, 4]
+    steps: [43, 49]
+  wd_steps_35_42:
+    op: window_auc_pr
+    dataset: elliptic_pp
+    store_root: data/interim
+    scores: eval_outputs/elliptic_pp/gnn_gatv2_focal_wd_multiseed/seed_{seed}/scores_test.parquet
+    seeds: [0, 1, 2, 3, 4]
+    steps: [35, 42]
+  wd_steps_43_49:
+    op: window_auc_pr
+    dataset: elliptic_pp
+    store_root: data/interim
+    scores: eval_outputs/elliptic_pp/gnn_gatv2_focal_wd_multiseed/seed_{seed}/scores_test.parquet
+    seeds: [0, 1, 2, 3, 4]
+    steps: [43, 49]
+  es_steps_35_42:
+    op: window_auc_pr
+    dataset: elliptic_pp
+    store_root: data/interim
+    scores: eval_outputs/elliptic_pp/gnn_gatv2_focal_es_multiseed/seed_{seed}/scores_test.parquet
+    seeds: [0, 1, 2, 3, 4]
+    steps: [35, 42]
+  es_steps_43_49:
+    op: window_auc_pr
+    dataset: elliptic_pp
+    store_root: data/interim
+    scores: eval_outputs/elliptic_pp/gnn_gatv2_focal_es_multiseed/seed_{seed}/scores_test.parquet
+    seeds: [0, 1, 2, 3, 4]
+    steps: [43, 49]
+  valwin_steps_35_42:
+    op: window_auc_pr
+    dataset: elliptic_pp
+    store_root: data/interim
+    scores: eval_outputs/elliptic_pp/gnn_gatv2_focal_valwin_multiseed/seed_{seed}/scores_test.parquet
+    seeds: [0, 1, 2, 3, 4]
+    steps: [35, 42]
+  valwin_steps_43_49:
+    op: window_auc_pr
+    dataset: elliptic_pp
+    store_root: data/interim
+    scores: eval_outputs/elliptic_pp/gnn_gatv2_focal_valwin_multiseed/seed_{seed}/scores_test.parquet
+    seeds: [0, 1, 2, 3, 4]
+    steps: [43, 49]

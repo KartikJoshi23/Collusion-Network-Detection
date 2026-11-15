@@ -73,7 +73,8 @@ to a lift of $1.36$ over their base rates, the Mendeley countries to $0.93$. Acr
 encoder reaches $0.150$ AUC-PR on Elliptic++ against a base rate of $0.065$,
 while a linear probe on the target's own features reaches $0.299$. The reverse
 direction falls below its base rate.
-\PENDING{B7: the label-noise and regulariser result}
+Label noise and stronger weight decay raise test AUC-PR while validation
+falls, so validation selection is unreliable on this benchmark.
 The released system ranks group alerts for a fixed review budget, explains
 each with a subgraph and a red-flag citation, and leaves every decision to a
 human.
@@ -177,8 +178,8 @@ transfer between procurement markets and between the two domains.
 \end{enumerate}
 
 Two further results support these contributions. The first is a catalogue of
-negative results, including \PENDING{B7: count of supporting measurements}
-measurements showing that validation selection cannot see the Elliptic
+negative results, including two five-seed measurements showing that
+validation selection cannot see the Elliptic
 distribution shift. The second is an explanation layer and a guarded copilot,
 released with the code.
 
@@ -931,7 +932,47 @@ $0.039$ to $0.025$, level with the base rate. Noise therefore does not carry
 the model across the closure. It helps on the steps just after validation
 (30--34), while validation itself falls, so the two windows disagree about the
 same models even before the break.
-\PENDING{B7: whether explicit regularisers do the same, and which measurements support the claim}
+
+\begin{table}[t]
+\caption{Label noise against explicit regularisers (GATv2-focal on
+Elliptic++, five seeds; test mean $\pm$ standard deviation, validation
+mean). Each arm changes one setting of the headline run. The last column
+counts seeds whose test AUC-PR beats the clean run of the same seed. The
+window arm validates on steps 32--34, so its validation value is not
+comparable.}
+\label{tab:regularisers}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{llrr}
+\toprule
+Arm & Test AUC-PR & Val. & Above clean \\
+\midrule
+Clean labels (headline) & $0.4729 \pm 0.0525$ & $0.9380$ & --- \\
+Label noise 5\% & $0.5493 \pm 0.0870$ & $0.7735$ & 4/5 \\
+Label noise 10\% & $0.5646 \pm 0.0456$ & $0.6832$ & 5/5 \\
+Label noise 20\% & $0.5507 \pm 0.0690$ & $0.5642$ & 4/5 \\
+Label smoothing, $\varepsilon = 0.1$ & $0.4585 \pm 0.0344$ & $0.9387$ & 2/5 \\
+Weight decay $5 \times 10^{-3}$ & $0.5403 \pm 0.0286$ & $0.8996$ & 5/5 \\
+Dropout 0.5 & $0.4874 \pm 0.0362$ & $0.9419$ & 4/5 \\
+Early-stopping patience 5 & $0.4224 \pm 0.0589$ & $0.8913$ & 0/5 \\
+Validation on steps 32--34 & $0.4772 \pm 0.0468$ & $0.9583$ & 2/5 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Explicit regularisers split two ways (Table~\ref{tab:regularisers}). Weight
+decay of $5 \times 10^{-3}$, ten times the headline value, behaves like label
+noise. Test AUC-PR rises to $0.5403 \pm 0.0286$, above the clean run on all
+five seeds, while validation falls to $0.8996$. Its gain also sits in steps
+35--42, from $0.574$ to $0.659$. Dropout raises test slightly and leaves
+validation unchanged. Label smoothing and a patience of 5 lower test. A later
+validation window does not help either: trained on steps 1--31 and validated
+on 32--34, the model scores $0.9583$ on validation and $0.4772 \pm 0.0468$ on
+test. Among the eight variants that share the original window, validation
+would select dropout, which ranks fifth on test. Label noise and weight decay
+are the two measurements in which validation selection prefers the setting
+that does worse on test.
 
 This is a diagnostic, not a training recommendation. It shows that validation
 selection is unreliable under this shift.
@@ -1086,7 +1127,7 @@ the language guarding against that is part of the design.
 % =====================================================================
 
 \begin{itemize}
-\item \textbf{The Elliptic shift has a strong effect on the financial results}, and validation selection cannot detect it \PENDING{B7: the measurements that support this}. Test numbers on this benchmark should therefore be read as dependent on the regime.
+\item \textbf{The Elliptic shift has a strong effect on the financial results}, and validation selection cannot detect it. Label noise and stronger weight decay each lower validation AUC-PR while raising test AUC-PR. Test numbers on this benchmark should therefore be read as dependent on the regime.
 \item \textbf{Anonymised features limit what an explanation can say.} Elliptic’s features contain no names, so financial explanations remain structural. Amount-level explanations are only available on AMLworld, which is synthetic.
 \item \textbf{Mendeley is case-control.} Lift is the appropriate comparator instead of raw AUC-PR, and it says nothing about population-level precision.
 \item \textbf{Garc\'ia identity coverage reaches four of six markets}, so the co-bidding identity graphs do not cover the whole benchmark.
@@ -1149,7 +1190,8 @@ A probe on the target's own features doubles it, and the reverse direction
 gives no signal. Below 1,000 labels, transfer never clearly helps.
 Corrupting training labels lifts test performance while validation falls away,
 so validation selection is unreliable under this shift.
-\PENDING{B7: comparison with explicit regularisers}
+Stronger weight decay does the same. Dropout, label smoothing and earlier
+stopping do not, and a later validation window does not close the gap.
 
 Several of these findings would be hidden by a single-seed,
 validation-selected, aggregate-only evaluation: the spread across seeds, the
@@ -1181,7 +1223,7 @@ configuration directory in both directions. Run any row as
 \texttt{collusiongraph <verb> -c configs/experiment/<config>}. Outputs land in a
 gitignored results directory and are never committed.
 
-\begin{table*}[t]
+\begin{table*}[tp]
 \caption{Published number $\rightarrow$ config. Multi-seed rows run seeds 0--4
 and are resumable; completed seeds are never retrained.}
 \label{tab:repro}
@@ -1211,6 +1253,11 @@ Config (\texttt{configs/experiment/}) & Produces \\
 \texttt{alert\_queue\_elliptic\_pp\_} \texttt{ensemble} & the financial queue: 254 alerts, P@50 $0.32$ \\
 \texttt{sensitivity\_elliptic\_pp} & financial NMS and hit-rule grid \\
 \texttt{label\_noise\_elliptic\_} \texttt{pp\_5seed} & the noise curve, $0.4729 \rightarrow 0.5646$ at 10\% \\
+\texttt{gnn\_elliptic\_pp\_gatv2\_} \texttt{focal\_ls\_multiseed} & Table~\ref{tab:regularisers}, label smoothing \\
+\texttt{gnn\_elliptic\_pp\_gatv2\_} \texttt{focal\_wd\_multiseed} & Table~\ref{tab:regularisers}, weight decay \\
+\texttt{gnn\_elliptic\_pp\_gatv2\_} \texttt{focal\_do\_multiseed} & Table~\ref{tab:regularisers}, dropout \\
+\texttt{gnn\_elliptic\_pp\_gatv2\_} \texttt{focal\_es\_multiseed} & Table~\ref{tab:regularisers}, patience 5 \\
+\texttt{gnn\_elliptic\_pp\_gatv2\_} \texttt{focal\_valwin\_} \texttt{multiseed} & Table~\ref{tab:regularisers}, validation on steps 32--34 \\
 \texttt{explainer\_metrics\_} \texttt{elliptic\_pp} & Table~\ref{tab:explainers} \\
 \texttt{explanations\_elliptic\_pp} & financial bundles, 15 of 50 with a motif \\
 \texttt{gnn\_elliptic\_actor\_rgcn} & the seed-0 actor-graph R-GCN \\
