@@ -122,7 +122,7 @@ the run outputs once each run completes; nothing here is typed from memory.
 | `diagnose_below_chance.yaml` | below-chance diagnostics: inverted-score AUC-PR, label encoding, split facts, feature shift, and per-window feature-label ROC-AUC (item B4) |
 | `gnn_mendeley_rgcn_nocomm_multiseed.yaml` | diagnostic ablation: the Mendeley R-GCN without the two component features, a test of the component-size explanation (item B4; not in the brief) |
 | `transfer_pooled_lift.yaml` | pooled and size-weighted lift, per-fold 95% CIs (item B5) |
-| `derived_numbers.yaml` | copilot grounding Wilson CI, probe lift, pre/post-step-43 AUC-PR (items A3, B1) |
+| `derived_numbers.yaml` | copilot grounding Wilson CI, probe lift, pre/post-step-43 AUC-PR (items A3, B1), and the same windows for the per-graph pass (D24) |
 | `label_noise_elliptic_pp_5seed.yaml` | label-noise curve on seeds 0–4, Fig. 6 (item B7). Seeds 0–2 reuse the stored master runs, since this machine reproduces master's GATv2 bit for bit (check R7); seeds 3–4 are new |
 | `gnn_elliptic_pp_gatv2_focal_ls_multiseed.yaml` | regulariser arm: label smoothing ε = 0.1 (item B7) |
 | `gnn_elliptic_pp_gatv2_focal_wd_multiseed.yaml` | regulariser arm: weight decay 5e-3 (item B7) |
@@ -131,7 +131,8 @@ the run outputs once each run completes; nothing here is typed from memory.
 | `gnn_elliptic_pp_gatv2_focal_valwin_multiseed.yaml` | alternative temporal validation window, steps 32–34 (item B7) |
 | `explainer_metrics_elliptic_pp.yaml` | Fidelity+, Fidelity−, sparsity and arm overlap for three explainers on the rebuilt queue (item B8) |
 | `cross_domain_full_label_comparison.yaml` | full-label comparison of the frozen probe (stored encoders), a structural probe, a probe on B2's inputs, and five-seed B2 (item B6) |
-| `gnn_elliptic_pp_gatv2_focal_pergraphnorm_multiseed.yaml` | measures the test-time re-normalisation effect the paper quotes as 0.693 to 0.532 (item D24; not in the brief) |
+| `gnn_elliptic_pp_gatv2_focal_pergraphnorm_multiseed.yaml` | per-graph normalisation trained end to end, seed 0 only: the cross-check of the re-scoring runner (identical test scores, 0.6919; item D24; not in the brief) |
+| `normalisation_rescore_elliptic_pp.yaml` | re-scores the five stored GATv2 checkpoints with frozen and with test-graph statistics: 0.4729 ± 0.0525 → 0.6853 ± 0.0052, p ≤ 0.001 on every seed; the gain lies in steps 35–42 (item D24; not in the brief) |
 | `gnn_elliptic_actor_rgcn_multiseed.yaml` | actor-graph R-GCN over seeds 0–4, for the "stable across seeds" claim (item D25; not in the brief) |
 
 ## 4. Seeds & determinism (measured, not assumed)
@@ -153,7 +154,9 @@ the run outputs once each run completes; nothing here is typed from memory.
   in check R7 (test AUC-PR 0.5492089151328867, best epoch 121), and seeds 3
   and 4 as the rate-0 points of `label_noise_elliptic_pp_5seed.yaml`
   (identical test scores, maximum difference 0.0), while two other trainings
-  ran in parallel. The main machine reported by the user is an Intel Core
+  ran in parallel. Re-scoring the five stored master checkpoints here
+  (`normalisation_rescore_elliptic_pp.yaml`) reproduces every seed's
+  validation and test AUC-PR exactly. The main machine reported by the user is an Intel Core
   i7-1195G7 (4 cores / 8 threads, 16 GB). Both are 11th-generation Intel
   Core (Tiger Lake) parts, which is consistent with the bit-identical
   results. Its NVIDIA MX450 is not used: every published number is a CPU

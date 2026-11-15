@@ -181,3 +181,43 @@ window. Mean Jaccard overlap of the kept edges: PGExplainer–attention 0.88,
 GNNExplainer–attention 0.70, GNNExplainer–PGExplainer 0.65. The explanations
 are therefore not sparse, and the three arms largely agree on which edges
 matter.
+
+## D24. Test-time re-normalisation, five seeds
+
+The paper said that removing test-time re-normalisation moved GATv2 from 0.693
+to 0.532. Both figures came from the July ledger and from a fix pass that
+changed many things at once.
+
+Method. Validation runs on the train graph with the frozen train statistics,
+so a per-graph run trains exactly the weights of the frozen run. The seed-0
+per-graph training run (`gnn_elliptic_pp_gatv2_focal_pergraphnorm_multiseed.yaml`,
+here) confirms it: best epoch 121 and validation AUC-PR 0.9497, as in the
+headline seed 0. The five-seed measurement therefore re-scores the five stored
+master checkpoints with frozen and with test-graph statistics
+(`normalisation_rescore_elliptic_pp.yaml`, here). Guards: every checkpoint
+reproduces its validation AUC-PR and its frozen test AUC-PR exactly
+(difference 0.0 on all five seeds). Cross-check: the re-scored seed-0
+per-graph scores equal the end-to-end per-graph run's scores row for row
+(67,504 nodes; AUC-PR 0.691923063606791 in both). The trained route was
+stopped during seed 1 once the cross-check had passed.
+
+| Seed | Frozen (published) | Test-graph statistics | Paired Δ [95% CI] | p |
+|---|---|---|---|---|
+| 0 | 0.5492 | 0.6919 | +0.1427 [0.1260, 0.1594] | 0.001 |
+| 1 | 0.4712 | 0.6891 | +0.2178 [0.1958, 0.2374] | 0.001 |
+| 2 | 0.4276 | 0.6823 | +0.2547 [0.2346, 0.2736] | 0.001 |
+| 3 | 0.4213 | 0.6840 | +0.2628 [0.2381, 0.2846] | 0.001 |
+| 4 | 0.4951 | 0.6789 | +0.1838 [0.1662, 0.2012] | 0.001 |
+| Mean ± SD | 0.4729 ± 0.0525 | 0.6853 ± 0.0052 | +0.2124 ± 0.0501 | |
+
+Steps 35–42 against 43–49 (`derived_numbers.yaml`): frozen 0.5737 ± 0.0623
+and 0.0391 ± 0.0041; test-graph statistics 0.8038 ± 0.0068 and
+0.0378 ± 0.0039. The whole gain lies before the step-43 closure, where the
+trees reach 0.9259. The tree baselines read raw features and never normalise,
+so the RQ1 comparison does not rest on this protocol choice: the adapted
+GATv2 (0.6853) still falls short of B3 (0.8123).
+
+Verdict. The direction of the old claim holds, and the effect is larger than
+stated: re-normalising on the test graph adds 0.21 AUC-PR and cuts the seed
+SD tenfold. The paper now quotes the five-seed measurement and drops the
+ledger figures.

@@ -2,7 +2,8 @@
 # that none is typed by hand: the copilot grounding interval (A3), the lift
 # over prevalence of the procurement-to-financial probe, and the B1 pre- and
 # post-step-43 AUC-PR for GATv2-focal (stored five-seed scores) and for the
-# seeded B3 of baselines_elliptic_pp_multiseed.yaml.
+# seeded B3 of baselines_elliptic_pp_multiseed.yaml. Item D24 adds the same
+# windows for the per-graph pass of normalisation_rescore_elliptic_pp.yaml.
 derived_numbers: true
 output_dir: eval_outputs/derived
 items:
@@ -40,5 +41,19 @@ items:
     dataset: elliptic_pp
     store_root: data/interim
     scores: eval_outputs/elliptic_pp/baselines_multiseed/seed_{seed}/scores/b3_xgb_graph.parquet
+    seeds: [0, 1, 2, 3, 4]
+    steps: [43, 49]
+  gatv2_pergraph_steps_35_42:
+    op: window_auc_pr
+    dataset: elliptic_pp
+    store_root: data/interim
+    scores: eval_outputs/elliptic_pp/normalisation_rescore/seed_{seed}/per_graph/scores_test.parquet
+    seeds: [0, 1, 2, 3, 4]
+    steps: [35, 42]
+  gatv2_pergraph_steps_43_49:
+    op: window_auc_pr
+    dataset: elliptic_pp
+    store_root: data/interim
+    scores: eval_outputs/elliptic_pp/normalisation_rescore/seed_{seed}/per_graph/scores_test.parquet
     seeds: [0, 1, 2, 3, 4]
     steps: [43, 49]

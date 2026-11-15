@@ -436,9 +436,13 @@ Each rule below changed a headline number at some point while we built the syste
 
 \begin{itemize}
 \item \textbf{Strict inductive splits.} Test nodes and their edges stay unseen during training. Temporal splits fence the boundary; entity splits (LOCO, LOMO) hold out whole countries or markets.
-\item \textbf{Frozen train-time normalisation.} We compute feature statistics on training and freeze them. Recomputing them on the test set is unintentional test-time adaptation. Removing it pulled our own headline GATv2 number down from
-$0.693$ to $0.532$, which widened the gap to the tree baseline. Every figure we report is after the fix.
-\PENDING{D24: replace with the five-seed per-graph normalisation measurement}
+\item \textbf{Frozen train-time normalisation.} We compute feature statistics on training and freeze them. Recomputing them on the test graph is test-time adaptation, because it uses the unlabelled test features.
+The effect is large. Re-scoring the five stored GATv2 checkpoints with test-graph
+statistics lifts AUC-PR from $0.4729 \pm 0.0525$ to $0.6853 \pm 0.0052$
+(paired bootstrap, $p \leq 0.001$ on every seed). The whole gain falls in steps
+35--42, from $0.574$ to $0.804$. After the step-43 closure neither version
+recovers ($0.039$ and $0.038$). Even with this adaptation, GATv2 stays below
+the trees, which use raw features. Every figure we report uses frozen statistics.
 \item \textbf{Budget-first, tie-aware metrics.} We report tie-aware precision@$k$ at budgets a real team would use. We also report AUC-PR, the right summary under this level of class imbalance~\cite{saito2015}, always against its own fold’s prevalence baseline.
 \item \textbf{Multi-seed with dispersion.} Five seeds, reported as mean~$\pm$~standard deviation. The seed variance, about $\pm 0.05$, is much larger than the cross-machine variance of about $\pm 0.02$, so a single-seed comparison between two machines is unreliable. Our own previously published seed-0 GATv2 figure of $0.5492$ happens to be the best of the five. The more reliable number is $0.4729 \pm 0.0525$, and that is the one we quote.
 \item \textbf{Paired stratified bootstrap}~\cite{efron1993} over identical
@@ -1181,8 +1185,10 @@ Config (\texttt{configs/experiment/}) & Produces \\
 \texttt{baselines\_elliptic\_pp\_} \texttt{multiseed} & B2 $0.8039$, B3 $0.8123$, per-step AUC-PR \\
 \texttt{baselines\_elliptic\_pp\_} \texttt{local\_multiseed} & B2-local $0.7879$, B3-local $0.7959$ \\
 \texttt{gnn\_elliptic\_pp\_gatv2\_} \texttt{focal\_multiseed} & the headline GNN number, $0.4729 \pm 0.0525$ \\
+\texttt{normalisation\_rescore\_} \texttt{elliptic\_pp} & test-graph statistics, $0.6853 \pm 0.0052$ (Section~\ref{sec:protocol}) \\
+\texttt{gnn\_elliptic\_pp\_gatv2\_} \texttt{focal\_pergraphnorm\_} \texttt{multiseed} & seed-0 cross-check of the re-scoring runner \\
 \texttt{significance\_elliptic\_pp\_} \texttt{multiseed} & Table~\ref{tab:t3} \\
-\texttt{derived\_numbers} & Table~\ref{tab:t1b}; copilot Wilson interval; probe lift \\
+\texttt{derived\_numbers} & Table~\ref{tab:t1b}; copilot Wilson interval; probe lift; per-graph windows \\
 \texttt{baselines\_elliptic\_pp\_} \texttt{calib\_multiseed} & B3 trained on steps 1--29, $0.8012$ \\
 \texttt{fusion\_gatv2\_b3\_} \texttt{multiseed} & GATv2 + B3 calibrated fusion, $0.7760$ \\
 \texttt{gnn\_elliptic\_pp\_gatv2\_} \texttt{wce\_multiseed} & $-$focal ablation, $0.4388 \pm 0.0505$ \\

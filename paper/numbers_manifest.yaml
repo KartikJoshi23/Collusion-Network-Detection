@@ -135,6 +135,22 @@ numbers:
       - {id: b3_post_sd, v: "0.0034", key: items.b3_steps_43_49.auc_pr_std}
       - {id: prev_pre, v: "0.092", key: items.gatv2_steps_35_42.prevalence, fmt: "{:.3f}"}
       - {id: prev_post, v: "0.025", key: items.gatv2_steps_43_49.prevalence, fmt: "{:.3f}"}
+  - id: normalisation_rescore
+    file: eval_outputs/elliptic_pp/normalisation_rescore/normalisation_rescore.json
+    items:
+      - {id: frozen, v: "0.4729", key: aggregate.frozen.mean}
+      - {id: frozen_sd, v: "0.0525", key: aggregate.frozen.std}
+      - {id: per_graph, v: "0.6853", key: aggregate.per_graph.mean}
+      - {id: per_graph_sd, v: "0.0052", key: aggregate.per_graph.std}
+      - {id: max_p, v: "0.001", key: aggregate.max_p_value, fmt: "{:.3f}"}
+  - id: normalisation_windows
+    file: eval_outputs/derived/derived_numbers.json
+    fmt: "{:.3f}"
+    items:
+      - {id: frozen_pre, v: "0.574", key: items.gatv2_steps_35_42.auc_pr_mean}
+      - {id: per_graph_pre, v: "0.804", key: items.gatv2_pergraph_steps_35_42.auc_pr_mean}
+      - {id: frozen_post, v: "0.039", key: items.gatv2_steps_43_49.auc_pr_mean}
+      - {id: per_graph_post, v: "0.038", key: items.gatv2_pergraph_steps_43_49.auc_pr_mean}
   - id: seed0_arms
     file: eval_outputs/elliptic_pp/gnn_gatv2_focal/run.json
     items:
@@ -528,8 +544,6 @@ allow:
     values: ["12.7", "0.98", "0.01"]
   - reason: machine-class difference of the seed-0 GATv2 run from the July 2026 ledger (0.5492 against 0.5318); no stored artifact on this machine
     values: ["0.02"]
-  - reason: "D24 open: the normalisation-fix figures come from the July 2026 ledger; gnn_elliptic_pp_gatv2_focal_pergraphnorm_multiseed.yaml will replace them"
-    values: ["0.693", "0.532"]
   - reason: the copilot example of a broken figure ("0.32" rewritten as "32%")
     values: ["0.32"]
   - reason: hyperparameters copied from the committed configs into Appendix C (learning rate, subsample and column fractions); checked against the configs during the revision
