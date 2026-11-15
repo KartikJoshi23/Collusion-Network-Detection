@@ -5,7 +5,7 @@ reason — never partial, never faked."""
 import json
 from pathlib import Path
 
-from collusiongraph.eval.tables import build_paper_tables, to_latex, to_markdown
+from collusiongraph.eval.tables import build_paper_tables, regularisers, to_latex, to_markdown
 
 
 def _write(root: Path, rel: str, payload: dict) -> None:
@@ -418,6 +418,58 @@ def test_label_noise_prefers_the_five_seed_curve(tmp_path) -> None:
     md = (out / "label_noise.md").read_text(encoding="utf-8")
     assert "5 seeds per rate" in md
     assert "| 0% | 0.4729 ± 0.0525 | 0.9400 |" in md
+
+
+def test_regularisers_table_counts_seed_wins(tmp_path) -> None:
+    base = "eval_outputs/elliptic_pp"
+    clean = [0.50, 0.40, 0.45, 0.42, 0.48]
+
+    def multiseed(tests, vals):
+        return {
+            "per_seed": [
+                {"seed": s, "auc_pr": a, "best_val_auc_pr": v}
+                for s, (a, v) in enumerate(zip(tests, vals, strict=True))
+            ]
+        }
+
+    _write(
+        tmp_path, f"{base}/gnn_gatv2_focal_multiseed/multiseed.json", multiseed(clean, [0.94] * 5)
+    )
+    _write(
+        tmp_path,
+        f"{base}/label_noise_curve_5seed/noise_curve.json",
+        {
+            "seeds": [0, 1, 2, 3, 4],
+            "curve": [
+                {"rate": r, "auc_pr_mean": 0.5, "auc_pr_std": 0.05, "val_auc_pr_mean": 0.9}
+                for r in (0.0, 0.2)
+            ],
+        },
+    )
+    noisy = [0.60, 0.62, 0.58, 0.40, 0.61]
+    for s, a in enumerate(noisy):
+        _write(
+            tmp_path,
+            f"{base}/label_noise_curve_5seed/rate_0.2_seed_{s}/run.json",
+            {"node_level": {"auc_pr": a}, "best_val_auc_pr": 0.57},
+        )
+    for folder in ("ls", "wd", "do", "es", "valwin"):
+        _write(
+            tmp_path,
+            f"{base}/gnn_gatv2_focal_{folder}_multiseed/multiseed.json",
+            multiseed([c - 0.01 for c in clean], [0.93] * 5),
+        )
+    # the builder alone: the minimal fixture does not feed the other tables
+    md = to_markdown(*regularisers(tmp_path))
+    assert "| Clean labels (headline) | 0.4500 ± 0.0412 | 0.9400 ± 0.0000 | — |" in md
+    assert "| Label noise 20% | 0.5620 ± 0.0918 | 0.5700 ± 0.0000 | 4/5 |" in md
+    assert "| Dropout 0.5 | 0.4400 ± 0.0412 | 0.9300 ± 0.0000 | 0/5 |" in md
+
+
+def test_regularisers_table_skips_while_an_arm_is_missing(tmp_path) -> None:
+    revision_tree(tmp_path)
+    report = build_paper_tables(root=tmp_path, out_dir=tmp_path / "paper" / "tables")
+    assert "regularisers" in report["skipped"]
 
 
 def test_latex_escapes_and_structure() -> None:

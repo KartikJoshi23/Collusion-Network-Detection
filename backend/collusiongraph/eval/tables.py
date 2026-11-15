@@ -376,6 +376,72 @@ def label_noise(root: Path) -> Table:
     )
 
 
+_REGULARISER_ARMS = (
+    ("Label smoothing, ε = 0.1", "gnn_gatv2_focal_ls_multiseed"),
+    ("Weight decay 5e-3", "gnn_gatv2_focal_wd_multiseed"),
+    ("Dropout 0.5", "gnn_gatv2_focal_do_multiseed"),
+    ("Early-stopping patience 5", "gnn_gatv2_focal_es_multiseed"),
+    ("Validation on steps 32–34", "gnn_gatv2_focal_valwin_multiseed"),
+)
+
+
+def regularisers(root: Path) -> Table:
+    """Revision item B7: label noise against explicit regularisers, five seeds each.
+
+    The clean row is the headline campaign. Every other row changes one
+    setting; the last column counts seeds whose test AUC-PR beats the clean
+    run of the same seed."""
+    from statistics import mean, stdev
+
+    base = "eval_outputs/elliptic_pp"
+    # load every artifact first, so a missing one skips the table before any row
+    clean = _load(root, f"{base}/gnn_gatv2_focal_multiseed/multiseed.json")
+    curve = _load(root, f"{base}/label_noise_curve_5seed/noise_curve.json")
+    noisy = {
+        point["rate"]: [
+            (
+                s,
+                _load(
+                    root, f"{base}/label_noise_curve_5seed/rate_{point['rate']}_seed_{s}/run.json"
+                ),
+            )
+            for s in curve["seeds"]
+        ]
+        for point in curve["curve"]
+        if point["rate"] != 0.0
+    }
+    arms = [(label, _load(root, f"{base}/{d}/multiseed.json")) for label, d in _REGULARISER_ARMS]
+    clean_test = {r["seed"]: r["auc_pr"] for r in clean["per_seed"]}
+
+    def row(label: str, runs: list[tuple[int, float, float]], compare: bool = True) -> Row:
+        tests = [t for _, t, _ in runs]
+        vals = [v for _, _, v in runs]
+        above = sum(t > clean_test[s] for s, t, _ in runs)
+        return [
+            label,
+            _ms(mean(tests), stdev(tests)),
+            _ms(mean(vals), stdev(vals)),
+            f"{above}/{len(runs)}" if compare else "—",
+        ]
+
+    def per_seed(payload: dict[str, Any]) -> list[tuple[int, float, float]]:
+        return [(r["seed"], r["auc_pr"], r["best_val_auc_pr"]) for r in payload["per_seed"]]
+
+    rows = [row("Clean labels (headline)", per_seed(clean), compare=False)]
+    for rate in sorted(noisy):
+        runs = [(s, r["node_level"]["auc_pr"], r["best_val_auc_pr"]) for s, r in noisy[rate]]
+        rows.append(row(f"Label noise {rate:.0%}", runs))
+    rows += [row(label, per_seed(payload)) for label, payload in arms]
+    return (
+        ["Arm", "Test AUC-PR", "Validation AUC-PR", "Seeds above clean"],
+        rows,
+        "Label noise against explicit regularisers (GATv2-focal on Elliptic++, five seeds, "
+        "mean ± SD). Each arm changes one setting of the headline run. The last column counts "
+        "seeds whose test AUC-PR beats the clean run of the same seed. The window arm "
+        "validates on steps 32–34, so its validation column is not comparable.",
+    )
+
+
 def injection_ocds(root: Path) -> Table:
     payload = _load(
         root, "eval_outputs/ocds_georgia/injection_recovery_multiseed/injection_multiseed.json"
@@ -553,6 +619,7 @@ TABLES: dict[str, Callable[[Path], Table]] = {
     "full_label": full_label,
     "explainer_metrics": explainer_metrics,
     "label_noise": label_noise,
+    "regularisers": regularisers,
     "injection_ocds": injection_ocds,
     "label_efficiency_proc2fin": label_efficiency_proc2fin,
     "label_efficiency_fin2proc": label_efficiency_fin2proc,
