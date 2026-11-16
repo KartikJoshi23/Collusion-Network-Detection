@@ -53,8 +53,10 @@ what remains are the author decisions below.
   figures at 8 pt or more, greyscale-safe.
 
 ## Recommendations applied, for Dr. Garg to confirm
-- **Journal:** IJDSA (Springer), backup SNAM. The Springer template move is
-  the one remaining brief item; it waits for the template download.
+- **Journal:** IJDSA (Springer), backup SNAM. The paper now comes in both
+  formats: IEEE (`collusiongraph_paper.tex`) and Springer Nature `sn-jnl`
+  (`collusiongraph_paper_springer.tex`, generated from it), with a flat upload
+  bundle built by `scripts/paper_to_springer.py --bundle`.
 - **Rater study:** not run before submission; RQ3 rests on fidelity and coverage.
 - **Availability:** the public GitHub repository is cited in the abstract and
   Appendix C; a Zenodo DOI for a tagged release is recommended.

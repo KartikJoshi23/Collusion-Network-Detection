@@ -9,9 +9,10 @@ recommendation and is flagged for his confirmation; **Open** with the reason.
 
 ## Summary
 
-- All 13 P1 items and all five content P2 items (3, 10, 11, 12, 17) are done.
-- Item 18 (Springer template and declarations) is the one item of real work left. It
-  needs Springer Nature's template package, which has not been downloaded yet.
+- All 13 P1 items and all six P2 items are done.
+- Item 18: the paper now also exists in Springer Nature's `sn-jnl` format for
+  IJDSA (`paper/collusiongraph_paper_springer.tex`, generated from the IEEE source),
+  with a Statements and Declarations section and a flat upload bundle.
 - Item 19 (earlier versions) has a recommended wording; it is Dr. Garg's call.
 - Content only the authors can supply stays as marked placeholders: funding,
   competing interests, author contributions (CRediT), acknowledgements, and the
@@ -38,7 +39,7 @@ recommendation and is flagged for his confirmation; **Open** with the reason.
 | 15 | References | Done (60 references, each verified) | bibliography; `references_check.md` |
 | 16 | Abstract and language | Done except the availability sentence (L3) | Abstract, I–IX |
 | 17 | Figures | Done | Figs. 1–6 |
-| 18 | Springer template, declarations | Open: needs the template download | — |
+| 18 | Springer template, declarations | Done (template); declarations complete except author-supplied content | `collusiongraph_paper_springer.tex` |
 | 19 | Earlier versions disclosed | Recommended wording; Dr. Garg's decision | IV-E; declarations draft |
 
 ## Part A — framing and claims
@@ -174,8 +175,8 @@ latest, D28, made queue precision tie-aware as Contribution 1 claims.
 - Section II paragraphs without citations: each now has two to four. Done.
 - Suggested additions: Wachs et al. 2021 (IJDSA), Huber and Imhof 2019, Agarwal
   et al. 2023, and Weber et al. for random forest beating GCN. All cited. Done.
-- 45–60 complete references: 60. Springer numbered style: in the Springer move
-  (BibTeX in `paper/references.bib`).
+- 45–60 complete references: 60, in Springer's numbered style with full DOI
+  links in the Springer version (BibTeX in `paper/references.bib`).
 
 ## Part F — language, abstract, figures
 
@@ -199,22 +200,23 @@ latest, D28, made queue precision tie-aware as Contribution 1 claims.
 | Point | Status |
 |---|---|
 | Target IJDSA, backup SNAM | Recommended (Dr. Garg to confirm) |
-| sn-jnl template with numbered references | Open: needs the template download |
+| sn-jnl template with numbered references | Done: two-column `iicol`, `sn-mathphys-num`, BibTeX |
 | Abstract within the journal limit | Done (IJDSA: 150–250 words) |
 | 4–6 keywords | Done in this pass (six keywords) |
 | Declarations: funding, competing interests | Placeholders (authors to supply) |
-| Data availability: five datasets with links and licences | Drafted (`declarations_draft.md`); goes into the template |
+| Data availability: five datasets with links and licences | Done (Springer version) |
 | Code availability: repository URL | Recommended (L3) |
 | Author contributions (CRediT) | Placeholder (authors to supply) |
-| Ethics approval: not applicable | Drafted |
-| AI-use disclosure | Drafted and flagged for confirmation |
+| Ethics approval: not applicable | Done (Springer version) |
+| AI-use disclosure | In the Springer version, flagged for confirmation |
 | Acknowledgements | Placeholder (authors to supply) |
 | Earlier versions disclosed (0.5492) | Recommended wording (item 19) |
 | García licence: released artifacts do not redistribute modified data | Done for the repository: `eval_outputs/` is never committed; three notebook previews of raw rows removed on this branch. No public deployment is recorded. Any public console must leave out the García queue and bundles |
 
 ## Part H — report back
 
-- Revised PDF, LaTeX source and one-page change log: delivered.
+- Revised PDF, LaTeX source and one-page change log: delivered, for both the
+  IEEE and the Springer version.
 - Every changed number from a config in Appendix A: Done (`verify_numbers.py
   --strict`: 0 failures, 0 unlisted).
 - Items that cannot be done are marked open with the reason: Done (country
@@ -228,9 +230,9 @@ Final check before sending:
 |---|---|
 | All 13 P1 items done | Yes, with D8, D11, D12 on recommendations or placeholders |
 | Numbers agree across abstract, text, tables and Appendix A | Yes (manifest check) |
-| References complete and in Springer style | Complete; Springer style comes with the template |
+| References complete and in Springer style | Yes (Springer version) |
 | Figures readable in print and greyscale | Yes |
-| Declarations complete | No: author-supplied content and the template |
+| Declarations complete | All but author-supplied content (funding, competing interests, CRediT, acknowledgements) and the flagged AI-use statement |
 | All five co-authors approved | No: only the authors can do this |
 
 ## IJDSA requirements, read from the journal's own page

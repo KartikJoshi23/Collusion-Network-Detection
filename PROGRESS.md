@@ -256,6 +256,24 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-11-16 · **JOURNAL REVISION, audit against the brief and the Springer
+  version.** *Audit:* `paper/brief-audit.md` checks every brief item and
+  sub-point; all 19 items are done, with author-only content and Dr. Garg's
+  decisions marked. *Fixes it found:* the abstract defines AUC-PR, drops the
+  undefined "GATv2-focal" and carries the repository URL (244 words; IJDSA
+  allows 150–250); six keywords; four 30-word sentences split; the
+  "previously published 0.5492" sentence names the project report and
+  repository. *Decisions on recommendations, for Dr. Garg to confirm:* IJDSA
+  (Springer) with SNAM as backup; no rater study before submission; the public
+  GitHub repository cited (Zenodo DOI recommended); a cover-letter disclosure
+  paragraph; the source disagreements settled on the primary sources. *Springer
+  version:* `scripts/paper_to_springer.py` generates
+  `paper/collusiongraph_paper_springer.tex` (sn-jnl, two-column, numbered
+  references, Statements and Declarations) from the IEEE source; a hygiene test
+  fails on drift; `--bundle` builds and compiles the flat upload folder IJDSA
+  requires. Template files from Springer Nature's December 2024 package;
+  `cuted.sty` generated from CTAN's sttools v3.5. Both versions pass
+  `verify_numbers --strict`. · [revision laptop, i5-11300H]
 - 2026-11-16 · **JOURNAL REVISION, every run in: D24, D25, D28, B7 and the
   Part G licence check.** *D24:* re-scoring the five stored GATv2 checkpoints
   with test-graph statistics lifts AUC-PR from 0.4729 ± 0.0525 to
