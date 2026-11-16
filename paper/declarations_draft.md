@@ -30,8 +30,15 @@ history keeps them after the merge. Whether to rewrite that history is
 yours to decide.]
 
 ## Code availability
-[AUTHORS TO DECIDE — item L3: repository URL and wording.] The manuscript carries
-red markers in the abstract and Appendix C until this is decided.
+**Recommended (item L3), for Dr. Garg to confirm.** Now in the abstract and
+Appendix C:
+
+> The code, every experiment configuration, the number manifest and the leakage
+> tests are available at https://github.com/KartikJoshi23/Collusion-Network-Detection.
+
+Recommendation: before submission, archive a tagged release of the repository on
+Zenodo and add its DOI here, so the cited version cannot change. That needs an
+author's Zenodo account, so it is left to the authors.
 
 ## Author contributions
 [AUTHORS TO PROVIDE] (for example, CRediT roles per author)
@@ -67,14 +74,32 @@ Facts behind the draft, for checking:
 - This revision ran on the branch `paper/journal-revision` with Claude Opus 5.5
   in Claude Code.
 
-## Earlier versions of these results (item 19) — information for the decision
-**[AUTHORS TO DECIDE whether and how to disclose.]** Known earlier appearances,
-from the revision plan (item D8):
+## Earlier versions of these results (item 19)
+**Recommended wording, for Dr. Garg to confirm or change.** Known earlier
+appearances, from the revision plan (item D8):
 
-- the course report (`Report.pdf`, August 2026);
-- the public repository's documentation;
-- the earlier draft of this manuscript.
+- the course report (`Report.pdf`, SP Jain School of Global Management, Deep
+  Learning course, August 2026), which quotes 0.5492 and 0.4729;
+- the public repository's documentation and the earlier draft of this
+  manuscript, in the same repository.
 
-The manuscript currently says "Our own previously published seed-0 GATv2 figure
-of 0.5492" (Section IV). No peer-reviewed publication was found, so this
-sentence depends on the same decision.
+No preprint, conference paper or other peer-reviewed publication was found.
+
+In the manuscript (Section IV-E), the old sentence "Our own previously published
+seed-0 GATv2 figure of 0.5492" now reads: "Our earlier project report and public
+repository quoted the seed-0 GATv2 figure of 0.5492, which happens to be the best
+of the five."
+
+Recommended paragraph for the cover letter:
+
+> Earlier versions of some of these results appeared in an unreviewed course
+> project report (SP Jain School of Global Management, August 2026) and in the
+> project's public GitHub repository. Neither has been peer reviewed or submitted
+> elsewhere. The revised manuscript reports five-seed results throughout; the
+> seed-0 figure quoted earlier (0.5492) is now given as one of five seeds, with the
+> five-seed mean of 0.4729 as the headline.
+
+Two corrections made during the revision could also be mentioned if the editor
+asks: the explanation counts were rebuilt from the committed queues (the counts
+did not change), and one cross-domain probe value moved from 0.2841 to 0.2843
+between machines (the paper states this).

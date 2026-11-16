@@ -52,13 +52,23 @@ what remains are the author decisions below.
 - Language and figures (Part F): new abstract; Section I rewritten; vector
   figures at 8 pt or more, greyscale-safe.
 
-## Decisions needed from the authors
-Target journal (then Part G, the Springer move); rater study; repository URL and
-availability wording; disclosure of earlier versions (and the "previously
-published" sentence); confirmation of the AI-use statement in
-`paper/declarations_draft.md`; funding, competing interests, contributions,
-acknowledgements; co-author approval; the four source disagreements with the
-brief (95–98% vs 90–95%; the OECD 13%/20% figures; "after the fact"; country names).
-Also: three EDA notebooks on the public main branch show raw-row previews
-(5 Mendeley, 5 García, 3 AMLworld rows). They are removed on this branch,
-but the repository history keeps them; whether to rewrite it is yours.
+## Recommendations applied, for Dr. Garg to confirm
+- **Journal:** IJDSA (Springer), backup SNAM. The Springer template move is
+  the one remaining brief item; it waits for the template download.
+- **Rater study:** not run before submission; RQ3 rests on fidelity and coverage.
+- **Availability:** the public GitHub repository is cited in the abstract and
+  Appendix C; a Zenodo DOI for a tagged release is recommended.
+- **Earlier versions:** Section IV-E names the earlier project report and
+  repository; a cover-letter paragraph is drafted in `paper/declarations_draft.md`.
+- **Source disagreements with the brief:** settled on the primary sources
+  (95–98%; 12.7% of GDP, the 20% figure dropped; "secret and hard to detect";
+  country codes kept because the release gives no key).
+- **Full audit:** `paper/brief-audit.md` checks every brief item and sub-point.
+
+## Still needed from the authors
+Funding, competing interests, author contributions (CRediT) and
+acknowledgements; confirmation of the AI-use statement; approval by all five
+co-authors. Three EDA notebooks on the public main branch show raw-row
+previews (5 Mendeley, 5 García, 3 AMLworld rows); they are removed on this
+branch, but the repository history keeps them, and rewriting it is the
+authors' call.
