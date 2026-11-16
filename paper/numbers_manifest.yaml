@@ -613,6 +613,8 @@ allow:
     values: ["0.1", "0.25", "0.3", "0.4", "0.5", "0.6", "0.7", "1.0", "0.9"]
   - reason: licence version numbers in Table I
     values: ["1.0", "3.0", "4.0"]
+  - reason: AI model versions named in the Springer version's AI-use statement (Claude Opus 4.8, Claude Opus 5.5)
+    values: ["4.8", "5.5"]
   - reason: dataset facts from the publishers' files, recorded in the datasheets (Mendeley contract-level cartel share 6,548 of 15,616; García market shares 11.3 to 81.8 percent)
     values: ["41.9", "11.3", "81.8"]
   - reason: AMLworld post-window laundering share, counted from the stored edges during the revision (655 of 1,108 = 0.5912)

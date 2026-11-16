@@ -89,14 +89,20 @@ LENGTH = re.compile(
 )
 
 
+URL = re.compile(r"\\url\{[^}]*\}")
+BIBLIOGRAPHY = (r"\begin{thebibliography}", r"\bibliography{")
+
+
 def manuscript_body(tex: str) -> str:
-    """The text between \\begin{document} and the bibliography, with comments
-    and LaTeX lengths (2.5pt, 0.94\\textwidth) removed."""
-    body = tex[tex.index(r"\begin{document}") : tex.index(r"\begin{thebibliography}")]
+    """The text between \\begin{document} and the bibliography (an inline
+    thebibliography or a BibTeX \\bibliography{}), with comments, URLs and
+    LaTeX lengths (2.5pt, 0.94\\textwidth) removed."""
+    start = tex.index(r"\begin{document}")
+    end = min(tex.index(marker, start) for marker in BIBLIOGRAPHY if marker in tex[start:])
     kept = []
-    for line in body.splitlines():
+    for line in tex[start:end].splitlines():
         cut = re.split(r"(?<!\\)%", line, maxsplit=1)[0]
-        kept.append(LENGTH.sub(" ", cut))
+        kept.append(LENGTH.sub(" ", URL.sub(" ", cut)))
     return "\n".join(kept)
 
 
@@ -141,19 +147,33 @@ def check(manifest_path: Path, tex_path: Path) -> tuple[list[str], list[str]]:
     return failures, unlisted
 
 
+MANUSCRIPTS = ("collusiongraph_paper.tex", "collusiongraph_paper_springer.tex")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--manifest", default=str(REPO / "paper" / "numbers_manifest.yaml"))
-    parser.add_argument("--tex", default=str(REPO / "paper" / "collusiongraph_paper.tex"))
+    parser.add_argument(
+        "--tex",
+        action="append",
+        help="manuscript to check (repeatable); default: the IEEE and Springer versions",
+    )
     parser.add_argument("--strict", action="store_true", help="fail on unlisted numbers too")
     args = parser.parse_args()
-    failures, unlisted = check(Path(args.manifest), Path(args.tex))
-    for line in failures:
-        print(f"FAIL  {line}")
-    if unlisted:
-        print(f"UNLISTED ({len(unlisted)}): {' '.join(unlisted)}")
-    print(f"{len(failures)} failure(s), {len(unlisted)} unlisted number(s)")
-    return 1 if failures or (args.strict and unlisted) else 0
+    texs = args.tex or [
+        str(REPO / "paper" / name) for name in MANUSCRIPTS if (REPO / "paper" / name).is_file()
+    ]
+    bad = False
+    for tex in texs:
+        failures, unlisted = check(Path(args.manifest), Path(tex))
+        print(f"== {Path(tex).name}")
+        for line in failures:
+            print(f"FAIL  {line}")
+        if unlisted:
+            print(f"UNLISTED ({len(unlisted)}): {' '.join(unlisted)}")
+        print(f"{len(failures)} failure(s), {len(unlisted)} unlisted number(s)")
+        bad = bad or bool(failures) or (args.strict and bool(unlisted))
+    return 1 if bad else 0
 
 
 if __name__ == "__main__":

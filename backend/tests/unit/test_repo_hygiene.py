@@ -6,6 +6,8 @@ Raw data and secrets must never be committable. These tests read the actual
 
 from pathlib import Path
 
+import pytest
+
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
@@ -21,9 +23,9 @@ def test_gitignore_exists() -> None:
 def test_raw_data_is_gitignored() -> None:
     lines = _gitignore_lines()
     for pattern in ("data/raw/", "data/interim/", "data/processed/", "eval_outputs/"):
-        assert (
-            pattern in lines
-        ), f"{pattern} missing from .gitignore — raw data must not be committed"
+        assert pattern in lines, (
+            f"{pattern} missing from .gitignore — raw data must not be committed"
+        )
 
 
 def test_env_files_are_gitignored() -> None:
@@ -60,19 +62,24 @@ def test_repro_map_matches_configs() -> None:
         f"configs missing from docs/reproducibility.md: {sorted(missing_from_doc)} — "
         "every experiment config gets a row in the repro map"
     )
-    assert (
-        not phantom_in_doc
-    ), f"repro map references configs that do not exist: {sorted(phantom_in_doc)}"
+    assert not phantom_in_doc, (
+        f"repro map references configs that do not exist: {sorted(phantom_in_doc)}"
+    )
 
 
-def test_paper_appendix_configs_exist() -> None:
+MANUSCRIPTS = ("collusiongraph_paper.tex", "collusiongraph_paper_springer.tex")
+
+
+@pytest.mark.parametrize("manuscript", MANUSCRIPTS)
+def test_paper_appendix_configs_exist(manuscript: str) -> None:
     """Journal revision: the paper's Appendix A (number-to-config map) may only
     name configs that exist, so the map printed in the paper cannot rot either.
     Config names are split across \\texttt{} pieces to fit the column; a
-    trailing ``*`` matches a family (e.g. ``label_efficiency_*``)."""
+    trailing ``*`` matches a family (e.g. ``label_efficiency_*``). Both the
+    IEEE and the Springer version are checked."""
     import re
 
-    tex = (REPO_ROOT / "paper" / "collusiongraph_paper.tex").read_text(encoding="utf-8")
+    tex = (REPO_ROOT / "paper" / manuscript).read_text(encoding="utf-8")
     start = tex.index("section{Number-to-Config Map}")
     match = re.compile(r"\\end\{table\*?\}").search(tex, start)
     assert match, "Appendix A table not closed"
@@ -94,6 +101,28 @@ def test_paper_appendix_configs_exist() -> None:
         if not (n in on_disk or (n.endswith("*") and any(c.startswith(n[:-1]) for c in on_disk)))
     ]
     assert not phantom, f"paper Appendix A names configs that do not exist: {phantom}"
+
+
+def test_springer_version_is_generated_from_the_ieee_source() -> None:
+    """Journal revision: the Springer Nature version is generated from the IEEE
+    source by scripts/paper_to_springer.py. A hand edit to either file, without
+    regenerating, would let the two versions drift; this test catches it."""
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "paper_to_springer", REPO_ROOT / "scripts" / "paper_to_springer.py"
+    )
+    assert spec and spec.loader
+    converter = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(converter)
+    source = (REPO_ROOT / "paper" / "collusiongraph_paper.tex").read_text(encoding="utf-8")
+    committed = (REPO_ROOT / "paper" / "collusiongraph_paper_springer.tex").read_text(
+        encoding="utf-8"
+    )
+    assert converter.convert(source) == committed.replace("\r\n", "\n"), (
+        "paper/collusiongraph_paper_springer.tex is out of date: run "
+        "`uv run python scripts/paper_to_springer.py`"
+    )
 
 
 def test_demo_queues_come_from_committed_configs() -> None:
@@ -132,9 +161,9 @@ def test_m8_governance_docs_present_and_caveated() -> None:
         assert (datasheets / f"{name}.md").is_file(), f"datasheet missing: {name}"
     for doc in ("model_card.md", "ethics_and_scope.md"):
         text = (REPO_ROOT / "docs" / doc).read_text(encoding="utf-8")
-        assert (
-            SCREENING_CAVEAT.split(" — ")[0].lower() in text.lower()
-        ), f"{doc} must carry the screening caveat (R11)"
+        assert SCREENING_CAVEAT.split(" — ")[0].lower() in text.lower(), (
+            f"{doc} must carry the screening caveat (R11)"
+        )
 
 
 def test_red_team_review_covers_the_checklist() -> None:

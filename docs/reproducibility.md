@@ -178,3 +178,27 @@ dedicated CI step on every push. One YAML = one experiment: no published
 number exists without a committed config, and the repo-hygiene test
 `test_repro_map_matches_configs` fails CI if this document and
 `configs/experiment/` ever disagree in either direction.
+
+## 6. Building the paper (two versions)
+
+The paper exists in two versions with one source of content:
+
+- `paper/collusiongraph_paper.tex` (IEEEtran) is the source. Edit only this file.
+- `paper/collusiongraph_paper_springer.tex` is generated from it for the
+  International Journal of Data Science and Analytics (Springer Nature `sn-jnl`
+  class, two-column `iicol` layout, numbered `sn-mathphys-num` references,
+  BibTeX from `paper/references.bib`, a Statements and Declarations section).
+  Regenerate it with `uv run python scripts/paper_to_springer.py`; the hygiene
+  test `test_springer_version_is_generated_from_the_ieee_source` fails if the
+  two drift.
+- `uv run python scripts/paper_to_springer.py --bundle` builds
+  `paper/build/springer_upload/`, a flat folder (IJDSA accepts no subfolders)
+  with the .tex, `references.bib`, the class, style and `cuted.sty` files and the
+  figures, compiles it there with latexmk, and zips the sources with the .bbl
+  into `paper/build/springer_upload.zip`.
+- `sn-jnl.cls` and `sn-mathphys-num.bst` come unchanged from Springer Nature's
+  journal-article template package (December 2024 version, LPPL 1.3c).
+  `cuted.sty` (sttools v3.5, LPPL 1.3) was generated with docstrip from
+  `cuted.dtx` on CTAN; the class needs it and MiKTeX did not have it.
+- `uv run python scripts/audit/verify_numbers.py --strict` checks every printed
+  number in both versions against its artifact.
