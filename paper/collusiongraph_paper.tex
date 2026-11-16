@@ -57,32 +57,33 @@ Dubai, United Arab Emirates\\
 \maketitle
 
 \begin{abstract}
-Money laundering and bid rigging are studied by separate communities, yet both
-are collusive crimes. No single transaction or tender looks wrong by itself;
-the scheme shows only in the pattern of dealings around it. We built one
+Money laundering and bid rigging are studied apart, yet both are collusive
+crimes. No single transaction or tender looks wrong; the scheme shows only in
+the pattern of dealings around it. We built one
 graph-learning stack for both: one intermediate representation, one detector
 family, one explanation layer and one evaluation protocol, fed by five public
 datasets. Under strict inductive
 splits and fixed alert budgets, gradient-boosted trees on graph features beat
 every graph neural network we trained on Elliptic++. Over five seeds each, the
-trees score $0.8123 \pm 0.0012$ AUC-PR against $0.4729 \pm 0.0525$ for
-GATv2-focal, and the gap holds on every seed pair. The whole gap lies before a
+trees score $0.8123 \pm 0.0012$ in area under the precision--recall curve
+(AUC-PR) against $0.4729 \pm 0.0525$ for the best graph network, and the gap
+holds on every seed pair. The whole gap lies before a
 market closure at time step 43; after it, both models fall close to the base
-rate. Transfer between procurement markets is uneven: the Garc\'ia markets pool
-to a lift of $1.36$ over their base rates, the Mendeley countries to $0.93$. Across domains, a frozen procurement
-encoder reaches $0.150$ AUC-PR on Elliptic++ against a base rate of $0.065$,
-while a linear probe on the target's own features reaches $0.299$. The reverse
+rate. Transfer between procurement markets is uneven: Garc\'ia markets pool
+to a lift of $1.36$ over their base rates, Mendeley countries to $0.93$. Across domains, a frozen procurement
+encoder reaches $0.150$ AUC-PR on Elliptic++ (base rate $0.065$), while a
+linear probe on the target's own features reaches $0.299$. The reverse
 direction falls below its base rate.
 Label noise and stronger weight decay raise test AUC-PR while validation
-falls, so validation selection is unreliable on this benchmark.
+falls, so validation selection is unreliable here.
 The released system ranks group alerts for a fixed review budget, explains
-each with a subgraph and a red-flag citation, and leaves every decision to a
-human.
-\PENDING{L3: repository-availability wording, an author decision}
+each with a subgraph and a red-flag citation, and leaves decisions to a
+human. Code and configurations are available at
+\url{https://github.com/KartikJoshi23/Collusion-Network-Detection}.
 \end{abstract}
 
 \begin{IEEEkeywords}
-graph neural networks (GNN), anomaly detection, anti-money laundering (AML), bid rigging, class imbalance, transfer learning, evaluation protocol.
+graph neural networks, anti-money laundering, bid rigging, anomaly detection, transfer learning, evaluation protocol.
 \end{IEEEkeywords}
 
 % =====================================================================
@@ -227,7 +228,7 @@ cross-market numbers. Graph attention networks over tender--firm graphs from 13
 markets in seven countries transfer at 80--90\% accuracy~\cite{imhof2025}. They
 peak at 91\% on an eight-market configuration and settle at 84\% once extended
 to 12 markets. Relational GCNs with an explicit zero-shot phase attack
-out-of-distribution generalisation head on~\cite{gomes2024}, and a systematic
+out-of-distribution generalisation head on~\cite{gomes2024}. A systematic
 mapping study finds few methods applied in real systems to detect new
 cases~\cite{epjds2025}. Those
 accuracy figures and our budget-first lift numbers are different metrics on
@@ -447,7 +448,7 @@ statistics lifts AUC-PR from $0.4729 \pm 0.0525$ to $0.6853 \pm 0.0052$
 recovers ($0.039$ and $0.038$). Even with this adaptation, GATv2 stays below
 the trees, which use raw features. Every figure we report uses frozen statistics.
 \item \textbf{Budget-first, tie-aware metrics.} We report tie-aware precision@$k$ at budgets a real team would use. We also report AUC-PR, the right summary under this level of class imbalance~\cite{saito2015}, always against its own fold’s prevalence baseline.
-\item \textbf{Multi-seed with dispersion.} Five seeds, reported as mean~$\pm$~standard deviation. The seed variance, about $\pm 0.05$, is much larger than the cross-machine variance of about $\pm 0.02$, so a single-seed comparison between two machines is unreliable. Our own previously published seed-0 GATv2 figure of $0.5492$ happens to be the best of the five. The more reliable number is $0.4729 \pm 0.0525$, and that is the one we quote.
+\item \textbf{Multi-seed with dispersion.} Five seeds, reported as mean~$\pm$~standard deviation. The seed variance, about $\pm 0.05$, is much larger than the cross-machine variance of about $\pm 0.02$, so a single-seed comparison between two machines is unreliable. Our earlier project report and public repository quoted the seed-0 GATv2 figure of $0.5492$, which happens to be the best of the five. The more reliable number is $0.4729 \pm 0.0525$, and that is the one we quote.
 \item \textbf{Paired stratified bootstrap}~\cite{efron1993} over identical
 confirmed test nodes
 for every headline comparison, at 2,000 resamples.
@@ -977,9 +978,9 @@ that does worse on test.
 This is a diagnostic, not a training recommendation. It shows that validation
 selection is unreliable under this shift.
 
-\textbf{AMLworld at scale.} For completeness we report a negative at 5M edges:
-tree baselines score $0.0063$ (B2) and $0.0062$ (B3) against an account-level
-prevalence of $0.0103$ (Section~\ref{sec:prevalence}), which puts both below
+\textbf{AMLworld at scale.} For completeness we report a negative at 5M edges.
+Tree baselines score $0.0063$ (B2) and $0.0062$ (B3) against an account-level
+prevalence of $0.0103$ (Section~\ref{sec:prevalence}), so both sit below
 chance. Their inverted scores reach $0.0211$ and $0.0239$, about twice the
 prevalence. The labels map correctly, so this is not an inversion bug. The
 cause is the split. Accounts are heavily front-loaded, so a node-first-seen
@@ -1064,7 +1065,7 @@ would rather record it than paper over it with a weaker claim.
 
 \textbf{Copilot gate.} The release gate checks 26 golden cases against two separate requirements. The first has zero tolerance and applies to the released output: no guilt-attributing language can be released, and a deterministic guard enforces this instead of relying on a prompt. The second requires a grounding score of $0.9$, meaning every number quoted by the assistant must appear in the rows it actually read. The gate passes. Grounding is 24 of 26 cases ($0.923$; Wilson 95\% CI~\cite{wilson1927} $[0.759, 0.979]$). Released guilt violations are at zero, and draft rewrites have 1 of 26 cases against a $10\%$ ceiling. The interval is wide: with 26 cases, its lower bound sits below the $0.9$ threshold, so the gate cannot show that grounding exceeds it.
 
-We report the two grounding misses instead of hiding them through rounding because they are not random. Both are the newest cases in the set, and both use the tool we added most recently, the injection-study reader. One quoted a recall figure that was not present in the rows it had retrieved; the other left out an expected motif name from an answer that was otherwise well grounded. Growing the golden set from 24 to 26 left the older cases untouched but exposed problems in the new ones. For a bounded agent whose tool surface has just been expanded, this is a useful failure to find. It also shows why the golden set should be extended whenever a new tool is added instead of relying on a previously perfect score.
+We report the two grounding misses instead of hiding them through rounding because they are not random. Both are the newest cases in the set, and both use the tool we added most recently, the injection-study reader. One quoted a recall figure that was not in the rows it had retrieved. The other left out an expected motif name from an otherwise well-grounded answer. Growing the golden set from 24 to 26 left the older cases untouched but exposed problems in the new ones. For a bounded agent whose tool surface has just been expanded, this is a useful failure to find. It also shows why the golden set should be extended whenever a new tool is added instead of relying on a previously perfect score.
 
 Two earlier failures were fixed with prompt rules and did not need model changes. The agent once repeated a question presuming guilt in its own words while denying the premise. In another case, it changed a metric from  $0.32$ to ``32\%'' in a way that broke traceability back to the artifact. The deterministic guard, rather than the model simply following instructions, is what keeps the released-output bar at zero.
 
@@ -1133,7 +1134,7 @@ the language guarding against that is part of the design.
 \item \textbf{Garc\'ia identity coverage reaches four of six markets}, so the co-bidding identity graphs do not cover the whole benchmark.
 \item \textbf{Award-pattern motifs recover badly} especially rotation, cover bidding and partition. This limits what we can claim about the procurement side specifically.
 \item \textbf{The copilot's grounding is imperfect and depends on its tool
-surface.} Grounding stands at $0.923$ on the current 26-case gate, with both misses occurring on the tool we added last. The released-output guarantee is deterministic and has zero violations, but grounding is a statistical measure and may drop when the agent gains new tools faster than the golden set grows.
+surface.} Grounding stands at $0.923$ on the current 26-case gate, with both misses occurring on the tool we added last. The released-output guarantee is deterministic and has zero violations. Grounding is a statistical measure, and it may drop when the agent gains new tools faster than the golden set grows.
 \item \textbf{The practitioner study's human phase has not been run}, so
 \RQ{3} currently relies on fidelity and coverage measurements rather than practitioner judgement.
 \item \textbf{Compute envelope.} Everything published here ran on CPU,
@@ -1435,8 +1436,9 @@ depending on machine load. The five-seed trees take about six minutes on
 Elliptic++ and under a minute on Mendeley, and a Mendeley R-GCN seed takes a
 few seconds.
 
-\textbf{Code and data availability.} \PENDING{L3: repository URL and
-availability wording, an author decision} The datasets are public and are
+\textbf{Code and data availability.} The code, every experiment
+configuration, the number manifest and the leakage tests are available at
+\url{https://github.com/KartikJoshi23/Collusion-Network-Detection}. The datasets are public and are
 downloaded from their canonical sources (Table~\ref{tab:data}). No raw or
 modified data is redistributed.
 
