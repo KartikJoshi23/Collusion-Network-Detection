@@ -1,0 +1,3 @@
+# Springer Nature's class file uses classic Mac (CR) line endings: keep it
+# byte-identical to the template package and out of text diffs.
+paper/sn-jnl.cls -text -diff
