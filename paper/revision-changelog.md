@@ -41,5 +41,5 @@ Appendix A was rebuilt for the new runs: 51 rows, each naming an existing config
    - Availability (L3): the public GitHub repository is cited in the abstract and Appendix C; archiving a tagged release on Zenodo for a DOI is recommended before submission.
    - Earlier versions (L4, item 19): wording in Section IV-E and a cover-letter paragraph (`paper/declarations_draft.md`).
    - A1 stance (L5): the AI Act as a design standard, not an obligation, as the brief advises.
-   - Co-author approval (L6): only the authors can give it.
+   - Co-author approval (L6): given. All five authors approved the revised version (reported by Kartik Joshi, 17 November 2026).
 9. **Content only the authors can supply:** funding, competing interests, author contributions (CRediT) and acknowledgements stay as marked placeholders. The AI-use statement is drafted and flagged for confirmation.

@@ -69,8 +69,8 @@ what remains are the author decisions below.
 
 ## Still needed from the authors
 Funding, competing interests, author contributions (CRediT) and
-acknowledgements; confirmation of the AI-use statement; approval by all five
-co-authors. Three EDA notebooks on the public main branch show raw-row
+acknowledgements; confirmation of the AI-use statement. All five authors
+approved the revised version on 17 November 2026. Three EDA notebooks on the public main branch show raw-row
 previews (5 Mendeley, 5 García, 3 AMLworld rows); they are removed on this
 branch, but the repository history keeps them, and rewriting it is the
 authors' call.

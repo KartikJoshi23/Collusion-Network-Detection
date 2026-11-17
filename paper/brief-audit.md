@@ -15,8 +15,9 @@ recommendation and is flagged for his confirmation; **Open** with the reason.
   with a Statements and Declarations section and a flat upload bundle.
 - Item 19 (earlier versions) has a recommended wording; it is Dr. Garg's call.
 - Content only the authors can supply stays as marked placeholders: funding,
-  competing interests, author contributions (CRediT), acknowledgements, and the
-  approval of all five co-authors.
+  competing interests, author contributions (CRediT) and acknowledgements.
+- All five co-authors approved the revised version (reported by Kartik Joshi on
+  17 November 2026).
 
 ## Priority table
 
@@ -233,7 +234,7 @@ Final check before sending:
 | References complete and in Springer style | Yes (Springer version) |
 | Figures readable in print and greyscale | Yes |
 | Declarations complete | All but author-supplied content (funding, competing interests, CRediT, acknowledgements) and the flagged AI-use statement |
-| All five co-authors approved | No: only the authors can do this |
+| All five co-authors approved | Yes (reported by Kartik Joshi, 17 November 2026) |
 
 ## IJDSA requirements, read from the journal's own page
 
