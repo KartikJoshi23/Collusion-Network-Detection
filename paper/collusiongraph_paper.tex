@@ -233,7 +233,7 @@ cross-market results. Graph attention networks over tender--firm graphs from 13 
 countries transfer with 80--90\% accuracy~\cite{imhof2025}. Their accuracy
 peaks at 91\% in an eight-market configuration and settles at 84\% when
 extended to 12 markets. Relational GCNs with an explicit zero-shot phase
-address out-of-distribution generalisation directly~\cite{gomes2024}, and a
+address out-of-distribution generalisation directly~\cite{gomes2024}. A
 systematic mapping study finds that few methods have been applied in real
 systems to detect new cases~\cite{epjds2025}. These accuracy figures and our
 budget-first lift values are different metrics computed on differently sampled
@@ -442,9 +442,9 @@ an explanation is not considered delivered.
 
 A bounded language-model agent answers analyst questions from the published
 artifacts and is constrained by design. It has a SELECT-only allowlist over
-read-only views, a numeric check that rejects any figure absent from the rows it
-has read, a guard against guilt-attributing language, and a disclaimer attached
-to every response. Its release gate is a golden set of 26 cases, graded for
+read-only views and a numeric check that rejects any figure absent from the
+rows it has read. It also has a guard against guilt-attributing language and
+attaches a disclaimer to every response. Its release gate is a golden set of 26 cases, graded for
 grounding and for violations in the released output. Released output has zero
 tolerance for violations, while drafted rewrites are held to a separate
 limit.
@@ -492,6 +492,7 @@ comparison.
 % =====================================================================
 
 \subsection{RQ1: graph neural networks do not outperform the tree baselines}
+\label{sec:rq1}
 
 The answer to \RQ{1} is no. On neither anchor dataset, and at none of the
 reported budgets, does a graph neural network, alone or fused with unsupervised
@@ -705,18 +706,19 @@ collusion motifs unsupervised detectors can recover.
 \textbf{Transfer to unseen markets.} Fig.~\ref{fig:transfer} and
 Table~\ref{tab:t4} present the two procurement transfer matrices. Held-out
 prevalences range from $0.29$ to $0.89$ across the Mendeley folds and from
-$0.25$ to $0.55$ across the Garc\'ia folds, so lift over each fold's own
-prevalence is the only fair comparator.
+$0.25$ to $0.55$ across the Garc\'ia folds. Lift over each fold's own
+prevalence is therefore the only fair comparator.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{figures/fig4_transfer_lift.pdf}
 \caption{Transfer lift by held-out fold, with bootstrap 95\% intervals. All
 four Garc\'ia markets exceed their base rate under leave-one-market-out
-evaluation. On Mendeley's leave-one-country-out folds (C1--C7, the release's
-country codes), the pooled lift is $0.93$, and the largest fold, C2 with 750 of
-1,001 firms, falls below $1.0$. A bar at or below $1.0$ indicates no
-improvement over the fold's own base rate.}
+evaluation. On Mendeley's leave-one-country-out folds (C1--C7), the pooled lift
+is $0.93$, and the largest fold, C2 with 750 of 1,001 firms, falls below $1.0$.
+C1--C7 stand for the release's codes \texttt{country\_1} to
+\texttt{country\_7}. A bar at or below $1.0$ indicates no improvement over the
+fold's own base rate.}
 \label{fig:transfer}
 \end{figure}
 
@@ -818,8 +820,8 @@ results reported here, given how often the cartel literature treats rotation as
 a characteristic detectable pattern.
 
 One caveat applies. Coordinated-cluster recall has a standard deviation of
-$0.17$ over five seeds, so the apparent ordering between the rank ensemble at
-$0.92$ and the graph autoencoder at $0.91$ lies well within noise. The
+$0.17$ over five seeds. The apparent ordering between the rank ensemble at
+$0.92$ and the graph autoencoder at $0.91$ therefore lies well within noise. The
 experiment supports the family-level distinction between shape-changing and
 award-changing motifs, but not a ranking of unsupervised detectors, and we do
 not offer one.
@@ -828,13 +830,16 @@ not offer one.
 \label{sec:rq4}
 
 \textbf{Frozen probes.} We freeze an encoder trained on one domain and probe it
-on the other. Neither encoder ever ingests raw features: both domains enter
+on the other. Neither encoder ever ingests raw features. Both domains enter
 through the same ten-column structural template, z-scored within each graph,
 so the 183 Elliptic++ columns and the procurement screens never reach an
 encoder. Table~\ref{tab:fulllabel} compares each frozen probe at full labels
 with probes on the target's own inputs, and the two directions disagree. From
 financial to procurement, the probe reaches $0.2843$ against a prevalence of
-$0.358$, which is below the base rate and therefore carries no signal. From
+$0.358$, which is below the base rate and therefore carries no signal. Its inverted
+scores reach $0.43$, and the labels map correctly. The cause is the temporal
+reversal of the Mendeley structural signal described in
+Section~\ref{sec:rq1}, not an inversion bug. From
 procurement to financial, it reaches $0.1502$ against $0.065$, a lift of $2.3$,
 and outperforms a probe on the target's own structural template by $0.042$
 (95\% CI $[0.026, 0.059]$). However, a logistic probe on the inputs of B2
@@ -929,8 +934,8 @@ Mendeley B2 XGBoost & 5 seeds & $0.3849 \pm 0.0099$ & ref. \\
 \end{table}
 
 Direction-awareness is the most influential component: dropping the reverse
-edges reduces AUC-PR by $0.194$, consistent with the gains that Egressy et al.\
-report from reverse message passing on a different dataset~\cite{egressy2024}.
+edges reduces AUC-PR by $0.194$. This is consistent with the gains that
+Egressy et al.\ report from reverse message passing on a different dataset~\cite{egressy2024}.
 Focal loss gives a smaller improvement of $0.034$. Additional input channels
 reduced performance in every case: the structural, line-graph and
 context-fusion variants all performed worse than the raw features alone. We
@@ -951,9 +956,9 @@ non-maximum suppression has no effect, and the published queues do not depend
 on a tuned de-duplication setting.
 
 The hit rule matters more. Our published queue counts a group as a hit when at
-least one member is confirmed illicit. If we instead require illicit members to
-make up at least $0.1$ of a group's confirmed members, financial precision@50
-falls from $0.32$ to $0.30$, P@100 from $0.25$ to $0.23$, and P@200 from
+least one member is confirmed illicit. A stricter rule requires illicit members
+to make up at least $0.1$ of a group's confirmed members. Under it, financial
+precision@50 falls from $0.32$ to $0.30$, P@100 from $0.25$ to $0.23$, and P@200 from
 $0.135$ to $0.125$. Tightening the fraction further to $0.25$ costs nothing
 beyond that. The procurement queue is flat on the suppression axis, and on the
 hit-rule axis its P@18 moves from $0.40$ to $0.39$ and then to $0.37$. About
@@ -1019,7 +1024,7 @@ Validation on steps 32--34 & $0.4772 \pm 0.0468$ & $0.9583$ & 2/5 \\
 
 Explicit regularisers fall into two groups (Table~\ref{tab:regularisers}).
 Weight decay of $5 \times 10^{-3}$, ten times the headline value, behaves like
-label noise: test AUC-PR rises to $0.5403 \pm 0.0286$, above the clean run on
+label noise. Test AUC-PR rises to $0.5403 \pm 0.0286$, above the clean run on
 all five seeds, while validation AUC-PR falls to $0.8996$. Its gain also lies
 in steps 35--42, from $0.574$ to $0.659$. Dropout raises test AUC-PR slightly
 and leaves validation unchanged, whereas label smoothing and a patience of 5
@@ -1064,20 +1069,24 @@ red-flag pattern; on the procurement queues, none do.
 
 \textbf{Choosing an attribution method.} We ran a three-arm ablation over the
 top members of the 50 highest-ranked financial alerts, comparing GNNExplainer,
-PGExplainer and raw attention (Table~\ref{tab:explainers}). Each arm keeps the
-20 highest-scoring edges of a two-hop window around the node. Under PyG's
-fidelity measure~\cite{fey2019}, PGExplainer returned sane attributions for 49
+PGExplainer and raw attention (Table~\ref{tab:explainers}). Each arm keeps the 20 highest-scoring edges of a two-hop window around the node.
+Following the standard definitions~\cite{yuan2023,agarwal2023}, Fidelity+
+measures how much the model's prediction changes when the explanation is
+removed. Fidelity$-$ measures how much it changes when only the explanation is
+retained. We call an attribution \emph{sane} when its Fidelity+ is at least its
+Fidelity$-$. Removing a sane explanation therefore disturbs the prediction at
+least as much as keeping only the explanation does. An explanation bundle whose
+attribution is not sane carries an \emph{implausible-fidelity} flag. Under
+PyG's fidelity measure~\cite{fey2019}, PGExplainer returned sane attributions for 49
 of the 50 nodes, compared with 10 for GNNExplainer, in under a third of the
-time, and we therefore adopted it. Its bundles carry an implausible-fidelity
+time. We therefore adopted it. Its bundles carry an implausible-fidelity
 flag on 1 of 50 alerts, against 40 of 50 for GNNExplainer.
 
-A uniform test gives a less favourable picture. We remove or retain the
-selected edges outright and measure the change in the model's probability for
-its own prediction. Following the standard definitions~\cite{yuan2023,agarwal2023},
-Fidelity+ is the drop when the explanation is removed, and Fidelity$-$ is the
-drop when only the explanation is retained. Under this test the three arms are
-close: Fidelity+ ranges from $0.049$ to $0.052$, and 22 to 25 of the 50
-explanations of each arm pass (Fidelity+ $\geq$ Fidelity$-$). Sparsity is low
+A uniform test gives a less favourable picture. We remove or retain the selected edges outright, using hard masks, and measure
+both fidelities as drops in the model's probability for its own prediction.
+Under this test the three arms are close: Fidelity+ ranges from $0.049$ to
+$0.052$, and 22 to 25 of the 50 explanations of each arm are sane
+(Fidelity+ $\geq$ Fidelity$-$). Sparsity is low
 because most two-hop windows contain few more edges than the 20 retained, and
 attention keeps almost every edge. The arms also largely agree on which edges
 matter, with mean Jaccard overlaps of their edge sets between $0.65$ and
@@ -1127,15 +1136,14 @@ tolerance: no guilt-attributing language may be released, and a deterministic
 guard, rather than a prompt, enforces this. The second requires a grounding
 score of $0.9$, meaning that every number the assistant quotes must appear in
 the rows it retrieved. The gate passes, with grounding on 24 of 26 cases
-($0.923$; Wilson 95\% CI~\cite{wilson1927} $[0.759, 0.979]$), no released guilt
-violations, and draft rewrites flagged in 1 of 26 cases against a $10\%$
-ceiling. The interval is wide, however: with 26 cases its lower bound lies below
+($0.923$; Wilson 95\% CI~\cite{wilson1927} $[0.759, 0.979]$). No released output contains a guilt violation, and
+draft rewrites are flagged in 1 of 26 cases against a $10\%$ ceiling. The interval is wide, however: with 26 cases its lower bound lies below
 the $0.9$ threshold, so the gate cannot show that grounding exceeds it.
 
 We report the two grounding misses in detail because they are not random.
 Both are the newest cases in the set, and both involve the most recently added
 tool, the injection-study reader. In one, the assistant quoted a recall figure
-that was not in the rows it had retrieved; in the other, it omitted an expected
+that was not in the rows it had retrieved. In the other, it omitted an expected
 motif name from an otherwise well-grounded answer. Extending the golden set
 from 24 to 26 cases left the older cases unaffected but exposed problems in the
 new ones. For a bounded agent whose tool surface has just been expanded, this is a
@@ -1202,7 +1210,7 @@ against guilt-attributing language.
 ranks cases for human investigation. We target the maturity of a validated
 prototype (TRL 3--4) on public and synthetic data, and no personal or classified
 data were used at any point. Misreading a screening score as an accusation can
-cause real harm, so the language that guards against this is part of the
+cause real harm. The language that guards against this is therefore part of the
 design, both in the system's responses and in this paper.
 
 % =====================================================================
@@ -1211,7 +1219,7 @@ design, both in the system's responses and in this paper.
 
 \begin{itemize}
 \item \textbf{The distribution shift in Elliptic++ strongly affects the
-financial results}, and validation-based selection cannot detect it: label noise
+financial results}, and validation-based selection cannot detect it. Label noise
 and stronger weight decay each lower validation AUC-PR while raising test
 AUC-PR. Test results on this benchmark should therefore be read as
 regime-dependent.
@@ -1265,7 +1273,7 @@ whereas the financial-to-procurement probe gives $0.2841$ on the original
 machine and $0.2843$ on a second one. Torch GNN training is deterministic on a
 given machine, but its results depend on the machine class. A second machine of
 the same class reproduced GATv2 seeds 0, 3 and 4 and the seed-0 actor R-GCN bit
-for bit, while a machine of another class differed by about $0.02$. Seed
+for bit. A machine of another class differed by about $0.02$. Seed
 variance of about $\pm 0.05$ far exceeds that difference. A dedicated suite
 enforces the leakage guarantees and runs as its own continuous-integration
 step, and the full suite comprises 438 tests.
@@ -1279,7 +1287,7 @@ the negative results visible. Under a strict protocol, gradient-boosted trees on
 outperform the graph neural networks on the financial anchor. The whole gap
 lies before the step-43 market closure, which defeats both model families. Calibrated fusion is necessary once members are fused,
 but it does not outperform its best member. Transfer between procurement
-markets holds on Garc\'ia, with a pooled lift of $1.36$, but not on Mendeley,
+markets holds on Garc\'ia, with a pooled lift of $1.36$. It does not hold on Mendeley,
 where the pooled lift is $0.93$ and the largest market falls below its base
 rate. Across domains, a frozen procurement encoder carries some structural
 signal into the financial domain, a probe on the target's own features doubles
@@ -1314,8 +1322,8 @@ completed before submission.]
 
 Table~\ref{tab:repro} links every headline number in this paper to the
 committed configuration that produces it. A repository hygiene test fails
-continuous integration if the table names a configuration that does not exist,
-and a second test keeps the repository's full map consistent with the
+continuous integration if the table names a configuration that does not exist.
+A second test keeps the repository's full map consistent with the
 configuration directory in both directions. Any row can be reproduced with
 \texttt{collusiongraph <verb> -c configs/experiment/<config>}; outputs are
 written to a git-ignored results directory and are never committed.
@@ -1392,7 +1400,7 @@ Each of the following is enforced by a dedicated leakage test rather than by
 convention: strict inductive temporal splits, as-of feature computation,
 leave-one-country and leave-one-market entity isolation, and the alert-unit
 rules. The suite runs on its own and as a separate continuous-integration step
-on every push, so a change that reintroduces leakage breaks the build instead
+on every push. A change that reintroduces leakage therefore breaks the build instead
 of silently improving a reported number. Torch GNN training is deterministic on
 a given machine, but its results depend on the machine class
 (Section~\ref{sec:reproducibility}). Seed variance of about $\pm 0.05$
@@ -1402,16 +1410,39 @@ paper is reported as a multi-seed mean with its standard deviation.
 \section{Experimental Details}
 \label{app:methods}
 
+\begin{table}[t]
+\caption{Network settings. Every network uses two layers, Adam and weight decay
+$5 \times 10^{-4}$; GATv2 uses four attention heads. ``Folds'' are the LOCO
+and LOMO folds; ``probe'' rows are the cross-domain source encoders. ``Pat.''
+is the early-stopping patience in epochs.}
+\label{tab:hparams}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lrrrrr}
+\toprule
+Model (data) & Hidden & Dropout & LR & Epochs & Pat. \\
+\midrule
+GATv2 (Elliptic++) & 64 & 0.3 & 0.005 & 200 & 20 \\
+R-GCN (Mendeley, folds) & 64 & 0.3 & 0.01 & 300 & 30 \\
+R-GCN (actor graph) & 64 & 0.3 & 0.005 & 120 & 15 \\
+SAGE probe (Elliptic++) & 64 & 0.3 & 0.005 & 200 & 20 \\
+SAGE probe (Mendeley) & 64 & 0.3 & 0.01 & 300 & 30 \\
+DOMINANT, GAE & 32 & --- & --- & 50 & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 This appendix gives every setting needed to judge the fairness of the
 comparisons without consulting the repository. Each value was taken from the
 committed configurations and code.
 
 \textbf{Splits.} Elliptic++ is split by time step. The training graph contains
-steps 1--34; the loss uses the confirmed nodes of steps 1--29, and early
-stopping uses validation AUC-PR on the confirmed nodes of steps 30--34, so
-validation is temporal and never a random sample of training nodes. The test
+steps 1--34. The loss uses the confirmed nodes of steps 1--29, and early
+stopping uses validation AUC-PR on the confirmed nodes of steps 30--34.
+Validation is therefore temporal and never a random sample of training nodes. The test
 window covers steps 35--49. Mendeley is split by the year in which a firm first
-appears: training contains firms first seen up to 2013, and the test set
+appears. Training contains firms first seen up to 2013, and the test set
 contains the 363 confirmed firms first seen from 2014 onward. The R-GCN computes
 its loss on firms first seen up to 2010 and validates on 2011--2013, whereas the
 trees train on all firms up to 2013. A firm counts as cartel-linked once it
@@ -1421,17 +1452,17 @@ targets, while test labels use the full record. AMLworld splits accounts by
 first appearance, with the post-window tail removed. Leave-one-country-out
 (Mendeley) and leave-one-market-out (Garc\'ia) evaluation hold out one country
 or market at a time and score it on its own subgraph. Early stopping uses the
-smallest other group with at least three confirmed firms per class:
-\texttt{country\_7} validates every Mendeley fold except its own, which
-\texttt{country\_1} validates, and the USA validates every Garc\'ia fold except
-its own, which Brazil validates. Each fold runs five seeds.
+smallest other group with at least three confirmed firms per class. On
+Mendeley, \texttt{country\_7} validates every fold except its own, which
+\texttt{country\_1} validates. On Garc\'ia, the USA validates every fold
+except its own, which Brazil validates. Each fold runs five seeds.
 
 \textbf{Features.} Elliptic++ provides 183 node columns: the time step, 93 local
 features, 72 one-hop aggregates and 17 Elliptic++ additions, which include in-
 and out-degree and BTC amounts. B2 uses all 183 columns together with a
-money-flow pack computed from the transaction edges (counts and timing, since
-the Elliptic++ edges carry no amounts), while B2-local keeps only the time step
-and the 93 local features. On Mendeley, B2 uses the award screens of B4. B3 adds
+money-flow pack computed from the transaction edges. The pack holds counts and
+timing, since the Elliptic++ edges carry no amounts. B2-local keeps only the
+time step and the 93 local features. On Mendeley, B2 uses the award screens of B4. B3 adds
 two groups of features to B2's inputs. The first is a structural template: in-,
 out- and total degree, mutual-dyad degree, clustering, k-core, triangles,
 burstiness, the size of the node's connected component, and its degree relative
@@ -1458,30 +1489,7 @@ $\alpha$ weighting, and weighted cross-entropy serves as the ablation arm.
 Training stops early on validation AUC-PR, and the best validation epoch is
 retained. XGBoost uses 400 trees of depth 6, a learning rate of 0.1, the
 histogram method, and a positive-class weight equal to the ratio of negatives
-to positives; its five-seed runs subsample rows and columns at 0.8.
-
-\begin{table}[h]
-\caption{Network settings. Every network uses two layers, Adam and weight decay
-$5 \times 10^{-4}$; GATv2 uses four attention heads. ``Folds'' are the LOCO
-and LOMO folds; ``probe'' rows are the cross-domain source encoders. ``Pat.''
-is the early-stopping patience in epochs.}
-\label{tab:hparams}
-\centering
-\footnotesize
-\setlength{\tabcolsep}{3pt}
-\begin{tabular}{lrrrrr}
-\toprule
-Model (data) & Hidden & Dropout & LR & Epochs & Pat. \\
-\midrule
-GATv2 (Elliptic++) & 64 & 0.3 & 0.005 & 200 & 20 \\
-R-GCN (Mendeley, folds) & 64 & 0.3 & 0.01 & 300 & 30 \\
-R-GCN (actor graph) & 64 & 0.3 & 0.005 & 120 & 15 \\
-SAGE probe (Elliptic++) & 64 & 0.3 & 0.005 & 200 & 20 \\
-SAGE probe (Mendeley) & 64 & 0.3 & 0.01 & 300 & 30 \\
-DOMINANT, GAE & 32 & --- & --- & 50 & --- \\
-\bottomrule
-\end{tabular}
-\end{table}
+to positives. Its five-seed runs subsample rows and columns at 0.8.
 
 \textbf{Tuning.} No model received a hyperparameter search: the trees use
 standard settings, and the graph networks use fixed, hand-chosen settings with

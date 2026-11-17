@@ -367,6 +367,7 @@ numbers:
     items:
       - {id: rgcn_inv_min, v: "0.43", key: cases.mendeley_rgcn.score_checks.*.auc_pr_inverted, reduce: min, fmt: "{:.2f}"}
       - {id: rgcn_inv_max, v: "0.47", key: cases.mendeley_rgcn.score_checks.*.auc_pr_inverted, reduce: max, fmt: "{:.2f}"}
+      - {id: fin2proc_probe_inv, v: "0.43", key: cases.fin2proc_probe.score_checks.scores.auc_pr_inverted, fmt: "{:.2f}"}
       - {id: loss_degree, v: "0.38", key: cases.mendeley_rgcn.label_association.windows.loss.roc_auc.degree_total, fmt: "{:.2f}"}
       - {id: test_degree, v: "0.61", key: cases.mendeley_rgcn.label_association.windows.test.roc_auc.degree_total, fmt: "{:.2f}"}
       - {id: val_prev, v: "0.89", key: cases.mendeley_rgcn.label_association.windows.val.prevalence, fmt: "{:.2f}"}
