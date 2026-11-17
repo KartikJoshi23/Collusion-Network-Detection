@@ -190,7 +190,9 @@ The paper exists in two versions with one source of content:
   BibTeX from `paper/references.bib`, a Statements and Declarations section).
   Regenerate it with `uv run python scripts/paper_to_springer.py`; the hygiene
   test `test_springer_version_is_generated_from_the_ieee_source` fails if the
-  two drift.
+  two drift. The iicol column is narrower than an IEEE column, so in the
+  Springer version every table spans the page and is scaled down only if it is
+  still wider than the text; URLs may break at hyphens.
 - `uv run python scripts/paper_to_springer.py --bundle` builds
   `paper/build/springer_upload/`, a flat folder (IJDSA accepts no subfolders)
   with the .tex, `references.bib`, the class, style and `cuted.sty` files and the
