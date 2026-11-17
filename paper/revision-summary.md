@@ -49,7 +49,9 @@ what remains are the author decisions below.
   and explanation bundles built from the wrong models (rebuilt, counts unchanged)
   and the probe reproducibility claim (corrected).
 - References (Part E): 31 → 60, each verified; one finding re-attributed.
-- Language and figures (Part F): new abstract; Section I rewritten; vector
+- Language and figures (Part F): new abstract; a full professional language
+  pass over every section (17 November; no number, citation or reference
+  changed); vector
   figures at 8 pt or more, greyscale-safe.
 
 ## Recommendations applied, for Dr. Garg to confirm
