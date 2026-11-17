@@ -256,6 +256,20 @@ still public 2026-07-15 — anonymous clone succeeded).
 
 ## Completed
 <!-- - YYYY-MM-DD · item · commit ref · [machine tag: master | laptop-B | ...] -->
+- 2026-11-17 · **JOURNAL REVISION, approval, language pass and final audit.**
+  All five authors approved the revised version; a professional language pass
+  followed (no number, citation or reference changed). *Final audit against the
+  brief* (`paper/brief-audit.md`, "Final audit"): 81 scripted checks pass. It
+  found and fixed two gaps in the text (the probe's below-chance diagnosis, B4;
+  the Fidelity± and "sane" definitions, B8), a Fig. 4 caption that misnamed the
+  country codes, and a Springer layout fault: nine tables overran the narrower
+  iicol column, so every table now spans the page (scaled only if still too
+  wide), URLs break at hyphens and appendix tables are numbered per appendix.
+  25 long sentences split under a fingerprint check. The one-page change log in
+  the brief's Part H format is `paper/change_log_one_page.tex`. IEEE 17 pages,
+  Springer 25, no overfull boxes; `verify_numbers --strict` clean on both.
+  Corrected records: the original paper had 30 references, not 31.
+  · [revision laptop, i5-11300H]
 - 2026-11-16 · **JOURNAL REVISION, audit against the brief and the Springer
   version.** *Audit:* `paper/brief-audit.md` checks every brief item and
   sub-point; all 19 items are done, with author-only content and Dr. Garg's

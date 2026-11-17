@@ -48,11 +48,17 @@ what remains are the author decisions below.
 - Consistency (Part D): 28 items found and fixed or marked, including the queues
   and explanation bundles built from the wrong models (rebuilt, counts unchanged)
   and the probe reproducibility claim (corrected).
-- References (Part E): 31 → 60, each verified; one finding re-attributed.
+- References (Part E): 30 → 60, each verified; one finding re-attributed.
 - Language and figures (Part F): new abstract; a full professional language
   pass over every section (17 November; no number, citation or reference
-  changed); vector
-  figures at 8 pt or more, greyscale-safe.
+  changed); vector, greyscale-safe figures with text of 8 pt or more in the
+  IEEE layout (7.5 pt or more in the narrower Springer column).
+- Final audit (17 November): every brief item rechecked (81 scripted checks
+  pass). It added the probe's below-chance diagnosis (V-D) and the fidelity
+  definitions (VI), mapped the Fig. 4 labels C1–C7 to the release's codes,
+  split 25 long sentences, and made the Springer tables span the page (nine
+  had overrun the column). No number changed. The one-page change log in the
+  brief's Part H format is `paper/change_log_one_page.tex`.
 
 ## Recommendations applied, for Dr. Garg to confirm
 - **Journal:** IJDSA (Springer), backup SNAM. The paper now comes in both

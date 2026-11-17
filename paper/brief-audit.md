@@ -2,7 +2,9 @@
 
 Checked on 16 November 2026, item by item, against `paper/collusiongraph_paper.tex`
 on branch `paper/journal-revision`, the change log (`paper/revision-changelog.md`) and
-the run ledger (`paper/revision-results.md`). Every sub-point of Parts A–H is listed.
+the run ledger (`paper/revision-results.md`), and checked again in a final audit on
+17 November 2026, after the language pass (see the next section). Every sub-point
+of Parts A–H is listed.
 Status words: **Done**; **Done (source)** where the primary source overrides the
 brief's wording; **Recommended** where Dr. Garg's decision was taken on a
 recommendation and is flagged for his confirmation; **Open** with the reason.
@@ -17,7 +19,50 @@ recommendation and is flagged for his confirmation; **Open** with the reason.
 - Content only the authors can supply stays as marked placeholders: funding,
   competing interests, author contributions (CRediT) and acknowledgements.
 - All five co-authors approved the revised version (reported by Kartik Joshi on
-  17 November 2026).
+  17 November 2026). The language pass and the final audit came after that
+  approval; their changes are listed below and in the change log, and no number
+  changed.
+
+## Final audit, 17 November 2026
+
+**What was checked.** The brief's priority table, every sub-point of Parts A–H
+and its final check, read again against both manuscripts; 81 scripted checks, one
+for each sub-point that a search can test; `verify_numbers.py --strict` on both
+versions; every number in the one-page change log against the paper; and every
+page of both PDFs after a clean rebuild.
+
+**What it found and fixed.**
+- B4: the financial-to-procurement probe's below-chance score had no diagnosis in
+  the text. V-D now gives it: the inverted scores reach 0.43, the labels map
+  correctly, and the cause is the temporal reversal described in V-A.
+- B8: Fidelity+ and Fidelity− were used before they were defined, and "sane" and
+  the implausible-fidelity flag were never defined. All four are now defined at
+  first use (VI). This audit's 16 November entry had marked B8 done; that was
+  wrong.
+- Fig. 4: the caption called C1–C7 "the release's country codes", but the
+  release, Table VI and the text use `country_1` to `country_7`. The caption now
+  maps one to the other.
+- Springer layout: nine tables overran the narrower `iicol` column (by up to
+  89 pt), the page-wide dataset table overran the text (by 60 pt), and one URL
+  overran its column. The appendix table was numbered C2 with no C1 and floated
+  into the references. The converter now makes every table span the page and
+  scales one only if it is still too wide (the dataset table, to 88%), lets URLs
+  break at hyphens, and numbers tables per appendix; Table C1 now opens
+  Appendix C in both versions. Both builds have no overfull boxes.
+- Writing standard: 25 sentences of 30 or more words were split. None now
+  exceeds 32 words; the 17 above 29 are lists, two research questions and a few
+  two-clause sentences. A fingerprint check confirmed that no number, citation,
+  cross-reference or URL changed.
+- Records: the original paper had 30 references, not 31; the "B7 is still
+  running", "country names: open" and "practitioner study pending" lines were
+  stale. All are corrected.
+
+**Result.** 81 of 81 checks pass; `verify_numbers.py --strict` reports 0
+failures and 0 unlisted numbers in both versions. The IEEE version has 17
+pages and the Springer version 25, both with no overfull boxes and no undefined
+references. The one-page change log in the brief's Part H format is
+`paper/change_log_one_page.tex` (built to `paper/build/change_log_one_page.pdf`;
+pages refer to the Springer version).
 
 ## Priority table
 
@@ -103,7 +148,8 @@ recommendation and is flagged for his confirmation; **Open** with the reason.
   Done.
 - **B4:** all three below-chance cases diagnosed (inverted-score AUC-PR, label
   encoding, train/test distributions); no bug in labels or scores. One config bug
-  was found and fixed on the way (the AMLworld post-window fence). Done.
+  was found and fixed on the way (the AMLworld post-window fence). The probe's
+  diagnosis reached the text only in the final audit (V-D). Done.
 - **B5:** pooled lift, size-weighted lift and per-fold bootstrap 95% CIs in Table
   VI; macro lift moved to a table note. **Country names: cannot be done as
   written.** The Mendeley record names the seven countries but the data code them
@@ -118,8 +164,8 @@ recommendation and is flagged for his confirmation; **Open** with the reason.
   throughout; Fig. 6 rebuilt; the 0.4827 vs 0.4729 difference explained (the old
   curve averaged seeds 0–2; the new clean runs are the headline runs). Done.
 - **B8:** Fidelity+, Fidelity− and sparsity for PGExplainer, GNNExplainer and
-  attention on the same 50 alerts (Table XI); "sane" and "implausible fidelity"
-  defined (VI). Done.
+  attention on the same 50 alerts (Table XI); Fidelity±, "sane" and "implausible
+  fidelity" defined at first use (VI), added in the final audit. Done.
 - Every new run has a config in Appendix A (51 rows): Done.
 
 ## Part C — methods details (Appendix C unless noted)
@@ -182,26 +228,29 @@ latest, D28, made queue precision tie-aware as Contribution 1 claims.
 ## Part F — language, abstract, figures
 
 - Abstract 200–250 words in the brief's order (problem; what was built; three
-  findings with numbers; what is released); copilot dropped: Done (239 words).
+  findings with numbers; what is released); copilot dropped: Done (244 words).
   IJDSA allows 150–250 and forbids undefined abbreviations: "AUC-PR" is defined
   in the abstract in this pass.
 - Every sentence in the brief's "Sentences to fix" table: Done (none of the old
   phrases remains; "therules" was a PDF-extraction artefact).
 - No contractions; no asides: Done (checked by search).
-- Sentences under about 25 words: four sentences of 30–31 words were split in
-  this pass; the rest are 27 words or fewer.
+- Sentences under about 25 words: long sentences were split on 16 November, in
+  the language pass and in the final audit (25 more). None now exceeds 32 words;
+  the 17 above 29 are lists, two research questions and a few two-clause
+  sentences.
 - Fig. 6: "(%)" fixed and annotation moved off the curve: Done.
 - Fig. 7: removed: Done.
 - Fig. 3: B3 line: Done.
 - Fig. 4: the base-rate label sits in the legend, not behind the bars: Done.
-- All figures vector, fonts of at least 8 pt, greyscale-safe: Done.
+- All figures vector and greyscale-safe: Done. Figure text is at least 8 pt in
+  the IEEE layout and at least 7.5 pt in the narrower Springer column.
 
 ## Part G — Springer format and declarations
 
 | Point | Status |
 |---|---|
 | Target IJDSA, backup SNAM | Recommended (Dr. Garg to confirm) |
-| sn-jnl template with numbered references | Done: two-column `iicol`, `sn-mathphys-num`, BibTeX |
+| sn-jnl template with numbered references | Done: two-column `iicol`, `sn-mathphys-num`, BibTeX; tables span the page |
 | Abstract within the journal limit | Done (IJDSA: 150–250 words) |
 | 4–6 keywords | Done in this pass (six keywords) |
 | Declarations: funding, competing interests | Placeholders (authors to supply) |
@@ -216,12 +265,14 @@ latest, D28, made queue precision tie-aware as Contribution 1 claims.
 
 ## Part H — report back
 
-- Revised PDF, LaTeX source and one-page change log: delivered, for both the
-  IEEE and the Springer version.
+- Revised PDF and LaTeX source: delivered for both the IEEE and the Springer
+  version. One-page change log in the brief's format (Item | What changed |
+  Section/page | New numbers), with pages of the Springer version:
+  `paper/change_log_one_page.tex`, built to `paper/build/change_log_one_page.pdf`.
 - Every changed number from a config in Appendix A: Done (`verify_numbers.py
   --strict`: 0 failures, 0 unlisted).
 - Items that cannot be done are marked open with the reason: Done (country
-  names; the template download; author-supplied content).
+  names; author-supplied content).
 - Headlines rewritten where reruns changed them (B1, D24, D25, D28, B7): Done.
 - No claims beyond the results: checked in this audit.
 
@@ -232,9 +283,9 @@ Final check before sending:
 | All 13 P1 items done | Yes, with D8, D11, D12 on recommendations or placeholders |
 | Numbers agree across abstract, text, tables and Appendix A | Yes (manifest check) |
 | References complete and in Springer style | Yes (Springer version) |
-| Figures readable in print and greyscale | Yes |
+| Figures readable in print and greyscale | Yes (text of 8 pt or more in the IEEE layout, 7.5 pt or more in the Springer column) |
 | Declarations complete | All but author-supplied content (funding, competing interests, CRediT, acknowledgements) and the flagged AI-use statement |
-| All five co-authors approved | Yes (reported by Kartik Joshi, 17 November 2026) |
+| All five co-authors approved | Yes (reported by Kartik Joshi, 17 November 2026), before the language pass and the final audit; a last read of those changes is advisable |
 
 ## IJDSA requirements, read from the journal's own page
 

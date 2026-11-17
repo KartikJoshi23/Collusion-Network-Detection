@@ -117,8 +117,9 @@ line-graph) measurably hurt under the temporal shift and were not adopted.
 4. Mendeley prevalences are case-control artifacts; only lift-style
    comparisons cross folds.
 5. Explanation quality: PGExplainer fidelity is sane on 49/50 top alerts, but
-   human validation (practitioner study, §10.3) is pending; R-GCN carries no
-   mask-based explanation (R12).
+   human validation (practitioner study, §10.3) has not been run: the
+   instrument and rater packets are released, and the paper lists the missing
+   study as a limitation. R-GCN carries no mask-based explanation (R12).
 
 ## Ethics
 

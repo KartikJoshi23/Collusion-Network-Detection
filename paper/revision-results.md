@@ -4,8 +4,9 @@ Branch `paper/journal-revision`, 2026-11-14. Every value below is read from
 the named artifact, which a committed config produces. Values from this
 machine (Intel i5-11300H) are marked "here"; values from the original
 machine are marked "master". The trees, LOCO, LOMO and GATv2 seed 0
-reproduce master bit for bit (checks R1–R3, R5, R7). B7 is still running and
-is reported separately when it finishes.
+reproduce master bit for bit (checks R1–R3, R5, R7). B7 finished on
+2026-11-16; its results are in the last section, with D24, D25 and D28 before
+it.
 
 ## B2. Trees over five seeds
 
@@ -124,12 +125,14 @@ country_6. country_2 holds 750 of the 1,001 firms and its lift is 0.903
 Brazil 1.77, Italy 1.43, Japan 1.53). **Effect on the text:** "transfer works"
 holds for García only. On Mendeley the macro lift comes from small folds.
 
-**Country names: open.** The Mendeley record (DOI 10.17632/f3y4nrn3s6.2)
-names the seven countries (Bulgaria, France, Hungary, Latvia, Portugal,
-Spain, Sweden), but the data code them country_1 to country_7 and publish no
-key. The per-code case counts in the data (2, 15, 7, 14, 14, 2, 5) do not
-match the per-country counts in the publisher's working paper (10, 2, 8, 19,
-11, 17, 23), so the codes cannot be mapped without guessing.
+**Country names: the codes stay (settled).** The Mendeley record (DOI
+10.17632/f3y4nrn3s6.2) names the seven countries (Bulgaria, France, Hungary,
+Latvia, Portugal, Spain, Sweden), but the data code them country_1 to
+country_7 and publish no key. The per-code case counts in the data (2, 15, 7,
+14, 14, 2, 5) do not match the per-country counts in the publisher's working
+paper (10, 2, 8, 19, 11, 17, 23), so the codes cannot be mapped without
+guessing. The paper says the release does not identify the codes (V-C), and
+the Fig. 4 caption maps its labels C1–C7 to them.
 
 ## B6. Frozen probe at full labels
 

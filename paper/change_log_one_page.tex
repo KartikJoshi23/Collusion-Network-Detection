@@ -1,0 +1,48 @@
+% One-page change log for the journal revision of "One Stack, Two Ledgers",
+% in the format the revision brief asks for (Part H): every item of the
+% priority table, what changed, where (section and page of the Springer
+% version, collusiongraph_paper_springer.pdf) and the new numbers.
+% Every number is the one printed in the paper and checked by the manifest.
+\documentclass[9pt]{extarticle}
+\usepackage[a4paper,landscape,margin=12mm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{mathptmx}
+\usepackage{array,tabularx,booktabs}
+\renewcommand{\arraystretch}{1.12}
+\setlength{\tabcolsep}{4pt}
+\pagestyle{empty}
+\begin{document}
+
+\noindent{\large\textbf{One Stack, Two Ledgers --- change log of the journal revision}}\hfill
+\small Section and page numbers refer to the Springer (IJDSA) version, 25 pages.\par
+\vspace{4pt}
+\small
+\noindent\begin{tabularx}{\textwidth}{@{}r>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{0.17\textwidth}>{\raggedright\arraybackslash}p{0.27\textwidth}@{}}
+\toprule
+\# & What changed & Section / page & New numbers \\
+\midrule
+1 & Opening rewritten around the problem, not a date. The AI Act is a design standard, not an obligation; the Annex~III 5(b) claim is removed; the Commission guidelines are cited as a non-binding draft. UAE Art.~149 and the OECD figures checked against the official texts. & \S1 (pp.~1--3); \S7 (pp.~15--16) & CEPS false-positive share 95--98\% (source pp.~3, 31); OECD procurement 12.7\% of GDP (source p.~146) \\
+2 & Two lead contributions. LOCO and LOMO moved under RQ2, only the cross-domain probe under RQ4. RQ2 matched to the unsupervised injection study; RQ3 answered from fidelity and coverage; RQ1 answered ``no''. & \S1.1--1.2 (p.~2); \S5.1, 5.3, 5.4; \S6 & Unsupervised members cost $0.0295$ \\
+3 & The dual-actor section cut to two sentences of future work; Fig.~7 removed. & \S10 (p.~17) & --- \\
+4 & Every overstated claim in A3 rewritten: calibration, transfer, macro lift, Garc\'ia, copilot, bootstrap gap, validation. Validation blindness now rests on two five-seed measurements, not four. & Abstract; \S1.2; \S5; \S6; \S8; \S10 & Grounding 24/26, Wilson CI $[0.759, 0.979]$; seed-pair gaps $-0.264$ to $-0.391$ \\
+5 & B3 per-step line added to Fig.~3; new Table~4 before and after step 43. The trees also collapse at step 43, so RQ1 now says the whole gap lies in steps 35--42. & \S5.1; Fig.~3 and Table~4 (p.~9) & Steps 35--42: B3 $0.9259$, GATv2 $0.5737$; steps 43--49: $0.0567$, $0.0391$ \\
+6 & B2 and B3 over seeds 0--4 (subsample and colsample 0.8); bootstrap per seed pair and on seed-averaged scores; B3 added to a calibrated fusion. & Tables~2, 3 (p.~8), 5 (p.~10), 9 (p.~13) & B3 $0.8123 \pm 0.0012$, B2 $0.8039 \pm 0.0017$; fusion with B3 $0.7760$ \\
+7 & B2 and B3 on local features only; the \S5.1 paragraph rewritten. & Table~2 (p.~8); \S5.1 & B2-local $0.7879$, B3-local $0.7959$ \\
+8 & Each below-chance result diagnosed; no label or score bug. Mendeley R-GCN and the financial-to-procurement probe: a temporal reversal of the structural signal. AMLworld trees: a one-hour training window. A missing AMLworld split fence was fixed. & \S5.1 (p.~9); \S5.4 (p.~11); \S5.5 (p.~13) & Inverted scores $0.43$--$0.47$ (R-GCN), $0.43$ (probe); AMLworld $0.0063$/$0.0062$ vs $0.0103$ \\
+9 & Pooled and size-weighted lift with per-fold bootstrap CIs; macro lift moved to a table note. Country names stay as codes because the release gives no key (stated in the text). & Table~6 (p.~10); Fig.~4 (p.~11); \S5.3 & Mendeley $0.93 \pm 0.02$ (size-weighted $0.99$); Garc\'ia $1.36 \pm 0.15$ ($1.53$) \\
+10 & Frozen probe compared with probes on the target's own inputs and with B2 at full labels; encoder input spaces documented; full-label point on Fig.~5; abstract sentence updated. & Table~8, Fig.~5 (p.~12); \S5.4; App.~C & Frozen $0.1502$; B2-input probe $0.2991$; B2 $0.8039$ \\
+11 & Validation split stated; a later window (steps 32--34) rerun; five-seed noise curve; Table~10 compares label smoothing, weight decay, dropout and early stopping; the gain is located in steps 35--42. & \S5.5; Fig.~6 (p.~13); Table~10 (p.~14); App.~C & Noise 10\%: $0.5646$ vs clean $0.4729$; weight decay $0.5403$; validation $0.9380 \rightarrow 0.5642$ \\
+12 & Fidelity+, Fidelity$-$ and sparsity for PGExplainer, GNNExplainer and attention on the same 50 alerts; ``sane'' and ``implausible fidelity'' defined. & \S6 (p.~14); Table~11 (p.~15) & PGExplainer sane on 49/50 (PyG), 25/50 (hard masks) \\
+13 & Appendix~C added: splits, features, rules, hyperparameters, tuning, unlabelled nodes, fusion, queue, probe, copilot, compute, availability. & App.~C (pp.~18--20); Table~C1 (p.~19) & --- \\
+14 & All twelve brief rows resolved (D8 and D11 on recommended wording; D12, the acknowledgements, awaits the authors). Sixteen further items found and fixed, including tie-aware queue precision. & Throughout & Procurement P@18 $0.40$ (tie-aware; was 0.33) \\
+15 & 60 references (was 30), each checked against its publisher or official source; numbered Springer style with DOI links. & References (pp.~21--25) & --- \\
+16 & Abstract in the brief's order with abbreviations defined (244 words); full professional language pass over every section; long sentences split (none now exceeds 32 words). & Abstract (p.~1); all sections & --- \\
+17 & Fig.~6 rebuilt on five seeds, with the ``(\%)'' label and the annotation fixed; Fig.~7 removed; all figures vector and greyscale-safe, with text of at least 7.5~pt (8~pt in the IEEE layout). & Figs.~1--6 & --- \\
+18 & Springer sn-jnl version: two-column layout with page-wide tables, numbered references, six keywords, a Statements and Declarations section, and a flat upload bundle. & Declarations (p.~17) & --- \\
+19 & The earlier project report and public repository are named; a cover-letter paragraph is drafted for Dr.~Garg. & \S4.5 (p.~7); declarations draft & Seed-0 $0.5492$ shown as one of five seeds \\
+\bottomrule
+\end{tabularx}
+
+\vspace{5pt}
+\noindent\textbf{Still with the authors:} funding, competing interests, author contributions (CRediT) and acknowledgements (red placeholders); confirmation of the AI-use statement; Dr.~Garg's confirmation of the recommended choices (journal IJDSA with SNAM as backup, no rater study before submission, the availability and disclosure wording). All five authors approved the revised version on 17 November 2026. The language pass and the final audit came after that approval. The audit added the probe diagnosis (\S5.4) and the fidelity definitions (\S6), split 25 long sentences, and made the Springer tables page-wide; no number changed.
+\end{document}
